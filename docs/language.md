@@ -1,0 +1,206 @@
+# Specifikace Lux Simple Lang 0.7
+
+Tento dokument je jazyková specifikace. Produkční implementace je pure-LSL self-hostovaný native compiler. Soubory používají UTF-8 a příponu `.lsl`.
+
+## Základní pravidla
+
+- Jeden příkaz je zpravidla na jednom řádku.
+- `#` začíná komentář mimo řetězec.
+- Blok začíná hlavičkou a končí samostatným `end`.
+- Odsazení nemá význam, ale doporučují se čtyři mezery.
+- Názvy rozlišují malá a velká písmena a mají tvar `[A-Za-z_][A-Za-z0-9_]*`.
+- Literály a operátory používají čitelnou syntaxi Pythonu: `+ - * / // % **`, porovnání, `and`, `or`, `not`, `in` a závorky.
+- Čárka odděluje argumenty. Víceřádkové `[]`, `()`, `{}` je jeden logický příkaz.
+
+## Proměnné a typy
+
+```lsl
+enabled = True
+count = 42
+ratio = 1.5
+name = "Lux"
+nothing = None
+```
+
+Vestavěné typy a návratové hodnoty `type(value)`:
+
+| Hodnota | Typ |
+|---|---|
+| `True`, `False` | `Bool` |
+| celé číslo | `Int` |
+| desetinné číslo | `Float` |
+| text | `String` |
+| `[...]` | `List` |
+| `(...)` | `Tuple` |
+| `{key: value}` | `Dictionary` |
+| `![...]` | `RealArray` |
+| `None` | `None` |
+
+`Bool(value)`, `Int(value)`, `Float(value)`, `String(value)`, `List(value)`, `Tuple(value)` a `Dictionary(value)` převádějí hodnoty. Přiřazení podporuje také `+=`, `-=`, `*=`, `/=` a `%=`.
+
+## Výstup a vstup
+
+```lsl
+name = input("Jméno: ")
+print "ahoj", name, "je ti", 1 + 10
+printl "ahoj {name}, je ti {1 + 10}"
+```
+
+`print` odděluje hodnoty mezerou a přidá nový řádek. `printl` nejdřív vyhodnotí svůj argument jako řetězec a pak vyhodnotí výrazy v `{...}`. `input(prompt)` vypíše prompt bez newline, načte nejvýše 4096 stdin bytes, odstraní koncové LF a vrátí UTF-8 `String`.
+
+## Podmínky
+
+```lsl
+if score > 90:
+    print "A"
+elif score > 70:
+    print "B"
+else:
+    print "C"
+end
+```
+
+Dvojtečka za hlavičkou je volitelná. Spustí se nejvýše jedna větev.
+
+## Smyčky
+
+```lsl
+for i in rang(1, 10):
+    if i == 5:
+        continue
+    elif i > 7:
+        break
+    end
+end
+
+while ready == False:
+    call poll()
+end
+
+loop:
+    print "navždy, pokud nepřijde break"
+    break
+end
+```
+
+`rang(stop)`, `rang(start, stop)` a `rang(start, stop, step)` mají pravou mez exkluzivní. `range` je stejné aliasové jméno. `break` a `continue` smějí být jen uvnitř smyčky.
+
+## Chyby
+
+```lsl
+safe:
+    Error(ValueError: tato chyba se zahodí)
+end
+
+try:
+    Error(NetworkError: primární cesta selhala)
+else:
+    print "fallback"
+end
+```
+
+`safe` při runtime chybě přeskočí zbytek svého bloku. `try/else` spustí `else` pouze tehdy, když `try` selže. `Error(Type: message)` vyvolá vlastní chybu. `check(condition, message)` vyvolá chybu při nepravdivé podmínce. Syntaktické chyby při parsování nelze zachytit uvnitř stejného zdroje.
+
+## Funkce
+
+```lsl
+function motor(power):
+    return power * 2
+end
+
+call motor(10)
+result = motor(10)
+```
+
+`call` zahodí návratovou hodnotu; běžné volání ji lze použít ve výrazu. Parametry jsou povinné a předávají se pozičně. `return` bez hodnoty vrátí `None`. Funkce čtou globální scope, zápis je lokální pro aktuální volání. Funkce jsou first-class hodnoty: lze je uložit, vrátit a předat jako callback (`type(callback)` je `Function`). Lexikální closures a keyword arguments nejsou součástí syntaxe 0.7.
+
+## Třídy a instance
+
+```lsl
+class Auto(True):
+    ctype Public
+    wheels = 4
+
+    function init(self, brand):
+        self.brand = brand
+    end
+
+    function motor(self, power):
+        return self.brand + ": " + String(power)
+    end
+end
+
+car = Auto("Lux")
+print car.wheels, car.motor(10)
+```
+
+Podmínka `class Name(condition)` určuje, zda se tělo třídy vykoná. Při `False` vznikne vypnutá definice bez členů. `ctype Public` je výchozí; `ctype Private` zabrání exportu třídy z modulu. Funkce s prvním parametrem přesně `self` se při přístupu přes instanci váže jako metoda. `init(self, ...)` je volitelný konstruktor.
+
+## Kolekce
+
+```lsl
+items = ["A", 1, True]
+point = (10, 20)
+fixed = ![1, 2, 3]
+data = {
+    "A": "ahoj"
+    "B": "balet"
+}
+
+items.append("konec")
+items.extend([2, 3])
+a = items[0]
+b = items(1)        # alternativní indexace
+items[2] = "ahoj"
+fixed[1] = 8
+del(items[0])
+```
+
+Čárky mezi řádky jednoduchého víceřádkového dictionary jsou volitelné. `RealArray` lze indexově měnit, ale jeho délka je pevná: `append`, `extend`, `pop` a `del(fixed[i])` selžou.
+
+Povolené metody:
+
+- List: `append`, `extend`, `insert`, `pop`, `remove`, `clear`, `index`, `count`, `sort`, `reverse`, `copy`
+- Dictionary: `get`, `keys`, `values`, `items`, `update`, `pop`, `clear`, `setdefault`, `copy`
+- String: `lower`, `upper`, `split`, `strip`, `lstrip`, `rstrip`, `replace`, `join`, `startswith`, `endswith`, `title`, `capitalize`, `find`, `count`
+- Tuple/RealArray: `index`, `count`; RealArray navíc `copy`
+
+Indexace a slicing (`value[start:stop]`) mají pravou mez exkluzivní a podporují záporné indexy. String indexy, `len`, slicing, iterace, `find` a `index` počítají validní Unicode code points, ne UTF-8 bajty.
+
+## Mazání
+
+```lsl
+del(name)
+del(items[0])
+del(object.member)
+```
+
+Mazat lze proměnnou, měnitelný index nebo člen LSL instance/třídy.
+
+## Moduly
+
+```lsl
+load lux
+from lux load l as value_type
+print lux.version, value_type([1, 2])
+```
+
+`load foo.bar` hledá `foo/bar.lsl` nejprve vedle zdrojového souboru a poté v instalovaném `lib/lsl/stdlib`, odvozeném od cesty compileru. Modulové symbols dostávají deterministický namespace prefix. Třídy označené `ctype Private` nejsou dostupné přes vnější namespace; public classes lze přímo konstruovat. Native plugin modul zatím není podporovaný.
+
+Vestavěný modul `lux` exportuje `version`, `language` a `l` (alias `type`). Další vestavěné moduly jsou `json`, `http`, `env` a `config`; podrobnosti jsou v `configuration.md` a `ai.md`.
+
+## Standardní funkce
+
+- matematika: `min`, `max`, `sum`, `abs`, `round`
+- znaky: `chr`, `ord`
+- čas: `clock()` — monotónní čas v sekundách
+- soubory UTF-8: `readfile(path)`, `writefile(path, value)`, `appendfile(path, value)`, `exists(path)`
+- Linux/POSIX filesystem: `cwd()`, `chdir(path)`, `mkdir(path)`, `remove_path(path)`
+- proces: globální `args`, `arg(index)`, `arg_count()`, `run([program, arg, ...])`, `exit(status)`
+- environment: `getenv(name)` vrátí String nebo `None`; v pure config režimu není dostupné
+- chyby: `last_error()` vrátí poslední chybu zachycenou `safe` nebo `try`
+- nápověda: `help()`
+
+## Bezpečnost
+
+Běžný programovací režim není bezpečnostní sandbox. LSL program může číst a zapisovat soubory nebo spouštět procesy s právy aktuálního procesu. Oddělený `lsl config` režim staticky odmítá ambientní I/O, síť, environment a process capabilities.

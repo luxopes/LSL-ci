@@ -1,0 +1,480 @@
+# Dynamic operations implemented in LSL and compiled by the direct backend.
+
+function __lsl_is_space(character):
+    return character == " " or character == "\t" or character == "\r" or character == "\n"
+end
+
+function __lsl_lower(text):
+    result = ""
+    for character in text:
+        code = ord(character)
+        if code >= 65 and code <= 90:
+            result += chr(code + 32)
+        else:
+            result += character
+        end
+    end
+    return result
+end
+
+function __lsl_upper(text):
+    result = ""
+    for character in text:
+        code = ord(character)
+        if code >= 97 and code <= 122:
+            result += chr(code - 32)
+        else:
+            result += character
+        end
+    end
+    return result
+end
+
+function __lsl_title(text):
+    result = ""
+    word_start = True
+    for character in text:
+        code = ord(character)
+        if code >= 65 and code <= 90:
+            if word_start:
+                result += character
+            else:
+                result += chr(code + 32)
+            end
+            word_start = False
+        elif code >= 97 and code <= 122:
+            if word_start:
+                result += chr(code - 32)
+            else:
+                result += character
+            end
+            word_start = False
+        else:
+            result += character
+            word_start = True
+        end
+    end
+    return result
+end
+
+function __lsl_startswith(text, prefix):
+    if len(prefix) > len(text):
+        return False
+    end
+    index = 0
+    while index < len(prefix):
+        if text[index] != prefix[index]:
+            return False
+        end
+        index += 1
+    end
+    return True
+end
+
+function __lsl_endswith(text, suffix):
+    if len(suffix) > len(text):
+        return False
+    end
+    offset = len(text) - len(suffix)
+    index = 0
+    while index < len(suffix):
+        if text[offset + index] != suffix[index]:
+            return False
+        end
+        index += 1
+    end
+    return True
+end
+
+function __lsl_lstrip(text):
+    start = 0
+    while start < len(text) and __lsl_is_space(text[start]):
+        start += 1
+    end
+    result = ""
+    index = start
+    while index < len(text):
+        result += text[index]
+        index += 1
+    end
+    return result
+end
+
+function __lsl_rstrip(text):
+    stop = len(text)
+    while stop > 0 and __lsl_is_space(text[stop - 1]):
+        stop -= 1
+    end
+    result = ""
+    index = 0
+    while index < stop:
+        result += text[index]
+        index += 1
+    end
+    return result
+end
+
+function __lsl_strip(text):
+    return __lsl_rstrip(__lsl_lstrip(text))
+end
+
+function __lsl_find(text, needle):
+    if len(needle) == 0:
+        return 0
+    end
+    limit = len(text) - len(needle)
+    start = 0
+    while start <= limit:
+        matches = True
+        index = 0
+        while index < len(needle):
+            if text[start + index] != needle[index]:
+                matches = False
+                break
+            end
+            index += 1
+        end
+        if matches:
+            return start
+        end
+        start += 1
+    end
+    return -1
+end
+
+function __lsl_string_index(text, needle):
+    position = __lsl_find(text, needle)
+    if position < 0:
+        Error(ValueError: "substring is not in String")
+    end
+    return position
+end
+
+function __lsl_split(text, separator):
+    result = []
+    current = ""
+    index = 0
+    while index < len(text):
+        matches = False
+        if index + len(separator) <= len(text):
+            matches = True
+            offset = 0
+            while offset < len(separator):
+                if text[index + offset] != separator[offset]:
+                    matches = False
+                    break
+                end
+                offset += 1
+            end
+        end
+        if matches:
+            call result.append(current)
+            current = ""
+            index += len(separator)
+        else:
+            current += text[index]
+            index += 1
+        end
+    end
+    call result.append(current)
+    return result
+end
+
+function __lsl_join(separator, values):
+    result = ""
+    index = 0
+    while index < len(values):
+        if index > 0:
+            result += separator
+        end
+        result += values[index]
+        index += 1
+    end
+    return result
+end
+
+function __lsl_extend(target, values):
+    for value in values:
+        call target.append(value)
+    end
+end
+
+function __lsl_list(values):
+    result = []
+    for value in values:
+        result.append(value)
+    end
+    return result
+end
+
+function __lsl_require_real(value):
+    value_type = __lsl_type_code(value)
+    if value_type != 0 and value_type != 6:
+        Error(TypeError: "RealArray accepts only Int or Float values")
+    end
+    return value
+end
+
+function __lsl_real_array(values):
+    result = []
+    for value in values:
+        result.append(__lsl_require_real(value))
+    end
+    return result
+end
+
+function __lsl_sum(values):
+    result = 0
+    for value in values:
+        result += value
+    end
+    return result
+end
+
+function __lsl_parse_float(text):
+    sign = 1.0
+    index = 0
+    if len(text) > 0 and text[0] == "-":
+        sign = -1.0
+        index = 1
+    elif len(text) > 0 and text[0] == "+":
+        index = 1
+    end
+    value = 0.0
+    fraction_scale = 1.0
+    after_dot = False
+    exponent = 0
+    exponent_negative = False
+    in_exponent = False
+    exponent_sign_allowed = False
+    digits = 0
+    exponent_digits = 0
+    while index < len(text):
+        character = text[index]
+        code = ord(character)
+        if code >= 48 and code <= 57:
+            digit = code - 48
+            if in_exponent:
+                exponent = exponent * 10 + digit
+                exponent_digits += 1
+                exponent_sign_allowed = False
+            else:
+                value = value * 10.0 + Float(digit)
+                digits += 1
+                if after_dot:
+                    fraction_scale *= 10.0
+                end
+            end
+        elif character == "." and not after_dot and not in_exponent:
+            after_dot = True
+        elif (character == "e" or character == "E") and not in_exponent and digits > 0:
+            in_exponent = True
+            exponent_sign_allowed = True
+        elif in_exponent and exponent_sign_allowed and (character == "-" or character == "+"):
+            if character == "-":
+                exponent_negative = True
+            end
+            exponent_sign_allowed = False
+        else:
+            Error(ValueError: "invalid Float String")
+        end
+        index += 1
+    end
+    if digits == 0 or (in_exponent and exponent_digits == 0):
+        Error(ValueError: "invalid Float String")
+    end
+    value /= fraction_scale
+    while exponent > 0:
+        if exponent_negative:
+            value /= 10.0
+        else:
+            value *= 10.0
+        end
+        exponent -= 1
+    end
+    return value * sign
+end
+
+function __lsl_float_any(value):
+    value_type = __lsl_type_code(value)
+    if value_type == 6:
+        return value
+    elif value_type == 1:
+        return __lsl_parse_float(value)
+    elif value_type == 0:
+        return __lsl_float_from_int(value)
+    end
+    Error(TypeError: "Float expects Int, Float, or String")
+end
+
+function __lsl_insert(target, position, value):
+    if position < 0:
+        position += len(target)
+    end
+    if position < 0:
+        position = 0
+    elif position > len(target):
+        position = len(target)
+    end
+    call target.append(None)
+    index = len(target) - 1
+    while index > position:
+        target[index] = target[index - 1]
+        index -= 1
+    end
+    target[position] = value
+end
+
+function __lsl_list_find(target, value):
+    index = 0
+    while index < len(target):
+        if target[index] == value:
+            return index
+        end
+        index += 1
+    end
+    return -1
+end
+
+function __lsl_list_index(target, value):
+    position = __lsl_list_find(target, value)
+    if position < 0:
+        Error(ValueError: "value is not in collection")
+    end
+    return position
+end
+
+function __lsl_pop(target):
+    if len(target) == 0:
+        Error(IndexError: "pop from empty List")
+    end
+    return __lsl_pop_last(target)
+end
+
+function __lsl_list_count(target, value):
+    result = 0
+    for item in target:
+        if item == value:
+            result += 1
+        end
+    end
+    return result
+end
+
+function __lsl_remove(target, value):
+    position = __lsl_list_find(target, value)
+    if position >= 0:
+        index = position
+        while index + 1 < len(target):
+            target[index] = target[index + 1]
+            index += 1
+        end
+        call __lsl_pop_last(target)
+    end
+end
+
+function __lsl_sort(target):
+    limit = len(target)
+    while limit > 1:
+        index = 1
+        while index < limit:
+            if target[index] < target[index - 1]:
+                temporary = target[index]
+                target[index] = target[index - 1]
+                target[index - 1] = temporary
+            end
+            index += 1
+        end
+        limit -= 1
+    end
+end
+
+function __lsl_copy(target):
+    return target[0:len(target)]
+end
+
+function __lsl_dict_get(target, key, default_value):
+    if key in target:
+        return target[key]
+    end
+    return default_value
+end
+
+function __lsl_setdefault(target, key, default_value):
+    if key not in target:
+        target[key] = default_value
+    end
+    return target[key]
+end
+
+function __lsl_update(target, values):
+    for key in values.keys():
+        target[key] = values[key]
+    end
+end
+
+function __lsl_replace(text, old_value, new_value):
+    result = ""
+    index = 0
+    while index < len(text):
+        matches = False
+        if index + len(old_value) <= len(text):
+            matches = True
+            offset = 0
+            while offset < len(old_value):
+                if text[index + offset] != old_value[offset]:
+                    matches = False
+                    break
+                end
+                offset += 1
+            end
+        end
+        if matches:
+            result += new_value
+            index += len(old_value)
+        else:
+            result += text[index]
+            index += 1
+        end
+    end
+    return result
+end
+
+function __lsl_count(text, needle):
+    count = 0
+    offset = 0
+    while offset <= len(text) - len(needle):
+        found = __lsl_find_offset(text, needle, offset)
+        if found < 0:
+            break
+        end
+        count += 1
+        step = len(needle)
+        if step < 1:
+            step = 1
+        end
+        offset = found + step
+    end
+    return count
+end
+
+function __lsl_find_offset(text, needle, offset):
+    limit = len(text) - len(needle)
+    start = offset
+    while start <= limit:
+        matches = True
+        index = 0
+        while index < len(needle):
+            if text[start + index] != needle[index]:
+                matches = False
+                break
+            end
+            index += 1
+        end
+        if matches:
+            return start
+        end
+        start += 1
+    end
+    return -1
+end

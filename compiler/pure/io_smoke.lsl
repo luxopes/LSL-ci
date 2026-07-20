@@ -1,0 +1,5 @@
+input_path = arg(1)
+output_path = arg(2)
+text = readfile(input_path)
+print text.strip(), len(text), exists(input_path), arg_count()
+call writefile(output_path, text + "copied")

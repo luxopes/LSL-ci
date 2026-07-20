@@ -1,0 +1,3 @@
+12.000000 25.000000 3.500000
+ValueError: invalid Float String
+TypeError: Float expects Int, Float, or String

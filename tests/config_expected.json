@@ -1,0 +1,1 @@
+{"system":{"name":"ai-workstation"},"services":{"ai":{"enable":true,"model":"local/model-q4","port":11434}},"environment":{"packages":["curl","ca-certificates","git","clang"]}}
