@@ -200,6 +200,18 @@ byl přegenerován deterministicky (každá binárka 2× bitově shodná). Nový
 `tests/int_conversion_conformance.lsl`/`.out` je zapojen do `lsl-test` a celý
 suite je zelený; catchability ověřena přes `safe` i `try/else`.
 
+Fixed point s Float `**` (mocnina) má SHA-256
+`b48df85b691527f045767d2ffbbb548fa37d09b02343b06c91e9f7b9fb9428e3`. Dříve
+`infer_expression_type` neměla větev pro `**`, takže `2.0 ** 53` bylo inferováno
+jako Int a šlo přes `runtime_int_power`, který bral boxed-Float pointer jako Int
+(výsledek `0`/garbage). Inference nyní promuje `**` na Float, pokud je kterýkoli
+operand Float; nový `runtime_float_power` počítá exact repeated multiplication
+(SSE2) a pro záporný exponent vrací reciproký. Float báze vyžaduje Int exponent;
+Float exponent je odmítnut čitelným compile errorem místo tiché truncation.
+`runtime_float_power` je runtime label, takže stačila jednofázová iterace do
+fixed pointu (fp2==fp3). Toolchain přegenerován deterministicky; nový
+`tests/float_power_conformance.lsl`/`.out` je v `lsl-test`.
+
 Přesný další krok: odstranit poslední teoretickou raw-Int/live-pointer kolizi
 jednoznačným scalar tag ABI, doplnit zbývající RealArray numerické metody a
 navrhnout pure-LSL in-process zero-copy tensor/shared-object loader. Izolované
@@ -211,6 +223,6 @@ collections, GC robustnost, syscall I/O, native/tensor ABI, AI vrstva,
 NixOS config, arita/builtiny, fuzz/bench/determinismus/audit, cleanup, docs).
 Postup je inkrementální: každý krok = konkrétní defekt → oprava → nový
 conformance test → ověřený self-host fixed point. Hotovo z okruhu 2: validace
-`Int(String)` a dynamické `Int(Any)` konverze. Zbývá zbytek okruhu 2
-(float round-trip formatting, NaN/Inf, kontrolovaný integer overflow) a okruhy
-1, 3–17.
+`Int(String)` a dynamické `Int(Any)` konverze; opravená Float `**` mocnina.
+Zbývá zbytek okruhu 2 (float round-trip formatting, NaN/Inf, kontrolovaný
+integer overflow) a okruhy 1, 3–17.

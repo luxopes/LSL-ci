@@ -128,6 +128,10 @@ function infer_expression_type(syntax, types, function_returns):
             if left == "Float" or right == "Float" or syntax["operator"] == "/":
                 return "Float"
             end
+        elif syntax["operator"] == "**":
+            if left == "Float" or right == "Float":
+                return "Float"
+            end
         end
         if syntax["operator"] == "and" or syntax["operator"] == "or":
             return "Bool"
@@ -622,6 +626,19 @@ function emit_expression(generator, syntax):
         operator = syntax["operator"]
         expression_type = infer_expression_type(syntax, generator["types"], generator["function_returns"])
         if expression_type == "Float":
+            if operator == "**":
+                exponent_type = infer_expression_type(syntax["right"], generator["types"], generator["function_returns"])
+                if exponent_type != "Int":
+                    call unsupported(generator["path"], generator["lines"], syntax, "Float ** requires an Int exponent", "use an Int exponent such as x ** 3")
+                end
+                call emit_float_expression(generator, syntax["left"])
+                call assembler.emit(output, x86_64.push(0))
+                call emit_expression(generator, syntax["right"])
+                call assembler.emit(output, x86_64.move_reg_reg(6, 0))
+                call assembler.emit(output, x86_64.pop(7))
+                call assembler.relative(output, [232], "runtime_float_power")
+                return
+            end
             call emit_float_expression(generator, syntax["left"])
             call assembler.emit(output, x86_64.push(0))
             call emit_float_expression(generator, syntax["right"])

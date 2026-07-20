@@ -137,6 +137,41 @@ function emit_int_power(output):
     call assembler.emit(output, x86_64.ret())
 end
 
+function emit_float_power(output):
+    # reg7 = boxed Float base, reg6 = raw Int exponent. Exact repeated
+    # multiplication; negative exponent yields the reciprocal.
+    call assembler.label(output, "runtime_float_power")
+    call assembler.emit(output, x86_64.function_prologue(32))
+    call assembler.emit(output, x86_64.load_memory(0, 7, 8))
+    call assembler.emit(output, x86_64.movq_xmm_from_reg(1, 0))
+    call assembler.emit(output, x86_64.mov_imm64(0, 1))
+    call assembler.emit(output, x86_64.int_to_double(0, 0))
+    call assembler.emit(output, x86_64.xor_reg_reg(8, 8))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(6, 0))
+    call assembler.relative(output, [15, 141], "float_power_loop")
+    call assembler.emit(output, x86_64.mov_imm64(8, 1))
+    call assembler.emit(output, x86_64.neg_reg(6))
+    call assembler.label(output, "float_power_loop")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(6, 0))
+    call assembler.relative(output, [15, 142], "float_power_reduced")
+    call assembler.emit(output, x86_64.mul_double(0, 1))
+    call assembler.emit(output, x86_64.decrement(6))
+    call assembler.relative(output, [233], "float_power_loop")
+    call assembler.label(output, "float_power_reduced")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(8, 0))
+    call assembler.relative(output, [15, 132], "float_power_box")
+    call assembler.emit(output, x86_64.mov_imm64(0, 1))
+    call assembler.emit(output, x86_64.int_to_double(2, 0))
+    call assembler.emit(output, x86_64.div_double(2, 0))
+    call assembler.emit(output, x86_64.movq_reg_from_xmm(7, 2))
+    call assembler.relative(output, [233], "float_power_new")
+    call assembler.label(output, "float_power_box")
+    call assembler.emit(output, x86_64.movq_reg_from_xmm(7, 0))
+    call assembler.label(output, "float_power_new")
+    call assembler.relative(output, [232], "runtime_float_new")
+    call assembler.emit(output, x86_64.function_epilogue())
+end
+
 function emit_string_concat(output):
     call assembler.label(output, "runtime_string_concat")
     call assembler.emit(output, x86_64.function_prologue(48))
@@ -1420,6 +1455,7 @@ function emit_all(output):
     call emit_allocator(output)
     call emit_object_checks(output)
     call emit_int_power(output)
+    call emit_float_power(output)
     call emit_string_concat(output)
     call emit_string_clone(output)
     call emit_float_runtime(output)
