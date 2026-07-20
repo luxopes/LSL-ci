@@ -14,9 +14,15 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`.
 - pure-LSL installer a test runner;
 - přesný selfhost a config conformance.
 
+## Nedávno hotovo (inkrementálně, každé s conformance testem a self-host fixed pointem)
+
+- okruh 2: validace `Int(String)` a dynamické `Int(Any)` konverze (dřív `Int("abc")` vracelo garbage);
+- okruh 2: oprava Float `**` mocniny (dřív `2.0 ** 53` vracelo `0`).
+
 ## Zbývá
 
 - dokončit jednoznačný scalar tag ABI tak, aby ani záměrný raw Int shodný s živou heap adresou nemohl kolidovat s object value;
+- zbytek okruhu 2: float round-trip formatting, NaN/Infinity, kontrolovaný integer overflow, INT64_MIN/-1;
 - dokončit pokročilé Tuple/RealArray metody a runtime error parity;
 - doplnit Float exponent/round-trip formatting a další numerické edge cases;
 - vedle hotového JSON process plugin ABI navrhnout pure-LSL in-process shared-object/zero-copy tensor loader;
