@@ -4,3 +4,7 @@ dist/
 *.o
 *.a
 *.so
+
+# transient double-build verification artifacts
+*.a
+*.b

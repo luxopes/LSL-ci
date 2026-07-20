@@ -307,6 +307,45 @@ function __lsl_float_any(value):
     Error(TypeError: "Float expects Int, Float, or String")
 end
 
+function __lsl_parse_int(text):
+    length = len(text)
+    index = 0
+    sign = 1
+    if length > 0 and text[0] == "-":
+        sign = -1
+        index = 1
+    elif length > 0 and text[0] == "+":
+        index = 1
+    end
+    if index >= length:
+        Error(ValueError: "invalid Int String")
+    end
+    value = 0
+    while index < length:
+        code = ord(text[index])
+        if code < 48 or code > 57:
+            Error(ValueError: "invalid Int String")
+        end
+        value = value * 10 + (code - 48)
+        index += 1
+    end
+    return value * sign
+end
+
+function __lsl_int_any(value):
+    value_type = __lsl_type_code(value)
+    if value_type == 0:
+        return value
+    elif value_type == 1:
+        return __lsl_parse_int(value)
+    elif value_type == 6:
+        return __lsl_float_to_int(value)
+    elif value_type == 4:
+        return __lsl_unbox_bool(value)
+    end
+    Error(TypeError: "Int expects Int, Float, String, or Bool")
+end
+
 function __lsl_insert(target, position, value):
     if position < 0:
         position += len(target)

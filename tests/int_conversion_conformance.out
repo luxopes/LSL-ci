@@ -1,0 +1,5 @@
+123 -45 7 3 1
+ValueError: invalid Int String
+ValueError: invalid Int String
+ValueError: invalid Int String
+TypeError: Int expects Int, Float, String, or Bool

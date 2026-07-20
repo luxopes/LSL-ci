@@ -56,6 +56,12 @@ if float_conversion_output != readfile("tests/float_conversion_conformance.out")
     Error(TestFailure: "Float conversion conformance output differs")
 end
 
+call require_success(run(compiler, ["tests/int_conversion_conformance.lsl", "/tmp/lsl-int-conversion-test"]), "compile Int conversion conformance")
+int_conversion_output = capture("/tmp/lsl-int-conversion-test", [])
+if int_conversion_output != readfile("tests/int_conversion_conformance.out"):
+    Error(TestFailure: "Int conversion conformance output differs")
+end
+
 call require_success(run(compiler, ["tests/dynamic_value_conformance.lsl", "/tmp/lsl-dynamic-value-test"]), "compile dynamic value conformance")
 dynamic_value_output = capture("/tmp/lsl-dynamic-value-test", [])
 if dynamic_value_output != readfile("tests/dynamic_value_conformance.out"):

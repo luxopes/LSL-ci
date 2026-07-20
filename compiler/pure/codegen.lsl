@@ -794,6 +794,11 @@ function emit_expression(generator, syntax):
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 call assembler.relative(output, [232], "runtime_float_from_int")
                 return
+            elif target["name"] == "__lsl_float_to_int":
+                call emit_expression(generator, syntax["arguments"][0])
+                call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                call assembler.relative(output, [232], "runtime_float_to_int")
+                return
             elif target["name"] == "__lsl_type_code":
                 call emit_expression(generator, syntax["arguments"][0])
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
@@ -823,14 +828,19 @@ function emit_expression(generator, syntax):
                 call assembler.relative(output, [232], "runtime_length")
                 return
             elif target["name"] == "Int":
-                call emit_expression(generator, syntax["arguments"][0])
                 argument_type = infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"])
-                if argument_type == "String" or argument_type == "Any":
-                    call assembler.emit(output, x86_64.move_reg_reg(7, 0))
-                    call assembler.relative(output, [232], "runtime_string_to_int")
+                if argument_type == "String":
+                    parse_int_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_parse_int"}, "arguments": syntax["arguments"]}
+                    call emit_expression(generator, parse_int_call)
+                elif argument_type == "Any":
+                    int_any_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_int_any"}, "arguments": syntax["arguments"]}
+                    call emit_expression(generator, int_any_call)
                 elif argument_type == "Float":
+                    call emit_expression(generator, syntax["arguments"][0])
                     call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                     call assembler.relative(output, [232], "runtime_float_to_int")
+                else:
+                    call emit_expression(generator, syntax["arguments"][0])
                 end
                 return
             elif target["name"] == "Float":

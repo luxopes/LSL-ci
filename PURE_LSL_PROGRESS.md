@@ -184,7 +184,33 @@ compiler z jiného cwd přeložil server i klienta a jejich output byl přesně
 shodný. Dynamic-value test ověřuje Int hodnoty `5000000`, `-5000000` a `9000000000` uvnitř List/Dictionary, equality, sum a
 smíšený String dispatch; starý cutoff by tento test rozbil.
 
+Fixed point s validovanou `Int(String)`/`Int(Any)` konverzí má SHA-256
+`497482d6c2ceece5a0ab4d990764050aaf356f2e0e6f48c2a1966aee27ac2e7f` a je uložen
+jako `compiler/pure/lslc-direct`. `Int(String)` nyní dispatchuje na čistou LSL
+`__lsl_parse_int` (znaménko, prázdný/sign-only řetězec i ne-číslice → catchable
+`ValueError: invalid Int String`); dřívější `runtime_string_to_int` bez validace
+vracel garbage (`Int("abc")` → `5451`). `Int(Any)` dispatchuje přes
+`__lsl_int_any` (Int→self, String→parse, Float→truncate přes nový intrinsic
+`__lsl_float_to_int`, Bool→unbox, jinak catchable `TypeError`). Změna proběhla
+disciplinovaným dvoufázovým bootstrapem: fáze A přidala jen rozpoznání intrinsiku
+`__lsl_float_to_int` (fixed point `59966431…`), fáze B teprve stdlib funkce a
+`Int` reroute (fixed point `497482d6…`, B2==B3). Celý toolchain
+(`lsl`, `compiler/lslc`, `lsl-cli`, `lsl-configure`, `lsl-test`, `lsl-install`)
+byl přegenerován deterministicky (každá binárka 2× bitově shodná). Nový
+`tests/int_conversion_conformance.lsl`/`.out` je zapojen do `lsl-test` a celý
+suite je zelený; catchability ověřena přes `safe` i `try/else`.
+
 Přesný další krok: odstranit poslední teoretickou raw-Int/live-pointer kolizi
 jednoznačným scalar tag ABI, doplnit zbývající RealArray numerické metody a
 navrhnout pure-LSL in-process zero-copy tensor/shared-object loader. Izolované
 process plugin ABI je hotové, ale není vydáváno za zero-copy náhradu.
+
+## Roadmap k "kompletní 1" (17 okruhů)
+Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,
+collections, GC robustnost, syscall I/O, native/tensor ABI, AI vrstva,
+NixOS config, arita/builtiny, fuzz/bench/determinismus/audit, cleanup, docs).
+Postup je inkrementální: každý krok = konkrétní defekt → oprava → nový
+conformance test → ověřený self-host fixed point. Hotovo z okruhu 2: validace
+`Int(String)` a dynamické `Int(Any)` konverze. Zbývá zbytek okruhu 2
+(float round-trip formatting, NaN/Inf, kontrolovaný integer overflow) a okruhy
+1, 3–17.
