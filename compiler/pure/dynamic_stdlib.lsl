@@ -450,6 +450,22 @@ function __lsl_str_repeat(text, count):
     return result
 end
 
+function __lsl_delete_at(target, position):
+    length = len(target)
+    if position < 0:
+        position += length
+    end
+    if position < 0 or position >= length:
+        Error(IndexError: "del index out of range")
+    end
+    index = position
+    while index + 1 < length:
+        target[index] = target[index + 1]
+        index += 1
+    end
+    call __lsl_pop_last(target)
+end
+
 function __lsl_insert(target, position, value):
     if position < 0:
         position += len(target)

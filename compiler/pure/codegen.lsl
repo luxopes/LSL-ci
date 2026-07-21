@@ -1786,15 +1786,20 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             target = statement["target"]
             if target["kind"] == "index":
                 target_type = infer_expression_type(target["target"], generator["types"], generator["function_returns"])
-                if target_type != "Dictionary":
-                    call unsupported(generator["path"], generator["lines"], statement, "indexed del currently requires a Dictionary", "use del(dictionary[key])")
+                if target_type == "Tuple" or target_type == "RealArray":
+                    call unsupported(generator["path"], generator["lines"], statement, "fixed collection does not support del", "convert it with List(value) before deleting")
                 end
-                call emit_expression(generator, target["target"])
-                call assembler.emit(generator["builder"], x86_64.push(0))
-                call emit_expression(generator, target["index"])
-                call assembler.emit(generator["builder"], x86_64.move_reg_reg(6, 0))
-                call assembler.emit(generator["builder"], x86_64.pop(7))
-                call assembler.relative(generator["builder"], [232], "runtime_dict_delete")
+                if target_type == "List":
+                    delete_call = {"kind": "call", "line": statement["line"], "column": statement["column"], "end_column": statement["end_column"], "target": {"kind": "name", "name": "__lsl_delete_at"}, "arguments": [target["target"], target["index"]]}
+                    call emit_expression(generator, delete_call)
+                else:
+                    call emit_expression(generator, target["target"])
+                    call assembler.emit(generator["builder"], x86_64.push(0))
+                    call emit_expression(generator, target["index"])
+                    call assembler.emit(generator["builder"], x86_64.move_reg_reg(6, 0))
+                    call assembler.emit(generator["builder"], x86_64.pop(7))
+                    call assembler.relative(generator["builder"], [232], "runtime_dict_delete")
+                end
             elif target["kind"] == "name":
                 if target["name"] in generator["variables"]:
                     call assembler.emit(generator["builder"], x86_64.mov_imm64(0, 0))

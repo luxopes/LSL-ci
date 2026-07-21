@@ -68,6 +68,12 @@ if float_conversion_output != readfile("tests/float_conversion_conformance.out")
     Error(TestFailure: "Float conversion conformance output differs")
 end
 
+call require_success(run(compiler, ["tests/del_conformance.lsl", "/tmp/lsl-del-test"]), "compile del conformance")
+del_output = capture("/tmp/lsl-del-test", [])
+if del_output != readfile("tests/del_conformance.out"):
+    Error(TestFailure: "del conformance output differs")
+end
+
 call require_success(run(compiler, ["tests/sequence_ops_conformance.lsl", "/tmp/lsl-sequence-ops-test"]), "compile sequence ops conformance")
 sequence_ops_output = capture("/tmp/lsl-sequence-ops-test", [])
 if sequence_ops_output != readfile("tests/sequence_ops_conformance.out"):
