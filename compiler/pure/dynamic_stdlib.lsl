@@ -429,6 +429,27 @@ function __lsl_str_value(value):
     return __lsl_render(value, False)
 end
 
+function __lsl_list_concat(left, right):
+    result = []
+    for value in left:
+        result.append(value)
+    end
+    for value in right:
+        result.append(value)
+    end
+    return result
+end
+
+function __lsl_str_repeat(text, count):
+    result = ""
+    index = 0
+    while index < count:
+        result = result + text
+        index += 1
+    end
+    return result
+end
+
 function __lsl_insert(target, position, value):
     if position < 0:
         position += len(target)

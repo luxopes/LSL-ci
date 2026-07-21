@@ -68,6 +68,12 @@ if float_conversion_output != readfile("tests/float_conversion_conformance.out")
     Error(TestFailure: "Float conversion conformance output differs")
 end
 
+call require_success(run(compiler, ["tests/sequence_ops_conformance.lsl", "/tmp/lsl-sequence-ops-test"]), "compile sequence ops conformance")
+sequence_ops_output = capture("/tmp/lsl-sequence-ops-test", [])
+if sequence_ops_output != readfile("tests/sequence_ops_conformance.out"):
+    Error(TestFailure: "sequence ops conformance output differs")
+end
+
 call require_success(run(compiler, ["tests/collection_repr_conformance.lsl", "/tmp/lsl-collection-repr-test"]), "compile collection repr conformance")
 collection_repr_output = capture("/tmp/lsl-collection-repr-test", [])
 if collection_repr_output != readfile("tests/collection_repr_conformance.out"):

@@ -119,12 +119,20 @@ function infer_expression_type(syntax, types, function_returns):
         if syntax["operator"] == "+":
             if left == "String" or right == "String":
                 return "String"
+            elif left == "List" and right == "List":
+                return "List"
             elif left == "Float" or right == "Float":
                 return "Float"
             elif left == "Any" or right == "Any":
                 return "Any"
             end
-        elif syntax["operator"] == "-" or syntax["operator"] == "*" or syntax["operator"] == "/":
+        elif syntax["operator"] == "*":
+            if (left == "String" and right == "Int") or (left == "Int" and right == "String"):
+                return "String"
+            elif left == "Float" or right == "Float":
+                return "Float"
+            end
+        elif syntax["operator"] == "-" or syntax["operator"] == "/":
             if left == "Float" or right == "Float" or syntax["operator"] == "/":
                 return "Float"
             end
@@ -655,6 +663,19 @@ function emit_expression(generator, syntax):
             else:
                 call unsupported(generator["path"], generator["lines"], syntax, "unsupported Float operator " + operator, "use +, -, *, or /")
             end
+            return
+        elif operator == "+" and expression_type == "List":
+            concat_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_list_concat"}, "arguments": [syntax["left"], syntax["right"]]}
+            call emit_expression(generator, concat_call)
+            return
+        elif operator == "*" and expression_type == "String":
+            left_type = infer_expression_type(syntax["left"], generator["types"], generator["function_returns"])
+            if left_type == "String":
+                repeat_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_str_repeat"}, "arguments": [syntax["left"], syntax["right"]]}
+            else:
+                repeat_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_str_repeat"}, "arguments": [syntax["right"], syntax["left"]]}
+            end
+            call emit_expression(generator, repeat_call)
             return
         elif operator == "+" and (expression_type == "String" or expression_type == "Any"):
             call emit_expression(generator, syntax["left"])

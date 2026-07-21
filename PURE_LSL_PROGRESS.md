@@ -290,6 +290,14 @@ zůstal beze změny; nový `tests/collection_repr_conformance` je v `lsl-test`.
 Známé omezení: raw Bool vs raw Int stejnou kolizi sdílí (`String(True)` mimo
 kolekci dá `1`), plně to řeší až tagged ABI (okruh 1).
 
+Fixed point s `List + List` a `String * Int` má SHA-256 `15521a0c7647442c…`.
+Dříve obě operace chyběly v `infer_expression_type`, spadly na `Int` a sečítaly
+raw pointery (garbage). Inference nyní vrací `List` pro `List + List` a `String`
+pro `String * Int` / `Int * String`; codegen přesměrovává na čistě-LSL
+`__lsl_list_concat` a `__lsl_str_repeat` (obě runtime labely, bez bootstrapu).
+Ověřeno `[1,2]+[3,4]`, `[]+[1]`, `"ab"*3`, `3*"xy"`, `"a"*0`;
+`tests/sequence_ops_conformance` je v `lsl-test`.
+
 Přesný další krok: odstranit poslední teoretickou raw-Int/live-pointer kolizi
 jednoznačným scalar tag ABI, doplnit zbývající RealArray numerické metody a
 navrhnout pure-LSL in-process zero-copy tensor/shared-object loader. Izolované
@@ -306,7 +314,8 @@ NaN/Infinity výpis a `String()`; IEEE-754 NaN comparisons; bezpečný
 `INT64_MIN // -1` / `% -1` (místo SIGFPE pádu). Z okruhu 6: partial-write smyčka
 (`runtime_write_all`) a CRLF strip v `input()`. Z okruhu 10: arita validace
 builtinů i metod (dříve compiler segfaultoval na `len()` / `list.append()`).
-Z okruhu 4: rekurzivní repr kolekcí v `print`/`String()` (dříve raw pointer). Zbývá zbytek okruhu 2 (float
+Z okruhu 4: rekurzivní repr kolekcí v `print`/`String()` (dříve raw pointer);
+`List + List` concatenation a `String * Int` repetition (dříve garbage). Zbývá zbytek okruhu 2 (float
 round-trip formatting; obecný kontrolovaný integer overflow vyžaduje oddělit
 wrapping interní aritmetiku od checked uživatelské — větší sémantický zásah,
 protože `bytes.little` záměrně spoléhá na `*` wraparound) a okruhy 1, 3–17.
