@@ -328,6 +328,20 @@ krátký přehled funkcí/typů. `min`/`max` přijmou buď 2 hodnoty, nebo 1 ite
 dříve arita validace `max([..])` chybně odmítala (a předtím crashovala).
 `tests/minmax_help_conformance` přidán.
 
+Výkon: self-compile zrychlen z **273 s na 1,9 s (~142×)**, `print "hi"` z 2,9 s
+na 0,09 s, celý test suite z 348 s na 4,3 s; scaling je nyní lineární místo
+O(n²). Fixed point `3be80c9e902652cc…`, celý toolchain deterministický,
+config conformance bitově shodný. Tři O(n²) příčiny odstraněny:
+1. **Dictionary** byl asociační seznam (lineární scan v get/set/contains) →
+   přidán open-addressing hash index (djb2) vedle insertion-order polí.
+2. **String indexace/`for-in` je O(n)** (skenuje UTF-8 od začátku), takže
+   index-based lexer byl O(n²). Přidán native `runtime_string_chars`
+   (String→List[1-char] jedním O(n) průchodem, intrinsic `__lsl_string_chars`,
+   dvoufázový bootstrap); lexer nyní indexuje List (O(1)).
+3. **`__lsl_split` byl O(n²)** (`text[i]` v loopu) a `source.split(chr(10))` se
+   volá 3× na celý zdroj (link 2×, codegen 1×) — dominantní náklad. Split nyní
+   převeden na char-list, O(n).
+
 Přesný další krok: odstranit poslední teoretickou raw-Int/live-pointer kolizi
 jednoznačným scalar tag ABI, doplnit zbývající RealArray numerické metody a
 navrhnout pure-LSL in-process zero-copy tensor/shared-object loader. Izolované

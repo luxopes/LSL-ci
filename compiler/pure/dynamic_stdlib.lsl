@@ -151,16 +151,20 @@ function __lsl_string_index(text, needle):
 end
 
 function __lsl_split(text, separator):
+    chars = __lsl_string_chars(text)
+    seps = __lsl_string_chars(separator)
+    count = len(chars)
+    sep_len = len(seps)
     result = []
     current = ""
     index = 0
-    while index < len(text):
+    while index < count:
         matches = False
-        if index + len(separator) <= len(text):
+        if sep_len > 0 and index + sep_len <= count:
             matches = True
             offset = 0
-            while offset < len(separator):
-                if text[index + offset] != separator[offset]:
+            while offset < sep_len:
+                if chars[index + offset] != seps[offset]:
                     matches = False
                     break
                 end
@@ -170,9 +174,9 @@ function __lsl_split(text, separator):
         if matches:
             call result.append(current)
             current = ""
-            index += len(separator)
+            index += sep_len
         else:
-            current += text[index]
+            current += chars[index]
             index += 1
         end
     end

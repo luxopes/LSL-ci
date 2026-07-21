@@ -47,15 +47,45 @@ function decode_escape(path, lines, line, column, escaped):
     return ""
 end
 
+function join_chars(chars, start, stop):
+    result = ""
+    index = start
+    while index < stop:
+        result += chars[index]
+        index += 1
+    end
+    return result
+end
+
+function build_lines(chars, count):
+    lines = []
+    current = ""
+    index = 0
+    while index < count:
+        character = chars[index]
+        if character == chr(10):
+            lines.append(current)
+            current = ""
+        else:
+            current += character
+        end
+        index += 1
+    end
+    lines.append(current)
+    return lines
+end
+
 function tokenize(path, source):
     result = []
-    lines = source.split(chr(10))
+    chars = __lsl_string_chars(source)
+    count = len(chars)
+    lines = build_lines(chars, count)
     index = 0
     line = 1
     column = 1
     depth = 0
-    while index < len(source):
-        character = source[index]
+    while index < count:
+        character = chars[index]
         if character == chr(10):
             if depth == 0:
                 result.append(token("newline", chr(10), line, column, column + 1))
@@ -67,7 +97,7 @@ function tokenize(path, source):
             index += 1
             column += 1
         elif character == "#":
-            while index < len(source) and source[index] != chr(10):
+            while index < count and chars[index] != chr(10):
                 index += 1
                 column += 1
             end
@@ -79,18 +109,18 @@ function tokenize(path, source):
             index += 1
             column += 1
             closed = False
-            while index < len(source):
-                character = source[index]
+            while index < count:
+                character = chars[index]
                 if character == quote:
                     index += 1
                     column += 1
                     closed = True
                     break
                 elif character == "\\":
-                    if index + 1 >= len(source):
+                    if index + 1 >= count:
                         call diagnostics.fail(path, line, column, 1, source_line(lines, line), "E0002", "unfinished escape sequence", "add a character after the backslash")
                     end
-                    escaped = source[index + 1]
+                    escaped = chars[index + 1]
                     value += decode_escape(path, lines, line, column, escaped)
                     index += 2
                     column += 2
@@ -110,22 +140,22 @@ function tokenize(path, source):
             start = index
             start_column = column
             dots = 0
-            while index < len(source) and (is_digit(source[index]) or source[index] == "."):
-                if source[index] == ".":
+            while index < count and (is_digit(chars[index]) or chars[index] == "."):
+                if chars[index] == ".":
                     dots += 1
                 end
                 index += 1
                 column += 1
             end
-            if index < len(source) and (source[index] == "e" or source[index] == "E"):
+            if index < count and (chars[index] == "e" or chars[index] == "E"):
                 index += 1
                 column += 1
-                if index < len(source) and (source[index] == "+" or source[index] == "-"):
+                if index < count and (chars[index] == "+" or chars[index] == "-"):
                     index += 1
                     column += 1
                 end
                 exponent_start = index
-                while index < len(source) and is_digit(source[index]):
+                while index < count and is_digit(chars[index]):
                     index += 1
                     column += 1
                 end
@@ -133,7 +163,7 @@ function tokenize(path, source):
                     call diagnostics.fail(path, line, start_column, max(1, index - start), source_line(lines, line), "E0004", "invalid Float exponent", "add decimal digits after the exponent marker")
                 end
             end
-            value = source[start:index]
+            value = join_chars(chars, start, index)
             if dots > 1:
                 call diagnostics.fail(path, line, start_column, len(value), source_line(lines, line), "E0004", "invalid numeric literal", "a Float may contain only one decimal point")
             end
@@ -141,16 +171,16 @@ function tokenize(path, source):
         elif is_alpha(character):
             start = index
             start_column = column
-            while index < len(source) and (is_alpha(source[index]) or is_digit(source[index])):
+            while index < count and (is_alpha(chars[index]) or is_digit(chars[index])):
                 index += 1
                 column += 1
             end
-            result.append(token("name", source[start:index], line, start_column, column))
+            result.append(token("name", join_chars(chars, start, index), line, start_column, column))
         else:
             start_column = column
             value = character
-            if index + 1 < len(source):
-                pair = character + source[index + 1]
+            if index + 1 < count:
+                pair = character + chars[index + 1]
                 if pair == "==" or pair == "!=" or pair == "<=" or pair == ">=" or pair == "//" or pair == "**" or pair == "+=" or pair == "-=" or pair == "*=" or pair == "/=" or pair == "%=":
                     value = pair
                 end

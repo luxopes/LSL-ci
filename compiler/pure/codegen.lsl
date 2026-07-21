@@ -861,6 +861,11 @@ function emit_expression(generator, syntax):
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 call assembler.relative(output, [232], "runtime_is_heap_object")
                 return
+            elif target["name"] == "__lsl_string_chars":
+                call emit_expression(generator, syntax["arguments"][0])
+                call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                call assembler.relative(output, [232], "runtime_string_chars")
+                return
             elif target["name"] == "__lsl_type_code":
                 call emit_expression(generator, syntax["arguments"][0])
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
