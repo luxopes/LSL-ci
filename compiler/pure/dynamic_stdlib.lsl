@@ -346,6 +346,89 @@ function __lsl_int_any(value):
     Error(TypeError: "Int expects Int, Float, String, or Bool")
 end
 
+function __lsl_int_to_string(number):
+    if number == 0:
+        return "0"
+    end
+    if number == -9223372036854775808:
+        return "-9223372036854775808"
+    end
+    negative = False
+    remaining = number
+    if remaining < 0:
+        negative = True
+        remaining = -remaining
+    end
+    digits = ""
+    while remaining > 0:
+        digit = remaining % 10
+        digits = chr(48 + digit) + digits
+        remaining = remaining // 10
+    end
+    if negative:
+        return "-" + digits
+    end
+    return digits
+end
+
+function __lsl_render(value, quote):
+    if not __lsl_is_heap(value):
+        return __lsl_int_to_string(value)
+    end
+    code = __lsl_type_code(value)
+    if code == 0:
+        return __lsl_int_to_string(value)
+    elif code == 1:
+        if quote:
+            return "'" + value + "'"
+        end
+        return value
+    elif code == 4:
+        if __lsl_unbox_bool(value):
+            return "True"
+        end
+        return "False"
+    elif code == 5:
+        return "None"
+    elif code == 6:
+        return __lsl_float_string(value)
+    elif code == 3:
+        result = "{"
+        first = True
+        for key in value.keys():
+            if not first:
+                result = result + ", "
+            end
+            result = result + __lsl_render(key, True) + ": " + __lsl_render(value[key], True)
+            first = False
+        end
+        return result + "}"
+    end
+    open_bracket = "["
+    close_bracket = "]"
+    if code == 7:
+        open_bracket = "("
+        close_bracket = ")"
+    elif code == 8:
+        open_bracket = "!["
+    end
+    result = open_bracket
+    index = 0
+    length = len(value)
+    while index < length:
+        if index > 0:
+            result = result + ", "
+        end
+        result = result + __lsl_render(value[index], True)
+        index += 1
+    end
+    return result + close_bracket
+end
+
+function __lsl_str_value(value):
+    return __lsl_render(value, False)
+end
+
 function __lsl_insert(target, position, value):
     if position < 0:
         position += len(target)

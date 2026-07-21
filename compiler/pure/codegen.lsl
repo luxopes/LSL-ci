@@ -835,6 +835,11 @@ function emit_expression(generator, syntax):
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 call assembler.relative(output, [232], "runtime_float_to_int")
                 return
+            elif target["name"] == "__lsl_is_heap":
+                call emit_expression(generator, syntax["arguments"][0])
+                call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                call assembler.relative(output, [232], "runtime_is_heap_object")
+                return
             elif target["name"] == "__lsl_type_code":
                 call emit_expression(generator, syntax["arguments"][0])
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
@@ -892,14 +897,20 @@ function emit_expression(generator, syntax):
                 end
                 return
             elif target["name"] == "String":
-                call emit_expression(generator, syntax["arguments"][0])
                 argument_type = infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"])
-                if argument_type == "Float":
+                if argument_type == "String":
+                    call emit_expression(generator, syntax["arguments"][0])
+                elif argument_type == "Float":
+                    call emit_expression(generator, syntax["arguments"][0])
                     call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                     call assembler.relative(output, [232], "runtime_float_to_string")
-                elif argument_type != "String":
+                elif argument_type == "Int":
+                    call emit_expression(generator, syntax["arguments"][0])
                     call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                     call assembler.relative(output, [232], "runtime_int_to_string")
+                else:
+                    str_value_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_str_value"}, "arguments": syntax["arguments"]}
+                    call emit_expression(generator, str_value_call)
                 end
                 return
             elif target["name"] == "chr":
@@ -1381,6 +1392,13 @@ function emit_print_value(generator, expression):
     end
     if True:
         value_type = infer_expression_type(expression, generator["types"], generator["function_returns"])
+        if value_type == "List" or value_type == "Tuple" or value_type == "RealArray" or value_type == "Dictionary" or value_type == "Any":
+            str_call = {"kind": "call", "line": expression["line"], "column": expression["column"], "end_column": expression["end_column"], "target": {"kind": "name", "name": "__lsl_str_value"}, "arguments": [expression]}
+            call emit_expression(generator, str_call)
+            call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
+            call assembler.relative(generator["builder"], [232], "runtime_print_string")
+            return
+        end
         call emit_expression(generator, expression)
         if value_type == "String":
             call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))

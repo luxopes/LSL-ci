@@ -276,6 +276,20 @@ replace/insert; proměnné pop/get/setdefault vynechány) pro ne-Class receivery
 (pre-existing): `print`/`String()` List/Tuple/Dictionary vypisuje raw pointer
 místo obsahu.
 
+Fixed point s repr kolekcí má SHA-256 `ef02708447547506…`. Dříve `print` /
+`String()` List/Tuple/RealArray/Dictionary spadly na `runtime_print_int` /
+`runtime_int_to_string` a vypsaly **raw pointer** místo obsahu. Nová rekurzivní
+čistě-LSL `__lsl_render(value, quote)` (a `__lsl_str_value`, `__lsl_int_to_string`)
+formátuje `[..]` / `(..)` / `![..]` / `{k: v}`, vnořené Stringy s `'..'`, a
+codegen `print`/`String()` kolekcí i `Any` přesměrovává sem. Při tom se odhalila
+přímá instance okruhu-1 kolize: `__lsl_type_code(raw 0)` vrací 5 (None), protože
+integer 0 a None sdílí raw reprezentaci; render proto nejdřív přes nový intrinsic
+`__lsl_is_heap` (dvoufázový bootstrap) rozliší raw scalar (→ Int) od boxed
+hodnot (→ type_code), takže `[0]`→`[0]` a `[None]`→`[None]`. Selfhost conformance
+zůstal beze změny; nový `tests/collection_repr_conformance` je v `lsl-test`.
+Známé omezení: raw Bool vs raw Int stejnou kolizi sdílí (`String(True)` mimo
+kolekci dá `1`), plně to řeší až tagged ABI (okruh 1).
+
 Přesný další krok: odstranit poslední teoretickou raw-Int/live-pointer kolizi
 jednoznačným scalar tag ABI, doplnit zbývající RealArray numerické metody a
 navrhnout pure-LSL in-process zero-copy tensor/shared-object loader. Izolované
@@ -291,7 +305,8 @@ conformance test → ověřený self-host fixed point. Hotovo z okruhu 2: valida
 NaN/Infinity výpis a `String()`; IEEE-754 NaN comparisons; bezpečný
 `INT64_MIN // -1` / `% -1` (místo SIGFPE pádu). Z okruhu 6: partial-write smyčka
 (`runtime_write_all`) a CRLF strip v `input()`. Z okruhu 10: arita validace
-builtinů i metod (dříve compiler segfaultoval na `len()` / `list.append()`). Zbývá zbytek okruhu 2 (float
+builtinů i metod (dříve compiler segfaultoval na `len()` / `list.append()`).
+Z okruhu 4: rekurzivní repr kolekcí v `print`/`String()` (dříve raw pointer). Zbývá zbytek okruhu 2 (float
 round-trip formatting; obecný kontrolovaný integer overflow vyžaduje oddělit
 wrapping interní aritmetiku od checked uživatelské — větší sémantický zásah,
 protože `bytes.little` záměrně spoléhá na `*` wraparound) a okruhy 1, 3–17.
