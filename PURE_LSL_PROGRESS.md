@@ -223,6 +223,7 @@ collections, GC robustnost, syscall I/O, native/tensor ABI, AI vrstva,
 NixOS config, arita/builtiny, fuzz/bench/determinismus/audit, cleanup, docs).
 Postup je inkrementální: každý krok = konkrétní defekt → oprava → nový
 conformance test → ověřený self-host fixed point. Hotovo z okruhu 2: validace
-`Int(String)` a dynamické `Int(Any)` konverze; opravená Float `**` mocnina.
-Zbývá zbytek okruhu 2 (float round-trip formatting, NaN/Inf, kontrolovaný
-integer overflow) a okruhy 1, 3–17.
+`Int(String)` a dynamické `Int(Any)` konverze; opravená Float `**` mocnina;
+NaN/Infinity výpis a `String()`. Zbývá zbytek okruhu 2 (float round-trip
+formatting, NaN unordered comparisons, kontrolovaný integer overflow) a
+okruhy 1, 3–17.

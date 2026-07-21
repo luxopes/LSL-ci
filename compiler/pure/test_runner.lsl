@@ -50,6 +50,12 @@ if float_exponent_output != readfile("tests/float_exponent_conformance.out"):
     Error(TestFailure: "Float exponent conformance output differs")
 end
 
+call require_success(run(compiler, ["tests/float_special_conformance.lsl", "/tmp/lsl-float-special-test"]), "compile Float special conformance")
+float_special_output = capture("/tmp/lsl-float-special-test", [])
+if float_special_output != readfile("tests/float_special_conformance.out"):
+    Error(TestFailure: "Float special conformance output differs")
+end
+
 call require_success(run(compiler, ["tests/float_power_conformance.lsl", "/tmp/lsl-float-power-test"]), "compile Float power conformance")
 float_power_output = capture("/tmp/lsl-float-power-test", [])
 if float_power_output != readfile("tests/float_power_conformance.out"):
