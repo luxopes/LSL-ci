@@ -212,6 +212,24 @@ Float exponent je odmítnut čitelným compile errorem místo tiché truncation.
 fixed pointu (fp2==fp3). Toolchain přegenerován deterministicky; nový
 `tests/float_power_conformance.lsl`/`.out` je v `lsl-test`.
 
+Fixed point s NaN/Infinity výpisem měl SHA-256
+`99547d0e086fc56d61db4d0451fab55600ff87f561ac098090f35f50087e7978`. Dříve
+`runtime_print_float`/`runtime_float_to_string` volaly `double_to_int` (cvttsd2si)
+i na NaN/Inf, kde vrací INT64_MIN → garbage (`1.0/0.0` → `-9223…775808`). Obě
+funkce nyní z IEEE-754 bitů detekují special values (`abs == 0x7FF0…` → Inf podle
+znaménka, `>` → NaN) a vypisují/klonují interned `inf`/`-inf`/`nan`; `String()`
+používá static String layout + `runtime_string_clone`.
+
+Fixed point s IEEE-754 NaN comparisons má SHA-256
+`07ba33b962d0bf85…`. `ucomisd` při NaN nastaví ZF=PF=CF=1, takže původní
+`sete/setb/setbe` vracely při NaN chybně `True` a `setne` chybně `False`. Nové
+helpery `set_condition_ordered` (`setcc ∧ setnp`) a `set_condition_unordered`
+(`setcc ∨ setp`) filtrují parity flag: `== < <=` jsou při NaN `False`, `!=` je
+`True`, `> >=` byly už korektní. Ověřeno 15 případů včetně `NaN != NaN == True`;
+rozšířeno `tests/float_special_conformance`. Známý zbývající bug: `1e300`/`1e20`
+výpis je stále `0.000000` — korektní řešení je shortest/exponenciální formatting
+(Ryū/Grisu), velký samostatný algoritmus, ne bugfix; není označeno za hotové.
+
 Přesný další krok: odstranit poslední teoretickou raw-Int/live-pointer kolizi
 jednoznačným scalar tag ABI, doplnit zbývající RealArray numerické metody a
 navrhnout pure-LSL in-process zero-copy tensor/shared-object loader. Izolované
@@ -224,6 +242,5 @@ NixOS config, arita/builtiny, fuzz/bench/determinismus/audit, cleanup, docs).
 Postup je inkrementální: každý krok = konkrétní defekt → oprava → nový
 conformance test → ověřený self-host fixed point. Hotovo z okruhu 2: validace
 `Int(String)` a dynamické `Int(Any)` konverze; opravená Float `**` mocnina;
-NaN/Infinity výpis a `String()`. Zbývá zbytek okruhu 2 (float round-trip
-formatting, NaN unordered comparisons, kontrolovaný integer overflow) a
-okruhy 1, 3–17.
+NaN/Infinity výpis a `String()`; IEEE-754 NaN comparisons. Zbývá zbytek okruhu 2
+(float round-trip formatting, kontrolovaný integer overflow) a okruhy 1, 3–17.

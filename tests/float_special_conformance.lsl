@@ -7,3 +7,6 @@ print 2.5, -3.5, 0.0
 if positive > 1e300:
     print "inf is greater"
 end
+print notnum == notnum, notnum != notnum, notnum < positive
+print positive > 1.0, positive == positive, negative < positive
+print 1.5 == 1.5, 1.5 != 2.5, 2.5 <= 2.5

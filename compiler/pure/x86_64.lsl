@@ -244,6 +244,14 @@ function set_condition(condition_opcode):
     # setcc al; movzx rax, al
     return [15, condition_opcode, 192, 72, 15, 182, 192]
 end
+function set_condition_ordered(condition_opcode):
+    # setcc cl; setnp al; and al,cl; movzx rax,al -> true only if cc and ordered
+    return [15, condition_opcode, 193, 15, 155, 192, 32, 200, 72, 15, 182, 192]
+end
+function set_condition_unordered(condition_opcode):
+    # setcc cl; setp al; or al,cl; movzx rax,al -> true if cc or unordered (NaN)
+    return [15, condition_opcode, 193, 15, 154, 192, 8, 200, 72, 15, 182, 192]
+end
 
 function and_reg_imm8(register, value):
     return [rex(True, False, False, register >= 8), 131, modrm(3, 4, register), value % 256]

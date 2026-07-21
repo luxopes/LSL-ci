@@ -1294,13 +1294,13 @@ function emit_expression(generator, syntax):
             call assembler.emit(output, x86_64.movq_xmm_from_reg(1, 1))
             call assembler.emit(output, x86_64.compare_double(0, 1))
             if operator == "==" or operator == "is":
-                call assembler.emit(output, x86_64.set_condition(148))
+                call assembler.emit(output, x86_64.set_condition_ordered(148))
             elif operator == "!=" or operator == "is not":
-                call assembler.emit(output, x86_64.set_condition(149))
+                call assembler.emit(output, x86_64.set_condition_unordered(149))
             elif operator == "<":
-                call assembler.emit(output, x86_64.set_condition(146))
+                call assembler.emit(output, x86_64.set_condition_ordered(146))
             elif operator == "<=":
-                call assembler.emit(output, x86_64.set_condition(150))
+                call assembler.emit(output, x86_64.set_condition_ordered(150))
             elif operator == ">":
                 call assembler.emit(output, x86_64.set_condition(151))
             else:
