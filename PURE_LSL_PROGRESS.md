@@ -247,6 +247,13 @@ rdx syscall zachovává), s error větví. Ověřeno zapsat+přečíst 256000 ba
 bitově shodně + append; compiler sám jím píše vlastní několikasetkilobajtový
 ELF, takže fixed point tuto cestu validuje.
 
+Fixed point s CRLF strip v `input()` má SHA-256 `71d331262bcadb7a…`.
+`runtime_input` dříve strippoval jen `\n`, takže `Lux\r\n` (CRLF, Windows/DOS
+vstup) zanechal koncový `\r` (délka 4). Nyní po `\n` strippuje i koncový `\r`
+(CRLF i LF i EOF bez newline), `\r` uprostřed zůstává. Známé omezení: `input()`
+má stále pevný 4096B buffer — skutečně unbounded verze je read-loop s rostoucím
+bufferem v raw asm; není vydáváno za hotové.
+
 Přesný další krok: odstranit poslední teoretickou raw-Int/live-pointer kolizi
 jednoznačným scalar tag ABI, doplnit zbývající RealArray numerické metody a
 navrhnout pure-LSL in-process zero-copy tensor/shared-object loader. Izolované
@@ -261,7 +268,7 @@ conformance test → ověřený self-host fixed point. Hotovo z okruhu 2: valida
 `Int(String)` a dynamické `Int(Any)` konverze; opravená Float `**` mocnina;
 NaN/Infinity výpis a `String()`; IEEE-754 NaN comparisons; bezpečný
 `INT64_MIN // -1` / `% -1` (místo SIGFPE pádu). Z okruhu 6: partial-write smyčka
-(`runtime_write_all`). Zbývá zbytek okruhu 2 (float
+(`runtime_write_all`) a CRLF strip v `input()`. Zbývá zbytek okruhu 2 (float
 round-trip formatting; obecný kontrolovaný integer overflow vyžaduje oddělit
 wrapping interní aritmetiku od checked uživatelské — větší sémantický zásah,
 protože `bytes.little` záměrně spoléhá na `*` wraparound) a okruhy 1, 3–17.
