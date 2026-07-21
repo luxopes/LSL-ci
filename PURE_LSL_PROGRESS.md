@@ -239,6 +239,14 @@ mimo nereprezentovatelný 2^63. Žádný pád, definovaný výsledek; floor
 division/modulo pro ostatní případy beze změny. Rozšířen
 `tests/runtime_error_conformance`.
 
+Fixed point s partial-write smyčkou má SHA-256 `3b21bc515297d442…`.
+`writefile`/`appendfile`/`writebytes` dříve dělaly jediný `write` syscall a při
+partial write (pipe, velký buffer) tiše ztratily data. Nový sdílený
+`runtime_write_all` loopuje `write` dokud nejsou všechny bajty odeslané (rdi/rsi/
+rdx syscall zachovává), s error větví. Ověřeno zapsat+přečíst 256000 bajtů
+bitově shodně + append; compiler sám jím píše vlastní několikasetkilobajtový
+ELF, takže fixed point tuto cestu validuje.
+
 Přesný další krok: odstranit poslední teoretickou raw-Int/live-pointer kolizi
 jednoznačným scalar tag ABI, doplnit zbývající RealArray numerické metody a
 navrhnout pure-LSL in-process zero-copy tensor/shared-object loader. Izolované
@@ -252,7 +260,8 @@ Postup je inkrementální: každý krok = konkrétní defekt → oprava → nov�
 conformance test → ověřený self-host fixed point. Hotovo z okruhu 2: validace
 `Int(String)` a dynamické `Int(Any)` konverze; opravená Float `**` mocnina;
 NaN/Infinity výpis a `String()`; IEEE-754 NaN comparisons; bezpečný
-`INT64_MIN // -1` / `% -1` (místo SIGFPE pádu). Zbývá zbytek okruhu 2 (float
+`INT64_MIN // -1` / `% -1` (místo SIGFPE pádu). Z okruhu 6: partial-write smyčka
+(`runtime_write_all`). Zbývá zbytek okruhu 2 (float
 round-trip formatting; obecný kontrolovaný integer overflow vyžaduje oddělit
 wrapping interní aritmetiku od checked uživatelské — větší sémantický zásah,
 protože `bytes.little` záměrně spoléhá na `*` wraparound) a okruhy 1, 3–17.

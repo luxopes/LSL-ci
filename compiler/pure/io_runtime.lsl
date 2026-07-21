@@ -137,6 +137,28 @@ function emit_readfile(output):
     call assembler.emit(output, [0])
 end
 
+function emit_write_all(output):
+    # Loop write(2) until every byte is sent. rdi=fd, rsi=buf, rdx=count.
+    # syscall preserves rdi/rsi/rdx; returns 0 on success, -1 on write error.
+    call assembler.label(output, "runtime_write_all")
+    call assembler.label(output, "write_all_loop")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(2, 0))
+    call assembler.relative(output, [15, 142], "write_all_done")
+    call assembler.emit(output, x86_64.mov_imm64(0, 1))
+    call assembler.emit(output, x86_64.syscall())
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+    call assembler.relative(output, [15, 142], "write_all_error")
+    call assembler.emit(output, x86_64.add_reg_reg(6, 0))
+    call assembler.emit(output, x86_64.sub_reg_reg(2, 0))
+    call assembler.relative(output, [233], "write_all_loop")
+    call assembler.label(output, "write_all_error")
+    call assembler.emit(output, x86_64.mov_imm64(0, -1))
+    call assembler.emit(output, x86_64.ret())
+    call assembler.label(output, "write_all_done")
+    call assembler.emit(output, x86_64.mov_imm64(0, 0))
+    call assembler.emit(output, x86_64.ret())
+end
+
 function emit_writefile(output):
     call assembler.label(output, "runtime_writefile")
     call assembler.emit(output, x86_64.function_prologue(48))
@@ -158,8 +180,7 @@ function emit_writefile(output):
     call assembler.emit(output, x86_64.load_stack(1, -8))
     call assembler.emit(output, x86_64.lea_base(6, 1, 16))
     call assembler.emit(output, x86_64.load_memory(2, 1, 8))
-    call assembler.emit(output, x86_64.mov_imm64(0, 1))
-    call assembler.emit(output, x86_64.syscall())
+    call assembler.relative(output, [232], "runtime_write_all")
     call assembler.emit(output, x86_64.load_stack(7, -16))
     call assembler.emit(output, x86_64.mov_imm64(0, 3))
     call assembler.emit(output, x86_64.syscall())
@@ -194,8 +215,7 @@ function emit_appendfile(output):
     call assembler.emit(output, x86_64.load_stack(1, -8))
     call assembler.emit(output, x86_64.lea_base(6, 1, 16))
     call assembler.emit(output, x86_64.load_memory(2, 1, 8))
-    call assembler.emit(output, x86_64.mov_imm64(0, 1))
-    call assembler.emit(output, x86_64.syscall())
+    call assembler.relative(output, [232], "runtime_write_all")
     call assembler.emit(output, x86_64.load_stack(7, -16))
     call assembler.emit(output, x86_64.mov_imm64(0, 3))
     call assembler.emit(output, x86_64.syscall())
@@ -250,8 +270,7 @@ function emit_writebytes(output):
     call assembler.emit(output, x86_64.move_reg_reg(7, 0))
     call assembler.emit(output, x86_64.load_stack(6, -32))
     call assembler.emit(output, x86_64.load_stack(2, -24))
-    call assembler.emit(output, x86_64.mov_imm64(0, 1))
-    call assembler.emit(output, x86_64.syscall())
+    call assembler.relative(output, [232], "runtime_write_all")
     call assembler.emit(output, x86_64.load_stack(7, -40))
     call assembler.emit(output, x86_64.mov_imm64(0, 3))
     call assembler.emit(output, x86_64.syscall())
@@ -294,6 +313,7 @@ function emit_all(output):
     call emit_cstring(output)
     call emit_input(output)
     call emit_readfile(output)
+    call emit_write_all(output)
     call emit_writefile(output)
     call emit_appendfile(output)
     call emit_writebytes(output)
