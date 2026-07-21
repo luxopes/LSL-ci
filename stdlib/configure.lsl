@@ -113,6 +113,10 @@ end
 
 entry = arg(1)
 output_path = arg(2)
+if entry == None or output_path == None:
+    print "usage: lsl-configure ENTRY OUTPUT"
+    exit(2)
+end
 root = dirname(entry)
 order = []
 call collect(entry, [], order)

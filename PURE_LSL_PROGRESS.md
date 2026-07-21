@@ -298,6 +298,18 @@ pro `String * Int` / `Int * String`; codegen přesměrovává na čistě-LSL
 Ověřeno `[1,2]+[3,4]`, `[]+[1]`, `"ab"*3`, `3*"xy"`, `"a"*0`;
 `tests/sequence_ops_conformance` je v `lsl-test`.
 
+Tři pilíeře jazyka (config / AI / běžné programy) ověřeny end-to-end.
+Dodaný `examples/showcase.lsl` se dříve NEpřekládal: používal neuvozený
+víceslovný Unicode text v `Error(Kind: ...)` (lexer padl na `á`), což není
+kanonická forma — stdlib vždy uvozuje. Oprava: zprávy uvozeny. Navíc `load lux`
+odkazoval na neexistující modul; přidán `stdlib/lux.lsl` (`version` = "0.7",
+`name`, `identity`/`clamp`/`is_empty`) a zaregistrován v installeru — showcase
+teď běží celý včetně `LSL 0.7`. Config systém je funkční: `lsl config ENTRY`
+produkuje výstup bitově shodný s `tests/config_expected.json`; přidán usage guard
+do `configure.lsl` (chybějící argument → usage/exit 2 místo matoucího FileError).
+Compíler fixed point beze změny; toolchain (lsl-configure, lsl-install)
+přegenerován.
+
 Přesný další krok: odstranit poslední teoretickou raw-Int/live-pointer kolizi
 jednoznačným scalar tag ABI, doplnit zbývající RealArray numerické metody a
 navrhnout pure-LSL in-process zero-copy tensor/shared-object loader. Izolované

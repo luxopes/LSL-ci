@@ -10,11 +10,11 @@ for i in rang(1, 5):
 end
 
 safe:
-    Error(ValueError: tato chyba se ignoruje)
+    Error(ValueError: "tato chyba se ignoruje")
 end
 
 try:
-    Error(NetworkError: ukázková chyba)
+    Error(NetworkError: "ukázková chyba")
 else:
     print "try fallback funguje"
 end
