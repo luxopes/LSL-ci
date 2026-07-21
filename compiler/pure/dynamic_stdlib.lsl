@@ -450,6 +450,36 @@ function __lsl_str_repeat(text, count):
     return result
 end
 
+function __lsl_min(values):
+    first = True
+    result = None
+    for value in values:
+        if first or value < result:
+            result = value
+        end
+        first = False
+    end
+    if first:
+        Error(ValueError: "min of empty sequence")
+    end
+    return result
+end
+
+function __lsl_max(values):
+    first = True
+    result = None
+    for value in values:
+        if first or value > result:
+            result = value
+        end
+        first = False
+    end
+    if first:
+        Error(ValueError: "max of empty sequence")
+    end
+    return result
+end
+
 function __lsl_delete_at(target, position):
     length = len(target)
     if position < 0:

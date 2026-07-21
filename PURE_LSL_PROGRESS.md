@@ -321,6 +321,13 @@ String/List/Dictionary/Tuple/RealArray testují length/count na offsetu 8 (práz
 nespoléhal na truthy prázdné kolekce). `tests/del_conformance` a
 `tests/truthiness_conformance` přidány.
 
+Fixed point s `help()` a `min`/`max(iterable)` má SHA-256
+`e1824f525b0f4e6d…`. `help()` (v definici jazyka) dříve chyběl — nyní vypisuje
+krátký přehled funkcí/typů. `min`/`max` přijmou buď 2 hodnoty, nebo 1 iterable
+(čistě-LSL `__lsl_min`/`__lsl_max`, catchable `ValueError` na prázdné sekvenci);
+dříve arita validace `max([..])` chybně odmítala (a předtím crashovala).
+`tests/minmax_help_conformance` přidán.
+
 Přesný další krok: odstranit poslední teoretickou raw-Int/live-pointer kolizi
 jednoznačným scalar tag ABI, doplnit zbývající RealArray numerické metody a
 navrhnout pure-LSL in-process zero-copy tensor/shared-object loader. Izolované

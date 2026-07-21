@@ -68,6 +68,12 @@ if float_conversion_output != readfile("tests/float_conversion_conformance.out")
     Error(TestFailure: "Float conversion conformance output differs")
 end
 
+call require_success(run(compiler, ["tests/minmax_help_conformance.lsl", "/tmp/lsl-minmax-help-test"]), "compile minmax/help conformance")
+minmax_help_output = capture("/tmp/lsl-minmax-help-test", [])
+if minmax_help_output != readfile("tests/minmax_help_conformance.out"):
+    Error(TestFailure: "minmax/help conformance output differs")
+end
+
 call require_success(run(compiler, ["tests/truthiness_conformance.lsl", "/tmp/lsl-truthiness-test"]), "compile truthiness conformance")
 truthiness_output = capture("/tmp/lsl-truthiness-test", [])
 if truthiness_output != readfile("tests/truthiness_conformance.out"):
