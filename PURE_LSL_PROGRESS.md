@@ -254,6 +254,17 @@ vstup) zanechal koncový `\r` (délka 4). Nyní po `\n` strippuje i koncový `\r
 má stále pevný 4096B buffer — skutečně unbounded verze je read-loop s rostoucím
 bufferem v raw asm; není vydáváno za hotové.
 
+Fixed point s arita validací builtinů má SHA-256 `c283131172fd71ed…`. Dříve
+`len()`, `chr()`, `Int()`, `String()` (a další) bez argumentů **shodily samotný
+compiler** (SIGSEGV při přístupu na `arguments[0]`), a `len("a","b")` /
+`ord("a","b")` tiše ignorovaly extra argumenty. Codegen nyní na začátku name
+dispatch validuje aritu builtinů proti tabulce (0: `gc clock arg_count
+last_error executable_path`; 1: `Bool Int Float String List Tuple RealArray len
+chr ord abs sum type exit input readfile getenv mkdir unlink exists`; 2: `min
+max run capture writefile appendfile writebytes check`) a místo pádu vydá
+strukturovaný compile error se span a help. `tests/builtin_arity_negative.lsl`
+je zapojen jako require_failure.
+
 Přesný další krok: odstranit poslední teoretickou raw-Int/live-pointer kolizi
 jednoznačným scalar tag ABI, doplnit zbývající RealArray numerické metody a
 navrhnout pure-LSL in-process zero-copy tensor/shared-object loader. Izolované
@@ -268,7 +279,8 @@ conformance test → ověřený self-host fixed point. Hotovo z okruhu 2: valida
 `Int(String)` a dynamické `Int(Any)` konverze; opravená Float `**` mocnina;
 NaN/Infinity výpis a `String()`; IEEE-754 NaN comparisons; bezpečný
 `INT64_MIN // -1` / `% -1` (místo SIGFPE pádu). Z okruhu 6: partial-write smyčka
-(`runtime_write_all`) a CRLF strip v `input()`. Zbývá zbytek okruhu 2 (float
+(`runtime_write_all`) a CRLF strip v `input()`. Z okruhu 10: arita validace
+builtinů (dříve compiler segfaultoval na `len()` apod.). Zbývá zbytek okruhu 2 (float
 round-trip formatting; obecný kontrolovaný integer overflow vyžaduje oddělit
 wrapping interní aritmetiku od checked uživatelské — větší sémantický zásah,
 protože `bytes.little` záměrně spoléhá na `*` wraparound) a okruhy 1, 3–17.

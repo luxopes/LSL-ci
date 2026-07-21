@@ -770,6 +770,13 @@ function emit_expression(generator, syntax):
     elif kind == "call":
         target = syntax["target"]
         if target["kind"] == "name":
+            builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sum": 1, "type": 1, "exit": 1, "input": 1, "readfile": 1, "getenv": 1, "mkdir": 1, "unlink": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "min": 2, "max": 2, "run": 2, "capture": 2, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2}
+            if target["name"] in builtin_arity:
+                expected_builtin = builtin_arity[target["name"]]
+                if len(syntax["arguments"]) != expected_builtin:
+                    call unsupported(generator["path"], generator["lines"], syntax, "builtin " + target["name"] + " expects " + String(expected_builtin) + " argument(s), got " + String(len(syntax["arguments"])), "pass exactly " + String(expected_builtin) + " argument(s)")
+                end
+            end
             if target["name"] == "Bool":
                 call emit_expression(generator, syntax["arguments"][0])
                 call emit_truth(generator)
