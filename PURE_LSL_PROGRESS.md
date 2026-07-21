@@ -265,6 +265,17 @@ max run capture writefile appendfile writebytes check`) a místo pádu vydá
 strukturovaný compile error se span a help. `tests/builtin_arity_negative.lsl`
 je zapojen jako require_failure.
 
+Fixed point s arita validací metod má SHA-256 `66aa3dada53c4ee7…`. Stejná třída
+bugu jako u builtinů, ale pro metody: `list.append()` bez argumentu **shodil
+compiler** (SIGSEGV na `arguments[0]`), `"x".upper(5)` a `s.replace("l")` tiše
+ignorovaly/doplňovaly garbage. Codegen validuje aritu metod s pevnou aritou
+(0: strip/lstrip/rstrip/lower/upper/title/sort/copy/keys/clear; 1: append/
+startswith/endswith/find/count/split/join/extend/remove/index/update; 2:
+replace/insert; proměnné pop/get/setdefault vynechány) pro ne-Class receivery.
+`tests/method_arity_negative.lsl` je require_failure. Známá samostatná mezera
+(pre-existing): `print`/`String()` List/Tuple/Dictionary vypisuje raw pointer
+místo obsahu.
+
 Přesný další krok: odstranit poslední teoretickou raw-Int/live-pointer kolizi
 jednoznačným scalar tag ABI, doplnit zbývající RealArray numerické metody a
 navrhnout pure-LSL in-process zero-copy tensor/shared-object loader. Izolované
@@ -280,7 +291,7 @@ conformance test → ověřený self-host fixed point. Hotovo z okruhu 2: valida
 NaN/Infinity výpis a `String()`; IEEE-754 NaN comparisons; bezpečný
 `INT64_MIN // -1` / `% -1` (místo SIGFPE pádu). Z okruhu 6: partial-write smyčka
 (`runtime_write_all`) a CRLF strip v `input()`. Z okruhu 10: arita validace
-builtinů (dříve compiler segfaultoval na `len()` apod.). Zbývá zbytek okruhu 2 (float
+builtinů i metod (dříve compiler segfaultoval na `len()` / `list.append()`). Zbývá zbytek okruhu 2 (float
 round-trip formatting; obecný kontrolovaný integer overflow vyžaduje oddělit
 wrapping interní aritmetiku od checked uživatelské — větší sémantický zásah,
 protože `bytes.little` záměrně spoléhá na `*` wraparound) a okruhy 1, 3–17.

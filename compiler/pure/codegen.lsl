@@ -1058,6 +1058,13 @@ function emit_expression(generator, syntax):
             end
         elif target["kind"] == "member":
             receiver_type = infer_expression_type(target["target"], generator["types"], generator["function_returns"])
+            method_arity = {"strip": 0, "lstrip": 0, "rstrip": 0, "lower": 0, "upper": 0, "title": 0, "sort": 0, "copy": 0, "keys": 0, "clear": 0, "append": 1, "startswith": 1, "endswith": 1, "find": 1, "count": 1, "split": 1, "join": 1, "extend": 1, "remove": 1, "index": 1, "update": 1, "replace": 2, "insert": 2}
+            if target["name"] in method_arity and not receiver_type.startswith("Class:") and not receiver_type.startswith("Instance:"):
+                expected_method = method_arity[target["name"]]
+                if len(syntax["arguments"]) != expected_method:
+                    call unsupported(generator["path"], generator["lines"], syntax, "method " + target["name"] + " expects " + String(expected_method) + " argument(s), got " + String(len(syntax["arguments"])), "pass exactly " + String(expected_method) + " argument(s)")
+                end
+            end
             if receiver_type.startswith("Class:") or receiver_type.startswith("Instance:"):
                 if receiver_type.startswith("Class:"):
                     class_name = receiver_type[6:len(receiver_type)]
