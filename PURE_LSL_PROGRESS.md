@@ -230,6 +230,15 @@ rozšířeno `tests/float_special_conformance`. Známý zbývající bug: `1e300
 výpis je stále `0.000000` — korektní řešení je shortest/exponenciální formatting
 (Ryū/Grisu), velký samostatný algoritmus, ne bugfix; není označeno za hotové.
 
+Fixed point s bezpečným `INT64_MIN // -1` / `% -1` má SHA-256
+`be536ee3245d9271…`. `idiv` dělitelem `-1` přetéká kvocient na `+2^63` → CPU #DE →
+SIGFPE tvrdý pád procesu. Codegen `//`/`%` nyní dělíč `-1` řeší speciálně:
+kvocient = `neg(a)` (wrapuje, `INT64_MIN`), zbytek = `0` — konzistentní s 2's-
+complement wrapping s�mantikou Int (`a+1` už wrapuje) a se sémantikou Pythonu
+mimo nereprezentovatelný 2^63. Žádný pád, definovaný výsledek; floor
+division/modulo pro ostatní případy beze změny. Rozšířen
+`tests/runtime_error_conformance`.
+
 Přesný další krok: odstranit poslední teoretickou raw-Int/live-pointer kolizi
 jednoznačným scalar tag ABI, doplnit zbývající RealArray numerické metody a
 navrhnout pure-LSL in-process zero-copy tensor/shared-object loader. Izolované
@@ -242,5 +251,8 @@ NixOS config, arita/builtiny, fuzz/bench/determinismus/audit, cleanup, docs).
 Postup je inkrementální: každý krok = konkrétní defekt → oprava → nový
 conformance test → ověřený self-host fixed point. Hotovo z okruhu 2: validace
 `Int(String)` a dynamické `Int(Any)` konverze; opravená Float `**` mocnina;
-NaN/Infinity výpis a `String()`; IEEE-754 NaN comparisons. Zbývá zbytek okruhu 2
-(float round-trip formatting, kontrolovaný integer overflow) a okruhy 1, 3–17.
+NaN/Infinity výpis a `String()`; IEEE-754 NaN comparisons; bezpečný
+`INT64_MIN // -1` / `% -1` (místo SIGFPE pádu). Zbývá zbytek okruhu 2 (float
+round-trip formatting; obecný kontrolovaný integer overflow vyžaduje oddělit
+wrapping interní aritmetiku od checked uživatelské — větší sémantický zásah,
+protože `bytes.little` záměrně spoléhá na `*` wraparound) a okruhy 1, 3–17.

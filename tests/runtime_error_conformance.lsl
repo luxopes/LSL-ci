@@ -44,3 +44,5 @@ else:
 end
 print "hello".find("x")
 print -7 // 3, -7 % 3, 7 // -3, 7 % -3
+limit = -9223372036854775808
+print limit // -1, limit % -1, 7 // -1, 7 % -1

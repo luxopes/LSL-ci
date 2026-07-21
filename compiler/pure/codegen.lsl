@@ -723,6 +723,13 @@ function emit_expression(generator, syntax):
             zero_message = "ZeroDivisionError: integer division or modulo by zero at " + zero_source_path + ":" + String(syntax["line"])
             call emit_runtime_raise(generator, zero_message)
             call assembler.label(output, division_ready)
+            # Divisor -1 overflows idiv on INT64_MIN (#DE/SIGFPE). a // -1 == -a
+            # and a % -1 == 0 for all representable a; INT64_MIN wraps like other
+            # Int overflow instead of crashing.
+            division_neg_one = label_name(generator, "division_neg_one")
+            division_computed = label_name(generator, "division_computed")
+            call assembler.emit(output, x86_64.cmp_reg_imm8(1, -1))
+            call assembler.relative(output, [15, 132], division_neg_one)
             call assembler.emit(output, x86_64.cqo())
             call assembler.emit(output, x86_64.idiv_reg(1))
             division_floor_done = label_name(generator, "division_floor_done")
@@ -735,6 +742,11 @@ function emit_expression(generator, syntax):
             call assembler.emit(output, x86_64.decrement(0))
             call assembler.emit(output, x86_64.add_reg_reg(2, 1))
             call assembler.label(output, division_floor_done)
+            call assembler.relative(output, [233], division_computed)
+            call assembler.label(output, division_neg_one)
+            call assembler.emit(output, x86_64.neg_reg(0))
+            call assembler.emit(output, x86_64.xor_reg_reg(2, 2))
+            call assembler.label(output, division_computed)
             if operator == "%":
                 call assembler.emit(output, x86_64.move_reg_reg(0, 2))
             end
