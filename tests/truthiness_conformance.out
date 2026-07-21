@@ -1,0 +1,7 @@
+False True False True False True
+False True False True False
+empty string falsy
+empty list falsy
+empty dict falsy
+non-empty all truthy
+drained after 3

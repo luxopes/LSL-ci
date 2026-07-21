@@ -433,9 +433,14 @@ function emit_boxed_scalars(output):
     call assembler.emit(output, x86_64.cmp_reg_imm8(1, 4))
     call assembler.relative(output, [15, 132], "truth_boxed_bool")
     call assembler.emit(output, x86_64.cmp_reg_imm8(1, 6))
-    call assembler.relative(output, [15, 133], "truth_true")
+    call assembler.relative(output, [15, 133], "truth_collection")
     call assembler.emit(output, x86_64.load_memory(7, 7, 8))
     call assembler.emit(output, x86_64.shift_left_imm(7, 1))
+    call assembler.relative(output, [233], "truth_raw")
+    call assembler.label(output, "truth_collection")
+    # String/List/Dictionary/Tuple/RealArray store length/count at offset 8;
+    # empty is falsy like Python.
+    call assembler.emit(output, x86_64.load_memory(7, 7, 8))
     call assembler.relative(output, [233], "truth_raw")
     call assembler.label(output, "truth_boxed_bool")
     call assembler.emit(output, x86_64.load_memory(7, 7, 8))

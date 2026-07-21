@@ -310,6 +310,17 @@ do `configure.lsl` (chybějící argument → usage/exit 2 místo matoucího Fil
 Compíler fixed point beze změny; toolchain (lsl-configure, lsl-install)
 přegenerován.
 
+Fixed point s `del(list[i])` a Python truthiness má SHA-256
+`f6f0f8a77fd7d084…`. (1) `del(beta[0])` (v definici jazyka) dříve fungoval jen
+pro Dictionary; nyní `del(list[i])` přes čistě-LSL `__lsl_delete_at` (shift +
+pop_last, catchable IndexError, záporné indexy), Tuple/RealArray odmítnuty jako
+fixed. (2) `runtime_truth` dříve vracel True pro **jakoukoli** ne-None/Bool/Float
+heap hodnotu, takže `Bool("")`, `if []:`, `if {}:` byly chybně truthy; nyní
+String/List/Dictionary/Tuple/RealArray testují length/count na offsetu 8 (prázdné
+→ falsy jako Python). Fixed point dr=ží i po změně truth sémantiky (compiler
+nespoléhal na truthy prázdné kolekce). `tests/del_conformance` a
+`tests/truthiness_conformance` přidány.
+
 Přesný další krok: odstranit poslední teoretickou raw-Int/live-pointer kolizi
 jednoznačným scalar tag ABI, doplnit zbývající RealArray numerické metody a
 navrhnout pure-LSL in-process zero-copy tensor/shared-object loader. Izolované
