@@ -52,6 +52,6 @@ ELF image má pouze RX `PT_LOAD`; mutable allocator stav, 16M-entry object regis
 
 `r14 != 0` znamená pending error a `r13` nese String message. Přímá LSL volání po návratu kontrolují flag a skáčou do nejbližšího `safe`/`try` handleru, nebo vypíšou fatal error na stderr a skončí nenulově.
 
-## Budoucí plugin ABI
+## Native CPU plugin ABI
 
-Native shared-object/tensor ABI zatím není podporované. Budoucí loader musí být implementován v LSL, verzovat layout a ownership a nesmí odhalovat interní heap layout pluginům; viz `docs/native-plugins.md`.
+Omezený ABI v1 mapuje self-contained Linux x86_64 ET_DYN bez libc, relocations a external symbols. Opaque library/function objekty mají type 11/12; veřejné volání přijímá nejvýše šest Int64 a vrací Int64, takže plugin nikdy nevidí LSL heap layout. Viz `docs/native-plugins.md`.

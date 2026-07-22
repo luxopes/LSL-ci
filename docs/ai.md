@@ -14,4 +14,4 @@ HTTP(S) transport používá systémový `/usr/bin/curl` spuštěný přímým `
 
 OpenAI-compatible příklad je v `examples/ai_client.lsl` a čistým compilerem se překládá do samostatného ELF.
 
-Nativní tensor/plugin ABI zatím není podporované; stav a podmínky budoucí implementace jsou v `docs/native-plugins.md`. Tato mezera není vydávána za hotovou.
+Pure-LSL CPU Tensor a omezený self-contained ET_DYN Int64 kernel ABI jsou podporované; obecné libc/shared-object relocations a GPU ABI nikoli. Přesný scope je v `docs/native-plugins.md`.

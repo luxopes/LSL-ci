@@ -480,6 +480,14 @@ zelené. Následující fixed point
 `dfc81ddfd9fa0f57f3f86c12465891fd24003b752e6420769134f6405eea17e6`
 doplnil stejnou full-probe ochranu 64K String intern cache.
 
+Restricted native CPU ABI fixed point
+`42fd3c59427ff6552d926bdaf7ad029eca2ce7e5a619522bcd6e85d7f5fd04c1`
+mapuje self-contained Linux x86_64 ET_DYN přes syscalls, validuje ELF a section
+bounds, hledá SHT_DYNSYM symboly a volá je in-process s nejvýše šesti Int64.
+Opaque type 11/12 neodhalují LSL heap. Conformance v LSL vyrobí vlastní ET_DYN,
+zavolá `add(19,23)`, ověří missing symbol, malformed image a catchable
+use-after-close `NativeError`.
+
 Pure-LSL `tensor` module poskytuje dense CPU Tensor nad sdíleným RealArray,
 shape/strides/offset/dtype, bounds-checked get/set, reshape a zero-copy views.
 Conformance dokazuje sdílenou mutaci a shape errors; installer jej distribuuje.

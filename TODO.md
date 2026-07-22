@@ -29,12 +29,13 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktu�
 - [x] Odstranit pevný 1MiB limit `capture()` dynamicky rostoucím bufferem.
 - [ ] Dokončit jednoznačný scalar tag ABI (Function type 10 je hotový; zbývá raw Any return hranice).
 - [x] Doplnit AI provider errors/retry/cancellation, lazy config/cycles/defaults/provenance, structured process status a pure-LSL zero-copy CPU Tensor.
-- [ ] Pokračovat foreign shared-object ABI, stderr streaming, dynamic table growth a audit okruhy níže.
+- [x] Doplnit omezený in-process CPU ET_DYN Int64 kernel ABI a neomezené stderr capture.
+- [ ] Pokračovat dynamic table growth, skutečný HTTP streaming a audit okruhy níže.
 
 ## Zbývá
 
 - dokončit jednoznačný scalar tag ABI tak, aby ani záměrný raw Int shodný s živou heap adresou nemohl kolidovat s object value;
 - další numerické edge cases; Int overflow má definovanou two's-complement modulo `2^64` sémantiku a conformance;
-- vedle hotového JSON process plugin ABI a pure-LSL zero-copy CPU Tensoru dokončit foreign in-process shared-object/GPU ABI;
+- případná ABI v2 rozšíření nad hotovým self-contained CPU ET_DYN v1 (relocations/Tensor descriptors); GPU je mimo aktuální scope;
 - rozšířit negative/conformance, benchmarky a další targety;
 - po finální kontrole odstranit případné zbylé transition poznámky a nepotřebné smoke zdroje.

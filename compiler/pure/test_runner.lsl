@@ -267,6 +267,12 @@ if dictionary_key_output != readfile("tests/dictionary_key_conformance.out"):
     Error(TestFailure: "Dictionary key conformance output differs")
 end
 
+call require_success(run(compiler, ["tests/native_elf_conformance.lsl", "/tmp/lsl-native-elf-test"]), "compile native ELF conformance")
+native_elf_output = capture("/tmp/lsl-native-elf-test", [])
+if native_elf_output != readfile("tests/native_elf_conformance.out"):
+    Error(TestFailure: "native ELF conformance output differs")
+end
+
 call require_success(run(compiler, ["tests/tensor_conformance.lsl", "/tmp/lsl-tensor-test"]), "compile Tensor conformance")
 tensor_output = capture("/tmp/lsl-tensor-test", [])
 if tensor_output != readfile("tests/tensor_conformance.out"):

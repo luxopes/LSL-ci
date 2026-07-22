@@ -1,0 +1,4 @@
+42
+NativeError: native symbol not found: missing
+NativeError: native library is closed
+NativeError: cannot map valid Linux x86_64 ET_DYN image

@@ -140,7 +140,10 @@ ověřuje typed i boxed dynamic cestu, min/max, power a String hranice.
 
 ### 3. In-process native/shared-object/tensor ABI
 
-Hotové je pouze izolované JSON process plugin ABI. Není hotové zero-copy.
+Hotový je izolovaný JSON process ABI, zero-copy pure-LSL CPU Tensor a omezený
+self-contained Linux x86_64 ET_DYN Int64 kernel ABI v1. ABI v1 nepovoluje
+relocations, libc, external symbols ani constructors a plugin nevidí LSL heap.
+Následující původní body popisují volitelnou bohatší ABI v2:
 
 Minimální čistý v1 scope:
 

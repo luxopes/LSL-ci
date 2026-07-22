@@ -189,7 +189,7 @@ function infer_expression_type(syntax, types, function_returns):
             if name == "sum":
                 return "Any"
             end
-            if name == "len" or name == "Int" or name == "ord" or name == "arg_count" or name == "run" or name == "capture_status" or name == "__lsl_type_code" or name == "__lsl_raw_equal" or name == "__lsl_float_bits" or name == "__lsl_float_to_int" or name == "__lsl_unbox_int" or name == "__lsl_raw_int":
+            if name == "len" or name == "Int" or name == "ord" or name == "arg_count" or name == "run" or name == "capture_status" or name == "native_u64" or name == "native_size" or name == "native_call" or name == "native_close" or name == "__lsl_type_code" or name == "__lsl_raw_equal" or name == "__lsl_float_bits" or name == "__lsl_float_to_int" or name == "__lsl_unbox_int" or name == "__lsl_raw_int":
                 return "Int"
             elif name == "Float":
                 return "Float"
@@ -199,7 +199,7 @@ function infer_expression_type(syntax, types, function_returns):
                 return "String"
             elif name == "clock":
                 return "Float"
-            elif name == "exists":
+            elif name == "exists" or name == "native_name_equal":
                 return "Bool"
             elif name == "List":
                 return "List"
@@ -1140,7 +1140,7 @@ function emit_expression(generator, syntax):
     elif kind == "call":
         target = syntax["target"]
         if target["kind"] == "name":
-            builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "Dictionary": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sum": 1, "type": 1, "exit": 1, "input": 1, "readfile": 1, "getenv": 1, "mkdir": 1, "unlink": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "help": 0, "run": 2, "capture": 2, "capture_status": 0, "capture_stderr": 0, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2}
+            builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "Dictionary": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sum": 1, "type": 1, "exit": 1, "input": 1, "readfile": 1, "getenv": 1, "mkdir": 1, "unlink": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "help": 0, "run": 2, "capture": 2, "capture_status": 0, "capture_stderr": 0, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2, "native_open": 1, "native_size": 1, "native_u64": 2, "native_name_equal": 3, "native_function": 2, "native_call": 2, "native_close": 1}
             if target["name"] in builtin_arity:
                 expected_builtin = builtin_arity[target["name"]]
                 if len(syntax["arguments"]) != expected_builtin:
@@ -1402,6 +1402,53 @@ function emit_expression(generator, syntax):
                 else:
                     call assembler.relative(output, [232], "runtime_run")
                 end
+                return
+            elif target["name"] == "native_open":
+                call emit_expression(generator, syntax["arguments"][0])
+                call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                call assembler.relative(output, [232], "runtime_native_open")
+                return
+            elif target["name"] == "native_size":
+                call emit_expression(generator, syntax["arguments"][0])
+                call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                call assembler.relative(output, [232], "runtime_native_size")
+                return
+            elif target["name"] == "native_u64" or target["name"] == "native_function" or target["name"] == "native_call":
+                call emit_expression(generator, syntax["arguments"][0])
+                call assembler.emit(output, x86_64.push(0))
+                call emit_expression(generator, syntax["arguments"][1])
+                if target["name"] == "native_u64" or target["name"] == "native_function":
+                    call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                    call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+                end
+                call assembler.emit(output, x86_64.move_reg_reg(6, 0))
+                call assembler.emit(output, x86_64.pop(7))
+                if target["name"] == "native_u64":
+                    call assembler.relative(output, [232], "runtime_native_u64")
+                elif target["name"] == "native_function":
+                    call assembler.relative(output, [232], "runtime_native_function")
+                else:
+                    call assembler.relative(output, [232], "runtime_native_call")
+                    call emit_pending_error(generator)
+                end
+                return
+            elif target["name"] == "native_name_equal":
+                call emit_expression(generator, syntax["arguments"][0])
+                call assembler.emit(output, x86_64.push(0))
+                call emit_expression(generator, syntax["arguments"][1])
+                call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+                call assembler.emit(output, x86_64.push(0))
+                call emit_expression(generator, syntax["arguments"][2])
+                call assembler.emit(output, x86_64.move_reg_reg(2, 0))
+                call assembler.emit(output, x86_64.pop(6))
+                call assembler.emit(output, x86_64.pop(7))
+                call assembler.relative(output, [232], "runtime_native_name_equal")
+                return
+            elif target["name"] == "native_close":
+                call emit_expression(generator, syntax["arguments"][0])
+                call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                call assembler.relative(output, [232], "runtime_native_close")
                 return
             elif target["name"] == "capture_status":
                 call assembler.relative(output, [232], "runtime_capture_status")

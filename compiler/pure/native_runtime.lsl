@@ -4,6 +4,7 @@ load assembler
 load heap_runtime
 load io_runtime
 load process_runtime
+load native_plugin_runtime
 load x86_64
 
 function emit_print_int(output):
@@ -573,6 +574,7 @@ function emit_all(output):
     call heap_runtime.emit_all(output)
     call io_runtime.emit_all(output)
     call process_runtime.emit_all(output)
+    call native_plugin_runtime.emit_all(output)
     call emit_print_int(output)
     call emit_print_string(output)
     call emit_int_to_string(output)
