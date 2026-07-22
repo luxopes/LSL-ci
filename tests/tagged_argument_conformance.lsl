@@ -27,3 +27,10 @@ end
 
 item = Tagged(0)
 print type(item.value), item.add(2), type(item.value)
+
+function dynamic_add(left, right):
+    return left + right
+end
+
+computed = dynamic_add(2, -2)
+print type(computed), __lsl_type_code(computed), computed

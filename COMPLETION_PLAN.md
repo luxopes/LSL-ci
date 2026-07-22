@@ -246,9 +246,9 @@ jsou deterministické.
 
 Následuje dokončení Any function ABI:
 
-1. Otagovat raw numerické výsledky inferované jako Any na return hranici a
-   explicitně unboxovat na staticky typed call sites; compiler raw trust core
-   musí zůstat oddělený.
+1. Any binary numerické výsledky se už na user return hranici tagují (fixed
+   point `74077a0e…`). Zbývá generic builtin/callback return; staticky typed raw
+   fast path a compiler trust core zůstávají oddělené.
 2. Na Any argument hranici otagovat i výraz inferovaný `Any`. Již heap/tagged
    hodnotu zachovat; raw numerický výsledek boxovat jako Int. Díky type 10 nesmí
    být Function pointer zaměněn za Int.

@@ -486,9 +486,16 @@ transport/408/429/5xx, cancellation callback, validaci provider JSON,
 syntetické responses bez sítě; example i installer jsou aktualizované. Skutečný
 curl token streaming zůstává samostatná transportní mezera.
 
-Přesný další krok: dokončit deterministické tagging raw Any argument/return
-výsledků a typed unbox na call sites, potom odstranit raw fallback a dokázat
-nemožnost live-pointer kolize. Následuje pure-LSL in-process
+Tagged return fixed point
+`74077a0e7531f139cf4cd9adcaa41c8d1f61a52e613c518f0696398b51f8cb35`
+boxuje raw numerický výsledek Any binary výrazu před návratem z user funkce;
+staticky typed returny zůstávají raw fast path. Conformance ověřuje dynamické
+`2 + -2` jako type 9 po návratu. Selfhost, callback, AI a tagged targeted testy
+procházejí.
+
+Přesný další krok: dokončit zbývající raw Any return zdroje (zejména generic
+builtin/callback return), potom odstranit raw fallback a dokázat nemožnost
+live-pointer kolize. Následuje pure-LSL in-process
 zero-copy tensor/shared-object loader.
 
 ## Roadmap k "kompletní 1" (17 okruhů)

@@ -2443,6 +2443,13 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 call assembler.emit(generator["builder"], x86_64.mov_imm64(0, 0))
             else:
                 call emit_expression(generator, statement["expression"])
+                if generator["path"].find("compiler/pure/") < 0:
+                    return_type = infer_expression_type(statement["expression"], generator["types"], generator["function_returns"])
+                    if return_type == "Any" and statement["expression"]["kind"] == "binary":
+                        call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
+                        call assembler.relative(generator["builder"], [232], "runtime_box_dynamic_int")
+                    end
+                end
             end
             call assembler.relative(generator["builder"], [233], return_label)
         else:
