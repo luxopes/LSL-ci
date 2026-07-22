@@ -377,10 +377,18 @@ backend (SSA, register allocation, loop passes), vícedenní práce, není hotov
 Další reálná páka konstantního faktoru: držet horké lokální proměnné v
 registrech namísto stack slotů (skutečný register allocator).
 
-Přesný další krok: odstranit poslední teoretickou raw-Int/live-pointer kolizi
-jednoznačným scalar tag ABI, doplnit zbývající RealArray numerické metody a
-navrhnout pure-LSL in-process zero-copy tensor/shared-object loader. Izolované
-process plugin ABI je hotové, ale není vydáváno za zero-copy náhradu.
+Fixed point s indexed augmented assignment má SHA-256
+`3b07b7f9bbe00802796b3a93846229a67a4400e6681f4767d5c16539ebc4d513`.
+`list[i] +=`, `RealArray[i] -=` a `dictionary[key] *=` nyní používají stejný
+dynamický numerický/String dispatch jako běžné výrazy; nový exact-output test
+ověřuje Int, Float, String a všechny tři mutable collection druhy. Tři čisté
+stage jsou bitově shodné, celý toolchain byl 2× deterministicky přegenerován,
+`lsl-test` a config conformance procházejí.
+
+Přesný další krok: odstranit literal-only omezení `rang` kroku, poté poslední
+raw-Int/live-pointer kolizi jednoznačným scalar tag ABI, zbývající RealArray
+numerické metody a pure-LSL in-process zero-copy tensor/shared-object loader.
+Izolované process plugin ABI je hotové, ale není vydáváno za zero-copy náhradu.
 
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,

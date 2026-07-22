@@ -158,6 +158,12 @@ if sequence_ops_output != readfile("tests/sequence_ops_conformance.out"):
     Error(TestFailure: "sequence ops conformance output differs")
 end
 
+call require_success(run(compiler, ["tests/indexed_augmented_conformance.lsl", "/tmp/lsl-indexed-augmented-test"]), "compile indexed augmented conformance")
+indexed_augmented_output = capture("/tmp/lsl-indexed-augmented-test", [])
+if indexed_augmented_output != readfile("tests/indexed_augmented_conformance.out"):
+    Error(TestFailure: "indexed augmented conformance output differs")
+end
+
 call require_success(run(compiler, ["tests/collection_repr_conformance.lsl", "/tmp/lsl-collection-repr-test"]), "compile collection repr conformance")
 collection_repr_output = capture("/tmp/lsl-collection-repr-test", [])
 if collection_repr_output != readfile("tests/collection_repr_conformance.out"):

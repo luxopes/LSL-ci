@@ -1926,14 +1926,17 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 call assembler.emit(generator["builder"], x86_64.store_stack(generator["variables"][target["name"]], 0))
             elif target["kind"] == "index":
                 target_type = infer_expression_type(target["target"], generator["types"], generator["function_returns"])
-                if statement["operator"] != "=":
-                    call unsupported(generator["path"], generator["lines"], statement, "indexed augmented assignment is not implemented", "use collection[index] = value")
-                end
                 call emit_expression(generator, target["target"])
                 call assembler.emit(generator["builder"], x86_64.push(0))
                 call emit_expression(generator, target["index"])
                 call assembler.emit(generator["builder"], x86_64.push(0))
-                call emit_expression(generator, statement["value"])
+                if statement["operator"] == "=":
+                    call emit_expression(generator, statement["value"])
+                else:
+                    operator = statement["operator"][0:len(statement["operator"]) - 1]
+                    combined = {"kind": "binary", "line": statement["line"], "column": statement["column"], "end_column": statement["end_column"], "operator": operator, "left": target, "right": statement["value"]}
+                    call emit_expression(generator, combined)
+                end
                 call assembler.emit(generator["builder"], x86_64.move_reg_reg(2, 0))
                 call assembler.emit(generator["builder"], x86_64.pop(6))
                 call assembler.emit(generator["builder"], x86_64.pop(7))

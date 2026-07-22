@@ -19,6 +19,14 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`.
 - okruh 2: validace `Int(String)` a dynamické `Int(Any)` konverze (dřív `Int("abc")` vracelo garbage);
 - okruh 2: oprava Float `**` mocniny (dřív `2.0 ** 53` vracelo `0`).
 
+## Aktivní plán
+
+- [x] Doplnit indexed augmented assignment pro List, RealArray a Dictionary.
+- [ ] Odstranit omezení literal-only `rang` kroku.
+- [ ] Dokončit Float round-trip/exponent formatting.
+- [ ] Dokončit jednoznačný scalar tag ABI.
+- [ ] Pokračovat zbývajícími runtime, plugin/AI/config a audit okruhy níže.
+
 ## Zbývá
 
 - dokončit jednoznačný scalar tag ABI tak, aby ani záměrný raw Int shodný s živou heap adresou nemohl kolidovat s object value;
