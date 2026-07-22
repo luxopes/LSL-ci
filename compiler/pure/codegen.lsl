@@ -1170,6 +1170,10 @@ function emit_expression(generator, syntax):
             elif target["name"] == "sum":
                 sum_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_sum"}, "arguments": syntax["arguments"]}
                 call emit_expression(generator, sum_call)
+                if generator["path"].find("compiler/pure/") < 0:
+                    call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                    call assembler.relative(output, [232], "runtime_box_dynamic_int")
+                end
                 return
             elif target["name"] == "__lsl_float_string":
                 call emit_expression(generator, syntax["arguments"][0])

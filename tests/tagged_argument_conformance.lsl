@@ -34,3 +34,5 @@ end
 
 computed = dynamic_add(2, -2)
 print type(computed), __lsl_type_code(computed), computed
+summed = sum([2, -2])
+print type(summed), __lsl_type_code(summed), summed

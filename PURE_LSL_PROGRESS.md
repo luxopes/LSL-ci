@@ -493,9 +493,13 @@ staticky typed returny zůstávají raw fast path. Conformance ověřuje dynamic
 `2 + -2` jako type 9 po návratu. Selfhost, callback, AI a tagged targeted testy
 procházejí.
 
-Přesný další krok: dokončit zbývající raw Any return zdroje (zejména generic
-builtin/callback return), potom odstranit raw fallback a dokázat nemožnost
-live-pointer kolize. Následuje pure-LSL in-process
+Generic `sum()` Int výsledek je od fixed pointu
+`33ffa38bd74330dfb994e3381b1175260e7edb640ead157d50864d9ef6b31784`
+na public Any hranici type 9; Float sum zůstává boxed Float. Targeted tagged
+conformance pro nulu prochází.
+
+Přesný další krok: dokončit zbývající raw Any callback return, potom odstranit
+raw fallback a dokázat nemožnost live-pointer kolize. Následuje pure-LSL in-process
 zero-copy tensor/shared-object loader.
 
 ## Roadmap k "kompletní 1" (17 okruhů)
