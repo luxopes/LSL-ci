@@ -150,10 +150,11 @@ wrapper += "    if __lsl_type_code(left_value) == 3 and __lsl_type_code(right_va
 wrapper += "        dictionary_result = {}\n        for key in left_value:\n            dictionary_result[key] = left_value[key]\n        end\n        for key in right_value:\n            if key in dictionary_result:\n                dictionary_result[key] = deep_merge(dictionary_result[key], right_value[key])\n            else:\n                dictionary_result[key] = right_value[key]\n            end\n        end\n        return dictionary_result\n    end\n"
 wrapper += "    if __lsl_type_code(left_value) == 2 and __lsl_type_code(right_value) == 2:\n        list_result = left_value[0:len(left_value)]\n        list_result.extend(right_value)\n        return list_result\n    end\n"
 wrapper += "    return right\nend\n"
-wrapper += "\nfunction materialize(value):\n"
-wrapper += "    if __lsl_type_code(value) == 3 and \"__priority\" in value:\n        return materialize(value[\"value\"])\n    end\n"
-wrapper += "    if __lsl_type_code(value) == 3:\n        dictionary_result = {}\n        for key in value:\n            if not (__lsl_type_code(value[key]) == 3 and \"__omit\" in value[key]):\n                materialized = materialize(value[key])\n                dictionary_result[key] = materialized\n            end\n        end\n        return dictionary_result\n    end\n"
-wrapper += "    if __lsl_type_code(value) == 2:\n        list_result = []\n        for item in value:\n            materialized = materialize(item)\n            list_result.append(materialized)\n        end\n        return list_result\n    end\n    return value\nend\n"
+wrapper += "\nfunction materialize(value, active):\n"
+wrapper += "    if __lsl_type_code(value) == 3 and \"__priority\" in value:\n        return materialize(value[\"value\"], active)\n    end\n"
+wrapper += "    if __lsl_type_code(value) == 3 and \"__lazy\" in value:\n        thunk = value[\"__lazy\"]\n        if thunk in active:\n            Error(ConfigCycleError: \"lazy configuration dependency cycle\")\n        end\n        active.append(thunk)\n        resolved = materialize(thunk(), active)\n        call __lsl_pop(active)\n        return resolved\n    end\n"
+wrapper += "    if __lsl_type_code(value) == 3:\n        dictionary_result = {}\n        for key in value:\n            if not (__lsl_type_code(value[key]) == 3 and \"__omit\" in value[key]):\n                materialized = materialize(value[key], active)\n                dictionary_result[key] = materialized\n            end\n        end\n        return dictionary_result\n    end\n"
+wrapper += "    if __lsl_type_code(value) == 2:\n        list_result = []\n        for item in value:\n            materialized = materialize(item, active)\n            list_result.append(materialized)\n        end\n        return list_result\n    end\n    return value\nend\n"
 wrapper += "\nfunction get_path(root, path, missing):\n"
 wrapper += "    parts = path.split(\".\")\n    value = root\n    for part in parts:\n        if __lsl_type_code(value) != 3 or part not in value:\n            return missing\n        end\n        value = value[part]\n    end\n    return value\nend\n"
 wrapper += "\nfunction set_path(root, path, value):\n"
@@ -174,8 +175,8 @@ while index < len(order):
     end
     index += 1
 end
-wrapper += "clean = materialize(merged)\nmissing = {\"__missing\": True}\n"
-wrapper += "for option_name in all_options:\n    descriptor = all_options[option_name]\n    option_value = get_path(clean, option_name, missing)\n    if option_value == missing:\n        if descriptor[\"required\"]:\n            print \"Missing required option\", option_name\n            exit(1)\n        end\n        option_value = materialize(descriptor[\"default\"])\n        call set_path(clean, option_name, option_value)\n    end\n    if not type_matches(option_value, descriptor[\"type\"]):\n        print \"Invalid option type\", option_name, descriptor[\"type\"], dynamic_type(option_value)\n        exit(1)\n    end\nend\n"
+wrapper += "clean = materialize(merged, [])\nmissing = {\"__missing\": True}\n"
+wrapper += "for option_name in all_options:\n    descriptor = all_options[option_name]\n    option_value = get_path(clean, option_name, missing)\n    if option_value == missing:\n        if descriptor[\"required\"]:\n            print \"Missing required option\", option_name\n            exit(1)\n        end\n        option_value = materialize(descriptor[\"default\"], [])\n        call set_path(clean, option_name, option_value)\n    end\n    if not type_matches(option_value, descriptor[\"type\"]):\n        print \"Invalid option type\", option_name, descriptor[\"type\"], dynamic_type(option_value)\n        exit(1)\n    end\nend\n"
 wrapper += "for assertion in all_assertions:\n    if not assertion[0]:\n        print \"Configuration assertion failed:\", assertion[1]\n        exit(1)\n    end\nend\n"
 wrapper += "print json.encode(clean)\n"
 call writefile(output_path, wrapper)

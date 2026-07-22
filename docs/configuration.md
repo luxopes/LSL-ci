@@ -42,6 +42,10 @@ Importy se vyhodnocují jednou v deterministickém post-order pořadí, root mod
 - `mkOverride(priority, value)` nastaví explicitní prioritu.
 - `mkIf(condition, value)` hodnotu při `False` úplně vynechá.
 
+## Lazy hodnoty
+
+`config.lazy(thunk)` odloží volání bezargumentové Function až do materializace výsledného stromu. Každý lazy výsledek se rekurzivně materializuje stejně jako běžná hodnota. Rekurzivní thunk dependency je detekována a končí `ConfigCycleError`, místo nekonečné rekurze. LSL 0.7 nemá closures, takže thunk čte module globals nebo volá jiné pojmenované funkce.
+
 ## Čistota a reprodukovatelnost
 
 V config režimu nejsou dostupné `input`, souborové funkce, hodiny ani moduly `http` a `env`. Jedinými hostitelskými vstupy jsou root soubor a explicitní graf `imports`. Výsledek je deterministicky serializovatelný do kompaktního JSON. Config generator staticky odmítá ambientní I/O a síťové funkce. Kryptografický derivační store a generation hash ještě patří do vyššího aktivačního nástroje, nikoli do evaluatoru.

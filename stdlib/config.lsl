@@ -20,6 +20,10 @@ function mkForce(value):
     return mkOverride(1000, value)
 end
 
+function lazy(thunk):
+    return {"__lazy": thunk}
+end
+
 function mkIf(condition, value):
     if condition:
         return value

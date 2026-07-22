@@ -303,6 +303,14 @@ config_defaults_output = capture("/tmp/lsl-config-defaults-test", [])
 if config_defaults_output != readfile("tests/config/defaults.out"):
     Error(TestFailure: "config defaults output differs")
 end
+lazy_wrapper = "tests/config/.lazy-test-evaluator.lsl"
+call require_success(run(configure, ["tests/config/lazy.lsl", lazy_wrapper]), "generate lazy config evaluator")
+call require_success(run(compiler, [lazy_wrapper, "/tmp/lsl-config-lazy-test"]), "compile lazy config evaluator")
+call unlink(lazy_wrapper)
+lazy_config_output = capture("/tmp/lsl-config-lazy-test", [])
+if lazy_config_output != readfile("tests/config/lazy.out"):
+    Error(TestFailure: "lazy config output differs")
+end
 config_cycle_output = capture(configure, ["tests/config/cycle_a.lsl", "/tmp/lsl-cycle-evaluator.lsl"])
 if config_cycle_output != readfile("tests/config/cycle.out"):
     Error(TestFailure: "config cycle diagnostic differs")
