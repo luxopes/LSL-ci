@@ -16,10 +16,9 @@ v `TODO.md`.
 - Repo: `/home/antonin/lsl`
 - Větev: `complete-roadmap`
 - Base větev: `master`
-- Poslední commit: `e3ddd0b Pass wide class initializers on the stack`
-- Pracovní strom byl při vytvoření tohoto souboru čistý.
+- Poslední funkční milník: `a552158 Eliminate scalar pointer collisions`.
 - Aktuální fixed-point compiler SHA-256:
-  `a147d1366d6528103e6bffe486eea467e917ca513494dfb4513c7983094b1dd7`
+  `0177dfcf593825157b60ea0f2962b7a6d39f4b4eaab8992d7e8eda7b0670706a`
 - `compiler/pure/lslc-direct` je bitově shodný s `compiler/lslc`.
 - `compiler/pure/lsl-cli` je bitově shodný s top-level `lsl`.
 - ELF má jediný RX `PT_LOAD`, žádný `INTERP` a žádné RWX.
@@ -62,7 +61,9 @@ nepushovat bez výslovného požadavku.
   textový formatter.
 - Dokumentované collection/String metody, Dictionary conversion, member delete.
 - Dynamický `rang` step, indexed augmented assignment, neomezený line `input`.
-- Aktuální `compiler/pure/lsl-test` a config conformance jsou zelené.
+- Aktuální `compiler/pure/lsl-test` včetně negative corpus a config conformance
+  jsou zelené. Instalovaný compiler z jiného cwd přeložil selfhost conformance;
+  z instalovaného source rootu znovu vytvořil bitově shodný fixed point.
 
 Nedávné commity na větvi:
 
@@ -177,8 +178,10 @@ Nevydávat process JSON ABI za zero-copy řešení.
 - `capture()` stdout i stderr rostou bez pevného limitu; stderr používá anonymous
   memfd, takže nemůže zablokovat druhou pipe. `process.capture_result` vrací
   `{stdout,stderr,status,ok}` a `process.check` propaguje status.
-- Zbývá ošetřit všechny syscall error/partial paths (`pipe`, `fork`, `dup2`, `wait4`,
-  `close`, read errors), ne pouze hlavní happy path.
+- `runtime_write_all` i `readfile` iterují partial I/O; `readfile` kontroluje
+  open/lseek/read a `input` propaguje read error.
+- Zbývá ošetřit všechny setup/cleanup chyby process syscallů (`pipe`, `fork`,
+  `dup2`, `wait4`, `close`) a doplnit jejich fault-injection testy.
 - Přidat čistý stdin-fed process helper; pak zapojit `input_conformance` přímo do
   pure `lsl-test` (nyní je 5000B input ověřen manuálním pipe testem).
 

@@ -32,7 +32,9 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktu�
 - [x] Doplnit omezený in-process CPU ET_DYN Int64 kernel ABI a neomezené stderr capture.
 - [x] Doplnit skutečné průběžné process/HTTP transport chunk callbacks.
 - [x] Doplnit dynamický růst object registry a String intern cache.
-- [ ] Dokončit syscall failure hardening a závěrečný full audit.
+- [x] Spustit závěrečný full suite, config, installed fixed-point a ELF audit.
+- [ ] Dokončit fault-injection hardening process setup/cleanup syscallů.
+- [ ] Změřit a zrychlit compiler/test runner bez změny deterministického výstupu.
 
 ## Feature scope 0.7 bez GPU
 

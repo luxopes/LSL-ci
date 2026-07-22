@@ -544,6 +544,17 @@ zachytává také neomezené stderr přes anonymous memfd (bez pipe deadlocku) a
 vrací `{stdout,stderr,status,ok}`. Conformance ověřuje stdout, uncaught stderr a
 exit 1.
 
+Finální předvýkonnostní hardening fixed point
+`0177dfcf593825157b60ea0f2962b7a6d39f4b4eaab8992d7e8eda7b0670706a`
+opravuje partial-read smyčku `readfile`, kontroluje lseek/read/input errors a
+opravuje type-flow augmented assignment tak, aby dynamický Float výsledek nebyl
+znovu boxován jako Int. Celý `compiler/pure/lsl-test` skončil 0 s `pure LSL
+tests passed`; config output je bitově shodný, všechny udržované ELF mají jediný
+RX `PT_LOAD` bez `INTERP`, produkční strom nemá `.c/.h/.py/.sh`. Installer byl
+ověřen v `/tmp/lsl-final-prefix`: nainstalovaný compiler z jiného cwd přeložil
+selfhost conformance a z relativního instalovaného source rootu vytvořil bitově
+shodný fixed point. Následuje měřená optimalizace.
+
 Scalar ABI fixed point
 `6dac5db225ab61f87c28837c03c20d7c390b7c61cbebfcca6a9df5df544459ef`
 metadata-taguje Int/Bool/None/Function callback returns, taguje polymorfní Any

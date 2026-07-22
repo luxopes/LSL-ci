@@ -254,13 +254,17 @@ function collect_types(statements, types, function_returns):
         elif kind == "assign":
             if statement["target"]["kind"] == "name":
                 name = statement["target"]["name"]
-                if statement["operator"] == "=" or name not in types:
+                if statement["operator"] == "=":
                     assigned_type = infer_expression_type(statement["value"], types, function_returns)
-                    if name in types and types[name] != assigned_type:
-                        types[name] = "Any"
-                    else:
-                        types[name] = assigned_type
-                    end
+                else:
+                    operator = statement["operator"][0:len(statement["operator"]) - 1]
+                    combined = {"kind": "binary", "operator": operator, "left": statement["target"], "right": statement["value"]}
+                    assigned_type = infer_expression_type(combined, types, function_returns)
+                end
+                if name in types and types[name] != assigned_type:
+                    types[name] = "Any"
+                else:
+                    types[name] = assigned_type
                 end
             end
         elif kind == "for":
@@ -1537,6 +1541,7 @@ function emit_expression(generator, syntax):
                 call emit_expression(generator, syntax["arguments"][0])
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 call assembler.relative(output, [232], "runtime_input")
+                call emit_pending_error(generator)
                 return
             elif target["name"] == "clock":
                 call assembler.relative(output, [232], "runtime_clock")
