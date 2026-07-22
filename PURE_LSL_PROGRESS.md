@@ -504,6 +504,11 @@ String/Int/Bool/None/Float/Function jsou tagované hashable scalar keys; mutable
 collection/Dictionary/Class/Instance keys compiler odmítá s E2001. Positive i
 negative targeted conformance prochází.
 
+Process `run` fixed point
+`caae0d045066544451443ec7c79e44840bab8004cfcb63b91fcde74d5a8ac61f`
+dekóduje normální exit, signal jako `128+signal`, exec failure 127 a fork/wait
+failure 126. Targeted process status conformance ověřuje exit 7 a missing exec.
+
 Přesný další krok: dokončit zbývající raw Any callback return, potom odstranit
 raw fallback a dokázat nemožnost live-pointer kolize. Následuje pure-LSL in-process
 zero-copy tensor/shared-object loader.

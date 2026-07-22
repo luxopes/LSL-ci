@@ -273,6 +273,13 @@ if ai_output != readfile("tests/ai_conformance.out"):
     Error(TestFailure: "AI conformance output differs")
 end
 
+call require_success(run(compiler, ["tests/process_status_server.lsl", "/tmp/lsl-process-status-server"]), "compile process status server")
+call require_success(run(compiler, ["tests/process_status_conformance.lsl", "/tmp/lsl-process-status-test"]), "compile process status conformance")
+process_status_output = capture("/tmp/lsl-process-status-test", [])
+if process_status_output != readfile("tests/process_status_conformance.out"):
+    Error(TestFailure: "process status conformance output differs")
+end
+
 call require_success(run(compiler, ["tests/plugin_process_server.lsl", "/tmp/lsl-plugin-process-server"]), "compile process plugin server")
 call require_success(run(compiler, ["tests/plugin_process_conformance.lsl", "/tmp/lsl-plugin-process-test"]), "compile process plugin conformance")
 plugin_process_output = capture("/tmp/lsl-plugin-process-test", [])
