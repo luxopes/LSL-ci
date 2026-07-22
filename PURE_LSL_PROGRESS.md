@@ -342,6 +342,30 @@ config conformance bitově shodný. Tři O(n²) příčiny odstraněny:
    volá 3× na celý zdroj (link 2×, codegen 1×) — dominantní náklad. Split nyní
    převeden na char-list, O(n).
 
+Konstantní faktory (po O(n) fixu): self-compile 1,9 s → ~1,3 s. `chr(10)`
+hoistnut z lexer smyček (alokoval na každý znak); lazy dict hash index (malé
+dicty jako tokeny/AST nodes bez index overheadu, velké zůstávají O(1));
+per-volani ASCII intern v `runtime_string_chars` (~60k alokací → ~80, sdílené
+pointery aktivují pointer-eq fast path v `string_equal`).
+
+Codegen kvalita (rychlost generovaného kódu): tři optimalizace naivního
+stack-machine kódu, všechny bitově fixed-point + config shodné:
+1. `if`/`while` podmínky vynechávají `runtime_truth` (call + is_heap_object
+   probe), když výraz už dává 0/1 (compare, and/or, not, Bool).
+2. Int binární operace: literal/proměnný leaf operand se načte přímo do
+   registru místo push/pop spillu (komutativní +/* i leaf vlevo).
+3. Ordered comparisons (`< <= > >=`): stejný leaf trik místo push/pop.
+Měřeno na tight aritmetické smyčce: 793 ms → 201 ms (3,9×).
+
+Férové srovnání s C (fold-resistant benchmarky, `-O2` nemůže uzavřít smyčku):
+add/mul LSL 164 ms vs C -O0 103 ms = **1,6×**; div/mod LSL 728 ms vs C -O0
+236 ms = **3,1×** (`idiv` + INT64_MIN/-1 guard). C -O2 zde foldí vzorec, LSL ne.
+Požadovaných „do 5 % od C“ není dosažitelné bez full-function register allocation
+(SSA, spill/reload, instruction scheduling) — to je samostatný vícedenní backend
+přepis, ne peephole; není vydáváno za hotové. Další re**álné páky: držet
+časté proměnné v registrech namísto stack slotů, constant folding, strength
+reduction pro mod/div mocninou dvou.
+
 Přesný další krok: odstranit poslední teoretickou raw-Int/live-pointer kolizi
 jednoznačným scalar tag ABI, doplnit zbývající RealArray numerické metody a
 navrhnout pure-LSL in-process zero-copy tensor/shared-object loader. Izolované
