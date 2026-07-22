@@ -440,17 +440,19 @@ Konstruktor už není omezen na pět user argumentů: prvních šest hodnot vče
 error propagation. Conformance ověřuje osm argumentů konstruktoru a sedm
 argumentů bound metody. Fixed point i suite procházejí.
 
-Tagged ABI fáze 1 má fixed point
-`4756d8caed3a8e5ee6ddb409ca9fc6b14c75bda68ca2fc52bf4e5d8e2b07170f`.
-Runtime má nový leaf heap type 9, `runtime_box_int`/`runtime_unbox_int` a interní
-intrinsics. Conformance explicitně boxuje 0, 1, -1, INT64_MIN a INT64_MAX,
-ověřuje tag 9, bitově přesný unbox, truth a přežití explicitního GC. Automatické
-boxování ABI hran zatím záměrně není zapnuté; tři stage, suite a config jsou
-zelené.
+Tagged ABI fáze 2 má fixed point
+`4af21a1d72cbe2d53338e7ba06bf41d82def309524f283fcab5b02a1eb910277`.
+Runtime má leaf heap type 9 a generic truth/equality/comparison/numeric operace,
+mixed Float promotion, print/render/JSON/conversions, sequence indexing, `chr`
+a `rang` přijímají raw i boxed Int. Conformance pokrývá edge values, GC,
+aritmetiku, Float mix, collections, RealArray, sum/min/max a JSON. Automatické
+boxování collection/Any hran zatím záměrně není zapnuté; tři stage, suite a
+config jsou zelené.
 
-Přesný další krok: tagged ABI fáze 2 — všechny generic operace musí přijmout raw
-i boxed Int, teprve poté zapnout boxování collections/Any hran. Následuje
-pure-LSL in-process zero-copy tensor/shared-object loader.
+Přesný další krok: tagged ABI fáze 3 — zapnout Int boxování v collections a
+Dictionary, sjednotit veřejnou type klasifikaci a teprve potom Any
+argument/return hranice. Následuje pure-LSL in-process zero-copy
+tensor/shared-object loader.
 
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,

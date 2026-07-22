@@ -266,7 +266,7 @@ end
 
 function __lsl_require_real(value):
     value_type = __lsl_type_code(value)
-    if value_type != 0 and value_type != 6:
+    if value_type != 0 and value_type != 6 and value_type != 9:
         Error(TypeError: "RealArray accepts only Int or Float values")
     end
     return value
@@ -368,6 +368,8 @@ function __lsl_float_any(value):
         return __lsl_parse_float(value)
     elif value_type == 0:
         return __lsl_float_from_int(value)
+    elif value_type == 9:
+        return __lsl_float_from_int(__lsl_unbox_int(value))
     end
     Error(TypeError: "Float expects Int, Float, or String")
 end
@@ -598,6 +600,8 @@ function __lsl_int_any(value):
     value_type = __lsl_type_code(value)
     if value_type == 0:
         return value
+    elif value_type == 9:
+        return __lsl_unbox_int(value)
     elif value_type == 1:
         return __lsl_parse_int(value)
     elif value_type == 6:
@@ -634,6 +638,9 @@ function __lsl_int_to_string(number):
 end
 
 function __lsl_require_rang_step(value):
+    if __lsl_type_code(value) == 9:
+        return __lsl_unbox_int(value)
+    end
     if __lsl_is_heap(value):
         Error(TypeError: "rang step must be an Int")
     end
@@ -647,6 +654,8 @@ function __lsl_render(value, quote):
     code = __lsl_type_code(value)
     if code == 0:
         return __lsl_int_to_string(value)
+    elif code == 9:
+        return __lsl_int_to_string(__lsl_unbox_int(value))
     elif code == 1:
         if quote:
             return "'" + value + "'"
@@ -737,21 +746,39 @@ function __lsl_fmod(a, b):
 end
 
 function __lsl_floordiv_dyn(a, b):
-    # Both operands are Any (only reachable from user Any // Any). If either is
-    # a boxed Float -> float floor division; else both are raw Ints, so use
-    # __lsl_raw_int (identity typed as Int) for a static Int//Int -- Int() would
-    # error on raw 0, whose type code reads as None.
-    if __lsl_is_heap(a) or __lsl_is_heap(b):
+    # Both operands are Any (only reachable from user Any // Any). Boxed Int
+    # remains on the exact signed Int path; boxed Float selects Float semantics.
+    a_type = __lsl_type_code(a)
+    b_type = __lsl_type_code(b)
+    if a_type == 6 or b_type == 6:
         return __lsl_ffloordiv(a, b)
     end
-    return __lsl_raw_int(a) // __lsl_raw_int(b)
+    left = __lsl_raw_int(a)
+    right = __lsl_raw_int(b)
+    if a_type == 9:
+        left = __lsl_unbox_int(a)
+    end
+    if b_type == 9:
+        right = __lsl_unbox_int(b)
+    end
+    return left // right
 end
 
 function __lsl_mod_dyn(a, b):
-    if __lsl_is_heap(a) or __lsl_is_heap(b):
+    a_type = __lsl_type_code(a)
+    b_type = __lsl_type_code(b)
+    if a_type == 6 or b_type == 6:
         return __lsl_fmod(a, b)
     end
-    return __lsl_raw_int(a) % __lsl_raw_int(b)
+    left = __lsl_raw_int(a)
+    right = __lsl_raw_int(b)
+    if a_type == 9:
+        left = __lsl_unbox_int(a)
+    end
+    if b_type == 9:
+        right = __lsl_unbox_int(b)
+    end
+    return left % right
 end
 
 function __lsl_slice3(target, start, has_start, stop, has_stop, step):

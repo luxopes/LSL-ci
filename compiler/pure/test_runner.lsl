@@ -219,6 +219,12 @@ if boxed_int_output != readfile("tests/boxed_int_infrastructure_conformance.out"
     Error(TestFailure: "boxed Int infrastructure conformance output differs")
 end
 
+call require_success(run(compiler, ["tests/boxed_int_operations_conformance.lsl", "/tmp/lsl-boxed-int-operations-test"]), "compile boxed Int operations conformance")
+boxed_int_operations_output = capture("/tmp/lsl-boxed-int-operations-test", [])
+if boxed_int_operations_output != readfile("tests/boxed_int_operations_conformance.out"):
+    Error(TestFailure: "boxed Int operations conformance output differs")
+end
+
 call require_success(run(compiler, ["tests/realarray_conformance.lsl", "/tmp/lsl-realarray-test"]), "compile RealArray conformance")
 realarray_output = capture("/tmp/lsl-realarray-test", [])
 if realarray_output != readfile("tests/realarray_conformance.out"):

@@ -664,19 +664,8 @@ function emit_float_expression(generator, syntax):
     call emit_expression(generator, syntax)
     value_type = infer_expression_type(syntax, generator["types"], generator["function_returns"])
     if value_type == "Any":
-        float_value_boxed = label_name(generator, "float_value_boxed")
-        float_value_ready = label_name(generator, "float_value_ready")
-        call assembler.emit(generator["builder"], x86_64.push(0))
         call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
-        call assembler.relative(generator["builder"], [232], "runtime_type_code")
-        call assembler.emit(generator["builder"], x86_64.cmp_reg_imm8(0, 6))
-        call assembler.emit(generator["builder"], x86_64.pop(7))
-        call assembler.relative(generator["builder"], [15, 132], float_value_boxed)
-        call assembler.relative(generator["builder"], [232], "runtime_float_from_int")
-        call assembler.relative(generator["builder"], [233], float_value_ready)
-        call assembler.label(generator["builder"], float_value_boxed)
-        call assembler.emit(generator["builder"], x86_64.move_reg_reg(0, 7))
-        call assembler.label(generator["builder"], float_value_ready)
+        call assembler.relative(generator["builder"], [232], "runtime_coerce_float")
     elif value_type != "Float":
         call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
         call assembler.relative(generator["builder"], [232], "runtime_float_from_int")
@@ -814,6 +803,10 @@ function emit_expression(generator, syntax):
         call emit_expression(generator, syntax["target"])
         call assembler.emit(output, x86_64.push(0))
         call emit_expression(generator, syntax["index"])
+        if target_type != "Dictionary" and infer_expression_type(syntax["index"], generator["types"], generator["function_returns"]) == "Any":
+            call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+            call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+        end
         call assembler.emit(output, x86_64.move_reg_reg(6, 0))
         call assembler.emit(output, x86_64.pop(7))
         if target_type == "Dictionary":
@@ -870,12 +863,16 @@ function emit_expression(generator, syntax):
         if expression_type == "Float":
             if operator == "**":
                 exponent_type = infer_expression_type(syntax["right"], generator["types"], generator["function_returns"])
-                if exponent_type != "Int":
+                if exponent_type != "Int" and exponent_type != "Any":
                     call unsupported(generator["path"], generator["lines"], syntax, "Float ** requires an Int exponent", "use an Int exponent such as x ** 3")
                 end
                 call emit_float_expression(generator, syntax["left"])
                 call assembler.emit(output, x86_64.push(0))
                 call emit_expression(generator, syntax["right"])
+                if exponent_type == "Any":
+                    call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                    call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+                end
                 call assembler.emit(output, x86_64.move_reg_reg(6, 0))
                 call assembler.emit(output, x86_64.pop(7))
                 call assembler.relative(output, [232], "runtime_float_power")
@@ -1304,6 +1301,10 @@ function emit_expression(generator, syntax):
                 return
             elif target["name"] == "chr":
                 call emit_expression(generator, syntax["arguments"][0])
+                if infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"]) == "Any":
+                    call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                    call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+                end
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 call assembler.relative(output, [232], "runtime_chr")
                 return
@@ -1316,6 +1317,10 @@ function emit_expression(generator, syntax):
                 argument_missing = label_name(generator, "argument_missing")
                 argument_done = label_name(generator, "argument_done")
                 call emit_expression(generator, syntax["arguments"][0])
+                if infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"]) == "Any":
+                    call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                    call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+                end
                 call assembler.emit(output, x86_64.move_reg_reg(6, 0))
                 call assembler.emit(output, x86_64.load_memory(1, 15, 0))
                 call assembler.emit(output, x86_64.cmp_reg_reg(6, 1))
@@ -1991,6 +1996,10 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 call emit_expression(generator, target["target"])
                 call assembler.emit(generator["builder"], x86_64.push(0))
                 call emit_expression(generator, target["index"])
+                if target_type != "Dictionary" and infer_expression_type(target["index"], generator["types"], generator["function_returns"]) == "Any":
+                    call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
+                    call assembler.relative(generator["builder"], [232], "runtime_unbox_dynamic_int")
+                end
                 call assembler.emit(generator["builder"], x86_64.push(0))
                 if statement["operator"] == "=":
                     call emit_expression(generator, statement["value"])
@@ -2179,8 +2188,16 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             stop_slot = generator["variables"][statement["iterator_name"]]
             step_slot = generator["variables"][statement["index_name"]]
             call emit_expression(generator, start_expression)
+            if infer_expression_type(start_expression, generator["types"], generator["function_returns"]) == "Any":
+                call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
+                call assembler.relative(generator["builder"], [232], "runtime_unbox_dynamic_int")
+            end
             call assembler.emit(generator["builder"], x86_64.store_stack(slot, 0))
             call emit_expression(generator, stop_expression)
+            if infer_expression_type(stop_expression, generator["types"], generator["function_returns"]) == "Any":
+                call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
+                call assembler.relative(generator["builder"], [232], "runtime_unbox_dynamic_int")
+            end
             call assembler.emit(generator["builder"], x86_64.store_stack(stop_slot, 0))
             if len(arguments) == 3:
                 step_syntax = arguments[2]

@@ -217,19 +217,27 @@ spekulativní API bez testovatelné specifikace.
 
 Začít **fází 1 tagged ABI** bez změny chování:
 
-Fáze 1 je hotová ve fixed pointu `4756d8ca…`: heap type 9,
-`runtime_box_int`/`runtime_unbox_int`, intrinsics, GC leaf chování a round-trip
-conformance pro `0`, `1`, `-1`, `INT64_MIN`, `INT64_MAX`.
+Fáze 1 je hotová: heap type 9, `runtime_box_int`/`runtime_unbox_int`,
+intrinsics, GC leaf chování a edge-value round trip.
 
-Následuje fáze 2 bez zapnutí automatického boxování:
+Fáze 2 je hotová ve fixed pointu
+`4af21a1d72cbe2d53338e7ba06bf41d82def309524f283fcab5b02a1eb910277`.
+Generic truth/equal/compare/add/sub/mul/div/mod/pow/abs/neg, mixed Float
+promotion, print/render/JSON/conversions, sequence indexing, `chr` a `rang`
+přijímají raw i boxed Int. Samostatný conformance pokrývá tyto operace včetně
+RealArray, sum/min/max a GC; typed raw Int fast path zůstává zachován.
 
-1. Naučit generic runtime classifier rozlišit type 9 od Float/String/collection.
-2. Upravit generic truth/equal/compare/add/sub/mul/div/mod/pow/abs/neg/print a
-   LSL render/JSON/conversion helpers, aby přijaly raw i boxed Int.
-3. Přidat explicitní boxed-Int test pro každou operaci a pro index value.
-4. Zachovat raw Int typed fast path compileru.
-5. Vytvořit 3 stage, celý suite/config a commit; až další commit smí zapnout
-   boxování v collections.
+Následuje fáze 3:
+
+1. Upravit `emit_collection_box` tak, aby Int ukládaný do collection/dictionary
+   slotu byl type 9; pozor na Bool/None pořadí a RealArray payload.
+2. Zkontrolovat všechny runtime append/set/return cesty, aby nedocházelo k
+   dvojímu boxování již boxed Int.
+3. Opravit `runtime_type_code`/`type()`/config schema tak, aby type 9 veřejně
+   znamenal `Int`, interní classifier jej ale stále rozlišil.
+4. Přegenerovat očekávané výstupy pouze tam, kde opravují dříve chybnou raw
+   0/1 dynamickou klasifikaci; přidat JSON/config/list testy pro 0 a 1.
+5. Teprve po zeleném fixed pointu řešit Any function argument/return ABI.
 
 ## Standardní ověřovací příkazy
 
