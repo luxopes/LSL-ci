@@ -25,7 +25,7 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktu�
 - [x] Odstranit omezení literal-only `rang` kroku; stop i step se vyhodnotí jednou.
 - [x] Dokončit Float round-trip/exponent formatting včetně subnormal, NaN a Infinity.
 - [x] Dokončit dokumentované collection metody a Dictionary konverzi.
-- [x] Odstranit pevný 4096B limit `input()` a číst přesně jeden řádek.
+- [x] Odstranit pevný 4096B limit vstupu, číst celý řádek a zachovat původní `input "prompt"` i call syntaxi.
 - [x] Odstranit pevný 1MiB limit `capture()` dynamicky rostoucím bufferem.
 - [x] Dokončit jednoznačný scalar tag ABI včetně metadata-tagged callback returns a raw-Int/live-pointer collision proof.
 - [x] Doplnit AI provider errors/retry/cancellation, lazy config/cycles/defaults/provenance, structured process status a pure-LSL zero-copy CPU Tensor.

@@ -45,12 +45,12 @@ Dictionary klíče mohou být immutable scalar hodnoty `String`, `Int`, `Bool`, 
 ## Výstup a vstup
 
 ```lsl
-name = input("Jméno: ")
+name = input "Jméno: "
 print "ahoj", name, "je ti", 1 + 10
 printl "ahoj {name}, je ti {1 + 10}"
 ```
 
-`print` odděluje hodnoty mezerou a přidá nový řádek. `printl` nejdřív vyhodnotí svůj argument jako řetězec a pak vyhodnotí výrazy v `{...}`. `input(prompt)` vypíše prompt bez newline, čte jeden celý stdin řádek do dynamicky rostoucího bufferu, odstraní koncové LF/CRLF a vrátí UTF-8 `String`.
+`print` odděluje hodnoty mezerou a přidá nový řádek. `printl` nejdřív vyhodnotí svůj argument jako řetězec a pak vyhodnotí výrazy v `{...}`. Původní zkrácená syntaxe `input "prompt"` i obecná call syntaxe `input("prompt")` vypíšou prompt bez newline, přečtou jeden celý stdin řádek do dynamicky rostoucího bufferu, odstraní koncové LF/CRLF a vrátí UTF-8 `String`.
 
 ## Podmínky
 

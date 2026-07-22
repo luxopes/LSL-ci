@@ -544,6 +544,12 @@ zachytává také neomezené stderr přes anonymous memfd (bez pipe deadlocku) a
 vrací `{stdout,stderr,status,ok}`. Conformance ověřuje stdout, uncaught stderr a
 exit 1.
 
+Input-syntax compatibility fixed point
+`d3657e13366ccdad3e601a11da4614b35b405b9c29400ef0427eecf4931f32e0`
+obnovuje původní výrazovou syntaxi `input "prompt"` jejím snížením na stejný
+call AST jako `input("prompt")`. `hello.lsl`, stdin-fed process conformance,
+full suite, config a installed fixed point prošly.
+
 Fault-injection/fuzz fixed point
 `e3bb05e634d2ffbd2e4d7efff2ce71236b59191868fd47f1e4582572ceedf5e3`
 přidává test-only RLIMIT_NOFILE/memfd fault helper. Full runner skutečnými kernel

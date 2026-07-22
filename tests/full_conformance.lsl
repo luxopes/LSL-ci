@@ -46,5 +46,6 @@ load ai_conformance
 load capture_stream_conformance
 load capture_result_conformance
 load capture_input_conformance
+load input_bare_conformance
 load process_status_conformance
 load plugin_process_conformance

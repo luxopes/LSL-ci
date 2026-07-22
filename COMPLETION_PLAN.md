@@ -12,7 +12,7 @@ N+1 bit po bitu.
 - Aktuální implementační milníky jsou v `git log`; handoff záměrně neukládá
   self-referenční hash vlastního dokumentačního commitu.
 - Aktuální fixed-point SHA-256:
-  `e3bb05e634d2ffbd2e4d7efff2ce71236b59191868fd47f1e4582572ceedf5e3`
+  `d3657e13366ccdad3e601a11da4614b35b405b9c29400ef0427eecf4931f32e0`
 - `compiler/pure/lslc-direct == compiler/lslc`
 - `compiler/pure/lsl-cli == lsl`
 - ELF: jediný RX `PT_LOAD`, bez `INTERP` a RWX
@@ -31,7 +31,7 @@ je v `TODO.md`.
   raw-Int/live-pointer collision proof;
 - functions, recursion, classes, široké register/stack ABI a exceptions;
 - conservative cycle GC, free-list reuse, dynamický růst registry/intern cache;
-- filesystem, argv/env/input, partial I/O, process/capture/status/stderr;
+- filesystem, argv/env, původní `input "prompt"` i `input("prompt")`, partial I/O a process/capture/status/stderr;
 - deadlock-free memfd `capture_input` a live `capture_stream` callbacky;
 - strict JSON parser (Float/exponenty, bounds, escapes/surrogates, trailing data);
 - config defaults/types/provenance/lazy/cycles, AI retry/cancel/SSE streaming;
