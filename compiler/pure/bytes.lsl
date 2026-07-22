@@ -13,8 +13,7 @@ function extend(buffer, values):
     end
 end
 
-function little(value, width):
-    result = []
+function append_little(buffer, value, width):
     # Compiler-internal direct calls carry scalar arguments as boxed Ints.
     # Normalize once into typed raw locals; keeping `remaining` as Any made the
     # byte encoder depend on generic heap classification under peak self-host
@@ -29,9 +28,14 @@ function little(value, width):
         remaining += limit
     end
     for index in rang(byte_width):
-        result.append(remaining % 256)
+        buffer.append(remaining % 256)
         remaining = remaining // 256
     end
+end
+
+function little(value, width):
+    result = []
+    call append_little(result, value, width)
     return result
 end
 

@@ -9,7 +9,7 @@ function compile_file(source_path, output_path):
     stdlib_path = resource_path("compiler/pure/dynamic_stdlib.lsl")
     stdlib_source = readfile(stdlib_path)
     program = parser.parse(stdlib_path, stdlib_source)
-    call linker.annotate_statements(program, stdlib_path, stdlib_source.split(chr(10)))
+    call linker.annotate_statements(program, stdlib_path)
     program.extend(linker.link(source_path, source))
     call writebytes(output_path, codegen.generate(source_path, source, program))
 end

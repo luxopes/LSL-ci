@@ -11,8 +11,8 @@ constraint.
 
 - Fixed compiler SHA-256 before this task:
   `e3bb05e634d2ffbd2e4d7efff2ce71236b59191868fd47f1e4582572ceedf5e3`
-- Self-host compile: approximately 3.6–3.7 s.
-- Self-host peak RSS: approximately 764 MiB.
+- Self-host compile (3-run baseline): 3.749 / 3.745 / 3.713 s.
+- Self-host peak RSS: 782100 KiB (approximately 764 MiB).
 - Fast suite: approximately 4.2 s; expanded full suite: approximately 15.0 s.
 - Full maintained LSL/compiler/stdlib/test sources: 13207 lines (`wc -l`).
 
@@ -20,10 +20,10 @@ constraint.
 
 - [x] Restore bare `input "prompt"` parsing and add stdin-fed conformance.
 - [x] Reach a new multi-stage fixed point and run full/config/install audits.
-- [ ] Profile compiler phases, allocation growth, and generated-byte pipeline.
-- [ ] Remove the largest avoidable allocation source without foreign tooling.
-- [ ] Re-measure time/RSS and iterate on the next measured hotspot.
-- [ ] Regenerate deterministic tools and run final full/fixed-point/ELF audit.
+- [x] Profile compiler phases, allocation growth, and generated-byte pipeline.
+- [x] Remove the largest avoidable allocation source without foreign tooling.
+- [x] Re-measure time/RSS and iterate on the next measured hotspot.
+- [x] Regenerate deterministic tools and run final full/fixed-point/ELF audit.
 
 ## Decisions
 
@@ -35,7 +35,27 @@ constraint.
 
 ## State
 
-Bare input lowers to the normal call AST. Fixed compiler
-`d3657e13366ccdad3e601a11da4614b35b405b9c29400ef0427eecf4931f32e0`, full,
-config, installed fixed point, hello, and stdin-fed conformance pass. Next:
-commit this compatibility milestone, then profile compiler phases and memory.
+Bare input compatibility is committed. Initial phase profile for self-host
+(microseconds): read 60, dynamic stdlib parse 102326, recursive link/parse
+1716410, codegen 1826283, write 24890.
+
+The current fixed-point candidate keeps compiler-internal typed Int/Bool/None and
+selected Any boundaries raw, materializes diagnostic lines only on failure,
+appends little-endian instruction bytes without an intermediate List, and starts
+the growable object registry at 4M rather than 16M slots. Five self-host runs are
+1.814–1.850 s; sampled peak RSS is 339840 KiB. Against the 3.713–3.749 s /
+782100 KiB baseline this is about 51% less wall time and 56.5% less peak RSS.
+Latest phase profile (microseconds, before the small byte append/table changes):
+read 49, stdlib parse 49038, recursive link/parse 883695, codegen 873937, write
+6219.
+
+Rejected experiments: direct-fill List literals enlarged the compiler without a
+measured win; explicit `gc()` between phases was pathologically slow; recycling
+assembler instruction Lists through the general free list or a one-entry cache
+was unsafe/pathological; a 2M registry table reached pathological probe density
+(about 693 s), while 4M is stable and did not grow during self-host.
+
+Final fixed point: `cf0758cc570194bece4fb86931f1b9adea01bde27e3197aee3cfae473998460b`.
+Regenerated full suite passed in 8.659 s, fixed-point mode in 2.096 s, config
+output is bit-identical, the installed compiler reproduces the same fixed point,
+and every maintained ELF has one RX `PT_LOAD` with no `INTERP`/`DYNAMIC`/RWX.

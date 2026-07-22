@@ -4,7 +4,9 @@ load diagnostics
 load lexer
 
 function state(path, source):
-    return [lexer.tokenize(path, source), 0, path, source.split(chr(10))]
+    # Keep the source compact on successful parses; line materialization is only
+    # needed when producing a parser diagnostic.
+    return [lexer.tokenize(path, source), 0, path, source]
 end
 
 function current(parser):
@@ -47,10 +49,11 @@ function match(parser, value):
 end
 
 function line_source(parser, line):
-    if line < 1 or line > len(parser[3]):
+    lines = parser[3].split(chr(10))
+    if line < 1 or line > len(lines):
         return ""
     end
-    return parser[3][line - 1]
+    return lines[line - 1]
 end
 
 function fail_at(parser, token, code, message, help_text):

@@ -628,6 +628,18 @@ dynamický růst tabulek, úplné syscall failure paths, odstranit raw fallback 
 dokázat nemožnost live-pointer kolize; potom full suite/audit a zrychlení. Následuje pure-LSL in-process
 zero-copy tensor/shared-object loader.
 
+Výkonnostní fixed point
+`cf0758cc570194bece4fb86931f1b9adea01bde27e3197aee3cfae473998460b`
+redukuje self-host z 3,713–3,749 s / 782100 KiB na 1,814–1,850 s / 339840
+KiB (přibližně −51 % času a −56,5 % peak RSS). Compiler-internal ABI drží
+typované Int/Bool/None a vybrané Any hranice raw; lexer/parser/linker/codegen
+materializují source lines pouze při diagnostické chybě; x86 encoder zapisuje
+little-endian immediate přímo do cílového Listu a počáteční dynamicky rostoucí
+object registry má 4M místo 16M slots. Tři self-host stages jsou bitově shodné,
+regenerovaný full suite prošel za 8,659 s, fixed-point režim za 2,096 s, config
+je bitově shodný a nainstalovaný compiler reprodukuje tentýž hash. Všechny
+udržované ELF mají jediný RX `PT_LOAD` bez `INTERP`, `DYNAMIC` a RWX.
+
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,
 collections, GC robustnost, syscall I/O, native/tensor ABI, AI vrstva,

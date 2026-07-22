@@ -16,7 +16,8 @@ function is_alpha(character):
     return (code >= 97 and code <= 122) or (code >= 65 and code <= 90) or code == 95
 end
 
-function source_line(lines, line_number):
+function source_line(source, line_number):
+    lines = source.split(chr(10))
     if line_number < 1 or line_number > len(lines):
         return ""
     end
@@ -57,30 +58,12 @@ function join_chars(chars, start, stop):
     return result
 end
 
-function build_lines(chars, count):
-    newline = chr(10)
-    lines = []
-    current = ""
-    index = 0
-    while index < count:
-        character = chars[index]
-        if character == newline:
-            lines.append(current)
-            current = ""
-        else:
-            current += character
-        end
-        index += 1
-    end
-    lines.append(current)
-    return lines
-end
-
 function tokenize(path, source):
     result = []
     chars = __lsl_string_chars(source)
     count = len(chars)
-    lines = build_lines(chars, count)
+    # Diagnostics materialize lines only on failure.
+    lines = source
     newline = chr(10)
     index = 0
     line = 1
@@ -208,7 +191,7 @@ function tokenize(path, source):
         end
     end
     if depth != 0:
-        last_line = len(lines)
+        last_line = line
         call diagnostics.fail(path, last_line, max(1, len(source_line(lines, last_line))), 1, source_line(lines, last_line), "E0007", "unclosed delimiter", "add the matching closing delimiter")
     end
     result.append(token("eof", "", line, column, column))

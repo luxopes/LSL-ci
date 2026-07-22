@@ -8,17 +8,23 @@ load native_runtime
 load parser
 load x86_64
 
-function context(path, lines, syntax):
+function context(path, source_text, syntax):
     line = syntax["line"]
     source = ""
     actual_path = path
     if "path" in syntax:
         actual_path = syntax["path"]
     end
-    if "source" in syntax:
-        source = syntax["source"]
-    elif line >= 1 and line <= len(lines):
-        source = lines[line - 1]
+    actual_source = source_text
+    if actual_path != path and exists(actual_path):
+        # Linked-node source text is loaded only on a failing diagnostic path;
+        # successful builds keep source text compact instead of materializing
+        # line Lists or duplicating a `source` field into every AST Dictionary.
+        actual_source = readfile(actual_path)
+    end
+    actual_lines = actual_source.split(chr(10))
+    if line >= 1 and line <= len(actual_lines):
+        source = actual_lines[line - 1]
     end
     return {"path": actual_path, "line": line, "column": syntax["column"], "source": source}
 end
@@ -440,7 +446,7 @@ function emit_condition(generator, syntax):
 end
 
 function integer_literal(syntax):
-    stored = __lsl_unbox_int(syntax["integer_value"])
+    stored = __lsl_typed_int(syntax["integer_value"])
     parsed = __lsl_parse_literal_int(syntax["value"])
     if stored != parsed:
         Error(CompilerInvariantError: "integer literal AST changed before emission")
@@ -630,15 +636,24 @@ end
 function emit_collection_box(generator, syntax):
     value_type = infer_expression_type(syntax, generator["types"], generator["function_returns"])
     if value_type == "Bool":
+        if generator["internal_abi"]:
+            return
+        end
         call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
         call assembler.relative(generator["builder"], [232], "runtime_box_bool")
     elif value_type == "Int":
+        # The self-host compiler is a typed trust core: its byte, token, index,
+        # register and offset Lists keep Ints raw. Public programs still use the
+        # unambiguous boxed dynamic ABI at call/collection boundaries.
+        if generator["internal_abi"]:
+            return
+        end
         call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
         call assembler.relative(generator["builder"], [232], "runtime_box_typed_int")
     elif value_type == "Function":
         # Function boxes carry the statically known return scalar tag so an
         # indirect call can re-establish the tagged Any result ABI.
-        if generator["path"].find("compiler/pure/") < 0:
+        if not generator["internal_abi"]:
             return_type = "Any"
             if syntax["kind"] == "name" and syntax["name"] in generator["function_returns"]:
                 return_type = generator["function_returns"][syntax["name"]]
@@ -648,15 +663,21 @@ function emit_collection_box(generator, syntax):
             call assembler.relative(generator["builder"], [232], "runtime_box_dynamic_function")
         end
     elif value_type == "Any" and syntax["kind"] == "binary" and syntax["operator"] != "and" and syntax["operator"] != "or":
+        if generator["internal_abi"]:
+            return
+        end
         call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
         call assembler.relative(generator["builder"], [232], "runtime_box_dynamic_int")
     elif value_type == "None":
+        if generator["internal_abi"]:
+            return
+        end
         call assembler.relative(generator["builder"], [232], "runtime_box_none")
     end
 end
 
 function emit_dynamic_boundary_box(generator, syntax):
-    if generator["path"].find("compiler/pure/") < 0:
+    if not generator["internal_abi"]:
         call emit_collection_box(generator, syntax)
     end
 end
@@ -670,7 +691,7 @@ function emit_dictionary_key_box(generator, syntax):
 end
 
 function dynamic_numeric_runtime(generator, name):
-    if generator["path"].find("compiler/pure/") >= 0:
+    if generator["internal_abi"]:
         return name + "_raw"
     end
     return name
@@ -1859,7 +1880,7 @@ function emit_expression(generator, syntax):
                     method_registers = [7, 6, 2, 1, 8, 9]
                     method_index = len(combined_arguments) - 1
                     while method_index >= 0:
-                        call assembler.emit(output, x86_64.pop(Int(method_registers[method_index])))
+                        call assembler.emit(output, x86_64.pop(__lsl_typed_int(method_registers[method_index])))
                         method_index -= 1
                     end
                     call assembler.relative(output, [232], "function_" + method_target)
@@ -1903,7 +1924,7 @@ function emit_expression(generator, syntax):
                 register_count = min(total_arguments, len(argument_registers))
                 index = 0
                 while index < register_count:
-                    call assembler.emit(output, x86_64.pop(Int(argument_registers[index])))
+                    call assembler.emit(output, x86_64.pop(__lsl_typed_int(argument_registers[index])))
                     index += 1
                 end
                 call assembler.relative(output, [232], "function_" + initializer_name)
@@ -1950,7 +1971,7 @@ function emit_expression(generator, syntax):
         register_count = min(len(arguments), len(argument_registers))
         index = 0
         while index < register_count:
-            call assembler.emit(output, x86_64.pop(Int(argument_registers[index])))
+            call assembler.emit(output, x86_64.pop(__lsl_typed_int(argument_registers[index])))
             index += 1
         end
         if indirect_call:
@@ -1963,7 +1984,7 @@ function emit_expression(generator, syntax):
             # registers, so preserve the already loaded user arguments.
             index = 0
             while index < register_count:
-                call assembler.emit(output, x86_64.push(Int(argument_registers[index])))
+                call assembler.emit(output, x86_64.push(__lsl_typed_int(argument_registers[index])))
                 index += 1
             end
             call assembler.emit(output, x86_64.move_reg_reg(7, 0))
@@ -1971,7 +1992,7 @@ function emit_expression(generator, syntax):
             call assembler.emit(output, x86_64.move_reg_reg(11, 0))
             index = register_count - 1
             while index >= 0:
-                call assembler.emit(output, x86_64.pop(Int(argument_registers[index])))
+                call assembler.emit(output, x86_64.pop(__lsl_typed_int(argument_registers[index])))
                 index -= 1
             end
             call assembler.emit(output, x86_64.call_reg(11))
@@ -2873,7 +2894,7 @@ function emit_function(generator, declaration):
     while index < len(declaration["parameters"]):
         parameter = declaration["parameters"][index]
         if index < len(argument_registers):
-            call assembler.emit(generator["builder"], x86_64.store_stack(variables[parameter], Int(argument_registers[index])))
+            call assembler.emit(generator["builder"], x86_64.store_stack(__lsl_typed_int(variables[parameter]), __lsl_typed_int(argument_registers[index])))
         else:
             call assembler.emit(generator["builder"], x86_64.load_stack(0, 16 + (index - len(argument_registers)) * 8))
             call assembler.emit(generator["builder"], x86_64.store_stack(variables[parameter], 0))
@@ -2894,7 +2915,7 @@ function emit_function(generator, declaration):
 end
 
 function generate(path, source, program):
-    lines = source.split(chr(10))
+    lines = source
     classes = class_table(program)
     functions = function_table(path, lines, program)
     function_returns = infer_function_returns(functions)
@@ -2906,7 +2927,7 @@ function generate(path, source, program):
     main_types = {}
     call collect_types(program, main_types, function_returns)
     output = assembler.builder()
-    generator = {"path": path, "lines": lines, "variables": {}, "types": {}, "global_variables": main_variables, "global_types": main_types, "functions": functions, "classes": classes, "function_returns": function_returns, "builder": output, "data": [], "relocations": [], "counter": 0, "error_label": ""}
+    generator = {"path": path, "internal_abi": path.find("compiler/pure/") >= 0, "lines": lines, "variables": {}, "types": {}, "global_variables": main_variables, "global_types": main_types, "functions": functions, "classes": classes, "function_returns": function_returns, "builder": output, "data": [], "relocations": [], "counter": 0, "error_label": ""}
     call native_runtime.emit_all(output)
 
     for statement in program:
@@ -2935,7 +2956,9 @@ function generate(path, source, program):
     call assembler.emit(output, x86_64.move_reg_reg(3, 0))
     call assembler.emit(output, x86_64.lea_base(8, 3, 80))
     call assembler.emit(output, x86_64.move_reg_reg(9, 8))
-    call assembler.emit(output, x86_64.add_reg_imm32(9, 134217728))
+    # Four million initial registry slots keep compiler lookup load low while
+    # avoiding the former 128 MiB table; runtime growth remains available.
+    call assembler.emit(output, x86_64.add_reg_imm32(9, 33554432))
     call assembler.emit(output, x86_64.move_reg_reg(7, 9))
     call assembler.emit(output, x86_64.add_reg_imm32(7, 1048576))
     call assembler.emit(output, x86_64.mov_imm64(0, 12))
@@ -2943,7 +2966,7 @@ function generate(path, source, program):
     call assembler.emit(output, x86_64.cmp_reg_reg(0, 7))
     call assembler.relative(output, [15, 133], "runtime_fatal_allocation")
     call assembler.emit(output, x86_64.store_memory(3, 32, 8))
-    call assembler.emit(output, x86_64.mov_imm64(10, 16777215))
+    call assembler.emit(output, x86_64.mov_imm64(10, 4194303))
     call assembler.emit(output, x86_64.store_memory(3, 40, 10))
     call assembler.emit(output, x86_64.store_memory(3, 48, 9))
     call assembler.emit(output, x86_64.mov_imm64(10, 65535))

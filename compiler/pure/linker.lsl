@@ -114,98 +114,86 @@ function scoped_names(names, parameters, body):
     return result
 end
 
-function annotate_expression(expression, path, lines):
+function annotate_expression(expression, path):
     if expression == None:
         return
     end
     expression["path"] = path
-    line = expression["line"]
-    if line >= 1 and line <= len(lines):
-        expression["source"] = lines[line - 1]
-    else:
-        expression["source"] = ""
-    end
     kind = expression["kind"]
     if kind == "member":
-        call annotate_expression(expression["target"], path, lines)
+        call annotate_expression(expression["target"], path)
     elif kind == "call":
-        call annotate_expression(expression["target"], path, lines)
+        call annotate_expression(expression["target"], path)
         for argument in expression["arguments"]:
-            call annotate_expression(argument, path, lines)
+            call annotate_expression(argument, path)
         end
     elif kind == "binary":
-        call annotate_expression(expression["left"], path, lines)
-        call annotate_expression(expression["right"], path, lines)
+        call annotate_expression(expression["left"], path)
+        call annotate_expression(expression["right"], path)
     elif kind == "unary":
-        call annotate_expression(expression["operand"], path, lines)
+        call annotate_expression(expression["operand"], path)
     elif kind == "compare":
         for operand in expression["operands"]:
-            call annotate_expression(operand, path, lines)
+            call annotate_expression(operand, path)
         end
     elif kind == "index":
-        call annotate_expression(expression["target"], path, lines)
-        call annotate_expression(expression["index"], path, lines)
+        call annotate_expression(expression["target"], path)
+        call annotate_expression(expression["index"], path)
     elif kind == "slice":
-        call annotate_expression(expression["target"], path, lines)
-        call annotate_expression(expression["start"], path, lines)
-        call annotate_expression(expression["stop"], path, lines)
+        call annotate_expression(expression["target"], path)
+        call annotate_expression(expression["start"], path)
+        call annotate_expression(expression["stop"], path)
     elif kind == "list" or kind == "tuple" or kind == "real_array":
         for item in expression["items"]:
-            call annotate_expression(item, path, lines)
+            call annotate_expression(item, path)
         end
     elif kind == "dictionary":
         for entry in expression["entries"]:
-            call annotate_expression(entry[0], path, lines)
-            call annotate_expression(entry[1], path, lines)
+            call annotate_expression(entry[0], path)
+            call annotate_expression(entry[1], path)
         end
     end
 end
 
-function annotate_statements(statements, path, lines):
+function annotate_statements(statements, path):
     for statement in statements:
         statement["path"] = path
-        line = statement["line"]
-        if line >= 1 and line <= len(lines):
-            statement["source"] = lines[line - 1]
-        else:
-            statement["source"] = ""
-        end
         kind = statement["kind"]
         if kind == "function" or kind == "loop" or kind == "safe":
-            call annotate_statements(statement["body"], path, lines)
+            call annotate_statements(statement["body"], path)
         elif kind == "while":
-            call annotate_expression(statement["condition"], path, lines)
-            call annotate_statements(statement["body"], path, lines)
+            call annotate_expression(statement["condition"], path)
+            call annotate_statements(statement["body"], path)
         elif kind == "for":
-            call annotate_expression(statement["iterable"], path, lines)
-            call annotate_statements(statement["body"], path, lines)
+            call annotate_expression(statement["iterable"], path)
+            call annotate_statements(statement["body"], path)
         elif kind == "try":
-            call annotate_statements(statement["body"], path, lines)
-            call annotate_statements(statement["otherwise"], path, lines)
+            call annotate_statements(statement["body"], path)
+            call annotate_statements(statement["otherwise"], path)
         elif kind == "class":
-            call annotate_expression(statement["condition"], path, lines)
-            call annotate_statements(statement["body"], path, lines)
+            call annotate_expression(statement["condition"], path)
+            call annotate_statements(statement["body"], path)
         elif kind == "assign":
-            call annotate_expression(statement["target"], path, lines)
-            call annotate_expression(statement["value"], path, lines)
+            call annotate_expression(statement["target"], path)
+            call annotate_expression(statement["value"], path)
         elif kind == "print":
             for expression in statement["expressions"]:
-                call annotate_expression(expression, path, lines)
+                call annotate_expression(expression, path)
             end
         elif kind == "expression":
-            call annotate_expression(statement["expression"], path, lines)
+            call annotate_expression(statement["expression"], path)
         elif kind == "return":
-            call annotate_expression(statement["expression"], path, lines)
+            call annotate_expression(statement["expression"], path)
         elif kind == "if":
             for branch in statement["branches"]:
-                call annotate_expression(branch[0], path, lines)
-                call annotate_statements(branch[1], path, lines)
+                call annotate_expression(branch[0], path)
+                call annotate_statements(branch[1], path)
             end
-            call annotate_statements(statement["otherwise"], path, lines)
+            call annotate_statements(statement["otherwise"], path)
         elif kind == "error":
-            call annotate_expression(statement["message"], path, lines)
+            call annotate_expression(statement["message"], path)
         elif kind == "delete":
-            call annotate_expression(statement["target"], path, lines)
+            call annotate_expression(statement["target"], path)
         end
     end
 end
@@ -333,7 +321,7 @@ function collect_module(name, owner_path, cache, output):
     path = module_path(name, owner_path)
     source = readfile(path)
     program = parser.parse(path, source)
-    call annotate_statements(program, path, source.split(chr(10)))
+    call annotate_statements(program, path)
     prefix = module_prefix(name)
     cache[name] = prefix
     namespaces = {}
@@ -374,7 +362,7 @@ end
 
 function link(path, source):
     program = parser.parse(path, source)
-    call annotate_statements(program, path, source.split(chr(10)))
+    call annotate_statements(program, path)
     cache = {}
     linked = []
     namespaces = {}

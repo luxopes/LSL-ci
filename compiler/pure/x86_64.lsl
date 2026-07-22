@@ -13,7 +13,7 @@ end
 
 function mov_imm64(register, value):
     result = [rex(True, False, False, register >= 8), 184 + register % 8]
-    result.extend(bytes.little(value, 8))
+    call bytes.append_little(result, value, 8)
     return result
 end
 
@@ -23,7 +23,7 @@ function mov_imm32(register, value):
         result.append(rex(False, False, False, True))
     end
     result.append(184 + register % 8)
-    result.extend(bytes.little(value, 4))
+    call bytes.append_little(result, value, 4)
     return result
 end
 
@@ -33,7 +33,7 @@ end
 
 function lea_rip(register, displacement):
     result = lea_rip_prefix(register)
-    result.extend(bytes.little(displacement, 4))
+    call bytes.append_little(result, displacement, 4)
     return result
 end
 
@@ -97,7 +97,7 @@ end
 
 function call_relative(displacement):
     result = [232]
-    result.extend(bytes.little(displacement, 4))
+    call bytes.append_little(result, displacement, 4)
     return result
 end
 
@@ -147,13 +147,13 @@ end
 
 function jump_relative(displacement):
     result = [233]
-    result.extend(bytes.little(displacement, 4))
+    call bytes.append_little(result, displacement, 4)
     return result
 end
 
 function jump_condition(condition_opcode, displacement):
     result = [15, condition_opcode]
-    result.extend(bytes.little(displacement, 4))
+    call bytes.append_little(result, displacement, 4)
     return result
 end
 
@@ -164,14 +164,14 @@ end
 function load_stack(register, displacement):
     # mov register, [rbp + disp32]
     result = [rex(True, register >= 8, False, False), 139, modrm(2, register, 5)]
-    result.extend(bytes.little(displacement, 4))
+    call bytes.append_little(result, displacement, 4)
     return result
 end
 
 function store_stack(displacement, register):
     # mov [rbp + disp32], register
     result = [rex(True, register >= 8, False, False), 137, modrm(2, register, 5)]
-    result.extend(bytes.little(displacement, 4))
+    call bytes.append_little(result, displacement, 4)
     return result
 end
 
@@ -179,7 +179,7 @@ function function_prologue(frame_size):
     result = [85, 72, 137, 229]
     if frame_size > 0:
         result.extend([72, 129, 236])
-        result.extend(bytes.little(frame_size, 4))
+        call bytes.append_little(result, frame_size, 4)
     end
     return result
 end
@@ -194,7 +194,7 @@ end
 
 function add_reg_imm32(register, value):
     result = [rex(True, False, False, register >= 8), 129, modrm(3, 0, register)]
-    result.extend(bytes.little(value, 4))
+    call bytes.append_little(result, value, 4)
     return result
 end
 
@@ -204,7 +204,7 @@ end
 
 function cmp_reg_imm32(register, value):
     result = [rex(True, False, False, register >= 8), 129, modrm(3, 7, register)]
-    result.extend(bytes.little(value, 4))
+    call bytes.append_little(result, value, 4)
     return result
 end
 
@@ -283,43 +283,43 @@ end
 function load_memory(destination, base_register, displacement):
     result = [rex(True, destination >= 8, False, base_register >= 8), 139]
     result.extend(memory_tail(base_register, 2, destination))
-    result.extend(bytes.little(displacement, 4))
+    call bytes.append_little(result, displacement, 4)
     return result
 end
 
 function store_memory(base_register, displacement, source_register):
     result = [rex(True, source_register >= 8, False, base_register >= 8), 137]
     result.extend(memory_tail(base_register, 2, source_register))
-    result.extend(bytes.little(displacement, 4))
+    call bytes.append_little(result, displacement, 4)
     return result
 end
 
 function store_memory_imm32(base_register, displacement, value):
     result = [rex(True, False, False, base_register >= 8), 199]
     result.extend(memory_tail(base_register, 2, 0))
-    result.extend(bytes.little(displacement, 4))
-    result.extend(bytes.little(value, 4))
+    call bytes.append_little(result, displacement, 4)
+    call bytes.append_little(result, value, 4)
     return result
 end
 
 function lea_base(destination, base_register, displacement):
     result = [rex(True, destination >= 8, False, base_register >= 8), 141]
     result.extend(memory_tail(base_register, 2, destination))
-    result.extend(bytes.little(displacement, 4))
+    call bytes.append_little(result, displacement, 4)
     return result
 end
 
 function load_byte_zero_extend(destination, base_register, displacement):
     result = [rex(True, destination >= 8, False, base_register >= 8), 15, 182]
     result.extend(memory_tail(base_register, 2, destination))
-    result.extend(bytes.little(displacement, 4))
+    call bytes.append_little(result, displacement, 4)
     return result
 end
 
 function store_byte_reg_disp(base_register, displacement, source_register):
     result = [rex(False, source_register >= 8, False, base_register >= 8), 136]
     result.extend(memory_tail(base_register, 2, source_register))
-    result.extend(bytes.little(displacement, 4))
+    call bytes.append_little(result, displacement, 4)
     return result
 end
 
