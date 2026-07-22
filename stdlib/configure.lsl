@@ -74,11 +74,20 @@ function validate_pure(source, path):
     end
 end
 
-function collect(path, seen, order):
-    if path in seen:
+function collect(path, seen, active, order):
+    if path in active:
+        start = 0
+        while start < len(active) and active[start] != path:
+            start += 1
+        end
+        cycle = active[start:len(active)]
+        cycle.append(path)
+        print "Configuration import cycle:", " -> ".join(cycle)
+        exit(1)
+    elif path in seen:
         return
     end
-    seen.append(path)
+    active.append(path)
     source = readfile(path)
     call validate_pure(source, path)
     imports = extract_imports(source)
@@ -88,9 +97,11 @@ function collect(path, seen, order):
         if not child.endswith(".lsl"):
             child += ".lsl"
         end
-        call collect(dirname(path) + "/" + child, seen, order)
+        call collect(dirname(path) + "/" + child, seen, active, order)
         index += 1
     end
+    call __lsl_pop(active)
+    seen.append(path)
     order.append(path)
 end
 
@@ -119,7 +130,7 @@ if entry == None or output_path == None:
 end
 root = dirname(entry)
 order = []
-call collect(entry, [], order)
+call collect(entry, [], [], order)
 wrapper = "load json\n"
 index = 0
 while index < len(order):
@@ -145,6 +156,8 @@ wrapper += "    if __lsl_type_code(value) == 3:\n        dictionary_result = {}\
 wrapper += "    if __lsl_type_code(value) == 2:\n        list_result = []\n        for item in value:\n            materialized = materialize(item)\n            list_result.append(materialized)\n        end\n        return list_result\n    end\n    return value\nend\n"
 wrapper += "\nfunction get_path(root, path, missing):\n"
 wrapper += "    parts = path.split(\".\")\n    value = root\n    for part in parts:\n        if __lsl_type_code(value) != 3 or part not in value:\n            return missing\n        end\n        value = value[part]\n    end\n    return value\nend\n"
+wrapper += "\nfunction set_path(root, path, value):\n"
+wrapper += "    parts = path.split(\".\")\n    target = root\n    index = 0\n    while index < len(parts) - 1:\n        part = parts[index]\n        if part not in target or __lsl_type_code(target[part]) != 3:\n            target[part] = {}\n        end\n        target = target[part]\n        index += 1\n    end\n    target[parts[len(parts) - 1]] = value\nend\n"
 wrapper += "\nfunction dynamic_type(value):\n    code = __lsl_type_code(value)\n    if code == 0 or code == 9:\n        return \"Int\"\n    elif code == 1:\n        return \"String\"\n    elif code == 2:\n        return \"List\"\n    elif code == 3:\n        return \"Dictionary\"\n    elif code == 4:\n        return \"Bool\"\n    elif code == 5:\n        return \"None\"\n    end\n    return \"Any\"\nend\n"
 wrapper += "\nfunction type_matches(value, expected):\n"
 wrapper += "    variants = expected.split(\"|\")\n    for variant in variants:\n        if variant.strip() == \"Any\" or variant.strip() == dynamic_type(value):\n            return True\n        end\n    end\n    return False\nend\n"
@@ -162,7 +175,7 @@ while index < len(order):
     index += 1
 end
 wrapper += "clean = materialize(merged)\nmissing = {\"__missing\": True}\n"
-wrapper += "for option_name in all_options:\n    descriptor = all_options[option_name]\n    option_value = get_path(clean, option_name, missing)\n    if option_value == missing:\n        if descriptor[\"required\"]:\n            print \"Missing required option\", option_name\n            exit(1)\n        end\n    elif not type_matches(option_value, descriptor[\"type\"]):\n        print \"Invalid option type\", option_name, descriptor[\"type\"], dynamic_type(option_value)\n        exit(1)\n    end\nend\n"
+wrapper += "for option_name in all_options:\n    descriptor = all_options[option_name]\n    option_value = get_path(clean, option_name, missing)\n    if option_value == missing:\n        if descriptor[\"required\"]:\n            print \"Missing required option\", option_name\n            exit(1)\n        end\n        option_value = materialize(descriptor[\"default\"])\n        call set_path(clean, option_name, option_value)\n    end\n    if not type_matches(option_value, descriptor[\"type\"]):\n        print \"Invalid option type\", option_name, descriptor[\"type\"], dynamic_type(option_value)\n        exit(1)\n    end\nend\n"
 wrapper += "for assertion in all_assertions:\n    if not assertion[0]:\n        print \"Configuration assertion failed:\", assertion[1]\n        exit(1)\n    end\nend\n"
 wrapper += "print json.encode(clean)\n"
 call writefile(output_path, wrapper)

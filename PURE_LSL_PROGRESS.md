@@ -468,6 +468,10 @@ raw trust core (`compiler/pure/`), aby jeho encoder nikdy nepoužil heap pointer
 jako scalar. Běžné user moduly automaticky používají type 10; callback/List,
 identity, equality, GC, Float smoke, celý suite a config jsou zelené.
 
+Config evaluator nyní materializuje chybějící option defaults do nested
+výsledku, validuje jejich typ a detekuje import cycles s celou cestou. Targeted
+conformance pro defaults, cycle i existující system config prochází.
+
 Přesný další krok: dokončit deterministické tagging raw Any argument/return
 výsledků a typed unbox na call sites, potom odstranit raw fallback a dokázat
 nemožnost live-pointer kolize. Následuje pure-LSL in-process

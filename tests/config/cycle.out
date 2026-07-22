@@ -1,0 +1,1 @@
+Configuration import cycle: tests/config/cycle_a.lsl -> tests/config/cycle_b.lsl -> tests/config/cycle_a.lsl

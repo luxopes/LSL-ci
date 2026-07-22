@@ -267,6 +267,20 @@ if plugin_process_output != readfile("tests/plugin_process_conformance.out"):
     Error(TestFailure: "process plugin conformance output differs")
 end
 
+configure = "./compiler/pure/lsl-configure"
+config_wrapper = "tests/config/.defaults-test-evaluator.lsl"
+call require_success(run(configure, ["tests/config/defaults.lsl", config_wrapper]), "generate config defaults evaluator")
+call require_success(run(compiler, [config_wrapper, "/tmp/lsl-config-defaults-test"]), "compile config defaults evaluator")
+call unlink(config_wrapper)
+config_defaults_output = capture("/tmp/lsl-config-defaults-test", [])
+if config_defaults_output != readfile("tests/config/defaults.out"):
+    Error(TestFailure: "config defaults output differs")
+end
+config_cycle_output = capture(configure, ["tests/config/cycle_a.lsl", "/tmp/lsl-cycle-evaluator.lsl"])
+if config_cycle_output != readfile("tests/config/cycle.out"):
+    Error(TestFailure: "config cycle diagnostic differs")
+end
+
 call require_success(run(compiler, ["compiler/pure/lslc_direct.lsl", "/tmp/lsl-fixed-test"]), "compile fixed-point stage")
 if readfile(compiler) != readfile("/tmp/lsl-fixed-test"):
     Error(TestFailure: "compiler fixed point differs")
