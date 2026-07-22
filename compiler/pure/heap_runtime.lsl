@@ -1187,6 +1187,14 @@ function emit_add_any(output):
     call assembler.emit(output, x86_64.load_stack(6, -16))
     call assembler.emit(output, x86_64.load_memory(1, 7, 0))
     call assembler.emit(output, x86_64.load_memory(2, 6, 0))
+    # Both boxed Float (type 6): real addition, not pointer arithmetic.
+    call assembler.emit(output, x86_64.cmp_reg_imm8(1, 6))
+    call assembler.relative(output, [15, 133], "add_any_not_float")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(2, 6))
+    call assembler.relative(output, [15, 133], "add_any_not_float")
+    call assembler.relative(output, [232], "runtime_float_add")
+    call assembler.emit(output, x86_64.function_epilogue())
+    call assembler.label(output, "add_any_not_float")
     call assembler.emit(output, x86_64.cmp_reg_imm8(1, 1))
     call assembler.relative(output, [15, 133], "add_any_int")
     call assembler.emit(output, x86_64.cmp_reg_imm8(2, 1))
@@ -1197,6 +1205,41 @@ function emit_add_any(output):
     call assembler.emit(output, x86_64.load_stack(0, -8))
     call assembler.emit(output, x86_64.load_stack(1, -16))
     call assembler.emit(output, x86_64.add_reg_reg(0, 1))
+    call assembler.emit(output, x86_64.function_epilogue())
+end
+
+function emit_arith_any(output, name, float_routine, int_label):
+    # reg7,reg6 = operands. Both boxed Float -> float_routine; otherwise raw
+    # Int op. Mirrors add_any without the String branch.
+    call assembler.label(output, name)
+    call assembler.emit(output, x86_64.function_prologue(48))
+    call assembler.emit(output, x86_64.store_stack(-8, 7))
+    call assembler.emit(output, x86_64.store_stack(-16, 6))
+    call assembler.relative(output, [232], "runtime_is_heap_object")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+    call assembler.relative(output, [15, 132], int_label)
+    call assembler.emit(output, x86_64.load_stack(7, -16))
+    call assembler.relative(output, [232], "runtime_is_heap_object")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+    call assembler.relative(output, [15, 132], int_label)
+    call assembler.emit(output, x86_64.load_stack(7, -8))
+    call assembler.emit(output, x86_64.load_stack(6, -16))
+    call assembler.emit(output, x86_64.load_memory(1, 7, 0))
+    call assembler.emit(output, x86_64.load_memory(2, 6, 0))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(1, 6))
+    call assembler.relative(output, [15, 133], int_label)
+    call assembler.emit(output, x86_64.cmp_reg_imm8(2, 6))
+    call assembler.relative(output, [15, 133], int_label)
+    call assembler.relative(output, [232], float_routine)
+    call assembler.emit(output, x86_64.function_epilogue())
+    call assembler.label(output, int_label)
+    call assembler.emit(output, x86_64.load_stack(0, -8))
+    call assembler.emit(output, x86_64.load_stack(1, -16))
+    if name == "runtime_sub_any":
+        call assembler.emit(output, x86_64.sub_reg_reg(0, 1))
+    else:
+        call assembler.emit(output, x86_64.imul_reg_reg(0, 1))
+    end
     call assembler.emit(output, x86_64.function_epilogue())
 end
 
@@ -1774,6 +1817,8 @@ function emit_all(output):
     call emit_string_contains(output)
     call emit_equal_any(output)
     call emit_add_any(output)
+    call emit_arith_any(output, "runtime_sub_any", "runtime_float_sub", "sub_any_int")
+    call emit_arith_any(output, "runtime_mul_any", "runtime_float_mul", "mul_any_int")
     call emit_contains(output)
     call emit_dict_hash(output)
     call emit_dict_probe(output)

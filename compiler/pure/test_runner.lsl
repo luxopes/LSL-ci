@@ -56,6 +56,12 @@ if equality_output != readfile("tests/equality_conformance.out"):
     Error(TestFailure: "equality conformance output differs")
 end
 
+call require_success(run(compiler, ["tests/dynamic_arith_conformance.lsl", "/tmp/lsl-dynamic-arith-test"]), "compile dynamic arith conformance")
+dynamic_arith_output = capture("/tmp/lsl-dynamic-arith-test", [])
+if dynamic_arith_output != readfile("tests/dynamic_arith_conformance.out"):
+    Error(TestFailure: "dynamic arith conformance output differs")
+end
+
 call require_success(run(compiler, ["tests/float_exponent_conformance.lsl", "/tmp/lsl-float-exponent-test"]), "compile Float exponent conformance")
 float_exponent_output = capture("/tmp/lsl-float-exponent-test", [])
 if float_exponent_output != readfile("tests/float_exponent_conformance.out"):

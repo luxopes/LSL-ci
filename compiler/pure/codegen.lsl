@@ -131,10 +131,14 @@ function infer_expression_type(syntax, types, function_returns):
                 return "String"
             elif left == "Float" or right == "Float":
                 return "Float"
+            elif left == "Any" or right == "Any":
+                return "Any"
             end
         elif syntax["operator"] == "-" or syntax["operator"] == "/":
-            if left == "Float" or right == "Float" or syntax["operator"] == "/":
+            if syntax["operator"] == "/" or left == "Float" or right == "Float":
                 return "Float"
+            elif left == "Any" or right == "Any":
+                return "Any"
             end
         elif syntax["operator"] == "**":
             if left == "Float" or right == "Float":
@@ -822,6 +826,19 @@ function emit_expression(generator, syntax):
                 call assembler.relative(output, [232], "runtime_string_concat")
             else:
                 call assembler.relative(output, [232], "runtime_add_any")
+            end
+            return
+        elif (operator == "-" or operator == "*") and expression_type == "Any":
+            # Dynamic - / * : dispatch Int vs boxed Float at runtime.
+            call emit_expression(generator, syntax["left"])
+            call assembler.emit(output, x86_64.push(0))
+            call emit_expression(generator, syntax["right"])
+            call assembler.emit(output, x86_64.move_reg_reg(6, 0))
+            call assembler.emit(output, x86_64.pop(7))
+            if operator == "-":
+                call assembler.relative(output, [232], "runtime_sub_any")
+            else:
+                call assembler.relative(output, [232], "runtime_mul_any")
             end
             return
         elif operator == "and" or operator == "or":
