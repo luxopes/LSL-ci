@@ -146,6 +146,10 @@ function infer_expression_type(syntax, types, function_returns):
             elif left == "Any" or right == "Any":
                 return "Any"
             end
+        elif syntax["operator"] == "//" or syntax["operator"] == "%":
+            if left == "Float" or right == "Float":
+                return "Float"
+            end
         end
         if syntax["operator"] == "and" or syntax["operator"] == "or":
             return "Bool"
@@ -829,6 +833,17 @@ function emit_expression(generator, syntax):
     elif kind == "binary":
         operator = syntax["operator"]
         expression_type = infer_expression_type(syntax, generator["types"], generator["function_returns"])
+        if (operator == "//" or operator == "%") and expression_type == "Float":
+            # Float floor-division/modulo (must precede the Float +-*/ block,
+            # which rejects // and %).
+            floor_target = "__lsl_ffloordiv"
+            if operator == "%":
+                floor_target = "__lsl_fmod"
+            end
+            floor_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": floor_target}, "arguments": [syntax["left"], syntax["right"]]}
+            call emit_expression(generator, floor_call)
+            return
+        end
         if expression_type == "Float":
             if operator == "**":
                 exponent_type = infer_expression_type(syntax["right"], generator["types"], generator["function_returns"])

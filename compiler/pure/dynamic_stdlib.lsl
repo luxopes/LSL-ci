@@ -490,6 +490,33 @@ function __lsl_list_concat(left, right):
     return result
 end
 
+function __lsl_float_floor(x):
+    # floor of a Float, returned as Float. Int() truncates toward zero.
+    truncated = Float(Int(x))
+    if truncated > x:
+        return truncated - 1.0
+    end
+    return truncated
+end
+
+function __lsl_ffloordiv(a, b):
+    left = Float(a)
+    right = Float(b)
+    if right == 0.0:
+        Error(ZeroDivisionError: "float floor division by zero")
+    end
+    return __lsl_float_floor(left / right)
+end
+
+function __lsl_fmod(a, b):
+    left = Float(a)
+    right = Float(b)
+    if right == 0.0:
+        Error(ZeroDivisionError: "float modulo by zero")
+    end
+    return left - __lsl_float_floor(left / right) * right
+end
+
 function __lsl_slice3(target, start, has_start, stop, has_stop, step):
     # General strided slice with Python semantics. step != 0. Negative step
     # flips the default bounds. Returns String for String targets, else List
