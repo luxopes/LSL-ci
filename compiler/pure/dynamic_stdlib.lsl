@@ -454,6 +454,42 @@ function __lsl_str_repeat(text, count):
     return result
 end
 
+function __lsl_equal(left, right):
+    left_code = __lsl_type_code(left)
+    right_code = __lsl_type_code(right)
+    if left_code != right_code:
+        return __lsl_raw_equal(left, right)
+    end
+    if left_code == 2 or left_code == 7 or left_code == 8:
+        length = len(left)
+        if length != len(right):
+            return False
+        end
+        index = 0
+        while index < length:
+            if not __lsl_equal(left[index], right[index]):
+                return False
+            end
+            index += 1
+        end
+        return True
+    elif left_code == 3:
+        if len(left) != len(right):
+            return False
+        end
+        for key in left.keys():
+            if not (key in right):
+                return False
+            end
+            if not __lsl_equal(left[key], right[key]):
+                return False
+            end
+        end
+        return True
+    end
+    return __lsl_raw_equal(left, right)
+end
+
 function __lsl_min(values):
     first = True
     result = None

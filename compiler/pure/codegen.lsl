@@ -157,7 +157,7 @@ function infer_expression_type(syntax, types, function_returns):
         target = syntax["target"]
         if target["kind"] == "name":
             name = target["name"]
-            if name == "len" or name == "Int" or name == "ord" or name == "sum" or name == "min" or name == "max" or name == "arg_count" or name == "run":
+            if name == "len" or name == "Int" or name == "ord" or name == "sum" or name == "min" or name == "max" or name == "arg_count" or name == "run" or name == "__lsl_type_code" or name == "__lsl_raw_equal" or name == "__lsl_float_bits" or name == "__lsl_float_to_int":
                 return "Int"
             elif name == "Float":
                 return "Float"
@@ -339,6 +339,10 @@ end
 function emit_truth(generator):
     call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
     call assembler.relative(generator["builder"], [232], "runtime_truth")
+end
+
+function maybe_collection(value_type):
+    return value_type == "List" or value_type == "Tuple" or value_type == "RealArray" or value_type == "Dictionary" or value_type == "Any"
 end
 
 function condition_is_bool(syntax):
@@ -1048,6 +1052,14 @@ function emit_expression(generator, syntax):
                 call emit_expression(generator, syntax["arguments"][0])
                 call assembler.emit(output, x86_64.load_memory(0, 0, 8))
                 return
+            elif target["name"] == "__lsl_raw_equal":
+                call emit_expression(generator, syntax["arguments"][0])
+                call assembler.emit(output, x86_64.push(0))
+                call emit_expression(generator, syntax["arguments"][1])
+                call assembler.emit(output, x86_64.move_reg_reg(6, 0))
+                call assembler.emit(output, x86_64.pop(7))
+                call assembler.relative(output, [232], "runtime_equal_any")
+                return
             elif target["name"] == "__lsl_is_heap":
                 call emit_expression(generator, syntax["arguments"][0])
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
@@ -1580,15 +1592,29 @@ function emit_expression(generator, syntax):
             return
         end
         if operator == "==" or operator == "!=" or operator == "is" or operator == "is not":
-            call emit_expression(generator, left)
-            call assembler.emit(output, x86_64.push(0))
-            call emit_expression(generator, right)
-            call assembler.emit(output, x86_64.move_reg_reg(6, 0))
-            call assembler.emit(output, x86_64.pop(7))
-            call assembler.relative(output, [232], "runtime_equal_any")
-            if operator == "!=" or operator == "is not":
-                call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
-                call assembler.emit(output, x86_64.set_condition(148))
+            left_equal_type = infer_expression_type(left, generator["types"], generator["function_returns"])
+            right_equal_type = infer_expression_type(right, generator["types"], generator["function_returns"])
+            use_deep = (operator == "==" or operator == "!=") and maybe_collection(left_equal_type) and maybe_collection(right_equal_type)
+            if use_deep:
+                # Deep equality for collections (recursive, element-wise). Scalar
+                # pairs stay on the runtime_equal_any fast path below.
+                equal_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_equal"}, "arguments": [left, right]}
+                call emit_expression(generator, equal_call)
+                if operator == "!=":
+                    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+                    call assembler.emit(output, x86_64.set_condition(148))
+                end
+            else:
+                call emit_expression(generator, left)
+                call assembler.emit(output, x86_64.push(0))
+                call emit_expression(generator, right)
+                call assembler.emit(output, x86_64.move_reg_reg(6, 0))
+                call assembler.emit(output, x86_64.pop(7))
+                call assembler.relative(output, [232], "runtime_equal_any")
+                if operator == "!=" or operator == "is not":
+                    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+                    call assembler.emit(output, x86_64.set_condition(148))
+                end
             end
         else:
             # Ordered comparison compiles to cmp reg0, reg6. emit_int_leaf yields
