@@ -1264,6 +1264,73 @@ function emit_abs_any(output):
     call assembler.emit(output, x86_64.function_epilogue())
 end
 
+function emit_compare_any(output):
+    # reg7=left, reg6=right -> reg0 = -1/0/1 (left <=> right). If either is a
+    # boxed Float, both are coerced to double and compared; else signed Int.
+    call assembler.label(output, "runtime_compare_any")
+    call assembler.emit(output, x86_64.function_prologue(48))
+    call assembler.emit(output, x86_64.store_stack(-8, 7))
+    call assembler.emit(output, x86_64.store_stack(-16, 6))
+    call assembler.emit(output, x86_64.load_stack(7, -8))
+    call assembler.relative(output, [232], "runtime_is_float")
+    call assembler.emit(output, x86_64.store_stack(-24, 0))
+    call assembler.emit(output, x86_64.load_stack(7, -16))
+    call assembler.relative(output, [232], "runtime_is_float")
+    call assembler.emit(output, x86_64.move_reg_reg(1, 0))
+    call assembler.emit(output, x86_64.load_stack(0, -24))
+    call assembler.emit(output, x86_64.or_reg_reg(0, 1))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+    call assembler.relative(output, [15, 132], "compare_any_int")
+    call assembler.emit(output, x86_64.load_stack(7, -8))
+    call assembler.relative(output, [232], "runtime_coerce_float")
+    call assembler.emit(output, x86_64.load_memory(0, 0, 8))
+    call assembler.emit(output, x86_64.store_stack(-24, 0))
+    call assembler.emit(output, x86_64.load_stack(7, -16))
+    call assembler.relative(output, [232], "runtime_coerce_float")
+    call assembler.emit(output, x86_64.load_memory(1, 0, 8))
+    call assembler.emit(output, x86_64.load_stack(0, -24))
+    call assembler.emit(output, x86_64.movq_xmm_from_reg(0, 0))
+    call assembler.emit(output, x86_64.movq_xmm_from_reg(1, 1))
+    call assembler.emit(output, x86_64.compare_double(0, 1))
+    call assembler.relative(output, [15, 130], "compare_any_less")
+    call assembler.relative(output, [15, 132], "compare_any_equal")
+    call assembler.emit(output, x86_64.mov_imm64(0, 1))
+    call assembler.emit(output, x86_64.function_epilogue())
+    call assembler.label(output, "compare_any_less")
+    call assembler.emit(output, x86_64.mov_imm64(0, -1))
+    call assembler.emit(output, x86_64.function_epilogue())
+    call assembler.label(output, "compare_any_equal")
+    call assembler.emit(output, x86_64.mov_imm64(0, 0))
+    call assembler.emit(output, x86_64.function_epilogue())
+    call assembler.label(output, "compare_any_int")
+    call assembler.emit(output, x86_64.load_stack(0, -8))
+    call assembler.emit(output, x86_64.load_stack(1, -16))
+    call assembler.emit(output, x86_64.cmp_reg_reg(0, 1))
+    call assembler.relative(output, [15, 140], "compare_any_less")
+    call assembler.relative(output, [15, 132], "compare_any_equal")
+    call assembler.emit(output, x86_64.mov_imm64(0, 1))
+    call assembler.emit(output, x86_64.function_epilogue())
+end
+
+function emit_neg_any(output):
+    # reg7 = value -> reg0 = negation. Boxed Float flips its sign bit and
+    # reboxes; raw Int negates.
+    call assembler.label(output, "runtime_neg_any")
+    call assembler.emit(output, x86_64.function_prologue(16))
+    call assembler.relative(output, [232], "runtime_is_float")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+    call assembler.relative(output, [15, 132], "neg_any_int")
+    call assembler.emit(output, x86_64.load_memory(7, 7, 8))
+    call assembler.emit(output, x86_64.mov_imm64(1, -9223372036854775808))
+    call assembler.emit(output, x86_64.add_reg_reg(7, 1))
+    call assembler.relative(output, [232], "runtime_float_new")
+    call assembler.emit(output, x86_64.function_epilogue())
+    call assembler.label(output, "neg_any_int")
+    call assembler.emit(output, x86_64.move_reg_reg(0, 7))
+    call assembler.emit(output, x86_64.neg_reg(0))
+    call assembler.emit(output, x86_64.function_epilogue())
+end
+
 function emit_num_any(output, name, float_routine, is_add):
     # reg7,reg6 = operands. If either is a boxed Float, promote both to Float
     # and use float_routine (fixes mixed raw-Int + boxed-Float). Otherwise
@@ -1905,6 +1972,8 @@ function emit_all(output):
     call emit_is_float(output)
     call emit_coerce_float(output)
     call emit_abs_any(output)
+    call emit_neg_any(output)
+    call emit_compare_any(output)
     call emit_num_any(output, "runtime_add_any", "runtime_float_add", True)
     call emit_num_any(output, "runtime_sub_any", "runtime_float_sub", False)
     call emit_num_any(output, "runtime_mul_any", "runtime_float_mul", False)

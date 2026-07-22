@@ -92,6 +92,12 @@ if abs_output != readfile("tests/abs_conformance.out"):
     Error(TestFailure: "abs conformance output differs")
 end
 
+call require_success(run(compiler, ["tests/numeric_builtins_conformance.lsl", "/tmp/lsl-numeric-builtins-test"]), "compile numeric builtins conformance")
+numeric_builtins_output = capture("/tmp/lsl-numeric-builtins-test", [])
+if numeric_builtins_output != readfile("tests/numeric_builtins_conformance.out"):
+    Error(TestFailure: "numeric builtins conformance output differs")
+end
+
 call require_success(run(compiler, ["tests/float_exponent_conformance.lsl", "/tmp/lsl-float-exponent-test"]), "compile Float exponent conformance")
 float_exponent_output = capture("/tmp/lsl-float-exponent-test", [])
 if float_exponent_output != readfile("tests/float_exponent_conformance.out"):

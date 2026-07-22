@@ -164,7 +164,18 @@ function infer_expression_type(syntax, types, function_returns):
             if name == "abs":
                 return infer_expression_type(syntax["arguments"][0], types, function_returns)
             end
-            if name == "len" or name == "Int" or name == "ord" or name == "sum" or name == "min" or name == "max" or name == "arg_count" or name == "run" or name == "__lsl_type_code" or name == "__lsl_raw_equal" or name == "__lsl_float_bits" or name == "__lsl_float_to_int":
+            if name == "min" or name == "max":
+                if len(syntax["arguments"]) == 2:
+                    if infer_expression_type(syntax["arguments"][0], types, function_returns) == "Int" and infer_expression_type(syntax["arguments"][1], types, function_returns) == "Int":
+                        return "Int"
+                    end
+                end
+                return "Any"
+            end
+            if name == "sum":
+                return "Any"
+            end
+            if name == "len" or name == "Int" or name == "ord" or name == "arg_count" or name == "run" or name == "__lsl_type_code" or name == "__lsl_raw_equal" or name == "__lsl_float_bits" or name == "__lsl_float_to_int":
                 return "Int"
             elif name == "Float":
                 return "Float"
@@ -227,13 +238,24 @@ function collect_types(statements, types, function_returns):
                 end
             end
         elif kind == "for":
-            iterable_type = infer_expression_type(statement["iterable"], types, function_returns)
-            if iterable_type == "String":
-                types[statement["name"]] = "String"
-            elif iterable_type == "List" or iterable_type == "Tuple" or iterable_type == "RealArray":
-                types[statement["name"]] = "Any"
-            else:
+            for_is_range = False
+            for_iterable = statement["iterable"]
+            if for_iterable["kind"] == "call":
+                if for_iterable["target"]["kind"] == "name":
+                    if for_iterable["target"]["name"] == "rang" or for_iterable["target"]["name"] == "range":
+                        for_is_range = True
+                    end
+                end
+            end
+            iterable_type = infer_expression_type(for_iterable, types, function_returns)
+            if for_is_range:
                 types[statement["name"]] = "Int"
+            elif iterable_type == "String":
+                types[statement["name"]] = "String"
+            else:
+                # List/Tuple/RealArray/Dictionary/Any elements are dynamic; Int
+                # would miscompile boxed Float/None elements (e.g. sum of Floats).
+                types[statement["name"]] = "Any"
             end
             call collect_types(statement["body"], types, function_returns)
         elif kind == "if":
@@ -491,7 +513,7 @@ function emit_branch_if_false(generator, syntax, target_label):
     right = syntax["operands"][1]
     left_type = infer_expression_type(left, generator["types"], generator["function_returns"])
     right_type = infer_expression_type(right, generator["types"], generator["function_returns"])
-    if left_type == "Float" or right_type == "Float":
+    if left_type == "Float" or right_type == "Float" or left_type == "Any" or right_type == "Any":
         return False
     end
     output = generator["builder"]
@@ -791,6 +813,9 @@ function emit_expression(generator, syntax):
                 call assembler.emit(output, x86_64.mov_imm64(1, -9223372036854775808))
                 call assembler.emit(output, x86_64.add_reg_reg(7, 1))
                 call assembler.relative(output, [232], "runtime_float_new")
+            elif operand_type == "Any":
+                call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                call assembler.relative(output, [232], "runtime_neg_any")
             else:
                 call assembler.emit(output, x86_64.neg_reg(0))
             end
@@ -1341,12 +1366,34 @@ function emit_expression(generator, syntax):
                 if len(syntax["arguments"]) != 2:
                     call unsupported(generator["path"], generator["lines"], syntax, "builtin " + target["name"] + " expects 1 iterable or 2 values", "pass min(iterable) or min(a, b)")
                 end
+                minmax_left_type = infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"])
+                minmax_right_type = infer_expression_type(syntax["arguments"][1], generator["types"], generator["function_returns"])
                 call emit_expression(generator, syntax["arguments"][0])
                 call assembler.emit(output, x86_64.push(0))
                 call emit_expression(generator, syntax["arguments"][1])
+                done_label = label_name(generator, "minmax_done")
+                if minmax_left_type == "Float" or minmax_right_type == "Float" or minmax_left_type == "Any" or minmax_right_type == "Any":
+                    # Dispatch Int/Float; keep the original boxed value.
+                    call assembler.emit(output, x86_64.move_reg_reg(6, 0))
+                    call assembler.emit(output, x86_64.pop(0))
+                    call assembler.emit(output, x86_64.push(0))
+                    call assembler.emit(output, x86_64.push(6))
+                    call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                    call assembler.relative(output, [232], "runtime_compare_any")
+                    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+                    call assembler.emit(output, x86_64.pop(1))
+                    call assembler.emit(output, x86_64.pop(0))
+                    if target["name"] == "min":
+                        call assembler.relative(output, [15, 142], done_label)
+                    else:
+                        call assembler.relative(output, [15, 141], done_label)
+                    end
+                    call assembler.emit(output, x86_64.move_reg_reg(0, 1))
+                    call assembler.label(output, done_label)
+                    return
+                end
                 call assembler.emit(output, x86_64.move_reg_reg(1, 0))
                 call assembler.emit(output, x86_64.pop(0))
-                done_label = label_name(generator, "minmax_done")
                 call assembler.emit(output, x86_64.cmp_reg_reg(0, 1))
                 if target["name"] == "min":
                     call assembler.relative(output, [15, 142], done_label)
@@ -1690,6 +1737,16 @@ function emit_expression(generator, syntax):
                     call assembler.emit(output, x86_64.set_condition(148))
                 end
             end
+        elif left_type == "Any" or right_type == "Any":
+            # Operand may be a boxed Float at runtime; dispatch Int/Float.
+            call emit_expression(generator, left)
+            call assembler.emit(output, x86_64.push(0))
+            call emit_expression(generator, right)
+            call assembler.emit(output, x86_64.move_reg_reg(6, 0))
+            call assembler.emit(output, x86_64.pop(7))
+            call assembler.relative(output, [232], "runtime_compare_any")
+            call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+            call assembler.emit(output, x86_64.set_condition(opcode))
         else:
             # Ordered comparison compiles to cmp reg0, reg6. emit_int_leaf yields
             # the same value as emit_expression for a leaf, so skip the spill.
