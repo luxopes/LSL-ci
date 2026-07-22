@@ -81,6 +81,61 @@ function request(endpoint, token, model, messages, options):
     end
 end
 
+function stream_text(text, on_event, cancel):
+    delivered = 0
+    lines = text.split(chr(10))
+    for raw_line in lines:
+        line = raw_line.strip()
+        if line.startswith("data:"):
+            payload = line[5:len(line)].strip()
+            if payload == "[DONE]":
+                break
+            end
+            if cancel != None and cancel():
+                Error(AICancelled: "stream cancelled")
+            end
+            try:
+                event = json.decode(payload)
+            else:
+                Error(AIProviderError: "provider returned invalid stream JSON")
+            end
+            if "error" in event:
+                Error(AIProviderError: provider_message(event, "provider stream failed"))
+            end
+            if "choices" in event and len(event["choices"]) > 0:
+                choice = event["choices"][0]
+                if "delta" in choice and "content" in choice["delta"]:
+                    chunk = choice["delta"]["content"]
+                    call on_event(chunk)
+                    delivered += 1
+                end
+            end
+        end
+    end
+    return delivered
+end
+
+function stream(endpoint, token, model, messages, options, on_event):
+    headers = {"Content-Type": "application/json"}
+    if len(token) > 0:
+        headers["Authorization"] = "Bearer " + token
+    end
+    payload = {"model": model, "messages": messages, "stream": True}
+    timeout = 60
+    if "timeout" in options:
+        timeout = Int(options["timeout"])
+    end
+    response = http.post(endpoint, payload, headers, timeout)
+    if not response["ok"]:
+        return decode_response(response)
+    end
+    cancel = None
+    if "cancel" in options:
+        cancel = options["cancel"]
+    end
+    return stream_text(response["text"], on_event, cancel)
+end
+
 function content(response):
     if "choices" not in response or len(response["choices"]) == 0:
         Error(AIProviderError: "provider response has no choices")

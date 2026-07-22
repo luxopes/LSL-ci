@@ -22,6 +22,16 @@ else:
 end
 print caught
 
+events = []
+function receive(chunk):
+    events.append(chunk)
+end
+function keep_streaming():
+    return False
+end
+stream_body = "data: {\"choices\":[{\"delta\":{\"content\":\"hel\"}}]}\n\n" + "data: {\"choices\":[{\"delta\":{\"content\":\"lo\"}}]}\n\n" + "data: [DONE]\n"
+print ai.stream_text(stream_body, receive, keep_streaming), events
+
 try:
     call ai.content({"choices": []})
 else:

@@ -483,7 +483,9 @@ doplnil stejnou full-probe ochranu 64K String intern cache.
 Pure-LSL `tensor` module poskytuje dense CPU Tensor nad sdíleným RealArray,
 shape/strides/offset/dtype, bounds-checked get/set, reshape a zero-copy views.
 Conformance dokazuje sdílenou mutaci a shape errors; installer jej distribuuje.
-Foreign shared-object/GPU ABI tím není nahrazené.
+Foreign shared-object/GPU ABI tím není nahrazené. AI vrstva navíc validuje
+OpenAI SSE events a doručuje content chunks callbacku s cancellation; současný
+curl transport je ještě načte do bufferu před callback dispatch.
 
 AI standard module nyní poskytuje OpenAI-compatible request, timeout, retry pro
 transport/408/429/5xx, cancellation callback, validaci provider JSON,

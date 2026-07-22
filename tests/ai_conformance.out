@@ -1,4 +1,5 @@
 hello
 AIProviderError: rate limited
 AIProviderError: provider returned invalid JSON
+2 ['hel', 'lo']
 AIProviderError: provider response has no choices
