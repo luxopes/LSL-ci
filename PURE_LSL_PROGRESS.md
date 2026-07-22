@@ -480,6 +480,11 @@ zelené. Následující fixed point
 `dfc81ddfd9fa0f57f3f86c12465891fd24003b752e6420769134f6405eea17e6`
 doplnil stejnou full-probe ochranu 64K String intern cache.
 
+Pure-LSL `tensor` module poskytuje dense CPU Tensor nad sdíleným RealArray,
+shape/strides/offset/dtype, bounds-checked get/set, reshape a zero-copy views.
+Conformance dokazuje sdílenou mutaci a shape errors; installer jej distribuuje.
+Foreign shared-object/GPU ABI tím není nahrazené.
+
 AI standard module nyní poskytuje OpenAI-compatible request, timeout, retry pro
 transport/408/429/5xx, cancellation callback, validaci provider JSON,
 `AIProviderError`/`AICancelled` a bezpečný content accessor. Conformance používá

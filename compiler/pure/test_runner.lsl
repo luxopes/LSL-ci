@@ -267,6 +267,12 @@ if dictionary_key_output != readfile("tests/dictionary_key_conformance.out"):
     Error(TestFailure: "Dictionary key conformance output differs")
 end
 
+call require_success(run(compiler, ["tests/tensor_conformance.lsl", "/tmp/lsl-tensor-test"]), "compile Tensor conformance")
+tensor_output = capture("/tmp/lsl-tensor-test", [])
+if tensor_output != readfile("tests/tensor_conformance.out"):
+    Error(TestFailure: "Tensor conformance output differs")
+end
+
 call require_success(run(compiler, ["tests/ai_conformance.lsl", "/tmp/lsl-ai-test"]), "compile AI conformance")
 ai_output = capture("/tmp/lsl-ai-test", [])
 if ai_output != readfile("tests/ai_conformance.out"):

@@ -216,6 +216,18 @@ function infer_expression_type(syntax, types, function_returns):
             end
         elif target["kind"] == "member":
             member = target["name"]
+            receiver_type = infer_expression_type(target["target"], types, function_returns)
+            if receiver_type.startswith("Class:") or receiver_type.startswith("Instance:"):
+                if receiver_type.startswith("Class:"):
+                    receiver_class = receiver_type[6:len(receiver_type)]
+                else:
+                    receiver_class = receiver_type[9:len(receiver_type)]
+                end
+                receiver_method = receiver_class + "__" + member
+                if receiver_method in function_returns:
+                    return function_returns[receiver_method]
+                end
+            end
             if member == "append" or member == "extend" or member == "sort" or member == "reverse" or member == "clear":
                 return "None"
             elif member == "strip" or member == "lstrip" or member == "rstrip" or member == "join" or member == "replace" or member == "lower" or member == "upper" or member == "title" or member == "capitalize":
