@@ -517,6 +517,24 @@ function __lsl_fmod(a, b):
     return left - __lsl_float_floor(left / right) * right
 end
 
+function __lsl_floordiv_dyn(a, b):
+    # Both operands are Any (only reachable from user Any // Any). If either is
+    # a boxed Float -> float floor division; else both are raw Ints, so use
+    # __lsl_raw_int (identity typed as Int) for a static Int//Int -- Int() would
+    # error on raw 0, whose type code reads as None.
+    if __lsl_is_heap(a) or __lsl_is_heap(b):
+        return __lsl_ffloordiv(a, b)
+    end
+    return __lsl_raw_int(a) // __lsl_raw_int(b)
+end
+
+function __lsl_mod_dyn(a, b):
+    if __lsl_is_heap(a) or __lsl_is_heap(b):
+        return __lsl_fmod(a, b)
+    end
+    return __lsl_raw_int(a) % __lsl_raw_int(b)
+end
+
 function __lsl_slice3(target, start, has_start, stop, has_stop, step):
     # General strided slice with Python semantics. step != 0. Negative step
     # flips the default bounds. Returns String for String targets, else List

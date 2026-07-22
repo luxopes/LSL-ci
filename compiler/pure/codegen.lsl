@@ -149,6 +149,13 @@ function infer_expression_type(syntax, types, function_returns):
         elif syntax["operator"] == "//" or syntax["operator"] == "%":
             if left == "Float" or right == "Float":
                 return "Float"
+            elif left == "Any" and right == "Any":
+                # Only both-Any goes to the dynamic Int/Float dispatch. If either
+                # side is statically Int, stay on the deterministic Int idiv path
+                # (the compiler's own // % always has an Int operand, so its
+                # self-host stays convergent; the dynamic path's is_heap check
+                # can collide with a large raw Int address).
+                return "Any"
             end
         end
         if syntax["operator"] == "and" or syntax["operator"] == "or":
@@ -181,7 +188,7 @@ function infer_expression_type(syntax, types, function_returns):
             if name == "sum":
                 return "Any"
             end
-            if name == "len" or name == "Int" or name == "ord" or name == "arg_count" or name == "run" or name == "__lsl_type_code" or name == "__lsl_raw_equal" or name == "__lsl_float_bits" or name == "__lsl_float_to_int":
+            if name == "len" or name == "Int" or name == "ord" or name == "arg_count" or name == "run" or name == "__lsl_type_code" or name == "__lsl_raw_equal" or name == "__lsl_float_bits" or name == "__lsl_float_to_int" or name == "__lsl_raw_int":
                 return "Int"
             elif name == "Float":
                 return "Float"
@@ -833,12 +840,20 @@ function emit_expression(generator, syntax):
     elif kind == "binary":
         operator = syntax["operator"]
         expression_type = infer_expression_type(syntax, generator["types"], generator["function_returns"])
-        if (operator == "//" or operator == "%") and expression_type == "Float":
-            # Float floor-division/modulo (must precede the Float +-*/ block,
-            # which rejects // and %).
-            floor_target = "__lsl_ffloordiv"
+        if (operator == "//" or operator == "%") and (expression_type == "Float" or expression_type == "Any"):
+            # Float floor-division/modulo, or dynamic Int/Float dispatch when both
+            # operands are Any. Must precede the Float +-*/ block (which rejects
+            # // and %).
             if operator == "%":
                 floor_target = "__lsl_fmod"
+                if expression_type == "Any":
+                    floor_target = "__lsl_mod_dyn"
+                end
+            else:
+                floor_target = "__lsl_ffloordiv"
+                if expression_type == "Any":
+                    floor_target = "__lsl_floordiv_dyn"
+                end
             end
             floor_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": floor_target}, "arguments": [syntax["left"], syntax["right"]]}
             call emit_expression(generator, floor_call)
@@ -1166,6 +1181,12 @@ function emit_expression(generator, syntax):
                 call emit_expression(generator, syntax["arguments"][0])
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 call assembler.relative(output, [232], "runtime_is_heap_object")
+                return
+            elif target["name"] == "__lsl_raw_int":
+                # Identity that types the value as Int, so a known-raw-Int Any
+                # takes the static Int path without the is_heap/type_code probe
+                # in Int() (which errors on raw 0, whose type code reads as None).
+                call emit_expression(generator, syntax["arguments"][0])
                 return
             elif target["name"] == "__lsl_string_chars":
                 call emit_expression(generator, syntax["arguments"][0])
