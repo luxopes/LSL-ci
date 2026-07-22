@@ -461,11 +461,12 @@ Tagged ABI fáze 4b-infrastruktura má fixed point
 Heap type 10 boxuje Function code pointer, generic type/truth/equality/render jej
 znají a indirect call bezpečně přijímá raw i tagged callable při zachování všech
 argument registrů. Explicitní conformance ověřuje callback v List, identity,
-equality a přežití GC. Automatické boxování všech Function hodnot zůstává odloženo. Audit opravil
-lexikální shadowing (lokální `current`/`image` už nejsou mylně Function), ale
-plné zapnutí odhalilo další Float-runtime regresi. Explicitní intrinsic zachovává
-deterministický fixed point; aktuální hash po shadowing opravě je
-`01542437145d7f32886c136709f14f628de035b1c407452a3658328fa0f4967d`.
+equality a přežití GC. Veřejné automatické Function boxování je hotové ve fixed pointu
+`f876b40dbd1c030d3c7cd48a8b97da7b8e41745b677579e551327327c0070c84`.
+Audit opravil lexikální shadowing a oddělil self-host backend jako interní typed
+raw trust core (`compiler/pure/`), aby jeho encoder nikdy nepoužil heap pointer
+jako scalar. Běžné user moduly automaticky používají type 10; callback/List,
+identity, equality, GC, Float smoke, celý suite a config jsou zelené.
 
 Přesný další krok: dokončit deterministické tagging raw Any argument/return
 výsledků a typed unbox na call sites, potom odstranit raw fallback a dokázat

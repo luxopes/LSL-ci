@@ -595,6 +595,14 @@ function emit_collection_box(generator, syntax):
     elif value_type == "Int":
         call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
         call assembler.relative(generator["builder"], [232], "runtime_box_int")
+    elif value_type == "Function":
+        # The self-host compiler backend is the typed/raw trust core. Keeping its
+        # internal callbacks raw prevents heap addresses from becoming encoder
+        # scalars; ordinary user modules receive the tagged public ABI.
+        if generator["path"].find("compiler/pure/") < 0:
+            call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
+            call assembler.relative(generator["builder"], [232], "runtime_box_function")
+        end
     elif value_type == "None":
         call assembler.relative(generator["builder"], [232], "runtime_box_none")
     end

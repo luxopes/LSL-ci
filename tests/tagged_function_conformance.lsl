@@ -11,7 +11,7 @@ function identity(value):
     return value
 end
 
-callback = __lsl_box_function(add)
+callback = add
 print apply(callback, 2, 3)
 callbacks = [callback]
 from_list = callbacks[0]

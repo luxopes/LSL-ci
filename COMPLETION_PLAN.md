@@ -244,18 +244,18 @@ initializer callem, v registrech i na stacku. Compiler self-hostuje i s tagged
 parametry; `%`/`//` dispatch byl rozšířen na jeden Any operand. Conformance
 ověřuje identity return, min/max Int, Bool/None a class initializer/method.
 
-Fáze 4b-infrastruktura je hotová ve fixed pointu `19ec5a02…`: explicitní
-Function type 10, box/unbox, generic type/truth/equality/render, GC leaf a
-indirect call se zachováním argument registrů. Automatické Function boxování zatím není zapnuté. Opraveno bylo chybné
-shadowing pořadí v type inference, které boxovalo lokální `current`/`image` jako
-Function; další plný pokus ale odhalil Float-runtime regresi. Explicitní
-conformance a fixed point `01542437…` jsou deterministické.
+Fáze 4b Function ABI je hotová ve fixed pointu `f876b40d…`: type 10,
+box/unbox, generic type/truth/equality/render, GC leaf, indirect call se
+zachováním registrů a automatické boxování v běžných user modulech. Self-host
+backend pod `compiler/pure/` je záměrně interní typed/raw trust core, takže jeho
+encoder nemůže použít heap pointer jako scalar. Float i callback conformance
+jsou deterministické.
 
 Následuje dokončení Any function ABI:
 
-1. Najít a odstranit compiler cestu, která při automatickém Function boxování
-   používá box pointer jako generovaný scalar; teprve pak zapnout boxování všech
-   staticky známých Function hranic.
+1. Otagovat raw numerické výsledky inferované jako Any na return hranici a
+   explicitně unboxovat na staticky typed call sites; compiler raw trust core
+   musí zůstat oddělený.
 2. Na Any argument hranici otagovat i výraz inferovaný `Any`. Již heap/tagged
    hodnotu zachovat; raw numerický výsledek boxovat jako Int. Díky type 10 nesmí
    být Function pointer zaměněn za Int.
