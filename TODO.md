@@ -1,6 +1,6 @@
 # LSL TODO
 
-Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`.
+Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktuální handoff, pořadí blockerů a ověřovací příkazy jsou v `COMPLETION_PLAN.md`.
 
 ## Hotovo
 
