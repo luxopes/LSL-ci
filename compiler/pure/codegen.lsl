@@ -329,71 +329,11 @@ function emit_string_pointer(generator, text):
 end
 
 function float_bits(text):
-    digits = ""
-    denominator = 1
-    exponent = 0
-    exponent_sign = 1
-    after_dot = False
-    in_exponent = False
-    for character in text:
-        if character == ".":
-            after_dot = True
-        elif character == "e" or character == "E":
-            in_exponent = True
-        elif in_exponent:
-            if character == "-":
-                exponent_sign = -1
-            elif character != "+":
-                exponent = exponent * 10 + ord(character) - 48
-            end
-        else:
-            digits += character
-            if after_dot:
-                denominator *= 10
-            end
-        end
-    end
-    numerator = Int(digits)
-    exponent *= exponent_sign
-    while exponent > 0:
-        numerator *= 10
-        exponent -= 1
-    end
-    while exponent < 0:
-        denominator *= 10
-        exponent += 1
-    end
-    if numerator == 0:
-        return 0
-    end
-    exponent = 0
-    while numerator >= denominator * 2:
-        denominator *= 2
-        exponent += 1
-    end
-    while numerator < denominator:
-        numerator *= 2
-        exponent -= 1
-    end
-    remainder = numerator - denominator
-    mantissa = 0
-    for bit_index in rang(52):
-        mantissa *= 2
-        remainder *= 2
-        if remainder >= denominator:
-            mantissa += 1
-            remainder -= denominator
-        end
-    end
-    remainder *= 2
-    if remainder >= denominator:
-        mantissa += 1
-    end
-    if mantissa >= 4503599627370496:
-        mantissa = 0
-        exponent += 1
-    end
-    return (exponent + 1023) * 4503599627370496 + mantissa
+    # Parse via the runtime Float path (hardware doubles) and read the IEEE-754
+    # bit pattern. The old exact-integer algorithm overflowed Int64 for large
+    # exponents (e.g. 1e20 looped forever, 1e300 gave 0); doubles handle the
+    # full range including Infinity for overflow.
+    return __lsl_float_bits(__lsl_parse_float(text))
 end
 
 function emit_truth(generator):
@@ -1103,6 +1043,10 @@ function emit_expression(generator, syntax):
                 call emit_expression(generator, syntax["arguments"][0])
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 call assembler.relative(output, [232], "runtime_float_to_int")
+                return
+            elif target["name"] == "__lsl_float_bits":
+                call emit_expression(generator, syntax["arguments"][0])
+                call assembler.emit(output, x86_64.load_memory(0, 0, 8))
                 return
             elif target["name"] == "__lsl_is_heap":
                 call emit_expression(generator, syntax["arguments"][0])
