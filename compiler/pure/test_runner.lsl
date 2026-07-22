@@ -44,6 +44,13 @@ if io_output != readfile("tests/io_conformance.out"):
     Error(TestFailure: "I/O conformance output differs")
 end
 
+call require_success(run(compiler, ["tests/capture_large_server.lsl", "/tmp/lsl-capture-large-server"]), "compile large capture server")
+call require_success(run(compiler, ["tests/capture_large_conformance.lsl", "/tmp/lsl-capture-large-test"]), "compile large capture conformance")
+capture_large_output = capture("/tmp/lsl-capture-large-test", [])
+if capture_large_output != readfile("tests/capture_large_conformance.out"):
+    Error(TestFailure: "large capture conformance output differs")
+end
+
 call require_success(run(compiler, ["tests/magic_division_conformance.lsl", "/tmp/lsl-magic-division-test"]), "compile magic division conformance")
 magic_division_output = capture("/tmp/lsl-magic-division-test", [])
 if magic_division_output != readfile("tests/magic_division_conformance.out"):

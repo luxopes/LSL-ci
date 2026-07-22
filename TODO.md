@@ -26,6 +26,7 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`.
 - [x] Dokončit Float round-trip/exponent formatting včetně subnormal, NaN a Infinity.
 - [x] Dokončit dokumentované collection metody a Dictionary konverzi.
 - [x] Odstranit pevný 4096B limit `input()` a číst přesně jeden řádek.
+- [x] Odstranit pevný 1MiB limit `capture()` dynamicky rostoucím bufferem.
 - [ ] Dokončit jednoznačný scalar tag ABI.
 - [ ] Pokračovat zbývajícími runtime, plugin/AI/config a audit okruhy níže.
 

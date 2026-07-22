@@ -425,6 +425,14 @@ mají přesnou sémantiku a následující řádek zůstává pro další `input
 exact-output conformance ověřila 5000bajtový řádek a druhé čtení; tři stage,
 deterministické nástroje i celý suite procházejí.
 
+Fixed point s neomezeným `capture()` stdout má SHA-256
+`343cc72d1dda37a188d8b31a90e076fe47ba6acf731de90976308623db02ee7e`.
+Původní pevný 1MiB buffer je nahrazen 2× rostoucím String payloadem; parent při
+zaplnění alokuje, překopíruje a pokračuje ve čtení pipe až do EOF. Pure-LSL
+conformance vytvoří 2MiB soubor, child jej vypíše a parent přesně ověří délku,
+první/poslední byte a newline. Fixed point, deterministické nástroje i suite
+procházejí.
+
 Přesný další krok: poslední raw-Int/live-pointer kolize přes jednoznačný scalar
 tag ABI a pure-LSL in-process zero-copy tensor/shared-object loader. Izolované
 process plugin ABI je hotové, ale není vydáváno za zero-copy náhradu.
