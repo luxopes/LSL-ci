@@ -455,6 +455,59 @@ function power_of_two_exponent(syntax):
     return exponent
 end
 
+function pow63_divmod(m):
+    # Returns [q, r] with q = (2^63) // m, r = (2^63) % m, for 1 <= m < 2^62,
+    # using 2^62 (representable) to avoid materializing 2^63.
+    pow62 = 4611686018427387904
+    q = (pow62 // m) * 2
+    r = (pow62 % m) * 2
+    if r >= m:
+        q += 1
+        r -= m
+    end
+    return [q, r]
+end
+
+function magic_signed(divisor):
+    # Granlund-Montgomery signed magic for a constant divisor d in [3, 2^31).
+    # Returns [M, s]: floor-free truncated quotient is high64(n*M) [+n if M<0]
+    # then >> s. Pure signed 64-bit math (q2 may wrap as a bit pattern).
+    pow63_minus_1 = 9223372036854775807
+    ad = divisor
+    t = pow63_minus_1 - ((pow63_minus_1 % ad + 1) % ad)
+    anc = t
+    # anc lies in (2^62, 2^63), so (2^63)//anc == 1 and (2^63)%anc == 2^63-anc.
+    r1 = pow63_minus_1 - anc + 1
+    q1 = 1
+    divmod2 = pow63_divmod(ad)
+    q2 = divmod2[0]
+    r2 = divmod2[1]
+    p = 63
+    delta = 0
+    keep_going = True
+    while keep_going:
+        p += 1
+        q1 = q1 * 2
+        if r1 >= anc - r1:
+            q1 += 1
+            r1 = r1 - (anc - r1)
+        else:
+            r1 = r1 + r1
+        end
+        q2 = q2 * 2
+        if r2 >= ad - r2:
+            q2 += 1
+            r2 = r2 * 2 - ad
+        else:
+            r2 = r2 * 2
+        end
+        delta = ad - r2
+        keep_going = q1 < delta or (q1 == delta and r1 == 0)
+    end
+    magic = q2 + 1
+    return [magic, p - 64]
+end
+
 function inverted_branch(operator):
     # jcc bytes that jump when the ordered comparison is FALSE.
     if operator == "<":
@@ -894,6 +947,42 @@ function emit_expression(generator, syntax):
                 call assembler.emit(output, x86_64.and_reg_reg(0, 1))
             else:
                 call assembler.emit(output, x86_64.shift_right_arithmetic_imm(0, power_exponent))
+            end
+        elif (operator == "//" or operator == "%") and syntax["right"]["kind"] == "literal" and syntax["right"]["literal_kind"] == "number" and syntax["right"]["value"].find(".") < 0 and syntax["right"]["value"].find("e") < 0 and syntax["right"]["value"].find("E") < 0 and Int(syntax["right"]["value"]) >= 3 and Int(syntax["right"]["value"]) < 2147483648 and power_of_two_exponent(syntax["right"]) < 0:
+            # Magic-number division: replace idiv by a signed high-multiply.
+            # n is already in reg0. quotient q = floor(n/d); remainder via
+            # n - q*d. d is a positive non-power-of-two constant in [3, 2^31).
+            divisor_value = Int(syntax["right"]["value"])
+            magic_pair = magic_signed(divisor_value)
+            magic_number = magic_pair[0]
+            magic_shift = magic_pair[1]
+            floor_done = label_name(generator, "magic_floor_done")
+            call assembler.emit(output, x86_64.move_reg_reg(6, 0))
+            call assembler.emit(output, x86_64.mov_imm64(1, magic_number))
+            call assembler.emit(output, x86_64.imul_high_reg(1))
+            if magic_number < 0:
+                call assembler.emit(output, x86_64.add_reg_reg(2, 6))
+            end
+            if magic_shift > 0:
+                call assembler.emit(output, x86_64.shift_right_arithmetic_imm(2, magic_shift))
+            end
+            call assembler.emit(output, x86_64.move_reg_reg(8, 6))
+            call assembler.emit(output, x86_64.shift_right_logical_imm(8, 63))
+            call assembler.emit(output, x86_64.add_reg_reg(2, 8))
+            # reg2 = trunc(n/d). Convert to Python floor via the remainder.
+            call assembler.emit(output, x86_64.mov_imm64(1, divisor_value))
+            call assembler.emit(output, x86_64.move_reg_reg(9, 2))
+            call assembler.emit(output, x86_64.imul_reg_reg(9, 1))
+            call assembler.emit(output, x86_64.move_reg_reg(0, 6))
+            call assembler.emit(output, x86_64.sub_reg_reg(0, 9))
+            # reg0 = C remainder (sign of n). d>0, so if remainder<0 floor-correct.
+            call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+            call assembler.relative(output, [15, 141], floor_done)
+            call assembler.emit(output, x86_64.decrement(2))
+            call assembler.emit(output, x86_64.add_reg_reg(0, 1))
+            call assembler.label(output, floor_done)
+            if operator == "//":
+                call assembler.emit(output, x86_64.move_reg_reg(0, 2))
             end
         elif operator == "//" or operator == "%":
             division_ready = label_name(generator, "division_ready")

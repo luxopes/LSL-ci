@@ -44,6 +44,12 @@ if io_output != readfile("tests/io_conformance.out"):
     Error(TestFailure: "I/O conformance output differs")
 end
 
+call require_success(run(compiler, ["tests/magic_division_conformance.lsl", "/tmp/lsl-magic-division-test"]), "compile magic division conformance")
+magic_division_output = capture("/tmp/lsl-magic-division-test", [])
+if magic_division_output != readfile("tests/magic_division_conformance.out"):
+    Error(TestFailure: "magic division conformance output differs")
+end
+
 call require_success(run(compiler, ["tests/float_exponent_conformance.lsl", "/tmp/lsl-float-exponent-test"]), "compile Float exponent conformance")
 float_exponent_output = capture("/tmp/lsl-float-exponent-test", [])
 if float_exponent_output != readfile("tests/float_exponent_conformance.out"):

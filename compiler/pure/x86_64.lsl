@@ -219,6 +219,13 @@ end
 function idiv_reg(register):
     return [rex(True, False, False, register >= 8), 247, modrm(3, 7, register)]
 end
+function imul_high_reg(register):
+    # one-operand IMUL: RDX:RAX = RAX * register (signed); high half in RDX.
+    return [rex(True, False, False, register >= 8), 247, modrm(3, 5, register)]
+end
+function shift_right_logical_imm(register, amount):
+    return [rex(True, False, False, register >= 8), 193, modrm(3, 5, register), amount]
+end
 
 function cqo():
     return [72, 153]
