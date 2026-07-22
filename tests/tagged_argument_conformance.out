@@ -1,0 +1,11 @@
+Int 9 0 False
+Int 9 1 True
+Int 9 -9223372036854775808 True
+Int 9 9223372036854775807 True
+Bool 4 True True
+Bool 4 False False
+None 5 None False
+Int 9 0 False
+Int 9 1 True
+[0, 1] Int Int
+Int 2 Int

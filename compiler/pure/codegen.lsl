@@ -149,12 +149,8 @@ function infer_expression_type(syntax, types, function_returns):
         elif syntax["operator"] == "//" or syntax["operator"] == "%":
             if left == "Float" or right == "Float":
                 return "Float"
-            elif left == "Any" and right == "Any":
-                # Only both-Any goes to the dynamic Int/Float dispatch. If either
-                # side is statically Int, stay on the deterministic Int idiv path
-                # (the compiler's own // % always has an Int operand, so its
-                # self-host stays convergent; the dynamic path's is_heap check
-                # can collide with a large raw Int address).
+            elif left == "Any" or right == "Any":
+                # Dynamic Int/Float dispatch also normalizes tagged Int operands.
                 return "Any"
             end
         end
@@ -1637,14 +1633,10 @@ function emit_expression(generator, syntax):
                     if len(combined_arguments) > 6:
                         call unsupported(generator["path"], generator["lines"], syntax, "method has too many native ABI arguments", "use at most six arguments")
                     end
-                    method_argument_index = 0
                     for argument in combined_arguments:
                         call emit_expression(generator, argument)
-                        if (target["name"] == "setdefault" or target["name"] == "insert") and method_argument_index == 2:
-                            call emit_collection_box(generator, argument)
-                        end
+                        call emit_collection_box(generator, argument)
                         call assembler.emit(output, x86_64.push(0))
-                        method_argument_index += 1
                     end
                     method_registers = [7, 6, 2, 1, 8, 9]
                     method_index = len(combined_arguments) - 1
@@ -1682,6 +1674,7 @@ function emit_expression(generator, syntax):
                 index = len(arguments) - 1
                 while index >= 0:
                     call emit_expression(generator, arguments[index])
+                    call emit_collection_box(generator, arguments[index])
                     call assembler.emit(output, x86_64.push(0))
                     index -= 1
                 end
@@ -1731,6 +1724,7 @@ function emit_expression(generator, syntax):
         index = len(arguments) - 1
         while index >= 0:
             call emit_expression(generator, arguments[index])
+            call emit_collection_box(generator, arguments[index])
             call assembler.emit(output, x86_64.push(0))
             index -= 1
         end

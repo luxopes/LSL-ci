@@ -237,19 +237,26 @@ explicitní Int konverzi interních register tabulek a writebytes unbox; nyní j
 všechny stage opět bitově shodné. Conformance ověřuje 0/1, min/max, mutace,
 JSON, Tuple, RealArray a Dictionary.
 
-Následuje fáze 4 — Any function ABI:
+Fáze 4a je hotová ve fixed pointu
+`b939f8c171dc086ff3794fdda5f2a163468097c23eed223c5f4414c6b42cbbd3`.
+Staticky známé Int/Bool/None argumenty se boxují před direct, indirect, method a
+initializer callem, v registrech i na stacku. Compiler self-hostuje i s tagged
+parametry; `%`/`//` dispatch byl rozšířen na jeden Any operand. Conformance
+ověřuje identity return, min/max Int, Bool/None a class initializer/method.
 
-1. U každého direct/indirect/class callu určit statický typ argumentu a před
-   předáním do neanotovaného (Any) parametru boxovat Int/Bool/None; heap hodnoty
-   ponechat. U stack argumentů boxovat před push.
-2. Na vstupu funkce jsou všechny parametry Any. Auditovat compiler internals:
-   x86/bytes/backend funkce očekávají raw numerické parametry, takže buď zavést
-   interní typed-param metadata, nebo jejich parametry explicitně `Int(...)`
-   unboxnout. Nezapínat globálně bez tohoto auditu.
-3. Definovat return ABI: staticky známý Int/Bool/None boxovat jen pokud call site
-   očekává Any; praktičtější může být tagged return + explicitní typed unbox.
-4. Přidat conformance přes identity/callback/recursion/class metodu pro 0, 1,
-   min/max a Bool/None, včetně vložení return hodnoty do collection.
+Následuje fáze 4b — dokončení Any function ABI:
+
+1. Přidat tagged Function heap type 10 s box/unbox helperem; indirect call musí
+   přijmout raw i type-10 callable. Generic truth/equality/type/render musí type
+   10 znát a GC jej bere jako leaf.
+2. Na Any argument hranici otagovat i výraz inferovaný `Any`. Již heap/tagged
+   hodnotu zachovat; raw numerický výsledek boxovat jako Int. Díky type 10 nesmí
+   být Function pointer zaměněn za Int.
+3. Na `return` hranici tagovat staticky známé Int/Bool/None/Function a raw
+   numerické Any výsledky. Call site se staticky typed očekáváním musí případně
+   explicitně unboxnout; Any call výsledek zůstane tagged.
+4. Přidat recursion/callback/select-callback tests a identity kolem raw výsledku
+   `sum`, aritmetiky a 0; vložit všechny return hodnoty do collections.
 5. Po fixed pointu odstranit raw scalar fallback z generic runtime classifieru
    a přidat důkaz proti raw-Int/live-pointer kolizi.
 

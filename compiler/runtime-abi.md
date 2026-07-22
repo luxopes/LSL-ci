@@ -33,7 +33,7 @@ Allocator před payloadem udržuje neveřejnou 32-byte GC hlavičku. Aktuální 
 
 String payload je UTF-8, ale jazykové `len`, indexace a slicing pracují s Unicode code points. List/Tuple/RealArray slots, Dictionary hodnoty a instance fields nesou dynamické hodnoty; staticky známé Int, Bool a None jsou na této hranici boxované. Generic truth, equality, comparison, numeric operations, rendering, JSON, conversions, indexing a `rang` přijímají raw i boxed Int. Typed Int fast path zůstává raw.
 
-Object identity se už neurčuje hranicí ELF adresy. Každá alokace se zapisuje do exact open-addressed pointer registry; static String templates se při prvním použití klonují do heapu a internují podle template pointeru. Tím dynamické Int hodnoty nad `0x400000` zůstávají Int. K úplně jednoznačnému tag ABI ještě zbývá zapnout scalar boxování na Any function argument/return hranicích a poté odstranit raw fallback heuristiky; do té doby stále existuje teoretická kolize raw Int, jehož bits jsou přesně rovné adrese živého heap objektu.
+Object identity se už neurčuje hranicí ELF adresy. Každá alokace se zapisuje do exact open-addressed pointer registry; static String templates se při prvním použití klonují do heapu a internují podle template pointeru. Tím dynamické Int hodnoty nad `0x400000` zůstávají Int. Staticky známé Int/Bool/None argumenty se při direct, indirect, method i initializer volání předávají do Any parametrů boxované; již tagged hodnoty lze bezpečně vracet beze změny. Zbývá otagovat raw výsledky výrazů inferovaných jako Any a sjednotit Function hodnoty/returns, potom odstranit raw fallback heuristiky. Do té doby stále existuje teoretická kolize raw Int, jehož bits jsou přesně rovné adrese živého heap objektu.
 
 ## GC a vlastnictví
 

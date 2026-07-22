@@ -231,6 +231,12 @@ if boxed_collection_output != readfile("tests/boxed_collection_conformance.out")
     Error(TestFailure: "boxed collection conformance output differs")
 end
 
+call require_success(run(compiler, ["tests/tagged_argument_conformance.lsl", "/tmp/lsl-tagged-argument-test"]), "compile tagged argument conformance")
+tagged_argument_output = capture("/tmp/lsl-tagged-argument-test", [])
+if tagged_argument_output != readfile("tests/tagged_argument_conformance.out"):
+    Error(TestFailure: "tagged argument conformance output differs")
+end
+
 call require_success(run(compiler, ["tests/realarray_conformance.lsl", "/tmp/lsl-realarray-test"]), "compile RealArray conformance")
 realarray_output = capture("/tmp/lsl-realarray-test", [])
 if realarray_output != readfile("tests/realarray_conformance.out"):

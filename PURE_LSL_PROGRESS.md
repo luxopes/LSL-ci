@@ -449,10 +449,17 @@ vyžadoval explicitní unbox register tabulek a byte outputu; tři boxed-collect
 stage jsou nyní bitově shodné. Conformance pokrývá 0/1, min/max, JSON, mutace,
 Tuple, RealArray a Dictionary; celý suite a config jsou zelené.
 
-Přesný další krok: tagged ABI fáze 4 — scalar boxování na Any function
-argument/return hranicích s explicitním typed interním ABI pro compiler backend,
-potom odstranit raw fallback a dokázat nemožnost live-pointer kolize. Následuje
-pure-LSL in-process zero-copy tensor/shared-object loader.
+Tagged ABI fáze 4a má fixed point
+`b939f8c171dc086ff3794fdda5f2a163468097c23eed223c5f4414c6b42cbbd3`.
+Staticky známé Int/Bool/None argumenty se boxují před direct, indirect, method i
+initializer voláním v registrech i na stacku. Identity return zachová tagy;
+conformance ověřuje 0/1, min/max, Bool/None a class init/method. Self-host,
+suite a config jsou zelené.
+
+Přesný další krok: tagged ABI fáze 4b — Function type 10, tagging raw Any
+argument/return výsledků a typed unbox na call sites, potom odstranit raw
+fallback a dokázat nemožnost live-pointer kolize. Následuje pure-LSL in-process
+zero-copy tensor/shared-object loader.
 
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,
