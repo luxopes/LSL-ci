@@ -273,6 +273,13 @@ if ai_output != readfile("tests/ai_conformance.out"):
     Error(TestFailure: "AI conformance output differs")
 end
 
+call require_success(run(compiler, ["tests/capture_result_server.lsl", "/tmp/lsl-capture-result-server"]), "compile capture result server")
+call require_success(run(compiler, ["tests/capture_result_conformance.lsl", "/tmp/lsl-capture-result-test"]), "compile capture result conformance")
+capture_result_output = capture("/tmp/lsl-capture-result-test", [])
+if capture_result_output != readfile("tests/capture_result_conformance.out"):
+    Error(TestFailure: "capture result conformance output differs")
+end
+
 call require_success(run(compiler, ["tests/process_status_server.lsl", "/tmp/lsl-process-status-server"]), "compile process status server")
 call require_success(run(compiler, ["tests/process_status_conformance.lsl", "/tmp/lsl-process-status-test"]), "compile process status conformance")
 process_status_output = capture("/tmp/lsl-process-status-test", [])

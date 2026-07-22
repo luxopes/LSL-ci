@@ -189,7 +189,7 @@ function infer_expression_type(syntax, types, function_returns):
             if name == "sum":
                 return "Any"
             end
-            if name == "len" or name == "Int" or name == "ord" or name == "arg_count" or name == "run" or name == "__lsl_type_code" or name == "__lsl_raw_equal" or name == "__lsl_float_bits" or name == "__lsl_float_to_int" or name == "__lsl_unbox_int" or name == "__lsl_raw_int":
+            if name == "len" or name == "Int" or name == "ord" or name == "arg_count" or name == "run" or name == "capture_status" or name == "__lsl_type_code" or name == "__lsl_raw_equal" or name == "__lsl_float_bits" or name == "__lsl_float_to_int" or name == "__lsl_unbox_int" or name == "__lsl_raw_int":
                 return "Int"
             elif name == "Float":
                 return "Float"
@@ -1128,7 +1128,7 @@ function emit_expression(generator, syntax):
     elif kind == "call":
         target = syntax["target"]
         if target["kind"] == "name":
-            builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "Dictionary": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sum": 1, "type": 1, "exit": 1, "input": 1, "readfile": 1, "getenv": 1, "mkdir": 1, "unlink": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "help": 0, "run": 2, "capture": 2, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2}
+            builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "Dictionary": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sum": 1, "type": 1, "exit": 1, "input": 1, "readfile": 1, "getenv": 1, "mkdir": 1, "unlink": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "help": 0, "run": 2, "capture": 2, "capture_status": 0, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2}
             if target["name"] in builtin_arity:
                 expected_builtin = builtin_arity[target["name"]]
                 if len(syntax["arguments"]) != expected_builtin:
@@ -1390,6 +1390,9 @@ function emit_expression(generator, syntax):
                 else:
                     call assembler.relative(output, [232], "runtime_run")
                 end
+                return
+            elif target["name"] == "capture_status":
+                call assembler.relative(output, [232], "runtime_capture_status")
                 return
             elif target["name"] == "input":
                 call emit_expression(generator, syntax["arguments"][0])
@@ -2684,7 +2687,7 @@ function generate(path, source, program):
     call assembler.emit(output, x86_64.mov_imm64(7, 0))
     call assembler.emit(output, x86_64.syscall())
     call assembler.emit(output, x86_64.move_reg_reg(3, 0))
-    call assembler.emit(output, x86_64.lea_base(8, 3, 64))
+    call assembler.emit(output, x86_64.lea_base(8, 3, 72))
     call assembler.emit(output, x86_64.move_reg_reg(9, 8))
     call assembler.emit(output, x86_64.add_reg_imm32(9, 134217728))
     call assembler.emit(output, x86_64.move_reg_reg(7, 9))

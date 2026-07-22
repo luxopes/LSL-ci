@@ -509,6 +509,13 @@ Process `run` fixed point
 dekóduje normální exit, signal jako `128+signal`, exec failure 127 a fork/wait
 failure 126. Targeted process status conformance ověřuje exit 7 a missing exec.
 
+Structured capture fixed point
+`500691c46d6c7a21a77e2076dbaeefef63183387fe0ff887b5d026302e4ec495`
+uchovává dekódovaný status posledního capture v runtime state.
+`process.capture_result` vrací `{stdout,status,ok}` a `process.check` propaguje
+`ProcessError`; module je v installeru a targeted conformance ověřuje stdout +
+exit 7. Oddělené stderr zachycení stále vyžaduje druhou pipe/poll loop.
+
 Přesný další krok: dokončit zbývající raw Any callback return, potom odstranit
 raw fallback a dokázat nemožnost live-pointer kolize. Následuje pure-LSL in-process
 zero-copy tensor/shared-object loader.

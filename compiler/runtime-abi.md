@@ -4,7 +4,7 @@ Stav: interní Linux x86_64 ABI verze 0.7. Není to veřejné plugin ABI.
 
 ## Strojová hranice
 
-Compiler generuje SysV-like volání: prvních šest argumentů je v `rdi`, `rsi`, `rdx`, `rcx`, `r8`, `r9`, další argumenty jsou na zásobníku a výsledek je v `rax`. `r12` ukazuje na main/global frame, `r13` drží poslední error String, `r14` error flag a `rbx` adresu 64-byte allocator/GC state bloku rezervovaného přes `brk`.
+Compiler generuje SysV-like volání: prvních šest argumentů je v `rdi`, `rsi`, `rdx`, `rcx`, `r8`, `r9`, další argumenty jsou na zásobníku a výsledek je v `rax`. `r12` ukazuje na main/global frame, `r13` drží poslední error String, `r14` error flag a `rbx` adresu 72-byte allocator/GC/process state bloku rezervovaného přes `brk`.
 
 Runtime je emitován přímo jako x86_64 bytes z LSL modulů. Nepoužívá libc, C ABI runtime, assembler ani linker.
 

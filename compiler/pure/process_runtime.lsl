@@ -270,6 +270,19 @@ function emit_capture(output):
     call assembler.emit(output, x86_64.xor_reg_reg(10, 10))
     call assembler.emit(output, x86_64.mov_imm64(0, 61))
     call assembler.emit(output, x86_64.syscall())
+    call assembler.emit(output, x86_64.load_stack(0, -96))
+    call assembler.emit(output, x86_64.move_reg_reg(1, 0))
+    call assembler.emit(output, x86_64.and_reg_imm8(1, 127))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(1, 0))
+    call assembler.relative(output, [15, 132], "capture_status_exited")
+    call assembler.emit(output, x86_64.move_reg_reg(0, 1))
+    call assembler.emit(output, x86_64.add_reg_imm32(0, 128))
+    call assembler.relative(output, [233], "capture_status_ready")
+    call assembler.label(output, "capture_status_exited")
+    call assembler.emit(output, x86_64.shift_right_arithmetic_imm(0, 8))
+    call assembler.emit(output, x86_64.and_reg_imm8(0, 255))
+    call assembler.label(output, "capture_status_ready")
+    call assembler.emit(output, x86_64.store_memory(3, 64, 0))
     call assembler.emit(output, x86_64.load_stack(0, -80))
     call assembler.emit(output, x86_64.load_stack(1, -88))
     call assembler.emit(output, x86_64.store_memory(0, 8, 1))
@@ -299,9 +312,16 @@ function emit_capture(output):
     call assembler.emit(output, x86_64.syscall())
 end
 
+function emit_capture_status(output):
+    call assembler.label(output, "runtime_capture_status")
+    call assembler.emit(output, x86_64.load_memory(0, 3, 64))
+    call assembler.emit(output, x86_64.ret())
+end
+
 function emit_all(output):
     call emit_run(output)
     call emit_executable_path(output)
     call emit_getenv(output)
     call emit_capture(output)
+    call emit_capture_status(output)
 end
