@@ -1,0 +1,10 @@
+True False None
+5 -7 0
+2.500000 -1.500000 0.000000
+already 
+flag: True empty: None
+True
+None
+[True, False, None, 1, 'x']
+[True, False, None, 1, 'x']
+{'ok': True, 'missing': None}

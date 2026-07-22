@@ -1182,6 +1182,21 @@ function emit_expression(generator, syntax):
                     call emit_expression(generator, syntax["arguments"][0])
                     call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                     call assembler.relative(output, [232], "runtime_int_to_string")
+                elif argument_type == "Bool":
+                    # Static Bool is a raw 0/1, which __lsl_str_value would
+                    # misread as Int; select the String literal directly.
+                    bool_false = label_name(generator, "string_bool_false")
+                    bool_done = label_name(generator, "string_bool_done")
+                    call emit_expression(generator, syntax["arguments"][0])
+                    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+                    call assembler.relative(output, [15, 132], bool_false)
+                    call emit_string_pointer(generator, "True")
+                    call assembler.relative(output, [233], bool_done)
+                    call assembler.label(output, bool_false)
+                    call emit_string_pointer(generator, "False")
+                    call assembler.label(output, bool_done)
+                elif argument_type == "None":
+                    call emit_string_pointer(generator, "None")
                 else:
                     str_value_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_str_value"}, "arguments": syntax["arguments"]}
                     call emit_expression(generator, str_value_call)

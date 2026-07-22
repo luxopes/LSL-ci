@@ -80,6 +80,12 @@ if slice_step_output != readfile("tests/slice_step_conformance.out"):
     Error(TestFailure: "slice step conformance output differs")
 end
 
+call require_success(run(compiler, ["tests/string_conversion_conformance.lsl", "/tmp/lsl-string-conversion-test"]), "compile string conversion conformance")
+string_conversion_output = capture("/tmp/lsl-string-conversion-test", [])
+if string_conversion_output != readfile("tests/string_conversion_conformance.out"):
+    Error(TestFailure: "string conversion conformance output differs")
+end
+
 call require_success(run(compiler, ["tests/float_exponent_conformance.lsl", "/tmp/lsl-float-exponent-test"]), "compile Float exponent conformance")
 float_exponent_output = capture("/tmp/lsl-float-exponent-test", [])
 if float_exponent_output != readfile("tests/float_exponent_conformance.out"):
