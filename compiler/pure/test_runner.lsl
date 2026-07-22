@@ -117,6 +117,12 @@ if recursive_return_output != readfile("tests/recursive_return_conformance.out")
     Error(TestFailure: "recursive return conformance output differs")
 end
 
+call require_success(run(compiler, ["tests/wide_class_abi_conformance.lsl", "/tmp/lsl-wide-class-abi-test"]), "compile wide class ABI conformance")
+wide_class_abi_output = capture("/tmp/lsl-wide-class-abi-test", [])
+if wide_class_abi_output != readfile("tests/wide_class_abi_conformance.out"):
+    Error(TestFailure: "wide class ABI conformance output differs")
+end
+
 call require_success(run(compiler, ["tests/float_exponent_conformance.lsl", "/tmp/lsl-float-exponent-test"]), "compile Float exponent conformance")
 float_exponent_output = capture("/tmp/lsl-float-exponent-test", [])
 if float_exponent_output != readfile("tests/float_exponent_conformance.out"):

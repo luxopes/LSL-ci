@@ -1644,9 +1644,6 @@ function emit_expression(generator, syntax):
         if target["name"] in generator["classes"]:
             class_name = target["name"]
             arguments = syntax["arguments"]
-            if len(arguments) > 5:
-                call unsupported(generator["path"], generator["lines"], syntax, "class initializer has too many arguments", "use at most five arguments after self")
-            end
             call assembler.relative(output, [232], "runtime_dict_new")
             call assembler.emit(output, x86_64.push(0))
             initializer_name = class_name + "__init"
@@ -1664,12 +1661,18 @@ function emit_expression(generator, syntax):
                 call assembler.emit(output, x86_64.load_memory(0, 4, len(arguments) * 8))
                 call assembler.emit(output, x86_64.push(0))
                 argument_registers = [7, 6, 2, 1, 8, 9]
+                total_arguments = len(arguments) + 1
+                register_count = min(total_arguments, len(argument_registers))
                 index = 0
-                while index < len(arguments) + 1:
+                while index < register_count:
                     call assembler.emit(output, x86_64.pop(argument_registers[index]))
                     index += 1
                 end
                 call assembler.relative(output, [232], "function_" + initializer_name)
+                stack_count = total_arguments - register_count
+                if stack_count > 0:
+                    call assembler.emit(output, x86_64.add_reg_imm32(4, stack_count * 8))
+                end
                 call assembler.emit(output, x86_64.cmp_reg_imm8(14, 0))
                 if generator["error_label"] != "":
                     call assembler.relative(output, [15, 133], generator["error_label"])

@@ -433,6 +433,13 @@ conformance vytvoří 2MiB soubor, child jej vypíše a parent přesně ověří
 první/poslední byte a newline. Fixed point, deterministické nástroje i suite
 procházejí.
 
+Fixed point s širokým class initializer ABI má SHA-256
+`a147d1366d6528103e6bffe486eea467e917ca513494dfb4513c7983094b1dd7`.
+Konstruktor už není omezen na pět user argumentů: prvních šest hodnot včetně
+`self` jde registry a zbytek standardním stack ABI, se správným cleanupem před
+error propagation. Conformance ověřuje osm argumentů konstruktoru a sedm
+argumentů bound metody. Fixed point i suite procházejí.
+
 Přesný další krok: poslední raw-Int/live-pointer kolize přes jednoznačný scalar
 tag ABI a pure-LSL in-process zero-copy tensor/shared-object loader. Izolované
 process plugin ABI je hotové, ale není vydáváno za zero-copy náhradu.
