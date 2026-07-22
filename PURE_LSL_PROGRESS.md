@@ -509,6 +509,9 @@ Process `run` fixed point
 dekóduje normální exit, signal jako `128+signal`, exec failure 127 a fork/wait
 failure 126. Targeted process status conformance ověřuje exit 7 a missing exec.
 
+Option descriptors nyní nesou declaration-file provenance a missing/type
+chyby vypisují zdrojový modul; targeted invalid-type conformance prochází.
+
 Config podporuje `config.lazy(thunk)` s rekurzivní materializací a aktivním
 Function stackem; opakovaný thunk končí `ConfigCycleError`. Positive lazy
 conformance, manual negative cycle a existující system config procházejí.

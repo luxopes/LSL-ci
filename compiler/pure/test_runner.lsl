@@ -311,6 +311,14 @@ lazy_config_output = capture("/tmp/lsl-config-lazy-test", [])
 if lazy_config_output != readfile("tests/config/lazy.out"):
     Error(TestFailure: "lazy config output differs")
 end
+type_error_wrapper = "tests/config/.type-error-test-evaluator.lsl"
+call require_success(run(configure, ["tests/config/type_error.lsl", type_error_wrapper]), "generate config type-error evaluator")
+call require_success(run(compiler, [type_error_wrapper, "/tmp/lsl-config-type-error-test"]), "compile config type-error evaluator")
+call unlink(type_error_wrapper)
+type_error_output = capture("/tmp/lsl-config-type-error-test", [])
+if type_error_output != readfile("tests/config/type_error.out"):
+    Error(TestFailure: "config type-error provenance differs")
+end
 config_cycle_output = capture(configure, ["tests/config/cycle_a.lsl", "/tmp/lsl-cycle-evaluator.lsl"])
 if config_cycle_output != readfile("tests/config/cycle.out"):
     Error(TestFailure: "config cycle diagnostic differs")

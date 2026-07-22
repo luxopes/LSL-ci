@@ -168,7 +168,10 @@ while index < len(order):
     current_module = module_name(root, order[index])
     wrapper += "merged = deep_merge(merged, " + current_module + ".config)\n"
     if has_export(order[index], "options"):
-        wrapper += "all_options.update(" + current_module + ".options)\n"
+        wrapper += "for declared_name in " + current_module + ".options:\n"
+        wrapper += "    declared_option = " + current_module + ".options[declared_name]\n"
+        wrapper += "    declared_option[\"source\"] = \"" + order[index] + "\"\n"
+        wrapper += "    all_options[declared_name] = declared_option\nend\n"
     end
     if has_export(order[index], "assertions"):
         wrapper += "all_assertions.extend(" + current_module + ".assertions)\n"
@@ -176,7 +179,7 @@ while index < len(order):
     index += 1
 end
 wrapper += "clean = materialize(merged, [])\nmissing = {\"__missing\": True}\n"
-wrapper += "for option_name in all_options:\n    descriptor = all_options[option_name]\n    option_value = get_path(clean, option_name, missing)\n    if option_value == missing:\n        if descriptor[\"required\"]:\n            print \"Missing required option\", option_name\n            exit(1)\n        end\n        option_value = materialize(descriptor[\"default\"], [])\n        call set_path(clean, option_name, option_value)\n    end\n    if not type_matches(option_value, descriptor[\"type\"]):\n        print \"Invalid option type\", option_name, descriptor[\"type\"], dynamic_type(option_value)\n        exit(1)\n    end\nend\n"
+wrapper += "for option_name in all_options:\n    descriptor = all_options[option_name]\n    option_value = get_path(clean, option_name, missing)\n    if option_value == missing:\n        if descriptor[\"required\"]:\n            print \"Missing required option\", option_name, \"declared in\", descriptor[\"source\"]\n            exit(1)\n        end\n        option_value = materialize(descriptor[\"default\"], [])\n        call set_path(clean, option_name, option_value)\n    end\n    if not type_matches(option_value, descriptor[\"type\"]):\n        print \"Invalid option type\", option_name, descriptor[\"type\"], dynamic_type(option_value), \"declared in\", descriptor[\"source\"]\n        exit(1)\n    end\nend\n"
 wrapper += "for assertion in all_assertions:\n    if not assertion[0]:\n        print \"Configuration assertion failed:\", assertion[1]\n        exit(1)\n    end\nend\n"
 wrapper += "print json.encode(clean)\n"
 call writefile(output_path, wrapper)

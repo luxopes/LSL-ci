@@ -50,6 +50,6 @@ Importy se vyhodnocují jednou v deterministickém post-order pořadí, root mod
 
 V config režimu nejsou dostupné `input`, souborové funkce, hodiny ani moduly `http` a `env`. Jedinými hostitelskými vstupy jsou root soubor a explicitní graf `imports`. Výsledek je deterministicky serializovatelný do kompaktního JSON. Config generator staticky odmítá ambientní I/O a síťové funkce. Kryptografický derivační store a generation hash ještě patří do vyššího aktivačního nástroje, nikoli do evaluatoru.
 
-Deklarované options se kontrolují. Chybějící nepovinná option se materializuje do výsledného stromu ze svého defaultu; chybějící required option je chyba. Typ option i defaultu musí odpovídat `Bool`, `Int`, `Float`, `String`, `List`, `Dictionary`, `None`, `Any` nebo sjednocení, například `String|None`.
+Deklarované options se kontrolují a descriptor nese provenance souboru, který option deklaroval; missing/type diagnostika tento soubor vypíše. Chybějící nepovinná option se materializuje do výsledného stromu ze svého defaultu; chybějící required option je chyba. Typ option i defaultu musí odpovídat `Bool`, `Int`, `Float`, `String`, `List`, `Dictionary`, `None`, `Any` nebo sjednocení, například `String|None`.
 
 Aktuální evaluator řeší hodnoty a modulový systém. Generace, aktivace systému, rollback, package store a derivace budou vyšší nástroje nad tímto čistým výsledkem; nejsou předstírány jako hotová součást jazyka.
