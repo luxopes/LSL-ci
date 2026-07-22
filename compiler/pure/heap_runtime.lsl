@@ -1242,6 +1242,28 @@ function emit_coerce_float(output):
     call assembler.relative(output, [233], "runtime_float_from_int")
 end
 
+function emit_abs_any(output):
+    # reg7 = value -> reg0 = abs. Boxed Float clears the sign bit and reboxes;
+    # raw Int negates when negative.
+    call assembler.label(output, "runtime_abs_any")
+    call assembler.emit(output, x86_64.function_prologue(16))
+    call assembler.relative(output, [232], "runtime_is_float")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+    call assembler.relative(output, [15, 132], "abs_any_int")
+    call assembler.emit(output, x86_64.load_memory(7, 7, 8))
+    call assembler.emit(output, x86_64.mov_imm64(1, 9223372036854775807))
+    call assembler.emit(output, x86_64.and_reg_reg(7, 1))
+    call assembler.relative(output, [232], "runtime_float_new")
+    call assembler.emit(output, x86_64.function_epilogue())
+    call assembler.label(output, "abs_any_int")
+    call assembler.emit(output, x86_64.move_reg_reg(0, 7))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+    call assembler.relative(output, [15, 141], "abs_any_done")
+    call assembler.emit(output, x86_64.neg_reg(0))
+    call assembler.label(output, "abs_any_done")
+    call assembler.emit(output, x86_64.function_epilogue())
+end
+
 function emit_num_any(output, name, float_routine, is_add):
     # reg7,reg6 = operands. If either is a boxed Float, promote both to Float
     # and use float_routine (fixes mixed raw-Int + boxed-Float). Otherwise
@@ -1882,6 +1904,7 @@ function emit_all(output):
     call emit_equal_any(output)
     call emit_is_float(output)
     call emit_coerce_float(output)
+    call emit_abs_any(output)
     call emit_num_any(output, "runtime_add_any", "runtime_float_add", True)
     call emit_num_any(output, "runtime_sub_any", "runtime_float_sub", False)
     call emit_num_any(output, "runtime_mul_any", "runtime_float_mul", False)

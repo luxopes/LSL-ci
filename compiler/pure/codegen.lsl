@@ -161,6 +161,9 @@ function infer_expression_type(syntax, types, function_returns):
         target = syntax["target"]
         if target["kind"] == "name":
             name = target["name"]
+            if name == "abs":
+                return infer_expression_type(syntax["arguments"][0], types, function_returns)
+            end
             if name == "len" or name == "Int" or name == "ord" or name == "sum" or name == "min" or name == "max" or name == "arg_count" or name == "run" or name == "__lsl_type_code" or name == "__lsl_raw_equal" or name == "__lsl_float_bits" or name == "__lsl_float_to_int":
                 return "Int"
             elif name == "Float":
@@ -1358,12 +1361,24 @@ function emit_expression(generator, syntax):
                 call assembler.emit(output, x86_64.mov_imm64(0, 0))
                 return
             elif target["name"] == "abs":
+                abs_arg_type = infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"])
                 call emit_expression(generator, syntax["arguments"][0])
-                done_label = label_name(generator, "abs_done")
-                call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
-                call assembler.relative(output, [15, 141], done_label)
-                call assembler.emit(output, x86_64.neg_reg(0))
-                call assembler.label(output, done_label)
+                if abs_arg_type == "Float":
+                    # Clear the IEEE-754 sign bit of the boxed double and rebox.
+                    call assembler.emit(output, x86_64.load_memory(7, 0, 8))
+                    call assembler.emit(output, x86_64.mov_imm64(1, 9223372036854775807))
+                    call assembler.emit(output, x86_64.and_reg_reg(7, 1))
+                    call assembler.relative(output, [232], "runtime_float_new")
+                elif abs_arg_type == "Any":
+                    call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                    call assembler.relative(output, [232], "runtime_abs_any")
+                else:
+                    done_label = label_name(generator, "abs_done")
+                    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+                    call assembler.relative(output, [15, 141], done_label)
+                    call assembler.emit(output, x86_64.neg_reg(0))
+                    call assembler.label(output, done_label)
+                end
                 return
             elif target["name"] == "exit":
                 call emit_expression(generator, syntax["arguments"][0])
