@@ -401,6 +401,33 @@ function emit_truth(generator):
     call assembler.relative(generator["builder"], [232], "runtime_truth")
 end
 
+function condition_is_bool(syntax):
+    kind = syntax["kind"]
+    if kind == "compare":
+        return True
+    elif kind == "unary":
+        return syntax["operator"] == "not"
+    elif kind == "binary":
+        return syntax["operator"] == "and" or syntax["operator"] == "or"
+    elif kind == "literal":
+        return syntax["value"] == "True" or syntax["value"] == "False"
+    elif kind == "call":
+        if syntax["target"]["kind"] == "name":
+            return syntax["target"]["name"] == "Bool"
+        end
+    end
+    return False
+end
+
+function emit_condition(generator, syntax):
+    # Skip runtime_truth (a call + is_heap_object probe) when the expression
+    # already yields a 0/1 Bool.
+    call emit_expression(generator, syntax)
+    if not condition_is_bool(syntax):
+        call emit_truth(generator)
+    end
+end
+
 function emit_collection_box(generator, syntax):
     value_type = infer_expression_type(syntax, generator["types"], generator["function_returns"])
     if value_type == "Bool":
@@ -1598,8 +1625,7 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             while branch_index < len(statement["branches"]):
                 next_label = label_name(generator, "if_next")
                 branch = statement["branches"][branch_index]
-                call emit_expression(generator, branch[0])
-                call emit_truth(generator)
+                call emit_condition(generator, branch[0])
                 call assembler.emit(generator["builder"], x86_64.cmp_reg_imm8(0, 0))
                 call assembler.relative(generator["builder"], [15, 132], next_label)
                 call emit_statements(generator, branch[1], break_label, continue_label, return_label)
@@ -1614,8 +1640,7 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             end_label = label_name(generator, "loop_end")
             call assembler.label(generator["builder"], start_label)
             if kind == "while":
-                call emit_expression(generator, statement["condition"])
-                call emit_truth(generator)
+                call emit_condition(generator, statement["condition"])
                 call assembler.emit(generator["builder"], x86_64.cmp_reg_imm8(0, 0))
                 call assembler.relative(generator["builder"], [15, 132], end_label)
             end
