@@ -200,7 +200,7 @@ Vestavěný modul `lux` exportuje `version`, `language` a `l` (alias `type`). Da
 - čas: `clock()` — monotónní čas v sekundách
 - soubory UTF-8: `readfile(path)`, `writefile(path, value)`, `appendfile(path, value)`, `exists(path)`
 - Linux/POSIX filesystem: `cwd()`, `chdir(path)`, `mkdir(path)`, `remove_path(path)`
-- proces: globální `args`, `arg(index)`, `arg_count()`, `run(program, arguments)`, `capture(program, arguments)`, `capture_status()`, `exit(status)`; `process.capture_result` vrací `{stdout, stderr, status, ok}` a `process.check` vyvolá `ProcessError`; status je exit code, pro signál `128 + signal`, při selhání fork/wait 126 a při selhání exec 127
+- proces: globální `args`, `arg(index)`, `arg_count()`, `run(program, arguments)`, `capture(program, arguments)`, `capture_stream(program, arguments, callback)`, `capture_status()`, `exit(status)`; `process.capture_result` vrací `{stdout, stderr, status, ok}` a `process.check` vyvolá `ProcessError`; status je exit code, pro signál `128 + signal`, při selhání fork/wait 126 a při selhání exec 127
 - environment: `getenv(name)` vrátí String nebo `None`; v pure config režimu není dostupné
 - chyby: `last_error()` vrátí poslední chybu zachycenou `safe` nebo `try`
 - nápověda: `help()`

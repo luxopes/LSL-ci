@@ -1,0 +1,3 @@
+alpha|beta|
+True True 0 True
+StreamError: callback rejected chunk

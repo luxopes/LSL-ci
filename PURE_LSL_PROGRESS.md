@@ -491,9 +491,12 @@ use-after-close `NativeError`.
 Pure-LSL `tensor` module poskytuje dense CPU Tensor nad sdíleným RealArray,
 shape/strides/offset/dtype, bounds-checked get/set, reshape a zero-copy views.
 Conformance dokazuje sdílenou mutaci a shape errors; installer jej distribuuje.
-Foreign shared-object/GPU ABI tím není nahrazené. AI vrstva navíc validuje
-OpenAI SSE events a doručuje content chunks callbacku s cancellation; současný
-curl transport je ještě načte do bufferu před callback dispatch.
+Foreign shared-object/GPU ABI tím není nahrazené. AI vrstva navíc validuje OpenAI SSE events a doručuje content chunks callbacku
+s cancellation. Fixed point
+`f89961f12aecdce45c5772a138133b8b39fbd36a91f13c1f6638217faaf16524`
+přidal `capture_stream`: raw stdout chunks jsou callbacku předávány už během
+read loop, callback errors jsou catchable a curl `--no-buffer` je vystavuje přes
+`http.post_stream`/AI `transport_chunk`.
 
 AI standard module nyní poskytuje OpenAI-compatible request, timeout, retry pro
 transport/408/429/5xx, cancellation callback, validaci provider JSON,

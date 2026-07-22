@@ -125,7 +125,11 @@ function stream(endpoint, token, model, messages, options, on_event):
     if "timeout" in options:
         timeout = Int(options["timeout"])
     end
-    response = http.post(endpoint, payload, headers, timeout)
+    if "transport_chunk" in options:
+        response = http.post_stream(endpoint, payload, headers, timeout, options["transport_chunk"])
+    else:
+        response = http.post(endpoint, payload, headers, timeout)
+    end
     if not response["ok"]:
         return decode_response(response)
     end

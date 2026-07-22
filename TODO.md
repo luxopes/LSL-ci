@@ -30,7 +30,8 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktu�
 - [ ] Dokončit jednoznačný scalar tag ABI (Function type 10 je hotový; zbývá raw Any return hranice).
 - [x] Doplnit AI provider errors/retry/cancellation, lazy config/cycles/defaults/provenance, structured process status a pure-LSL zero-copy CPU Tensor.
 - [x] Doplnit omezený in-process CPU ET_DYN Int64 kernel ABI a neomezené stderr capture.
-- [ ] Pokračovat dynamic table growth, skutečný HTTP streaming a audit okruhy níže.
+- [x] Doplnit skutečné průběžné process/HTTP transport chunk callbacks.
+- [ ] Pokračovat dynamic table growth, poslední tagged callback return a audit okruhy níže.
 
 ## Zbývá
 

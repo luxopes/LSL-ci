@@ -1,0 +1,2 @@
+print "alpha"
+print "beta"
