@@ -244,11 +244,17 @@ initializer callem, v registrech i na stacku. Compiler self-hostuje i s tagged
 parametry; `%`/`//` dispatch byl rozšířen na jeden Any operand. Conformance
 ověřuje identity return, min/max Int, Bool/None a class initializer/method.
 
-Následuje fáze 4b — dokončení Any function ABI:
+Fáze 4b-infrastruktura je hotová ve fixed pointu `19ec5a02…`: explicitní
+Function type 10, box/unbox, generic type/truth/equality/render, GC leaf a
+indirect call se zachováním argument registrů. Automatické Function boxování
+zatím není zapnuté, protože první pokus prokázal heap-address leak do výstupu
+compileru; explicitní conformance je deterministická.
 
-1. Přidat tagged Function heap type 10 s box/unbox helperem; indirect call musí
-   přijmout raw i type-10 callable. Generic truth/equality/type/render musí type
-   10 znát a GC jej bere jako leaf.
+Následuje dokončení Any function ABI:
+
+1. Najít a odstranit compiler cestu, která při automatickém Function boxování
+   používá box pointer jako generovaný scalar; teprve pak zapnout boxování všech
+   staticky známých Function hranic.
 2. Na Any argument hranici otagovat i výraz inferovaný `Any`. Již heap/tagged
    hodnotu zachovat; raw numerický výsledek boxovat jako Int. Díky type 10 nesmí
    být Function pointer zaměněn za Int.

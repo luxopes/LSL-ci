@@ -30,6 +30,7 @@ Allocator před payloadem udržuje neveřejnou 32-byte GC hlavičku. Aktuální 
 - `7` Tuple
 - `8` RealArray
 - `9` boxed signed 64-bit Int (přechodový dynamic ABI)
+- `10` boxed Function code pointer (explicitní přechodový ABI)
 
 String payload je UTF-8, ale jazykové `len`, indexace a slicing pracují s Unicode code points. List/Tuple/RealArray slots, Dictionary hodnoty a instance fields nesou dynamické hodnoty; staticky známé Int, Bool a None jsou na této hranici boxované. Generic truth, equality, comparison, numeric operations, rendering, JSON, conversions, indexing a `rang` přijímají raw i boxed Int. Typed Int fast path zůstává raw.
 

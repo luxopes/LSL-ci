@@ -1216,6 +1216,11 @@ function emit_expression(generator, syntax):
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 call assembler.relative(output, [232], "runtime_box_int")
                 return
+            elif target["name"] == "__lsl_box_function":
+                call emit_expression(generator, syntax["arguments"][0])
+                call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                call assembler.relative(output, [232], "runtime_box_function")
+                return
             elif target["name"] == "__lsl_box_none":
                 call assembler.relative(output, [232], "runtime_box_none")
                 return
@@ -1741,7 +1746,22 @@ function emit_expression(generator, syntax):
             else:
                 call assembler.emit(output, x86_64.load_memory(0, 12, generator["global_variables"][target["name"]]))
             end
-            call assembler.emit(output, x86_64.call_reg(0))
+            # Callable classification uses rdi and may clobber caller-saved
+            # registers, so preserve the already loaded user arguments.
+            index = 0
+            while index < register_count:
+                call assembler.emit(output, x86_64.push(Int(argument_registers[index])))
+                index += 1
+            end
+            call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+            call assembler.relative(output, [232], "runtime_unbox_dynamic_function")
+            call assembler.emit(output, x86_64.move_reg_reg(11, 0))
+            index = register_count - 1
+            while index >= 0:
+                call assembler.emit(output, x86_64.pop(Int(argument_registers[index])))
+                index -= 1
+            end
+            call assembler.emit(output, x86_64.call_reg(11))
         else:
             call assembler.relative(output, [232], "function_" + target["name"])
         end

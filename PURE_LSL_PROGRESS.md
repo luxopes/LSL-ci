@@ -456,9 +456,18 @@ initializer voláním v registrech i na stacku. Identity return zachová tagy;
 conformance ověřuje 0/1, min/max, Bool/None a class init/method. Self-host,
 suite a config jsou zelené.
 
-Přesný další krok: tagged ABI fáze 4b — Function type 10, tagging raw Any
-argument/return výsledků a typed unbox na call sites, potom odstranit raw
-fallback a dokázat nemožnost live-pointer kolize. Následuje pure-LSL in-process
+Tagged ABI fáze 4b-infrastruktura má fixed point
+`19ec5a02e266f918b2eee6dc4fc0d67771a9042401c2e9bbdfb46f2792376548`.
+Heap type 10 boxuje Function code pointer, generic type/truth/equality/render jej
+znají a indirect call bezpečně přijímá raw i tagged callable při zachování všech
+argument registrů. Explicitní conformance ověřuje callback v List, identity,
+equality a přežití GC. Automatické boxování všech Function hodnot bylo
+záměrně odloženo: první pokus odhalil heap-address leak do compiler outputu;
+explicitní intrinsic zachovává deterministický fixed point.
+
+Přesný další krok: dokončit deterministické tagging raw Any argument/return
+výsledků a typed unbox na call sites, potom odstranit raw fallback a dokázat
+nemožnost live-pointer kolize. Následuje pure-LSL in-process
 zero-copy tensor/shared-object loader.
 
 ## Roadmap k "kompletní 1" (17 okruhů)

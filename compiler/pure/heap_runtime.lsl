@@ -408,6 +408,15 @@ function emit_boxed_scalars(output):
     call assembler.emit(output, x86_64.load_stack(1, -8))
     call assembler.emit(output, x86_64.store_memory(0, 8, 1))
     call assembler.emit(output, x86_64.function_epilogue())
+    call assembler.label(output, "runtime_box_function")
+    call assembler.emit(output, x86_64.function_prologue(32))
+    call assembler.emit(output, x86_64.store_stack(-8, 7))
+    call assembler.emit(output, x86_64.mov_imm64(7, 24))
+    call assembler.relative(output, [232], "runtime_alloc")
+    call assembler.emit(output, x86_64.store_memory_imm32(0, 0, 10))
+    call assembler.emit(output, x86_64.load_stack(1, -8))
+    call assembler.emit(output, x86_64.store_memory(0, 8, 1))
+    call assembler.emit(output, x86_64.function_epilogue())
     # Transitional Any numeric boundary: keep an already tagged heap value,
     # otherwise box the raw signed Int. Call only for expressions known to be
     # numeric-or-heap (for example indexed augmented assignment).
@@ -445,6 +454,19 @@ function emit_boxed_scalars(output):
     call assembler.emit(output, x86_64.ret())
     call assembler.label(output, "runtime_unbox_int")
     call assembler.emit(output, x86_64.load_memory(0, 7, 8))
+    call assembler.emit(output, x86_64.ret())
+    # Callable ABI accepts both the old raw code pointer and tagged type 10.
+    call assembler.label(output, "runtime_unbox_dynamic_function")
+    call assembler.relative(output, [232], "runtime_is_heap_object")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+    call assembler.relative(output, [15, 132], "unbox_function_raw")
+    call assembler.emit(output, x86_64.load_memory(1, 7, 0))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(1, 10))
+    call assembler.relative(output, [15, 133], "unbox_function_raw")
+    call assembler.emit(output, x86_64.load_memory(0, 7, 8))
+    call assembler.emit(output, x86_64.ret())
+    call assembler.label(output, "unbox_function_raw")
+    call assembler.emit(output, x86_64.move_reg_reg(0, 7))
     call assembler.emit(output, x86_64.ret())
     # Transitional helper for generic numeric operations: raw Int is returned
     # unchanged, boxed Int type 9 is unboxed. Other heap values remain unchanged
@@ -1209,6 +1231,8 @@ function emit_equal_any(output):
     call assembler.relative(output, [15, 132], "equal_any_payload")
     call assembler.emit(output, x86_64.cmp_reg_imm8(1, 9))
     call assembler.relative(output, [15, 132], "equal_any_payload")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(1, 10))
+    call assembler.relative(output, [15, 132], "equal_any_payload")
     call assembler.emit(output, x86_64.cmp_reg_imm8(1, 5))
     call assembler.relative(output, [15, 132], "equal_any_true")
     call assembler.relative(output, [233], "equal_any_false")
@@ -1236,6 +1260,8 @@ function emit_equal_any(output):
     call assembler.emit(output, x86_64.cmp_reg_imm8(1, 4))
     call assembler.relative(output, [15, 132], "equal_any_bool_raw")
     call assembler.emit(output, x86_64.cmp_reg_imm8(1, 9))
+    call assembler.relative(output, [15, 132], "equal_any_bool_raw")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(1, 10))
     call assembler.relative(output, [15, 132], "equal_any_bool_raw")
     call assembler.emit(output, x86_64.cmp_reg_imm8(1, 5))
     call assembler.relative(output, [15, 133], "equal_any_false")

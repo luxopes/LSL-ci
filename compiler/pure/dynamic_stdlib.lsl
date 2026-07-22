@@ -670,6 +670,8 @@ function __lsl_render(value, quote):
         return "None"
     elif code == 6:
         return __lsl_format_float(value)
+    elif code == 10:
+        return "<Function>"
     elif code == 3:
         result = "{"
         first = True
@@ -727,6 +729,8 @@ function __lsl_type_name(value):
         return "Tuple"
     elif code == 8:
         return "RealArray"
+    elif code == 10:
+        return "Function"
     end
     return "Any"
 end
