@@ -27,13 +27,13 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktu�
 - [x] Dokončit dokumentované collection metody a Dictionary konverzi.
 - [x] Odstranit pevný 4096B limit `input()` a číst přesně jeden řádek.
 - [x] Odstranit pevný 1MiB limit `capture()` dynamicky rostoucím bufferem.
-- [ ] Dokončit jednoznačný scalar tag ABI (fáze 1–4a: type 9, generic operace, collections a staticky známé scalar arguments hotové; zbývá Any returns/Function tag).
+- [ ] Dokončit jednoznačný scalar tag ABI (Function type 10 je hotový; zbývá raw Any return hranice).
 - [ ] Pokračovat zbývajícími runtime, plugin/AI/config a audit okruhy níže.
 
 ## Zbývá
 
 - dokončit jednoznačný scalar tag ABI tak, aby ani záměrný raw Int shodný s živou heap adresou nemohl kolidovat s object value;
-- zbytek okruhu 2: kontrolovaný integer overflow a další numerické edge cases;
+- další numerické edge cases; Int overflow má definovanou two's-complement modulo `2^64` sémantiku a conformance;
 - vedle hotového JSON process plugin ABI navrhnout pure-LSL in-process shared-object/zero-copy tensor loader;
 - rozšířit negative/conformance, benchmarky a další targety;
 - po finální kontrole odstranit případné zbylé transition poznámky a nepotřebné smoke zdroje.

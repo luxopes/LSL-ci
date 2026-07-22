@@ -38,6 +38,8 @@ Vestavěné typy a návratové hodnoty `type(value)`:
 
 `Bool(value)`, `Int(value)`, `Float(value)`, `String(value)`, `List(value)`, `Tuple(value)` a `Dictionary(value)` převádějí hodnoty. Přiřazení podporuje také `+=`, `-=`, `*=`, `/=` a `%=`.
 
+`Int` je signed 64-bit two's-complement hodnota. Aritmetika, mocnina, negace a převod z desetinného Stringu se definovaně redukují modulo `2^64`; nepoužívají `OverflowError`. `INT64_MIN // -1` proto vrací `INT64_MIN` a zbytek `0` bez CPU trapu.
+
 ## Výstup a vstup
 
 ```lsl

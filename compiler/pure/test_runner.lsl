@@ -105,6 +105,12 @@ if numeric_builtins_output != readfile("tests/numeric_builtins_conformance.out")
     Error(TestFailure: "numeric builtins conformance output differs")
 end
 
+call require_success(run(compiler, ["tests/integer_wrap_conformance.lsl", "/tmp/lsl-integer-wrap-test"]), "compile integer wrap conformance")
+integer_wrap_output = capture("/tmp/lsl-integer-wrap-test", [])
+if integer_wrap_output != readfile("tests/integer_wrap_conformance.out"):
+    Error(TestFailure: "integer wrap conformance output differs")
+end
+
 call require_success(run(compiler, ["tests/float_floordiv_conformance.lsl", "/tmp/lsl-float-floordiv-test"]), "compile float floordiv conformance")
 float_floordiv_output = capture("/tmp/lsl-float-floordiv-test", [])
 if float_floordiv_output != readfile("tests/float_floordiv_conformance.out"):

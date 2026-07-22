@@ -132,19 +132,11 @@ Rizika:
 Současný Int je signed 64-bit a většina operací wrapuje. `INT64_MIN // -1` je
 explicitně ošetřen bez CPU pádu. TODO ale stále žádá kontrolovaný overflow.
 
-Je nutné rozhodnout a zdokumentovat jednu sémantiku:
-
-A. Oficiální two's-complement wrapping Int (jednodušší, vhodné pro compiler),
-nebo
-B. User operace vyvolají `OverflowError`, interní compiler používá explicitní
-`__lsl_wrap_add/sub/mul/pow` intrinsic.
-
-Pokud B:
-
-- přidat x86 overflow branch (`jo`) pro user +, -, *, power;
-- předem převést compiler internals, které záměrně wrapují;
-- doplnit literal range validation a conformance pro min/max hranice;
-- teprve potom měnit běžný codegen, jinak se rozbije self-host determinismus.
+Rozhodnuto: LSL Int má oficiální signed 64-bit two's-complement wrapping
+sémantiku modulo `2^64`. Platí pro +, -, *, power, negaci i desetinný String
+conversion. `INT64_MIN // -1` vrací `INT64_MIN`, modulo vrací 0. Je to součást
+jazykové specifikace, nikoli neřízený host overflow. `integer_wrap_conformance`
+ověřuje typed i boxed dynamic cestu, min/max, power a String hranice.
 
 ### 3. In-process native/shared-object/tensor ABI
 
