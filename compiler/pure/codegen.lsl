@@ -428,6 +428,33 @@ function emit_condition(generator, syntax):
     end
 end
 
+function power_of_two_exponent(syntax):
+    # k if syntax is a positive power-of-two Int literal (2^k), else -1.
+    if syntax["kind"] != "literal":
+        return -1
+    end
+    if syntax["literal_kind"] != "number":
+        return -1
+    end
+    value = syntax["value"]
+    if value.find(".") >= 0 or value.find("e") >= 0 or value.find("E") >= 0:
+        return -1
+    end
+    number = Int(value)
+    if number <= 0:
+        return -1
+    end
+    exponent = 0
+    while number > 1:
+        if number % 2 != 0:
+            return -1
+        end
+        number = number // 2
+        exponent += 1
+    end
+    return exponent
+end
+
 function inverted_branch(operator):
     # jcc bytes that jump when the ordered comparison is FALSE.
     if operator == "<":
@@ -857,6 +884,17 @@ function emit_expression(generator, syntax):
             call assembler.emit(output, x86_64.move_reg_reg(7, 0))
             call assembler.emit(output, x86_64.move_reg_reg(6, 1))
             call assembler.relative(output, [232], "runtime_int_power")
+        elif (operator == "//" or operator == "%") and power_of_two_exponent(syntax["right"]) >= 0:
+            # Strength reduction: a % 2^k == a & (2^k-1), a // 2^k == a >> k
+            # (arithmetic), exact under Python floor semantics for every a
+            # including negatives and INT64_MIN. No idiv, no -1/overflow guard.
+            power_exponent = power_of_two_exponent(syntax["right"])
+            if operator == "%":
+                call assembler.emit(output, x86_64.mov_imm64(1, Int(syntax["right"]["value"]) - 1))
+                call assembler.emit(output, x86_64.and_reg_reg(0, 1))
+            else:
+                call assembler.emit(output, x86_64.shift_right_arithmetic_imm(0, power_exponent))
+            end
         elif operator == "//" or operator == "%":
             division_ready = label_name(generator, "division_ready")
             call assembler.emit(output, x86_64.cmp_reg_imm8(1, 0))
