@@ -1453,19 +1453,34 @@ function emit_expression(generator, syntax):
             end
             return
         end
-        call emit_expression(generator, left)
-        call assembler.emit(output, x86_64.push(0))
-        call emit_expression(generator, right)
-        call assembler.emit(output, x86_64.move_reg_reg(6, 0))
-        call assembler.emit(output, x86_64.pop(7))
         if operator == "==" or operator == "!=" or operator == "is" or operator == "is not":
+            call emit_expression(generator, left)
+            call assembler.emit(output, x86_64.push(0))
+            call emit_expression(generator, right)
+            call assembler.emit(output, x86_64.move_reg_reg(6, 0))
+            call assembler.emit(output, x86_64.pop(7))
             call assembler.relative(output, [232], "runtime_equal_any")
             if operator == "!=" or operator == "is not":
                 call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
                 call assembler.emit(output, x86_64.set_condition(148))
             end
         else:
-            call assembler.emit(output, x86_64.move_reg_reg(0, 7))
+            # Ordered comparison compiles to cmp reg0, reg6. emit_int_leaf yields
+            # the same value as emit_expression for a leaf, so skip the spill.
+            if is_int_leaf(generator, right):
+                call emit_expression(generator, left)
+                call emit_int_leaf(generator, right, 6)
+            elif is_int_leaf(generator, left):
+                call emit_expression(generator, right)
+                call assembler.emit(output, x86_64.move_reg_reg(6, 0))
+                call emit_int_leaf(generator, left, 0)
+            else:
+                call emit_expression(generator, left)
+                call assembler.emit(output, x86_64.push(0))
+                call emit_expression(generator, right)
+                call assembler.emit(output, x86_64.move_reg_reg(6, 0))
+                call assembler.emit(output, x86_64.pop(0))
+            end
             call assembler.emit(output, x86_64.cmp_reg_reg(0, 6))
             call assembler.emit(output, x86_64.set_condition(opcode))
         end
