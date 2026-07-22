@@ -33,7 +33,11 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktu�
 - [x] Doplnit skutečné průběžné process/HTTP transport chunk callbacks.
 - [ ] Pokračovat dynamic table growth, poslední tagged callback return a audit okruhy níže.
 
-## Zbývá
+## Feature scope 0.7 bez GPU
+
+Feature scope je implementovaný: self-host compiler/runtime, jazyk a collections, config lazy/default/provenance, AI retry/cancellation/SSE + live transport chunks, process JSON ABI, structured stdout/stderr/status, zero-copy CPU Tensor a omezený in-process CPU ET_DYN ABI v1.
+
+## Zbývá hardening/bugfix/audit
 
 - dokončit jednoznačný scalar tag ABI tak, aby ani záměrný raw Int shodný s živou heap adresou nemohl kolidovat s object value;
 - další numerické edge cases; Int overflow má definovanou two's-complement modulo `2^64` sémantiku a conformance;

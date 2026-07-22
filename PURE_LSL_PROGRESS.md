@@ -544,8 +544,13 @@ zachytává také neomezené stderr přes anonymous memfd (bez pipe deadlocku) a
 vrací `{stdout,stderr,status,ok}`. Conformance ověřuje stdout, uncaught stderr a
 exit 1.
 
-Přesný další krok: dokončit zbývající raw Any callback return, potom odstranit
-raw fallback a dokázat nemožnost live-pointer kolize. Následuje pure-LSL in-process
+Feature scope LSL 0.7 bez GPU je tímto uzavřený: omezený foreign CPU ABI,
+zero-copy CPU Tensor, live process/HTTP chunks, AI SSE/retry/cancellation,
+structured process results a lazy/provenance config jsou implementované.
+
+Další fáze je hardening/bugfix: dokončit zbývající raw Any callback return,
+dynamický růst tabulek, úplné syscall failure paths, odstranit raw fallback a
+dokázat nemožnost live-pointer kolize; potom full suite/audit a zrychlení. Následuje pure-LSL in-process
 zero-copy tensor/shared-object loader.
 
 ## Roadmap k "kompletní 1" (17 okruhů)
