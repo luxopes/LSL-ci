@@ -68,6 +68,7 @@ servers = [
     ["tests/capture_large_server.lsl", "/tmp/lsl-capture-large-server"],
     ["tests/capture_stream_server.lsl", "/tmp/lsl-capture-stream-server"],
     ["tests/capture_result_server.lsl", "/tmp/lsl-capture-result-server"],
+    ["tests/input_conformance.lsl", "/tmp/lsl-input-server"],
     ["tests/process_status_server.lsl", "/tmp/lsl-process-status-server"],
     ["tests/plugin_process_server.lsl", "/tmp/lsl-plugin-process-server"]
 ]

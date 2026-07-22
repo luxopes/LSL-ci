@@ -16,9 +16,9 @@ v `TODO.md`.
 - Repo: `/home/antonin/lsl`
 - Větev: `complete-roadmap`
 - Base větev: `master`
-- Poslední commit před aktuálním výkonnostním milníkem: `ed6ae24 Harden partial input paths`.
+- Poslední commit: `ea2befb Accelerate compiler and full conformance`.
 - Aktuální fixed-point compiler SHA-256:
-  `d986f572c3bb82734222af7ace3de2ce2c526ed94cc5be0841258accffdd4615`
+  `80ce6a7a62242bc2197c86335c4be64865cb0f2ed9a2d93c24711d42cf4635a0`
 - `compiler/pure/lslc-direct` je bitově shodný s `compiler/lslc`.
 - `compiler/pure/lsl-cli` je bitově shodný s top-level `lsl`.
 - ELF má jediný RX `PT_LOAD`, žádný `INTERP` a žádné RWX.
@@ -182,10 +182,11 @@ Nevydávat process JSON ABI za zero-copy řešení.
   `{stdout,stderr,status,ok}` a `process.check` propaguje status.
 - `runtime_write_all` i `readfile` iterují partial I/O; `readfile` kontroluje
   open/lseek/read a `input` propaguje read error.
-- Zbývá ošetřit všechny setup/cleanup chyby process syscallů (`pipe`, `fork`,
-  `dup2`, `wait4`, `close`) a doplnit jejich fault-injection testy.
-- Přidat čistý stdin-fed process helper; pak zapojit `input_conformance` přímo do
-  pure `lsl-test` (nyní je 5000B input ověřen manuálním pipe testem).
+- Capture kontroluje pipe/memfd/fork/read/wait/lseek/dup2, čistí otevřené fd a
+  propaguje catchable `ProcessError`; zbývá jen explicitní fault-injection pro
+  vzácné kernel failure větve a rozhodnutí o close(2)/EINTR politice.
+- `capture_input` používá memfd bez pipe deadlocku; 100000B stdin conformance je
+  přímo v agregovaném pure `lsl-test`.
 
 ### 6. AI/config produkční rozšíření
 

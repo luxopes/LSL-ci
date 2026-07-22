@@ -544,6 +544,19 @@ zachytává také neomezené stderr přes anonymous memfd (bez pipe deadlocku) a
 vrací `{stdout,stderr,status,ok}`. Conformance ověřuje stdout, uncaught stderr a
 exit 1.
 
+Process-I/O hardening fixed point
+`80ce6a7a62242bc2197c86335c4be64865cb0f2ed9a2d93c24711d42cf4635a0`
+kontroluje capture pipe/memfd/fork, parent read/wait/lseek a child dup2 chyby,
+čistí všechny již otevřené deskriptory a propaguje catchable `ProcessError`.
+`executable_path()` kontroluje readlink failure/truncation. Nový
+`capture_input(program, args, text)` používá seekable memfd místo stdin pipe,
+takže se nezablokuje na velkém vstupu; `process.capture_input_result` a
+`process.check_input` poskytují structured API. Conformance posílá 100000B řádek,
+ověřuje stdout/stderr/status i exec failure a je součástí agregovaného full
+suite. Child dup/close pořadí je navíc ověřené s předem zavřenými fd 0, 1, 2
+i všemi třemi současně. Full/fast/fixed-point, deset dalších fixed stages a
+config prošly.
+
 Výkonnostní a deterministický fixed point
 `d986f572c3bb82734222af7ace3de2ce2c526ed94cc5be0841258accffdd4615`
 přidává raw-or-boxed Int normalizaci v byte encoderu, lexer-validované Int tokeny

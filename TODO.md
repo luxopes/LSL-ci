@@ -33,7 +33,8 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktu�
 - [x] Doplnit skutečné průběžné process/HTTP transport chunk callbacks.
 - [x] Doplnit dynamický růst object registry a String intern cache.
 - [x] Spustit závěrečný full suite, config, installed fixed-point a ELF audit.
-- [ ] Dokončit fault-injection hardening process setup/cleanup syscallů.
+- [x] Ošetřit process pipe/memfd/fork/read/wait/lseek/dup2 failure a doplnit deadlock-free `capture_input`.
+- [ ] Doplnit explicitní syscall fault-injection corpus a uzavřít close(2)/EINTR politiku.
 - [x] Změřit a zrychlit compiler/test runner bez změny deterministického výstupu (full −59 %, compiler −9 %, peak RSS −5,6 %).
 
 ## Feature scope 0.7 bez GPU
