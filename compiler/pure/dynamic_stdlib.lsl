@@ -282,6 +282,14 @@ function __lsl_sum(values):
 end
 
 function __lsl_parse_float(text):
+    normalized = __lsl_lower(text)
+    if normalized == "nan" or normalized == "+nan" or normalized == "-nan":
+        return 0.0 / 0.0
+    elif normalized == "inf" or normalized == "+inf" or normalized == "infinity" or normalized == "+infinity":
+        return 1.0 / 0.0
+    elif normalized == "-inf" or normalized == "-infinity":
+        return -1.0 / 0.0
+    end
     sign = 1.0
     index = 0
     if len(text) > 0 and text[0] == "-":
@@ -355,6 +363,203 @@ function __lsl_float_any(value):
         return __lsl_float_from_int(value)
     end
     Error(TypeError: "Float expects Int, Float, or String")
+end
+
+function __lsl_float_candidate(significand, digit_count, exponent):
+    digits = __lsl_int_to_string(significand)
+    if exponent >= 0 and exponent < 16:
+        integer_count = exponent + 1
+        result = digits[0:integer_count] + "."
+        if integer_count < digit_count:
+            return result + digits[integer_count:digit_count]
+        end
+        return result + "0"
+    elif exponent < 0 and exponent > -7:
+        result = "0."
+        for index in rang(-exponent - 1):
+            result += "0"
+        end
+        return result + digits[0:digit_count]
+    end
+    result = digits[0]
+    if digit_count == 1:
+        result += ".0"
+    else:
+        result += "." + digits[1:digit_count]
+    end
+    if exponent >= 0:
+        return result + "e+" + __lsl_int_to_string(exponent)
+    end
+    return result + "e-" + __lsl_int_to_string(-exponent)
+end
+
+function __lsl_render_float_digits(significand, digit_count, exponent, negative):
+    digits = __lsl_int_to_string(significand)
+    prefix = ""
+    if negative:
+        prefix = "-"
+    end
+    if exponent >= 16 or exponent <= -7:
+        return prefix + __lsl_float_candidate(significand, digit_count, exponent)
+    end
+    result = prefix
+    if exponent >= 0:
+        index = 0
+        while index <= exponent:
+            if index < digit_count:
+                result += digits[index]
+            else:
+                result += "0"
+            end
+            index += 1
+        end
+        result += "."
+        if index >= digit_count:
+            result += "0"
+        else:
+            result += digits[index:digit_count]
+        end
+        return result
+    end
+    result += "0."
+    for index in rang(-exponent - 1):
+        result += "0"
+    end
+    return result + digits[0:digit_count]
+end
+
+function __lsl_format_float(value):
+    bits = __lsl_float_bits(value)
+    if bits == 9218868437227405312:
+        return "inf"
+    elif bits == -4503599627370496:
+        return "-inf"
+    elif bits > 9218868437227405312 or (bits < 0 and bits > -4503599627370496):
+        return "nan"
+    end
+    negative = value < 0.0 or (value == 0.0 and bits < 0)
+    if negative:
+        value = -value
+    end
+    if value == 0.0:
+        if negative:
+            return "-0.0"
+        end
+        return "0.0"
+    end
+    integer_value = Int(value)
+    if integer_value >= 0 and __lsl_float_from_int(integer_value) == value:
+        integer_text = __lsl_int_to_string(integer_value) + ".0"
+        if negative:
+            return "-" + integer_text
+        end
+        return integer_text
+    end
+    target_bits = __lsl_float_bits(value)
+
+    exponent = 0
+    significand = 0
+    round_digit = 0
+    if integer_value >= 0 and value >= 1.0:
+        integer_digits = len(__lsl_int_to_string(integer_value))
+        exponent = integer_digits - 1
+        significand = integer_value
+        fraction = value - __lsl_float_from_int(integer_value)
+        generated = integer_digits
+        while generated < 17:
+            fraction *= 10.0
+            digit = Int(fraction)
+            if digit < 0:
+                digit = 0
+            elif digit > 9:
+                digit = 9
+            end
+            significand = significand * 10 + digit
+            fraction -= __lsl_float_from_int(digit)
+            generated += 1
+        end
+        round_digit = Int(fraction * 10.0)
+    else:
+        scaled = value
+        while scaled >= 10.0:
+            scaled /= 10.0
+            exponent += 1
+        end
+        while scaled < 1.0:
+            scaled *= 10.0
+            exponent -= 1
+        end
+        for index in rang(17):
+            digit = Int(scaled)
+            if digit < 0:
+                digit = 0
+            elif digit > 9:
+                digit = 9
+            end
+            significand = significand * 10 + digit
+            scaled = (scaled - __lsl_float_from_int(digit)) * 10.0
+        end
+        round_digit = Int(scaled)
+    end
+    if round_digit >= 5:
+        significand += 1
+    end
+    if significand >= 100000000000000000:
+        significand = significand // 10
+        exponent += 1
+    end
+
+    # Repeated decimal scaling above can drift by a few ulps. Correct the final
+    # 17-digit integer against the original IEEE bits before shortening it.
+    attempts = 0
+    candidate = __lsl_float_candidate(significand, 17, exponent)
+    parsed = __lsl_parse_float(candidate)
+    while __lsl_float_bits(parsed) != target_bits and attempts < 10000:
+        if parsed < value:
+            significand += 1
+        else:
+            significand -= 1
+        end
+        candidate = __lsl_float_candidate(significand, 17, exponent)
+        parsed = __lsl_parse_float(candidate)
+        attempts += 1
+    end
+    if __lsl_float_bits(parsed) != target_bits:
+        Error(FloatFormatError: "could not produce a round-trip decimal")
+    end
+
+    digit_count = 17
+    shortening = True
+    while digit_count > 1 and shortening:
+        next_count = digit_count - 1
+        matched = False
+        rounded = (significand + 5) // 10
+        rounded_text = __lsl_int_to_string(rounded)
+        if len(rounded_text) == next_count:
+            rounded_candidate = __lsl_float_candidate(rounded, next_count, exponent)
+            if __lsl_float_bits(__lsl_parse_float(rounded_candidate)) == target_bits:
+                significand = rounded
+                digit_count = next_count
+                matched = True
+            end
+        end
+        if not matched:
+            lower = significand // 10
+            lower_text = __lsl_int_to_string(lower)
+            if len(lower_text) == next_count:
+                lower_candidate = __lsl_float_candidate(lower, next_count, exponent)
+                if __lsl_float_bits(__lsl_parse_float(lower_candidate)) == target_bits:
+                    significand = lower
+                    digit_count = next_count
+                    matched = True
+                end
+            end
+        end
+        if not matched:
+            shortening = False
+        end
+    end
+    return __lsl_render_float_digits(significand, digit_count, exponent, negative)
 end
 
 function __lsl_parse_int(text):
@@ -448,7 +653,7 @@ function __lsl_render(value, quote):
     elif code == 5:
         return "None"
     elif code == 6:
-        return __lsl_float_string(value)
+        return __lsl_format_float(value)
     elif code == 3:
         result = "{"
         first = True

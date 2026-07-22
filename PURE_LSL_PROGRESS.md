@@ -393,6 +393,18 @@ s path/line a dynamický ne-Int krok `TypeError`. Exact-output conformance, tři
 fixed-point stage, celý deterministicky přegenerovaný toolchain, `lsl-test` i
 config conformance procházejí.
 
+Fixed point s round-trip Float formattingem má SHA-256
+`d0690d53f31e76f23b6889afd30548bd368202ba9b838880fc0adddadc3937b5`.
+`print`, `String(Float)` i Floaty uvnitř kolekcí používají společný čistě-LSL
+formatter: zachovává `-0.0`, NaN/±Infinity, používá pevný nebo exponentový tvar,
+opraví počáteční decimal-scaling drift porovnáním IEEE bits a zkracuje digits,
+dokud `Float(text)` zůstává bitově shodný. Conformance pokrývá běžné hodnoty,
+1e±300, minimum normal, minimum subnormal, max finite, 1/3 a velkou hodnotu s
+frakcí; všechna finite kola hlásí `True`. Očekávané výstupy starších testů byly
+záměrně změněny z nepřesného fixed-6 formátu (`1.199999`) na round-trip tvar
+(`1.2`). Tři stage a dvakrát generovaný toolchain jsou bitově shodné, suite i
+config procházejí.
+
 Přesný další krok: poslední raw-Int/live-pointer kolize přes jednoznačný scalar
 tag ABI, zbývající RealArray numerické metody a pure-LSL in-process zero-copy
 tensor/shared-object loader. Izolované process plugin ABI je hotové, ale není

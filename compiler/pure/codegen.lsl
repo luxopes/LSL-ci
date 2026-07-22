@@ -1254,9 +1254,8 @@ function emit_expression(generator, syntax):
                 if argument_type == "String":
                     call emit_expression(generator, syntax["arguments"][0])
                 elif argument_type == "Float":
-                    call emit_expression(generator, syntax["arguments"][0])
-                    call assembler.emit(output, x86_64.move_reg_reg(7, 0))
-                    call assembler.relative(output, [232], "runtime_float_to_string")
+                    format_float_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_format_float"}, "arguments": syntax["arguments"]}
+                    call emit_expression(generator, format_float_call)
                 elif argument_type == "Int":
                     call emit_expression(generator, syntax["arguments"][0])
                     call assembler.emit(output, x86_64.move_reg_reg(7, 0))
@@ -1852,6 +1851,12 @@ function emit_print_value(generator, expression):
         if value_type == "List" or value_type == "Tuple" or value_type == "RealArray" or value_type == "Dictionary" or value_type == "Any":
             str_call = {"kind": "call", "line": expression["line"], "column": expression["column"], "end_column": expression["end_column"], "target": {"kind": "name", "name": "__lsl_str_value"}, "arguments": [expression]}
             call emit_expression(generator, str_call)
+            call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
+            call assembler.relative(generator["builder"], [232], "runtime_print_string")
+            return
+        elif value_type == "Float":
+            format_float_call = {"kind": "call", "line": expression["line"], "column": expression["column"], "end_column": expression["end_column"], "target": {"kind": "name", "name": "__lsl_format_float"}, "arguments": [expression]}
+            call emit_expression(generator, format_float_call)
             call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
             call assembler.relative(generator["builder"], [232], "runtime_print_string")
             return

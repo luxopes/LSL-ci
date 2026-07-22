@@ -1,5 +1,5 @@
-1 2.500000
-3.500000
+1 2.5
+3.5
 TypeError: RealArray accepts only Int or Float values
 TypeError: RealArray accepts only Int or Float values
 TypeError: RealArray accepts only Int or Float values

@@ -122,6 +122,12 @@ if float_special_output != readfile("tests/float_special_conformance.out"):
     Error(TestFailure: "Float special conformance output differs")
 end
 
+call require_success(run(compiler, ["tests/float_format_conformance.lsl", "/tmp/lsl-float-format-test"]), "compile Float format conformance")
+float_format_output = capture("/tmp/lsl-float-format-test", [])
+if float_format_output != readfile("tests/float_format_conformance.out"):
+    Error(TestFailure: "Float format conformance output differs")
+end
+
 call require_success(run(compiler, ["tests/float_power_conformance.lsl", "/tmp/lsl-float-power-test"]), "compile Float power conformance")
 float_power_output = capture("/tmp/lsl-float-power-test", [])
 if float_power_output != readfile("tests/float_power_conformance.out"):
