@@ -428,6 +428,61 @@ function emit_condition(generator, syntax):
     end
 end
 
+function inverted_branch(operator):
+    # jcc bytes that jump when the ordered comparison is FALSE.
+    if operator == "<":
+        return [15, 141]
+    elif operator == "<=":
+        return [15, 143]
+    elif operator == ">":
+        return [15, 142]
+    elif operator == ">=":
+        return [15, 140]
+    end
+    return []
+end
+
+function emit_branch_if_false(generator, syntax, target_label):
+    # Ordered Int comparison branches directly on flags (cmp + inverted jcc),
+    # skipping the setcc/movzx/cmp-0 bool materialization. Returns True if it
+    # handled the branch.
+    if syntax["kind"] != "compare":
+        return False
+    end
+    if len(syntax["operators"]) != 1:
+        return False
+    end
+    operator = syntax["operators"][0]
+    if operator != "<" and operator != "<=" and operator != ">" and operator != ">=":
+        return False
+    end
+    left = syntax["operands"][0]
+    right = syntax["operands"][1]
+    left_type = infer_expression_type(left, generator["types"], generator["function_returns"])
+    right_type = infer_expression_type(right, generator["types"], generator["function_returns"])
+    if left_type == "Float" or right_type == "Float":
+        return False
+    end
+    output = generator["builder"]
+    if is_int_leaf(generator, right):
+        call emit_expression(generator, left)
+        call emit_int_leaf(generator, right, 6)
+    elif is_int_leaf(generator, left):
+        call emit_expression(generator, right)
+        call assembler.emit(output, x86_64.move_reg_reg(6, 0))
+        call emit_int_leaf(generator, left, 0)
+    else:
+        call emit_expression(generator, left)
+        call assembler.emit(output, x86_64.push(0))
+        call emit_expression(generator, right)
+        call assembler.emit(output, x86_64.move_reg_reg(6, 0))
+        call assembler.emit(output, x86_64.pop(0))
+    end
+    call assembler.emit(output, x86_64.cmp_reg_reg(0, 6))
+    call assembler.relative(output, inverted_branch(operator), target_label)
+    return True
+end
+
 function is_int_leaf(generator, syntax):
     kind = syntax["kind"]
     if kind == "literal":
@@ -1679,9 +1734,11 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             while branch_index < len(statement["branches"]):
                 next_label = label_name(generator, "if_next")
                 branch = statement["branches"][branch_index]
-                call emit_condition(generator, branch[0])
-                call assembler.emit(generator["builder"], x86_64.cmp_reg_imm8(0, 0))
-                call assembler.relative(generator["builder"], [15, 132], next_label)
+                if not emit_branch_if_false(generator, branch[0], next_label):
+                    call emit_condition(generator, branch[0])
+                    call assembler.emit(generator["builder"], x86_64.cmp_reg_imm8(0, 0))
+                    call assembler.relative(generator["builder"], [15, 132], next_label)
+                end
                 call emit_statements(generator, branch[1], break_label, continue_label, return_label)
                 call assembler.relative(generator["builder"], [233], end_label)
                 call assembler.label(generator["builder"], next_label)
@@ -1694,9 +1751,11 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             end_label = label_name(generator, "loop_end")
             call assembler.label(generator["builder"], start_label)
             if kind == "while":
-                call emit_condition(generator, statement["condition"])
-                call assembler.emit(generator["builder"], x86_64.cmp_reg_imm8(0, 0))
-                call assembler.relative(generator["builder"], [15, 132], end_label)
+                if not emit_branch_if_false(generator, statement["condition"], end_label):
+                    call emit_condition(generator, statement["condition"])
+                    call assembler.emit(generator["builder"], x86_64.cmp_reg_imm8(0, 0))
+                    call assembler.relative(generator["builder"], [15, 132], end_label)
+                end
             end
             call emit_statements(generator, statement["body"], end_label, start_label, return_label)
             call assembler.relative(generator["builder"], [233], start_label)
