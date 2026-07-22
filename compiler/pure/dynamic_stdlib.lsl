@@ -490,6 +490,86 @@ function __lsl_list_concat(left, right):
     return result
 end
 
+function __lsl_slice3(target, start, has_start, stop, has_stop, step):
+    # General strided slice with Python semantics. step != 0. Negative step
+    # flips the default bounds. Returns String for String targets, else List
+    # (codegen retags Tuple/RealArray).
+    if step == 0:
+        Error(ValueError: "slice step cannot be zero")
+    end
+    length = len(target)
+    if not has_start:
+        if step > 0:
+            start = 0
+        else:
+            start = length - 1
+        end
+    else:
+        if start < 0:
+            start += length
+        end
+        if step > 0:
+            if start < 0:
+                start = 0
+            elif start > length:
+                start = length
+            end
+        else:
+            if start < 0:
+                start = -1
+            elif start > length - 1:
+                start = length - 1
+            end
+        end
+    end
+    if not has_stop:
+        if step > 0:
+            stop = length
+        else:
+            stop = -1
+        end
+    else:
+        if stop < 0:
+            stop += length
+        end
+        if step > 0:
+            if stop < 0:
+                stop = 0
+            elif stop > length:
+                stop = length
+            end
+        else:
+            if stop < 0:
+                stop = -1
+            elif stop > length - 1:
+                stop = length - 1
+            end
+        end
+    end
+    is_string = __lsl_type_code(target) == 1
+    parts = []
+    index = start
+    if step > 0:
+        while index < stop:
+            parts.append(target[index])
+            index += step
+        end
+    else:
+        while index > stop:
+            parts.append(target[index])
+            index += step
+        end
+    end
+    if is_string:
+        joined = ""
+        for piece in parts:
+            joined += piece
+        end
+        return joined
+    end
+    return parts
+end
+
 function __lsl_str_repeat(text, count):
     result = ""
     index = 0

@@ -74,6 +74,12 @@ if unicode_case_output != readfile("tests/unicode_case_conformance.out"):
     Error(TestFailure: "unicode case conformance output differs")
 end
 
+call require_success(run(compiler, ["tests/slice_step_conformance.lsl", "/tmp/lsl-slice-step-test"]), "compile slice step conformance")
+slice_step_output = capture("/tmp/lsl-slice-step-test", [])
+if slice_step_output != readfile("tests/slice_step_conformance.out"):
+    Error(TestFailure: "slice step conformance output differs")
+end
+
 call require_success(run(compiler, ["tests/float_exponent_conformance.lsl", "/tmp/lsl-float-exponent-test"]), "compile Float exponent conformance")
 float_exponent_output = capture("/tmp/lsl-float-exponent-test", [])
 if float_exponent_output != readfile("tests/float_exponent_conformance.out"):

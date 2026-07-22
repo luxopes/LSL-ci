@@ -190,23 +190,38 @@ function parse_primary(parser):
         elif match(parser, "["):
             index_node = node("index", token)
             index_node["target"] = result
+            index_node["step"] = None
             if match(parser, ":"):
                 index_node["start"] = None
-                if check(parser, "]"):
+                if check(parser, "]") or check(parser, ":"):
                     index_node["stop"] = None
                 else:
                     index_node["stop"] = parse_expression(parser)
                 end
                 index_node["kind"] = "slice"
+                if match(parser, ":"):
+                    if check(parser, "]"):
+                        index_node["step"] = None
+                    else:
+                        index_node["step"] = parse_expression(parser)
+                    end
+                end
             else:
                 start = parse_expression(parser)
                 if match(parser, ":"):
                     index_node["kind"] = "slice"
                     index_node["start"] = start
-                    if check(parser, "]"):
+                    if check(parser, "]") or check(parser, ":"):
                         index_node["stop"] = None
                     else:
                         index_node["stop"] = parse_expression(parser)
+                    end
+                    if match(parser, ":"):
+                        if check(parser, "]"):
+                            index_node["step"] = None
+                        else:
+                            index_node["step"] = parse_expression(parser)
+                        end
                     end
                 else:
                     index_node["index"] = start

@@ -718,6 +718,33 @@ function emit_expression(generator, syntax):
             call unsupported(generator["path"], generator["lines"], syntax, "member value requires a class or instance", "access a declared class field")
         end
     elif kind == "slice":
+        if syntax.get("step", None) != None:
+            # Strided slice via pure-LSL helper (Python step semantics).
+            zero_literal = {"kind": "literal", "literal_kind": "number", "value": "0", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]}
+            true_literal = {"kind": "literal", "literal_kind": "name", "value": "True", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]}
+            false_literal = {"kind": "literal", "literal_kind": "name", "value": "False", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]}
+            start_arg = zero_literal
+            has_start = false_literal
+            if syntax["start"] != None:
+                start_arg = syntax["start"]
+                has_start = true_literal
+            end
+            stop_arg = zero_literal
+            has_stop = false_literal
+            if syntax["stop"] != None:
+                stop_arg = syntax["stop"]
+                has_stop = true_literal
+            end
+            slice_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_slice3"}, "arguments": [syntax["target"], start_arg, has_start, stop_arg, has_stop, syntax["step"]]}
+            call emit_expression(generator, slice_call)
+            target_slice_type = infer_expression_type(syntax["target"], generator["types"], generator["function_returns"])
+            if target_slice_type == "Tuple":
+                call assembler.emit(output, x86_64.store_memory_imm32(0, 0, 7))
+            elif target_slice_type == "RealArray":
+                call assembler.emit(output, x86_64.store_memory_imm32(0, 0, 8))
+            end
+            return
+        end
         call emit_expression(generator, syntax["target"])
         call assembler.emit(output, x86_64.push(0))
         if syntax["start"] == None:
