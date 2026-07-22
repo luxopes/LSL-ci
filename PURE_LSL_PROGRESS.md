@@ -414,6 +414,12 @@ má Unicode-aware `capitalize`. Exact-output test pokrývá mutation, copy
 nezávislost, chyby a insertion order. Tři stage, dvakrát generované nástroje,
 celý suite i config jsou shodné.
 
+Fixed point s `del(instance.member)` má SHA-256
+`56ed96ad3a00533a05bc5403ea306fa28f73f2b19e129160b61eabce5112bfc2`.
+Dokumentovaná member deletion nyní maže Dictionary-backed field a následný
+přístup propaguje `KeyError`; `del(name)` navíc korektně obsluhuje globální
+sloty a unknown name je compile error. Self-host stage i suite procházejí.
+
 Přesný další krok: poslední raw-Int/live-pointer kolize přes jednoznačný scalar
 tag ABI a pure-LSL in-process zero-copy tensor/shared-object loader. Izolované
 process plugin ABI je hotové, ale není vydáváno za zero-copy náhradu.

@@ -2303,12 +2303,27 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                     call assembler.relative(generator["builder"], [232], "runtime_dict_delete")
                 end
             elif target["kind"] == "name":
+                call assembler.emit(generator["builder"], x86_64.mov_imm64(0, 0))
                 if target["name"] in generator["variables"]:
-                    call assembler.emit(generator["builder"], x86_64.mov_imm64(0, 0))
                     call assembler.emit(generator["builder"], x86_64.store_stack(generator["variables"][target["name"]], 0))
+                elif target["name"] in generator["global_variables"]:
+                    call assembler.emit(generator["builder"], x86_64.store_memory(12, generator["global_variables"][target["name"]], 0))
+                else:
+                    call unsupported(generator["path"], generator["lines"], statement, "cannot delete unknown name " + target["name"], "assign the name before deleting it")
                 end
+            elif target["kind"] == "member":
+                target_type = infer_expression_type(target["target"], generator["types"], generator["function_returns"])
+                if not target_type.startswith("Class:") and not target_type.startswith("Instance:"):
+                    call unsupported(generator["path"], generator["lines"], statement, "member deletion requires a class instance", "delete a field from an LSL class or instance")
+                end
+                call emit_expression(generator, target["target"])
+                call assembler.emit(generator["builder"], x86_64.push(0))
+                call emit_string_pointer(generator, target["name"])
+                call assembler.emit(generator["builder"], x86_64.move_reg_reg(6, 0))
+                call assembler.emit(generator["builder"], x86_64.pop(7))
+                call assembler.relative(generator["builder"], [232], "runtime_dict_delete")
             else:
-                call unsupported(generator["path"], generator["lines"], statement, "unsupported del target", "delete a name or Dictionary key")
+                call unsupported(generator["path"], generator["lines"], statement, "unsupported del target", "delete a name, mutable index, Dictionary key, or instance field")
             end
         elif kind == "class":
             class_slot = generator["variables"][statement["name"]]

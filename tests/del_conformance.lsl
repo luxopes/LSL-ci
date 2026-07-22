@@ -17,3 +17,17 @@ safe:
     del(values[5])
 end
 print "survived"
+
+class Box(True):
+    function init(self, value):
+        self.value = value
+    end
+end
+box = Box(42)
+print box.value
+del(box.value)
+try:
+    print box.value
+else:
+    print last_error()
+end
