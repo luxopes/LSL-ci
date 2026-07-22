@@ -9,7 +9,8 @@ N+1 bit po bitu.
 
 - Repo: `/home/antonin/lsl`
 - Větev: `complete-roadmap`
-- Poslední commit: `2d7334e Harden process capture and feed stdin`
+- Aktuální implementační milníky jsou v `git log`; handoff záměrně neukládá
+  self-referenční hash vlastního dokumentačního commitu.
 - Aktuální fixed-point SHA-256:
   `e3bb05e634d2ffbd2e4d7efff2ce71236b59191868fd47f1e4582572ceedf5e3`
 - `compiler/pure/lslc-direct == compiler/lslc`
