@@ -1171,71 +1171,86 @@ function emit_equal_any(output):
     call assembler.emit(output, x86_64.function_epilogue())
 end
 
-function emit_add_any(output):
-    call assembler.label(output, "runtime_add_any")
-    call assembler.emit(output, x86_64.function_prologue(48))
-    call assembler.emit(output, x86_64.store_stack(-8, 7))
-    call assembler.emit(output, x86_64.store_stack(-16, 6))
+function emit_is_float(output):
+    # reg7 = value -> reg0 = 1 if boxed Float (type 6), else 0.
+    call assembler.label(output, "runtime_is_float")
     call assembler.relative(output, [232], "runtime_is_heap_object")
     call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
-    call assembler.relative(output, [15, 132], "add_any_int")
-    call assembler.emit(output, x86_64.load_stack(7, -16))
-    call assembler.relative(output, [232], "runtime_is_heap_object")
-    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
-    call assembler.relative(output, [15, 132], "add_any_int")
-    call assembler.emit(output, x86_64.load_stack(7, -8))
-    call assembler.emit(output, x86_64.load_stack(6, -16))
+    call assembler.relative(output, [15, 132], "is_float_no")
     call assembler.emit(output, x86_64.load_memory(1, 7, 0))
-    call assembler.emit(output, x86_64.load_memory(2, 6, 0))
-    # Both boxed Float (type 6): real addition, not pointer arithmetic.
     call assembler.emit(output, x86_64.cmp_reg_imm8(1, 6))
-    call assembler.relative(output, [15, 133], "add_any_not_float")
-    call assembler.emit(output, x86_64.cmp_reg_imm8(2, 6))
-    call assembler.relative(output, [15, 133], "add_any_not_float")
-    call assembler.relative(output, [232], "runtime_float_add")
-    call assembler.emit(output, x86_64.function_epilogue())
-    call assembler.label(output, "add_any_not_float")
-    call assembler.emit(output, x86_64.cmp_reg_imm8(1, 1))
-    call assembler.relative(output, [15, 133], "add_any_int")
-    call assembler.emit(output, x86_64.cmp_reg_imm8(2, 1))
-    call assembler.relative(output, [15, 133], "add_any_int")
-    call assembler.relative(output, [232], "runtime_string_concat")
-    call assembler.emit(output, x86_64.function_epilogue())
-    call assembler.label(output, "add_any_int")
-    call assembler.emit(output, x86_64.load_stack(0, -8))
-    call assembler.emit(output, x86_64.load_stack(1, -16))
-    call assembler.emit(output, x86_64.add_reg_reg(0, 1))
-    call assembler.emit(output, x86_64.function_epilogue())
+    call assembler.relative(output, [15, 133], "is_float_no")
+    call assembler.emit(output, x86_64.mov_imm64(0, 1))
+    call assembler.emit(output, x86_64.ret())
+    call assembler.label(output, "is_float_no")
+    call assembler.emit(output, x86_64.xor_reg_reg(0, 0))
+    call assembler.emit(output, x86_64.ret())
 end
 
-function emit_arith_any(output, name, float_routine, int_label):
-    # reg7,reg6 = operands. Both boxed Float -> float_routine; otherwise raw
-    # Int op. Mirrors add_any without the String branch.
+function emit_coerce_float(output):
+    # reg7 = value -> reg0 = boxed Float. Raw Int is promoted; a boxed Float
+    # (or any heap value) is returned as-is.
+    call assembler.label(output, "runtime_coerce_float")
+    call assembler.relative(output, [232], "runtime_is_heap_object")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+    call assembler.relative(output, [15, 132], "coerce_from_int")
+    call assembler.emit(output, x86_64.move_reg_reg(0, 7))
+    call assembler.emit(output, x86_64.ret())
+    call assembler.label(output, "coerce_from_int")
+    call assembler.relative(output, [233], "runtime_float_from_int")
+end
+
+function emit_num_any(output, name, float_routine, is_add):
+    # reg7,reg6 = operands. If either is a boxed Float, promote both to Float
+    # and use float_routine (fixes mixed raw-Int + boxed-Float). Otherwise
+    # raw Int op, or (add only) String concat when both are Strings.
+    scalar_label = name + "_scalar"
+    int_label = name + "_int"
     call assembler.label(output, name)
-    call assembler.emit(output, x86_64.function_prologue(48))
+    call assembler.emit(output, x86_64.function_prologue(64))
     call assembler.emit(output, x86_64.store_stack(-8, 7))
     call assembler.emit(output, x86_64.store_stack(-16, 6))
-    call assembler.relative(output, [232], "runtime_is_heap_object")
-    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
-    call assembler.relative(output, [15, 132], int_label)
-    call assembler.emit(output, x86_64.load_stack(7, -16))
-    call assembler.relative(output, [232], "runtime_is_heap_object")
-    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
-    call assembler.relative(output, [15, 132], int_label)
     call assembler.emit(output, x86_64.load_stack(7, -8))
-    call assembler.emit(output, x86_64.load_stack(6, -16))
-    call assembler.emit(output, x86_64.load_memory(1, 7, 0))
-    call assembler.emit(output, x86_64.load_memory(2, 6, 0))
-    call assembler.emit(output, x86_64.cmp_reg_imm8(1, 6))
-    call assembler.relative(output, [15, 133], int_label)
-    call assembler.emit(output, x86_64.cmp_reg_imm8(2, 6))
-    call assembler.relative(output, [15, 133], int_label)
+    call assembler.relative(output, [232], "runtime_is_float")
+    call assembler.emit(output, x86_64.store_stack(-24, 0))
+    call assembler.emit(output, x86_64.load_stack(7, -16))
+    call assembler.relative(output, [232], "runtime_is_float")
+    call assembler.emit(output, x86_64.move_reg_reg(1, 0))
+    call assembler.emit(output, x86_64.load_stack(0, -24))
+    call assembler.emit(output, x86_64.or_reg_reg(0, 1))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+    call assembler.relative(output, [15, 132], scalar_label)
+    call assembler.emit(output, x86_64.load_stack(7, -8))
+    call assembler.relative(output, [232], "runtime_coerce_float")
+    call assembler.emit(output, x86_64.store_stack(-24, 0))
+    call assembler.emit(output, x86_64.load_stack(7, -16))
+    call assembler.relative(output, [232], "runtime_coerce_float")
+    call assembler.emit(output, x86_64.store_stack(-32, 0))
+    call assembler.emit(output, x86_64.load_stack(7, -24))
+    call assembler.emit(output, x86_64.load_stack(6, -32))
     call assembler.relative(output, [232], float_routine)
     call assembler.emit(output, x86_64.function_epilogue())
+    call assembler.label(output, scalar_label)
+    if is_add:
+        call assembler.emit(output, x86_64.load_stack(7, -8))
+        call assembler.relative(output, [232], "runtime_is_heap_object")
+        call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+        call assembler.relative(output, [15, 132], int_label)
+        call assembler.emit(output, x86_64.load_stack(7, -16))
+        call assembler.relative(output, [232], "runtime_is_heap_object")
+        call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+        call assembler.relative(output, [15, 132], int_label)
+        call assembler.emit(output, x86_64.load_stack(7, -8))
+        call assembler.emit(output, x86_64.load_stack(6, -16))
+        call assembler.relative(output, [232], "runtime_string_concat")
+        call assembler.emit(output, x86_64.function_epilogue())
+    end
     call assembler.label(output, int_label)
     call assembler.emit(output, x86_64.load_stack(0, -8))
     call assembler.emit(output, x86_64.load_stack(1, -16))
-    if name == "runtime_sub_any":
+    if name == "runtime_add_any":
+        call assembler.emit(output, x86_64.add_reg_reg(0, 1))
+    elif name == "runtime_sub_any":
         call assembler.emit(output, x86_64.sub_reg_reg(0, 1))
     else:
         call assembler.emit(output, x86_64.imul_reg_reg(0, 1))
@@ -1816,9 +1831,11 @@ function emit_all(output):
     call emit_string_equal(output)
     call emit_string_contains(output)
     call emit_equal_any(output)
-    call emit_add_any(output)
-    call emit_arith_any(output, "runtime_sub_any", "runtime_float_sub", "sub_any_int")
-    call emit_arith_any(output, "runtime_mul_any", "runtime_float_mul", "mul_any_int")
+    call emit_is_float(output)
+    call emit_coerce_float(output)
+    call emit_num_any(output, "runtime_add_any", "runtime_float_add", True)
+    call emit_num_any(output, "runtime_sub_any", "runtime_float_sub", False)
+    call emit_num_any(output, "runtime_mul_any", "runtime_float_mul", False)
     call emit_contains(output)
     call emit_dict_hash(output)
     call emit_dict_probe(output)

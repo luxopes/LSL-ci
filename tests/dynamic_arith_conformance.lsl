@@ -9,3 +9,7 @@ print config["a"] + config["b"], config["a"] - config["b"], config["a"] * config
 print String(reals[0]), String(reals[0] + reals[1])
 tup = (1.5, 2.5)
 print tup[0] + tup[1], tup[1] - tup[0]
+mixed = [7, 2.5]
+print mixed[0] + mixed[1], mixed[1] + mixed[0], mixed[0] * mixed[1], mixed[1] - mixed[0]
+mixdict = {"i": 7, "f": 2.5}
+print mixdict["i"] + mixdict["f"], mixdict["i"] * mixdict["f"]
