@@ -348,23 +348,34 @@ dicty jako tokeny/AST nodes bez index overheadu, velké zůstávají O(1));
 per-volani ASCII intern v `runtime_string_chars` (~60k alokací → ~80, sdílené
 pointery aktivují pointer-eq fast path v `string_equal`).
 
-Codegen kvalita (rychlost generovaného kódu): tři optimalizace naivního
+Codegen kvalita (rychlost generovaného kódu): čtyři optimalizace naivního
 stack-machine kódu, všechny bitově fixed-point + config shodné:
 1. `if`/`while` podmínky vynechávají `runtime_truth` (call + is_heap_object
    probe), když výraz už dává 0/1 (compare, and/or, not, Bool).
 2. Int binární operace: literal/proměnný leaf operand se načte přímo do
    registru místo push/pop spillu (komutativní +/* i leaf vlevo).
 3. Ordered comparisons (`< <= > >=`): stejný leaf trik místo push/pop.
-Měřeno na tight aritmetické smyčce: 793 ms → 201 ms (3,9×).
+4. `if`/`while` s ordered Int compare větví přímo na flagy (`cmp` + invertovaný
+   `jcc`) místo `setcc; movzx; cmp 0; jcc` — 3 instrukce z každé podmínky pryč.
+5. `//` a `%` mocninou dvou: strength reduction na `AND (2^k-1)` / aritmetický
+   `SAR k` místo `idiv` — přesně Python floor sémantika i pro záporná/INT64_MIN.
 
-Férové srovnání s C (fold-resistant benchmarky, `-O2` nemůže uzavřít smyčku):
-add/mul LSL 164 ms vs C -O0 103 ms = **1,6×**; div/mod LSL 728 ms vs C -O0
-236 ms = **3,1×** (`idiv` + INT64_MIN/-1 guard). C -O2 zde foldí vzorec, LSL ne.
-Požadovaných „do 5 % od C“ není dosažitelné bez full-function register allocation
-(SSA, spill/reload, instruction scheduling) — to je samostatný vícedenní backend
-přepis, ne peephole; není vydáváno za hotové. Další re**álné páky: držet
-časté proměnné v registrech namísto stack slotů, constant folding, strength
-reduction pro mod/div mocninou dvou.
+Férové srovnání s C (fold-resistant benchmarky, průměr 3 běhů; `-O2` zde foldí
+uzavřený vzorec, LSL ne, proto -O0):
+- add/mul: C -O0 106 ms vs LSL **104 ms** (0,98× — na úrovni C).
+- div/mod 2^k: C -O0 235 ms vs LSL **146 ms** (0,62× — pod C, díky AND místo idiv).
+- div/mod odd: C -O0 357 ms vs LSL 754 ms (2,1× — `idiv` dominuje; hardwarové
+  dělení + Python floor korekce, neobejditelné bez změny sémantiky).
+
+Integer-bound smyčky bez dělení jsou tedy nyní na úrovni `gcc -O0`. Zkoušená 5.
+optimalizace (vypustit zero/-1 guard u konstantního děliče) se v šumu ztratila,
+protože `idiv` (20-40 cyklů) dominuje nad pár dobře predikovanými branchemi —
+vrácena (neplatící se komplexita). Požadovaných „do 5 % od `-O2`“ není
+dosažitelné: `-O2` dělá algoritmické transformace (uzavření smyčky do vzorce,
+vektorizace, LICM), ne konstantní faktor — to je samostatný optimalizující
+backend (SSA, register allocation, loop passes), vícedenní práce, není hotové.
+Další reálná páka konstantního faktoru: držet horké lokální proměnné v
+registrech namísto stack slotů (skutečný register allocator).
 
 Přesný další krok: odstranit poslední teoretickou raw-Int/live-pointer kolizi
 jednoznačným scalar tag ABI, doplnit zbývající RealArray numerické metody a
