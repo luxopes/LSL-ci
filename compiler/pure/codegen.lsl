@@ -188,7 +188,7 @@ function infer_expression_type(syntax, types, function_returns):
             if name == "sum":
                 return "Any"
             end
-            if name == "len" or name == "Int" or name == "ord" or name == "arg_count" or name == "run" or name == "__lsl_type_code" or name == "__lsl_raw_equal" or name == "__lsl_float_bits" or name == "__lsl_float_to_int" or name == "__lsl_raw_int":
+            if name == "len" or name == "Int" or name == "ord" or name == "arg_count" or name == "run" or name == "__lsl_type_code" or name == "__lsl_raw_equal" or name == "__lsl_float_bits" or name == "__lsl_float_to_int" or name == "__lsl_unbox_int" or name == "__lsl_raw_int":
                 return "Int"
             elif name == "Float":
                 return "Float"
@@ -1215,6 +1215,11 @@ function emit_expression(generator, syntax):
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 call assembler.relative(output, [232], "runtime_box_bool")
                 return
+            elif target["name"] == "__lsl_box_int":
+                call emit_expression(generator, syntax["arguments"][0])
+                call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                call assembler.relative(output, [232], "runtime_box_int")
+                return
             elif target["name"] == "__lsl_box_none":
                 call assembler.relative(output, [232], "runtime_box_none")
                 return
@@ -1222,6 +1227,11 @@ function emit_expression(generator, syntax):
                 call emit_expression(generator, syntax["arguments"][0])
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 call assembler.relative(output, [232], "runtime_unbox_bool")
+                return
+            elif target["name"] == "__lsl_unbox_int":
+                call emit_expression(generator, syntax["arguments"][0])
+                call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                call assembler.relative(output, [232], "runtime_unbox_int")
                 return
             elif target["name"] == "__lsl_pop_last":
                 call emit_expression(generator, syntax["arguments"][0])

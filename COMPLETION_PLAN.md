@@ -217,14 +217,19 @@ spekulativní API bez testovatelné specifikace.
 
 Začít **fází 1 tagged ABI** bez změny chování:
 
-1. V `compiler/pure/heap_runtime.lsl` přidat type 9, `runtime_box_int` a
-   `runtime_unbox_int`.
-2. Přidat interní codegen intrinsics `__lsl_box_int` / `__lsl_unbox_int`.
-3. Přidat malý conformance smoke, který pouze explicitně boxne/unboxne hodnoty
-   `0`, `1`, `-1`, `INT64_MIN`, `INT64_MAX` a ověří round trip/type/GC.
-4. Vytvořit 3 čisté stage a ověřit fixed point, celý suite a config.
-5. Commitnout tuto izolovanou infrastrukturu před zapnutím boxování na ABI
-   hranicích.
+Fáze 1 je hotová ve fixed pointu `4756d8ca…`: heap type 9,
+`runtime_box_int`/`runtime_unbox_int`, intrinsics, GC leaf chování a round-trip
+conformance pro `0`, `1`, `-1`, `INT64_MIN`, `INT64_MAX`.
+
+Následuje fáze 2 bez zapnutí automatického boxování:
+
+1. Naučit generic runtime classifier rozlišit type 9 od Float/String/collection.
+2. Upravit generic truth/equal/compare/add/sub/mul/div/mod/pow/abs/neg/print a
+   LSL render/JSON/conversion helpers, aby přijaly raw i boxed Int.
+3. Přidat explicitní boxed-Int test pro každou operaci a pro index value.
+4. Zachovat raw Int typed fast path compileru.
+5. Vytvořit 3 stage, celý suite/config a commit; až další commit smí zapnout
+   boxování v collections.
 
 ## Standardní ověřovací příkazy
 

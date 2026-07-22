@@ -213,6 +213,12 @@ if dynamic_value_output != readfile("tests/dynamic_value_conformance.out"):
     Error(TestFailure: "dynamic value conformance output differs")
 end
 
+call require_success(run(compiler, ["tests/boxed_int_infrastructure_conformance.lsl", "/tmp/lsl-boxed-int-infrastructure-test"]), "compile boxed Int infrastructure conformance")
+boxed_int_output = capture("/tmp/lsl-boxed-int-infrastructure-test", [])
+if boxed_int_output != readfile("tests/boxed_int_infrastructure_conformance.out"):
+    Error(TestFailure: "boxed Int infrastructure conformance output differs")
+end
+
 call require_success(run(compiler, ["tests/realarray_conformance.lsl", "/tmp/lsl-realarray-test"]), "compile RealArray conformance")
 realarray_output = capture("/tmp/lsl-realarray-test", [])
 if realarray_output != readfile("tests/realarray_conformance.out"):
