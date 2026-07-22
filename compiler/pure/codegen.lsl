@@ -428,6 +428,35 @@ function emit_condition(generator, syntax):
     end
 end
 
+function is_int_leaf(generator, syntax):
+    kind = syntax["kind"]
+    if kind == "literal":
+        if syntax["literal_kind"] == "number":
+            value = syntax["value"]
+            return value.find(".") < 0 and value.find("e") < 0 and value.find("E") < 0
+        end
+        return False
+    elif kind == "name":
+        name = syntax["name"]
+        return name in generator["variables"] or name in generator["global_variables"]
+    end
+    return False
+end
+
+function emit_int_leaf(generator, syntax, register):
+    output = generator["builder"]
+    if syntax["kind"] == "literal":
+        call assembler.emit(output, x86_64.mov_imm64(register, Int(syntax["value"])))
+    else:
+        name = syntax["name"]
+        if name in generator["variables"]:
+            call assembler.emit(output, x86_64.load_stack(register, generator["variables"][name]))
+        else:
+            call assembler.emit(output, x86_64.load_memory(register, 12, generator["global_variables"][name]))
+        end
+    end
+end
+
 function emit_collection_box(generator, syntax):
     value_type = infer_expression_type(syntax, generator["types"], generator["function_returns"])
     if value_type == "Bool":
@@ -741,11 +770,21 @@ function emit_expression(generator, syntax):
             call assembler.label(output, done_label)
             return
         end
-        call emit_expression(generator, syntax["left"])
-        call assembler.emit(output, x86_64.push(0))
-        call emit_expression(generator, syntax["right"])
-        call assembler.emit(output, x86_64.move_reg_reg(1, 0))
-        call assembler.emit(output, x86_64.pop(0))
+        # Int arithmetic path (Float/String/List handled above). Avoid the
+        # push/pop spill when an operand is a literal or variable leaf.
+        if is_int_leaf(generator, syntax["right"]):
+            call emit_expression(generator, syntax["left"])
+            call emit_int_leaf(generator, syntax["right"], 1)
+        elif (operator == "+" or operator == "*") and is_int_leaf(generator, syntax["left"]):
+            call emit_expression(generator, syntax["right"])
+            call emit_int_leaf(generator, syntax["left"], 1)
+        else:
+            call emit_expression(generator, syntax["left"])
+            call assembler.emit(output, x86_64.push(0))
+            call emit_expression(generator, syntax["right"])
+            call assembler.emit(output, x86_64.move_reg_reg(1, 0))
+            call assembler.emit(output, x86_64.pop(0))
+        end
         if operator == "+":
             call assembler.emit(output, x86_64.add_reg_reg(0, 1))
         elif operator == "-":
