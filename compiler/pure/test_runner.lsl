@@ -182,6 +182,12 @@ if collection_repr_output != readfile("tests/collection_repr_conformance.out"):
     Error(TestFailure: "collection repr conformance output differs")
 end
 
+call require_success(run(compiler, ["tests/collection_methods_conformance.lsl", "/tmp/lsl-collection-methods-test"]), "compile collection methods conformance")
+collection_methods_output = capture("/tmp/lsl-collection-methods-test", [])
+if collection_methods_output != readfile("tests/collection_methods_conformance.out"):
+    Error(TestFailure: "collection methods conformance output differs")
+end
+
 call require_success(run(compiler, ["tests/int_conversion_conformance.lsl", "/tmp/lsl-int-conversion-test"]), "compile Int conversion conformance")
 int_conversion_output = capture("/tmp/lsl-int-conversion-test", [])
 if int_conversion_output != readfile("tests/int_conversion_conformance.out"):

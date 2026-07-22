@@ -76,6 +76,13 @@ function __lsl_upper(text):
     return result
 end
 
+function __lsl_capitalize(text):
+    if len(text) == 0:
+        return text
+    end
+    return __lsl_upper(text[0]) + __lsl_lower(text[1:len(text)])
+end
+
 function __lsl_title(text):
     result = ""
     word_start = True
@@ -963,6 +970,19 @@ function __lsl_pop(target):
     return __lsl_pop_last(target)
 end
 
+function __lsl_pop_at(target, position):
+    length = len(target)
+    if position < 0:
+        position += length
+    end
+    if position < 0 or position >= length:
+        Error(IndexError: "pop index out of range")
+    end
+    value = target[position]
+    call __lsl_delete_at(target, position)
+    return value
+end
+
 function __lsl_list_count(target, value):
     result = 0
     for item in target:
@@ -975,13 +995,21 @@ end
 
 function __lsl_remove(target, value):
     position = __lsl_list_find(target, value)
-    if position >= 0:
-        index = position
-        while index + 1 < len(target):
-            target[index] = target[index + 1]
-            index += 1
-        end
-        call __lsl_pop_last(target)
+    if position < 0:
+        Error(ValueError: "value is not in List")
+    end
+    call __lsl_delete_at(target, position)
+end
+
+function __lsl_reverse(target):
+    left = 0
+    right = len(target) - 1
+    while left < right:
+        temporary = target[left]
+        target[left] = target[right]
+        target[right] = temporary
+        left += 1
+        right -= 1
     end
 end
 
@@ -1023,6 +1051,62 @@ function __lsl_update(target, values):
     for key in values.keys():
         target[key] = values[key]
     end
+end
+
+function __lsl_dictionary(values):
+    if __lsl_type_code(values) == 3:
+        return __lsl_dict_copy(values)
+    end
+    result = {}
+    for entry in values:
+        if len(entry) != 2:
+            Error(ValueError: "Dictionary entries must contain two values")
+        end
+        result[entry[0]] = entry[1]
+    end
+    return result
+end
+
+function __lsl_dict_values(target):
+    result = []
+    for key in target.keys():
+        result.append(target[key])
+    end
+    return result
+end
+
+function __lsl_dict_items(target):
+    result = []
+    for key in target.keys():
+        result.append((key, target[key]))
+    end
+    return result
+end
+
+function __lsl_dict_copy(target):
+    result = {}
+    call result.update(target)
+    return result
+end
+
+function __lsl_dict_clear(target):
+    keys = target.keys()
+    for key in keys:
+        del(target[key])
+    end
+end
+
+function __lsl_dict_pop(target, key):
+    value = target[key]
+    del(target[key])
+    return value
+end
+
+function __lsl_dict_pop_default(target, key, default_value):
+    if key not in target:
+        return default_value
+    end
+    return __lsl_dict_pop(target, key)
 end
 
 function __lsl_replace(text, old_value, new_value):

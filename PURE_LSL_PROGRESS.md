@@ -405,10 +405,18 @@ záměrně změněny z nepřesného fixed-6 formátu (`1.199999`) na round-trip 
 (`1.2`). Tři stage a dvakrát generovaný toolchain jsou bitově shodné, suite i
 config procházejí.
 
+Fixed point s dokončenými dokumentovanými collection metodami má SHA-256
+`3403a93cac60c303965afd69afb8b28a405500c04cd114b52d28f297c88e6e82`.
+List nyní umí `reverse`, `pop(index)` a missing `remove` propaguje `ValueError`;
+Dictionary umí `values/items/copy/clear/pop(key[, default])`, po clear lze znovu
+vkládat bez stale hash indexu a `Dictionary(iterable)` validuje dvojice. String
+má Unicode-aware `capitalize`. Exact-output test pokrývá mutation, copy
+nezávislost, chyby a insertion order. Tři stage, dvakrát generované nástroje,
+celý suite i config jsou shodné.
+
 Přesný další krok: poslední raw-Int/live-pointer kolize přes jednoznačný scalar
-tag ABI, zbývající RealArray numerické metody a pure-LSL in-process zero-copy
-tensor/shared-object loader. Izolované process plugin ABI je hotové, ale není
-vydáváno za zero-copy náhradu.
+tag ABI a pure-LSL in-process zero-copy tensor/shared-object loader. Izolované
+process plugin ABI je hotové, ale není vydáváno za zero-copy náhradu.
 
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,

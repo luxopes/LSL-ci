@@ -215,9 +215,9 @@ function infer_expression_type(syntax, types, function_returns):
             end
         elif target["kind"] == "member":
             member = target["name"]
-            if member == "append" or member == "extend" or member == "sort" or member == "clear":
+            if member == "append" or member == "extend" or member == "sort" or member == "reverse" or member == "clear":
                 return "None"
-            elif member == "strip" or member == "lstrip" or member == "rstrip" or member == "join" or member == "replace" or member == "lower" or member == "upper" or member == "title":
+            elif member == "strip" or member == "lstrip" or member == "rstrip" or member == "join" or member == "replace" or member == "lower" or member == "upper" or member == "title" or member == "capitalize":
                 return "String"
             elif member == "split" or member == "keys" or member == "values" or member == "items":
                 return "List"
@@ -294,6 +294,8 @@ function method_function(name):
         return "__lsl_upper"
     elif name == "title":
         return "__lsl_title"
+    elif name == "capitalize":
+        return "__lsl_capitalize"
     elif name == "lstrip":
         return "__lsl_lstrip"
     elif name == "rstrip":
@@ -320,6 +322,8 @@ function method_function(name):
         return "__lsl_remove"
     elif name == "sort":
         return "__lsl_sort"
+    elif name == "reverse":
+        return "__lsl_reverse"
     elif name == "copy":
         return "__lsl_copy"
     elif name == "get":
@@ -328,6 +332,10 @@ function method_function(name):
         return "__lsl_setdefault"
     elif name == "update":
         return "__lsl_update"
+    elif name == "values":
+        return "__lsl_dict_values"
+    elif name == "items":
+        return "__lsl_dict_items"
     end
     return ""
 end
@@ -1100,7 +1108,7 @@ function emit_expression(generator, syntax):
     elif kind == "call":
         target = syntax["target"]
         if target["kind"] == "name":
-            builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sum": 1, "type": 1, "exit": 1, "input": 1, "readfile": 1, "getenv": 1, "mkdir": 1, "unlink": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "help": 0, "run": 2, "capture": 2, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2}
+            builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "Dictionary": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sum": 1, "type": 1, "exit": 1, "input": 1, "readfile": 1, "getenv": 1, "mkdir": 1, "unlink": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "help": 0, "run": 2, "capture": 2, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2}
             if target["name"] in builtin_arity:
                 expected_builtin = builtin_arity[target["name"]]
                 if len(syntax["arguments"]) != expected_builtin:
@@ -1145,6 +1153,10 @@ function emit_expression(generator, syntax):
                 elif target["name"] == "RealArray":
                     call assembler.emit(output, x86_64.store_memory_imm32(0, 0, 8))
                 end
+                return
+            elif target["name"] == "Dictionary":
+                dictionary_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_dictionary"}, "arguments": syntax["arguments"]}
+                call emit_expression(generator, dictionary_call)
                 return
             elif target["name"] == "sum":
                 sum_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_sum"}, "arguments": syntax["arguments"]}
@@ -1486,11 +1498,21 @@ function emit_expression(generator, syntax):
             end
         elif target["kind"] == "member":
             receiver_type = infer_expression_type(target["target"], generator["types"], generator["function_returns"])
-            method_arity = {"strip": 0, "lstrip": 0, "rstrip": 0, "lower": 0, "upper": 0, "title": 0, "sort": 0, "copy": 0, "keys": 0, "clear": 0, "append": 1, "startswith": 1, "endswith": 1, "find": 1, "count": 1, "split": 1, "join": 1, "extend": 1, "remove": 1, "index": 1, "update": 1, "replace": 2, "insert": 2}
+            method_arity = {"strip": 0, "lstrip": 0, "rstrip": 0, "lower": 0, "upper": 0, "title": 0, "capitalize": 0, "sort": 0, "reverse": 0, "copy": 0, "keys": 0, "values": 0, "items": 0, "clear": 0, "append": 1, "startswith": 1, "endswith": 1, "find": 1, "count": 1, "split": 1, "join": 1, "extend": 1, "remove": 1, "index": 1, "update": 1, "replace": 2, "insert": 2}
             if target["name"] in method_arity and not receiver_type.startswith("Class:") and not receiver_type.startswith("Instance:"):
                 expected_method = method_arity[target["name"]]
                 if len(syntax["arguments"]) != expected_method:
                     call unsupported(generator["path"], generator["lines"], syntax, "method " + target["name"] + " expects " + String(expected_method) + " argument(s), got " + String(len(syntax["arguments"])), "pass exactly " + String(expected_method) + " argument(s)")
+                end
+            elif target["name"] == "pop":
+                pop_arity_valid = False
+                if receiver_type == "Dictionary":
+                    pop_arity_valid = len(syntax["arguments"]) == 1 or len(syntax["arguments"]) == 2
+                else:
+                    pop_arity_valid = len(syntax["arguments"]) == 0 or len(syntax["arguments"]) == 1
+                end
+                if not pop_arity_valid:
+                    call unsupported(generator["path"], generator["lines"], syntax, "invalid pop argument count", "use list.pop([index]) or dictionary.pop(key[, default])")
                 end
             end
             if receiver_type.startswith("Class:") or receiver_type.startswith("Instance:"):
@@ -1527,15 +1549,35 @@ function emit_expression(generator, syntax):
                 call assembler.relative(output, [232], "runtime_list_append")
                 return
             elif target["name"] == "clear":
-                call emit_expression(generator, target["target"])
-                call assembler.emit(output, x86_64.move_reg_reg(7, 0))
-                call assembler.relative(output, [232], "runtime_list_clear")
+                if receiver_type == "Tuple" or receiver_type == "RealArray":
+                    call unsupported(generator["path"], generator["lines"], syntax, "fixed collection does not support clear", "convert it with List(value) before changing its length")
+                elif receiver_type == "Dictionary":
+                    clear_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_dict_clear"}, "arguments": [target["target"]]}
+                    call emit_expression(generator, clear_call)
+                else:
+                    call emit_expression(generator, target["target"])
+                    call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                    call assembler.relative(output, [232], "runtime_list_clear")
+                end
                 return
-            elif target["name"] == "pop" and len(syntax["arguments"]) == 0:
+            elif target["name"] == "pop":
                 if receiver_type == "Tuple" or receiver_type == "RealArray":
                     call unsupported(generator["path"], generator["lines"], syntax, "fixed collection does not support pop", "convert it with List(value) before changing its length")
                 end
-                pop_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_pop"}, "arguments": [target["target"]]}
+                pop_target = "__lsl_pop"
+                pop_arguments = [target["target"]]
+                if receiver_type == "Dictionary":
+                    if len(syntax["arguments"]) == 1:
+                        pop_target = "__lsl_dict_pop"
+                    else:
+                        pop_target = "__lsl_dict_pop_default"
+                    end
+                    pop_arguments.extend(syntax["arguments"])
+                elif len(syntax["arguments"]) == 1:
+                    pop_target = "__lsl_pop_at"
+                    pop_arguments.extend(syntax["arguments"])
+                end
+                pop_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": pop_target}, "arguments": pop_arguments}
                 call emit_expression(generator, pop_call)
                 return
             elif target["name"] == "keys":
@@ -1558,6 +1600,8 @@ function emit_expression(generator, syntax):
                     end
                 elif receiver_type == "String" and target["name"] == "index":
                     method_target = "__lsl_string_index"
+                elif receiver_type == "Dictionary" and target["name"] == "copy":
+                    method_target = "__lsl_dict_copy"
                 end
                 if method_target != "":
                     combined_arguments = [target["target"]]

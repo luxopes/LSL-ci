@@ -24,6 +24,7 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`.
 - [x] Doplnit indexed augmented assignment pro List, RealArray a Dictionary.
 - [x] Odstranit omezení literal-only `rang` kroku; stop i step se vyhodnotí jednou.
 - [x] Dokončit Float round-trip/exponent formatting včetně subnormal, NaN a Infinity.
+- [x] Dokončit dokumentované collection metody a Dictionary konverzi.
 - [ ] Dokončit jednoznačný scalar tag ABI.
 - [ ] Pokračovat zbývajícími runtime, plugin/AI/config a audit okruhy níže.
 
@@ -31,7 +32,6 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`.
 
 - dokončit jednoznačný scalar tag ABI tak, aby ani záměrný raw Int shodný s živou heap adresou nemohl kolidovat s object value;
 - zbytek okruhu 2: kontrolovaný integer overflow a další numerické edge cases;
-- dokončit pokročilé Tuple/RealArray metody a runtime error parity;
 - vedle hotového JSON process plugin ABI navrhnout pure-LSL in-process shared-object/zero-copy tensor loader;
 - rozšířit negative/conformance, benchmarky a další targety;
 - po finální kontrole odstranit případné zbylé transition poznámky a nepotřebné smoke zdroje.
