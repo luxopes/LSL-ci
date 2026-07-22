@@ -46,7 +46,7 @@ print "ahoj", name, "je ti", 1 + 10
 printl "ahoj {name}, je ti {1 + 10}"
 ```
 
-`print` odděluje hodnoty mezerou a přidá nový řádek. `printl` nejdřív vyhodnotí svůj argument jako řetězec a pak vyhodnotí výrazy v `{...}`. `input(prompt)` vypíše prompt bez newline, načte nejvýše 4096 stdin bytes, odstraní koncové LF a vrátí UTF-8 `String`.
+`print` odděluje hodnoty mezerou a přidá nový řádek. `printl` nejdřív vyhodnotí svůj argument jako řetězec a pak vyhodnotí výrazy v `{...}`. `input(prompt)` vypíše prompt bez newline, čte jeden celý stdin řádek do dynamicky rostoucího bufferu, odstraní koncové LF/CRLF a vrátí UTF-8 `String`.
 
 ## Podmínky
 

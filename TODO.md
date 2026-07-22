@@ -25,6 +25,7 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`.
 - [x] Odstranit omezení literal-only `rang` kroku; stop i step se vyhodnotí jednou.
 - [x] Dokončit Float round-trip/exponent formatting včetně subnormal, NaN a Infinity.
 - [x] Dokončit dokumentované collection metody a Dictionary konverzi.
+- [x] Odstranit pevný 4096B limit `input()` a číst přesně jeden řádek.
 - [ ] Dokončit jednoznačný scalar tag ABI.
 - [ ] Pokračovat zbývajícími runtime, plugin/AI/config a audit okruhy níže.
 

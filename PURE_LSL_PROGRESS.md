@@ -249,10 +249,8 @@ ELF, takže fixed point tuto cestu validuje.
 
 Fixed point s CRLF strip v `input()` má SHA-256 `71d331262bcadb7a…`.
 `runtime_input` dříve strippoval jen `\n`, takže `Lux\r\n` (CRLF, Windows/DOS
-vstup) zanechal koncový `\r` (délka 4). Nyní po `\n` strippuje i koncový `\r`
-(CRLF i LF i EOF bez newline), `\r` uprostřed zůstává. Známé omezení: `input()`
-má stále pevný 4096B buffer — skutečně unbounded verze je read-loop s rostoucím
-bufferem v raw asm; není vydáváno za hotové.
+vstup) zanechal koncový `\r` (délka 4). Po tomto kroku strippoval i koncový
+`\r`; pozdější fixed point `f4330810…` odstranil i tehdejší pevný 4096B limit.
 
 Fixed point s arita validací builtinů má SHA-256 `c283131172fd71ed…`. Dříve
 `len()`, `chr()`, `Int()`, `String()` (a další) bez argumentů **shodily samotný
@@ -419,6 +417,13 @@ Fixed point s `del(instance.member)` má SHA-256
 Dokumentovaná member deletion nyní maže Dictionary-backed field a následný
 přístup propaguje `KeyError`; `del(name)` navíc korektně obsluhuje globální
 sloty a unknown name je compile error. Self-host stage i suite procházejí.
+
+Fixed point s neomezeným řádkovým `input()` má SHA-256
+`f433081048b83607163fde29ff5932506865f78a75147cbd28f32c21108d0f63`.
+Runtime čte přesný jeden řádek po bajtu, buffer roste 2× od 256 B, EOF/LF/CRLF
+mají přesnou sémantiku a následující řádek zůstává pro další `input`. Manuální
+exact-output conformance ověřila 5000bajtový řádek a druhé čtení; tři stage,
+deterministické nástroje i celý suite procházejí.
 
 Přesný další krok: poslední raw-Int/live-pointer kolize přes jednoznačný scalar
 tag ABI a pure-LSL in-process zero-copy tensor/shared-object loader. Izolované
