@@ -2330,12 +2330,21 @@ function returned_type(statements, types, function_returns):
 end
 
 function infer_function_returns(functions):
+    # Least-fixed-point over the 3-level lattice None < concrete < Any. Start at
+    # bottom (None) so a not-yet-resolved recursive call is the merge identity
+    # rather than Any; otherwise merge(Bool, Any) = Any poisoned recursive
+    # Bool/Float returns (e.g. is_even printed 1 instead of True). Iterate until
+    # stable; monotonic widening bounds it by 2*len(names).
     result = {}
     names = functions.keys()
     for name in names:
-        result[name] = "Any"
+        result[name] = "None"
     end
-    for pass_index in rang(4):
+    max_iterations = len(names) * 2 + 4
+    iteration = 0
+    changed = True
+    while changed and iteration < max_iterations:
+        changed = False
         for name in names:
             declaration = functions[name]
             types = {}
@@ -2343,8 +2352,13 @@ function infer_function_returns(functions):
                 types[parameter] = "Any"
             end
             call collect_types(declaration["body"], types, result)
-            result[name] = returned_type(declaration["body"], types, result)
+            inferred = returned_type(declaration["body"], types, result)
+            if inferred != result[name]:
+                result[name] = inferred
+                changed = True
+            end
         end
+        iteration += 1
     end
     return result
 end
