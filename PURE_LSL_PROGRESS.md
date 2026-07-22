@@ -385,10 +385,18 @@ ověřuje Int, Float, String a všechny tři mutable collection druhy. Tři čis
 stage jsou bitově shodné, celý toolchain byl 2× deterministicky přegenerován,
 `lsl-test` a config conformance procházejí.
 
-Přesný další krok: odstranit literal-only omezení `rang` kroku, poté poslední
-raw-Int/live-pointer kolizi jednoznačným scalar tag ABI, zbývající RealArray
-numerické metody a pure-LSL in-process zero-copy tensor/shared-object loader.
-Izolované process plugin ABI je hotové, ale není vydáváno za zero-copy náhradu.
+Fixed point s dynamickým `rang` krokem má SHA-256
+`a6d15858fb69fe33ffe334e14790e2cc3b3133a45b7b985f0d7b2d00159b19ff`.
+Start, stop i step jsou vyhodnoceny právě jednou; Int proměnné a Any parametry
+fungují pro kladný i záporný krok. Nulový krok propaguje catchable `ValueError`
+s path/line a dynamický ne-Int krok `TypeError`. Exact-output conformance, tři
+fixed-point stage, celý deterministicky přegenerovaný toolchain, `lsl-test` i
+config conformance procházejí.
+
+Přesný další krok: poslední raw-Int/live-pointer kolize přes jednoznačný scalar
+tag ABI, zbývající RealArray numerické metody a pure-LSL in-process zero-copy
+tensor/shared-object loader. Izolované process plugin ABI je hotové, ale není
+vydáváno za zero-copy náhradu.
 
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,

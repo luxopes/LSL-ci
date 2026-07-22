@@ -22,7 +22,7 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`.
 ## Aktivní plán
 
 - [x] Doplnit indexed augmented assignment pro List, RealArray a Dictionary.
-- [ ] Odstranit omezení literal-only `rang` kroku.
+- [x] Odstranit omezení literal-only `rang` kroku; stop i step se vyhodnotí jednou.
 - [ ] Dokončit Float round-trip/exponent formatting.
 - [ ] Dokončit jednoznačný scalar tag ABI.
 - [ ] Pokračovat zbývajícími runtime, plugin/AI/config a audit okruhy níže.

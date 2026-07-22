@@ -1,0 +1,6 @@
+[1, 3, 5, 7]
+[8, 5, 2, -1]
+[0, 3, 6]
+ValueError: rang step cannot be zero at tests/rang_dynamic_conformance.lsl:26
+ValueError: rang step cannot be zero at tests/rang_dynamic_conformance.lsl:17
+TypeError: rang step must be an Int

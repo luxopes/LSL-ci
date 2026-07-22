@@ -421,6 +421,13 @@ function __lsl_int_to_string(number):
     return digits
 end
 
+function __lsl_require_rang_step(value):
+    if __lsl_is_heap(value):
+        Error(TypeError: "rang step must be an Int")
+    end
+    return __lsl_raw_int(value)
+end
+
 function __lsl_render(value, quote):
     if not __lsl_is_heap(value):
         return __lsl_int_to_string(value)

@@ -164,6 +164,12 @@ if indexed_augmented_output != readfile("tests/indexed_augmented_conformance.out
     Error(TestFailure: "indexed augmented conformance output differs")
 end
 
+call require_success(run(compiler, ["tests/rang_dynamic_conformance.lsl", "/tmp/lsl-rang-dynamic-test"]), "compile dynamic rang conformance")
+rang_dynamic_output = capture("/tmp/lsl-rang-dynamic-test", [])
+if rang_dynamic_output != readfile("tests/rang_dynamic_conformance.out"):
+    Error(TestFailure: "dynamic rang conformance output differs")
+end
+
 call require_success(run(compiler, ["tests/collection_repr_conformance.lsl", "/tmp/lsl-collection-repr-test"]), "compile collection repr conformance")
 collection_repr_output = capture("/tmp/lsl-collection-repr-test", [])
 if collection_repr_output != readfile("tests/collection_repr_conformance.out"):

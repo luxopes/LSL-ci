@@ -2113,48 +2113,60 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 start_expression = arguments[0]
                 stop_expression = arguments[1]
             end
-            step_value = 1
-            if len(arguments) == 3:
-                step_syntax = arguments[2]
-                if step_syntax["kind"] == "literal":
-                    if step_syntax["literal_kind"] != "number":
-                        call unsupported(generator["path"], generator["lines"], step_syntax, "native rang step must be an Int literal", "use a positive or negative integer step")
-                    end
-                    step_value = Int(step_syntax["value"])
-                elif step_syntax["kind"] == "unary":
-                    if step_syntax["operator"] != "-" or step_syntax["operand"]["kind"] != "literal":
-                        call unsupported(generator["path"], generator["lines"], step_syntax, "native rang step must currently be an Int literal", "use a positive or negative integer step")
-                    end
-                    step_value = -Int(step_syntax["operand"]["value"])
-                else:
-                    call unsupported(generator["path"], generator["lines"], step_syntax, "native rang step must currently be an Int literal", "use a positive or negative integer step")
-                end
-            end
-            if step_value == 0:
-                call unsupported(generator["path"], generator["lines"], statement, "rang step cannot be zero", "choose a non-zero step")
-            end
             slot = generator["variables"][statement["name"]]
+            stop_slot = generator["variables"][statement["iterator_name"]]
+            step_slot = generator["variables"][statement["index_name"]]
             call emit_expression(generator, start_expression)
             call assembler.emit(generator["builder"], x86_64.store_stack(slot, 0))
+            call emit_expression(generator, stop_expression)
+            call assembler.emit(generator["builder"], x86_64.store_stack(stop_slot, 0))
+            if len(arguments) == 3:
+                step_syntax = arguments[2]
+                step_type = infer_expression_type(step_syntax, generator["types"], generator["function_returns"])
+                if step_type != "Int" and step_type != "Any":
+                    call unsupported(generator["path"], generator["lines"], step_syntax, "rang step must be an Int", "pass an Int expression with a non-zero value")
+                end
+                call emit_expression(generator, step_syntax)
+                if step_type == "Any":
+                    call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
+                    call assembler.relative(generator["builder"], [232], "function___lsl_require_rang_step")
+                    call emit_pending_error(generator)
+                end
+                call assembler.emit(generator["builder"], x86_64.store_stack(step_slot, 0))
+            else:
+                call assembler.emit(generator["builder"], x86_64.mov_imm64(0, 1))
+                call assembler.emit(generator["builder"], x86_64.store_stack(step_slot, 0))
+            end
+            rang_step_ready = label_name(generator, "rang_step_ready")
+            call assembler.emit(generator["builder"], x86_64.load_stack(0, step_slot))
+            call assembler.emit(generator["builder"], x86_64.cmp_reg_imm8(0, 0))
+            call assembler.relative(generator["builder"], [15, 133], rang_step_ready)
+            rang_source_path = statement.get("path", generator["path"])
+            call emit_runtime_raise(generator, "ValueError: rang step cannot be zero at " + rang_source_path + ":" + String(statement["line"]))
+            call assembler.label(generator["builder"], rang_step_ready)
             start_label = label_name(generator, "for_start")
+            positive_check = label_name(generator, "for_positive_check")
+            body_label = label_name(generator, "for_body")
             continue_target = label_name(generator, "for_continue")
             end_label = label_name(generator, "for_end")
             call assembler.label(generator["builder"], start_label)
             call assembler.emit(generator["builder"], x86_64.load_stack(0, slot))
-            call assembler.emit(generator["builder"], x86_64.push(0))
-            call emit_expression(generator, stop_expression)
-            call assembler.emit(generator["builder"], x86_64.move_reg_reg(1, 0))
-            call assembler.emit(generator["builder"], x86_64.pop(0))
+            call assembler.emit(generator["builder"], x86_64.load_stack(1, stop_slot))
+            call assembler.emit(generator["builder"], x86_64.load_stack(2, step_slot))
+            call assembler.emit(generator["builder"], x86_64.cmp_reg_imm8(2, 0))
+            call assembler.relative(generator["builder"], [15, 143], positive_check)
             call assembler.emit(generator["builder"], x86_64.cmp_reg_reg(0, 1))
-            if step_value > 0:
-                call assembler.relative(generator["builder"], [15, 141], end_label)
-            else:
-                call assembler.relative(generator["builder"], [15, 142], end_label)
-            end
+            call assembler.relative(generator["builder"], [15, 142], end_label)
+            call assembler.relative(generator["builder"], [233], body_label)
+            call assembler.label(generator["builder"], positive_check)
+            call assembler.emit(generator["builder"], x86_64.cmp_reg_reg(0, 1))
+            call assembler.relative(generator["builder"], [15, 141], end_label)
+            call assembler.label(generator["builder"], body_label)
             call emit_statements(generator, statement["body"], end_label, continue_target, return_label)
             call assembler.label(generator["builder"], continue_target)
             call assembler.emit(generator["builder"], x86_64.load_stack(0, slot))
-            call assembler.emit(generator["builder"], x86_64.add_reg_imm8(0, step_value))
+            call assembler.emit(generator["builder"], x86_64.load_stack(1, step_slot))
+            call assembler.emit(generator["builder"], x86_64.add_reg_reg(0, 1))
             call assembler.emit(generator["builder"], x86_64.store_stack(slot, 0))
             call assembler.relative(generator["builder"], [233], start_label)
             call assembler.label(generator["builder"], end_label)
