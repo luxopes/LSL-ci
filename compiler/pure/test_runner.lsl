@@ -260,6 +260,12 @@ call require_failure(run(compiler, ["tests/method_arity_negative.lsl", "/tmp/lsl
 call require_failure(run(compiler, ["tests/fixed_collection_negative.lsl", "/tmp/lsl-fixed-negative"]), "fixed collection mutation unexpectedly compiled")
 call require_failure(run(compiler, ["tests/private_class_negative.lsl", "/tmp/lsl-private-negative"]), "private module class unexpectedly compiled")
 
+call require_success(run(compiler, ["tests/ai_conformance.lsl", "/tmp/lsl-ai-test"]), "compile AI conformance")
+ai_output = capture("/tmp/lsl-ai-test", [])
+if ai_output != readfile("tests/ai_conformance.out"):
+    Error(TestFailure: "AI conformance output differs")
+end
+
 call require_success(run(compiler, ["tests/plugin_process_server.lsl", "/tmp/lsl-plugin-process-server"]), "compile process plugin server")
 call require_success(run(compiler, ["tests/plugin_process_conformance.lsl", "/tmp/lsl-plugin-process-test"]), "compile process plugin conformance")
 plugin_process_output = capture("/tmp/lsl-plugin-process-test", [])

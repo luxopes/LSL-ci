@@ -480,6 +480,12 @@ zelené. Následující fixed point
 `dfc81ddfd9fa0f57f3f86c12465891fd24003b752e6420769134f6405eea17e6`
 doplnil stejnou full-probe ochranu 64K String intern cache.
 
+AI standard module nyní poskytuje OpenAI-compatible request, timeout, retry pro
+transport/408/429/5xx, cancellation callback, validaci provider JSON,
+`AIProviderError`/`AICancelled` a bezpečný content accessor. Conformance používá
+syntetické responses bez sítě; example i installer jsou aktualizované. Skutečný
+curl token streaming zůstává samostatná transportní mezera.
+
 Přesný další krok: dokončit deterministické tagging raw Any argument/return
 výsledků a typed unbox na call sites, potom odstranit raw fallback a dokázat
 nemožnost live-pointer kolize. Následuje pure-LSL in-process
