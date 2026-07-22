@@ -1,4 +1,6 @@
 # Pure-LSL regression runner. It invokes only LSL-generated syscall-only ELFs.
+# Positive conformance modules are linked into one program so parser/runtime
+# generation is paid once while every original source span remains intact.
 
 function require_success(status, name):
     if status != 0:
@@ -12,344 +14,104 @@ function require_failure(status, name):
     end
 end
 
-compiler = "./compiler/pure/lslc-direct"
+function require_output(program, arguments, expected_path, name):
+    actual = capture(program, arguments)
+    if actual != readfile(expected_path):
+        Error(TestFailure: name)
+    end
+end
 
+function aggregate_expected():
+    result = ""
+    for line in readfile("tests/full_conformance.lsl").split(chr(10)):
+        if line.startswith("load "):
+            result += readfile("tests/" + line[5:len(line)] + ".out")
+        end
+    end
+    return result
+end
+
+mode = arg(1)
+compiler = arg(2)
+if mode == None:
+    mode = "full"
+elif mode != "fast" and mode != "full" and mode != "fixed-point":
+    # Backward-compatible developer override: lsl-test /tmp/candidate-lslc
+    compiler = mode
+    mode = "full"
+end
+if compiler == None:
+    compiler = "./compiler/pure/lslc-direct"
+end
+
+if mode == "fixed-point":
+    call require_success(run(compiler, ["compiler/pure/lslc_direct.lsl", "/tmp/lsl-fixed-test"]), "compile fixed-point stage")
+    if readfile(compiler) != readfile("/tmp/lsl-fixed-test"):
+        Error(TestFailure: "compiler fixed point differs")
+    end
+    print "pure LSL fixed point passed"
+    exit(0)
+end
+
+# Standalone smoke/fixed-table programs cannot safely share aggregate state.
 call require_success(run(compiler, ["compiler/pure/scalar_smoke.lsl", "/tmp/lsl-scalar-test"]), "compile scalar smoke")
 call require_success(run("/tmp/lsl-scalar-test", []), "run scalar smoke")
-
 call require_success(run(compiler, ["compiler/pure/float_smoke.lsl", "/tmp/lsl-float-test"]), "compile Float smoke")
 call require_success(run("/tmp/lsl-float-test", []), "run Float smoke")
-
 call require_success(run(compiler, ["tests/selfhost_conformance.lsl", "/tmp/lsl-selfhost-test"]), "compile selfhost conformance")
-selfhost_output = capture("/tmp/lsl-selfhost-test", [])
-if selfhost_output != readfile("tests/selfhost_conformance.out"):
-    Error(TestFailure: "selfhost conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/runtime_error_conformance.lsl", "/tmp/lsl-runtime-error-test"]), "compile runtime error conformance")
-runtime_error_output = capture("/tmp/lsl-runtime-error-test", [])
-if runtime_error_output != readfile("tests/runtime_error_conformance.out"):
-    Error(TestFailure: "runtime error conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/io_error_conformance.lsl", "/tmp/lsl-io-error-test"]), "compile I/O error conformance")
-io_error_output = capture("/tmp/lsl-io-error-test", [])
-if io_error_output != readfile("tests/io_error_conformance.out"):
-    Error(TestFailure: "I/O error conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/io_conformance.lsl", "/tmp/lsl-io-test"]), "compile I/O conformance")
-io_output = capture("/tmp/lsl-io-test", [])
-if io_output != readfile("tests/io_conformance.out"):
-    Error(TestFailure: "I/O conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/capture_large_server.lsl", "/tmp/lsl-capture-large-server"]), "compile large capture server")
-call require_success(run(compiler, ["tests/capture_large_conformance.lsl", "/tmp/lsl-capture-large-test"]), "compile large capture conformance")
-capture_large_output = capture("/tmp/lsl-capture-large-test", [])
-if capture_large_output != readfile("tests/capture_large_conformance.out"):
-    Error(TestFailure: "large capture conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/magic_division_conformance.lsl", "/tmp/lsl-magic-division-test"]), "compile magic division conformance")
-magic_division_output = capture("/tmp/lsl-magic-division-test", [])
-if magic_division_output != readfile("tests/magic_division_conformance.out"):
-    Error(TestFailure: "magic division conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/equality_conformance.lsl", "/tmp/lsl-equality-test"]), "compile equality conformance")
-equality_output = capture("/tmp/lsl-equality-test", [])
-if equality_output != readfile("tests/equality_conformance.out"):
-    Error(TestFailure: "equality conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/dynamic_arith_conformance.lsl", "/tmp/lsl-dynamic-arith-test"]), "compile dynamic arith conformance")
-dynamic_arith_output = capture("/tmp/lsl-dynamic-arith-test", [])
-if dynamic_arith_output != readfile("tests/dynamic_arith_conformance.out"):
-    Error(TestFailure: "dynamic arith conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/dict_keys_conformance.lsl", "/tmp/lsl-dict-keys-test"]), "compile dict keys conformance")
-dict_keys_output = capture("/tmp/lsl-dict-keys-test", [])
-if dict_keys_output != readfile("tests/dict_keys_conformance.out"):
-    Error(TestFailure: "dict keys conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/unicode_case_conformance.lsl", "/tmp/lsl-unicode-case-test"]), "compile unicode case conformance")
-unicode_case_output = capture("/tmp/lsl-unicode-case-test", [])
-if unicode_case_output != readfile("tests/unicode_case_conformance.out"):
-    Error(TestFailure: "unicode case conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/slice_step_conformance.lsl", "/tmp/lsl-slice-step-test"]), "compile slice step conformance")
-slice_step_output = capture("/tmp/lsl-slice-step-test", [])
-if slice_step_output != readfile("tests/slice_step_conformance.out"):
-    Error(TestFailure: "slice step conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/string_conversion_conformance.lsl", "/tmp/lsl-string-conversion-test"]), "compile string conversion conformance")
-string_conversion_output = capture("/tmp/lsl-string-conversion-test", [])
-if string_conversion_output != readfile("tests/string_conversion_conformance.out"):
-    Error(TestFailure: "string conversion conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/abs_conformance.lsl", "/tmp/lsl-abs-test"]), "compile abs conformance")
-abs_output = capture("/tmp/lsl-abs-test", [])
-if abs_output != readfile("tests/abs_conformance.out"):
-    Error(TestFailure: "abs conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/numeric_builtins_conformance.lsl", "/tmp/lsl-numeric-builtins-test"]), "compile numeric builtins conformance")
-numeric_builtins_output = capture("/tmp/lsl-numeric-builtins-test", [])
-if numeric_builtins_output != readfile("tests/numeric_builtins_conformance.out"):
-    Error(TestFailure: "numeric builtins conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/integer_wrap_conformance.lsl", "/tmp/lsl-integer-wrap-test"]), "compile integer wrap conformance")
-integer_wrap_output = capture("/tmp/lsl-integer-wrap-test", [])
-if integer_wrap_output != readfile("tests/integer_wrap_conformance.out"):
-    Error(TestFailure: "integer wrap conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/float_floordiv_conformance.lsl", "/tmp/lsl-float-floordiv-test"]), "compile float floordiv conformance")
-float_floordiv_output = capture("/tmp/lsl-float-floordiv-test", [])
-if float_floordiv_output != readfile("tests/float_floordiv_conformance.out"):
-    Error(TestFailure: "float floordiv conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/recursive_return_conformance.lsl", "/tmp/lsl-recursive-return-test"]), "compile recursive return conformance")
-recursive_return_output = capture("/tmp/lsl-recursive-return-test", [])
-if recursive_return_output != readfile("tests/recursive_return_conformance.out"):
-    Error(TestFailure: "recursive return conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/wide_class_abi_conformance.lsl", "/tmp/lsl-wide-class-abi-test"]), "compile wide class ABI conformance")
-wide_class_abi_output = capture("/tmp/lsl-wide-class-abi-test", [])
-if wide_class_abi_output != readfile("tests/wide_class_abi_conformance.out"):
-    Error(TestFailure: "wide class ABI conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/float_exponent_conformance.lsl", "/tmp/lsl-float-exponent-test"]), "compile Float exponent conformance")
-float_exponent_output = capture("/tmp/lsl-float-exponent-test", [])
-if float_exponent_output != readfile("tests/float_exponent_conformance.out"):
-    Error(TestFailure: "Float exponent conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/float_special_conformance.lsl", "/tmp/lsl-float-special-test"]), "compile Float special conformance")
-float_special_output = capture("/tmp/lsl-float-special-test", [])
-if float_special_output != readfile("tests/float_special_conformance.out"):
-    Error(TestFailure: "Float special conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/float_format_conformance.lsl", "/tmp/lsl-float-format-test"]), "compile Float format conformance")
-float_format_output = capture("/tmp/lsl-float-format-test", [])
-if float_format_output != readfile("tests/float_format_conformance.out"):
-    Error(TestFailure: "Float format conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/float_power_conformance.lsl", "/tmp/lsl-float-power-test"]), "compile Float power conformance")
-float_power_output = capture("/tmp/lsl-float-power-test", [])
-if float_power_output != readfile("tests/float_power_conformance.out"):
-    Error(TestFailure: "Float power conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/float_conversion_conformance.lsl", "/tmp/lsl-float-conversion-test"]), "compile Float conversion conformance")
-float_conversion_output = capture("/tmp/lsl-float-conversion-test", [])
-if float_conversion_output != readfile("tests/float_conversion_conformance.out"):
-    Error(TestFailure: "Float conversion conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/minmax_help_conformance.lsl", "/tmp/lsl-minmax-help-test"]), "compile minmax/help conformance")
-minmax_help_output = capture("/tmp/lsl-minmax-help-test", [])
-if minmax_help_output != readfile("tests/minmax_help_conformance.out"):
-    Error(TestFailure: "minmax/help conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/truthiness_conformance.lsl", "/tmp/lsl-truthiness-test"]), "compile truthiness conformance")
-truthiness_output = capture("/tmp/lsl-truthiness-test", [])
-if truthiness_output != readfile("tests/truthiness_conformance.out"):
-    Error(TestFailure: "truthiness conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/del_conformance.lsl", "/tmp/lsl-del-test"]), "compile del conformance")
-del_output = capture("/tmp/lsl-del-test", [])
-if del_output != readfile("tests/del_conformance.out"):
-    Error(TestFailure: "del conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/sequence_ops_conformance.lsl", "/tmp/lsl-sequence-ops-test"]), "compile sequence ops conformance")
-sequence_ops_output = capture("/tmp/lsl-sequence-ops-test", [])
-if sequence_ops_output != readfile("tests/sequence_ops_conformance.out"):
-    Error(TestFailure: "sequence ops conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/indexed_augmented_conformance.lsl", "/tmp/lsl-indexed-augmented-test"]), "compile indexed augmented conformance")
-indexed_augmented_output = capture("/tmp/lsl-indexed-augmented-test", [])
-if indexed_augmented_output != readfile("tests/indexed_augmented_conformance.out"):
-    Error(TestFailure: "indexed augmented conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/rang_dynamic_conformance.lsl", "/tmp/lsl-rang-dynamic-test"]), "compile dynamic rang conformance")
-rang_dynamic_output = capture("/tmp/lsl-rang-dynamic-test", [])
-if rang_dynamic_output != readfile("tests/rang_dynamic_conformance.out"):
-    Error(TestFailure: "dynamic rang conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/collection_repr_conformance.lsl", "/tmp/lsl-collection-repr-test"]), "compile collection repr conformance")
-collection_repr_output = capture("/tmp/lsl-collection-repr-test", [])
-if collection_repr_output != readfile("tests/collection_repr_conformance.out"):
-    Error(TestFailure: "collection repr conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/collection_methods_conformance.lsl", "/tmp/lsl-collection-methods-test"]), "compile collection methods conformance")
-collection_methods_output = capture("/tmp/lsl-collection-methods-test", [])
-if collection_methods_output != readfile("tests/collection_methods_conformance.out"):
-    Error(TestFailure: "collection methods conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/int_conversion_conformance.lsl", "/tmp/lsl-int-conversion-test"]), "compile Int conversion conformance")
-int_conversion_output = capture("/tmp/lsl-int-conversion-test", [])
-if int_conversion_output != readfile("tests/int_conversion_conformance.out"):
-    Error(TestFailure: "Int conversion conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/dynamic_value_conformance.lsl", "/tmp/lsl-dynamic-value-test"]), "compile dynamic value conformance")
-dynamic_value_output = capture("/tmp/lsl-dynamic-value-test", [])
-if dynamic_value_output != readfile("tests/dynamic_value_conformance.out"):
-    Error(TestFailure: "dynamic value conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/boxed_int_infrastructure_conformance.lsl", "/tmp/lsl-boxed-int-infrastructure-test"]), "compile boxed Int infrastructure conformance")
-boxed_int_output = capture("/tmp/lsl-boxed-int-infrastructure-test", [])
-if boxed_int_output != readfile("tests/boxed_int_infrastructure_conformance.out"):
-    Error(TestFailure: "boxed Int infrastructure conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/boxed_int_operations_conformance.lsl", "/tmp/lsl-boxed-int-operations-test"]), "compile boxed Int operations conformance")
-boxed_int_operations_output = capture("/tmp/lsl-boxed-int-operations-test", [])
-if boxed_int_operations_output != readfile("tests/boxed_int_operations_conformance.out"):
-    Error(TestFailure: "boxed Int operations conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/boxed_collection_conformance.lsl", "/tmp/lsl-boxed-collection-test"]), "compile boxed collection conformance")
-boxed_collection_output = capture("/tmp/lsl-boxed-collection-test", [])
-if boxed_collection_output != readfile("tests/boxed_collection_conformance.out"):
-    Error(TestFailure: "boxed collection conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/tagged_argument_conformance.lsl", "/tmp/lsl-tagged-argument-test"]), "compile tagged argument conformance")
-tagged_argument_output = capture("/tmp/lsl-tagged-argument-test", [])
-if tagged_argument_output != readfile("tests/tagged_argument_conformance.out"):
-    Error(TestFailure: "tagged argument conformance output differs")
-end
-
+call require_output("/tmp/lsl-selfhost-test", [], "tests/selfhost_conformance.out", "selfhost conformance output differs")
 call require_success(run(compiler, ["tests/table_growth_conformance.lsl", "/tmp/lsl-table-growth-test"]), "compile table growth conformance")
-table_growth_output = capture("/tmp/lsl-table-growth-test", [])
-if table_growth_output != readfile("tests/table_growth_conformance.out"):
-    Error(TestFailure: "table growth conformance output differs")
+call require_output("/tmp/lsl-table-growth-test", [], "tests/table_growth_conformance.out", "table growth conformance output differs")
+
+# Process clients in the aggregate require independently executable children.
+servers = [
+    ["tests/capture_large_server.lsl", "/tmp/lsl-capture-large-server"],
+    ["tests/capture_stream_server.lsl", "/tmp/lsl-capture-stream-server"],
+    ["tests/capture_result_server.lsl", "/tmp/lsl-capture-result-server"],
+    ["tests/process_status_server.lsl", "/tmp/lsl-process-status-server"],
+    ["tests/plugin_process_server.lsl", "/tmp/lsl-plugin-process-server"]
+]
+for server in servers:
+    call require_success(run(compiler, server), "compile process conformance server")
 end
 
-call require_success(run(compiler, ["tests/pointer_collision_conformance.lsl", "/tmp/lsl-pointer-collision-test"]), "compile pointer collision conformance")
-pointer_collision_output = capture("/tmp/lsl-pointer-collision-test", [])
-if pointer_collision_output != readfile("tests/pointer_collision_conformance.out"):
-    Error(TestFailure: "pointer collision conformance output differs")
+call require_success(run(compiler, ["tests/full_conformance.lsl", "/tmp/lsl-full-conformance-test"]), "compile aggregated conformance")
+aggregate_output = capture("/tmp/lsl-full-conformance-test", [])
+if aggregate_output != aggregate_expected():
+    Error(TestFailure: "aggregated conformance output differs")
 end
 
-call require_success(run(compiler, ["tests/tagged_function_conformance.lsl", "/tmp/lsl-tagged-function-test"]), "compile tagged Function conformance")
-tagged_function_output = capture("/tmp/lsl-tagged-function-test", [])
-if tagged_function_output != readfile("tests/tagged_function_conformance.out"):
-    Error(TestFailure: "tagged Function conformance output differs")
+if mode == "fast":
+    print "pure LSL fast tests passed"
+    exit(0)
 end
 
-call require_success(run(compiler, ["tests/realarray_conformance.lsl", "/tmp/lsl-realarray-test"]), "compile RealArray conformance")
-realarray_output = capture("/tmp/lsl-realarray-test", [])
-if realarray_output != readfile("tests/realarray_conformance.out"):
-    Error(TestFailure: "RealArray conformance output differs")
-end
-
+# Compile-time diagnostics must remain failures and retain original source spans.
 call require_failure(run(compiler, ["tests/builtin_arity_negative.lsl", "/tmp/lsl-arity-negative"]), "builtin arity mismatch unexpectedly compiled")
 call require_failure(run(compiler, ["tests/method_arity_negative.lsl", "/tmp/lsl-method-negative"]), "method arity mismatch unexpectedly compiled")
 call require_failure(run(compiler, ["tests/fixed_collection_negative.lsl", "/tmp/lsl-fixed-negative"]), "fixed collection mutation unexpectedly compiled")
 call require_failure(run(compiler, ["tests/private_class_negative.lsl", "/tmp/lsl-private-negative"]), "private module class unexpectedly compiled")
 call require_failure(run(compiler, ["tests/dictionary_key_negative.lsl", "/tmp/lsl-dictionary-key-negative"]), "collection Dictionary key unexpectedly compiled")
 
-call require_success(run(compiler, ["tests/dictionary_key_conformance.lsl", "/tmp/lsl-dictionary-key-test"]), "compile Dictionary key conformance")
-dictionary_key_output = capture("/tmp/lsl-dictionary-key-test", [])
-if dictionary_key_output != readfile("tests/dictionary_key_conformance.out"):
-    Error(TestFailure: "Dictionary key conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/native_elf_conformance.lsl", "/tmp/lsl-native-elf-test"]), "compile native ELF conformance")
-native_elf_output = capture("/tmp/lsl-native-elf-test", [])
-if native_elf_output != readfile("tests/native_elf_conformance.out"):
-    Error(TestFailure: "native ELF conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/tensor_conformance.lsl", "/tmp/lsl-tensor-test"]), "compile Tensor conformance")
-tensor_output = capture("/tmp/lsl-tensor-test", [])
-if tensor_output != readfile("tests/tensor_conformance.out"):
-    Error(TestFailure: "Tensor conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/ai_conformance.lsl", "/tmp/lsl-ai-test"]), "compile AI conformance")
-ai_output = capture("/tmp/lsl-ai-test", [])
-if ai_output != readfile("tests/ai_conformance.out"):
-    Error(TestFailure: "AI conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/capture_stream_server.lsl", "/tmp/lsl-capture-stream-server"]), "compile capture stream server")
-call require_success(run(compiler, ["tests/capture_stream_conformance.lsl", "/tmp/lsl-capture-stream-test"]), "compile capture stream conformance")
-capture_stream_output = capture("/tmp/lsl-capture-stream-test", [])
-if capture_stream_output != readfile("tests/capture_stream_conformance.out"):
-    Error(TestFailure: "capture stream conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/capture_result_server.lsl", "/tmp/lsl-capture-result-server"]), "compile capture result server")
-call require_success(run(compiler, ["tests/capture_result_conformance.lsl", "/tmp/lsl-capture-result-test"]), "compile capture result conformance")
-capture_result_output = capture("/tmp/lsl-capture-result-test", [])
-if capture_result_output != readfile("tests/capture_result_conformance.out"):
-    Error(TestFailure: "capture result conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/process_status_server.lsl", "/tmp/lsl-process-status-server"]), "compile process status server")
-call require_success(run(compiler, ["tests/process_status_conformance.lsl", "/tmp/lsl-process-status-test"]), "compile process status conformance")
-process_status_output = capture("/tmp/lsl-process-status-test", [])
-if process_status_output != readfile("tests/process_status_conformance.out"):
-    Error(TestFailure: "process status conformance output differs")
-end
-
-call require_success(run(compiler, ["tests/plugin_process_server.lsl", "/tmp/lsl-plugin-process-server"]), "compile process plugin server")
-call require_success(run(compiler, ["tests/plugin_process_conformance.lsl", "/tmp/lsl-plugin-process-test"]), "compile process plugin conformance")
-plugin_process_output = capture("/tmp/lsl-plugin-process-test", [])
-if plugin_process_output != readfile("tests/plugin_process_conformance.out"):
-    Error(TestFailure: "process plugin conformance output differs")
-end
-
 configure = "./compiler/pure/lsl-configure"
 config_wrapper = "tests/config/.defaults-test-evaluator.lsl"
 call require_success(run(configure, ["tests/config/defaults.lsl", config_wrapper]), "generate config defaults evaluator")
 call require_success(run(compiler, [config_wrapper, "/tmp/lsl-config-defaults-test"]), "compile config defaults evaluator")
 call unlink(config_wrapper)
-config_defaults_output = capture("/tmp/lsl-config-defaults-test", [])
-if config_defaults_output != readfile("tests/config/defaults.out"):
-    Error(TestFailure: "config defaults output differs")
-end
+call require_output("/tmp/lsl-config-defaults-test", [], "tests/config/defaults.out", "config defaults output differs")
+
 lazy_wrapper = "tests/config/.lazy-test-evaluator.lsl"
 call require_success(run(configure, ["tests/config/lazy.lsl", lazy_wrapper]), "generate lazy config evaluator")
 call require_success(run(compiler, [lazy_wrapper, "/tmp/lsl-config-lazy-test"]), "compile lazy config evaluator")
 call unlink(lazy_wrapper)
-lazy_config_output = capture("/tmp/lsl-config-lazy-test", [])
-if lazy_config_output != readfile("tests/config/lazy.out"):
-    Error(TestFailure: "lazy config output differs")
-end
+call require_output("/tmp/lsl-config-lazy-test", [], "tests/config/lazy.out", "lazy config output differs")
+
 type_error_wrapper = "tests/config/.type-error-test-evaluator.lsl"
 call require_success(run(configure, ["tests/config/type_error.lsl", type_error_wrapper]), "generate config type-error evaluator")
 call require_success(run(compiler, [type_error_wrapper, "/tmp/lsl-config-type-error-test"]), "compile config type-error evaluator")
 call unlink(type_error_wrapper)
-type_error_output = capture("/tmp/lsl-config-type-error-test", [])
-if type_error_output != readfile("tests/config/type_error.out"):
-    Error(TestFailure: "config type-error provenance differs")
-end
+call require_output("/tmp/lsl-config-type-error-test", [], "tests/config/type_error.out", "config type-error provenance differs")
+
 config_cycle_output = capture(configure, ["tests/config/cycle_a.lsl", "/tmp/lsl-cycle-evaluator.lsl"])
 if config_cycle_output != readfile("tests/config/cycle.out"):
     Error(TestFailure: "config cycle diagnostic differs")

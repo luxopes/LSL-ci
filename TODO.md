@@ -34,7 +34,7 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktu�
 - [x] Doplnit dynamický růst object registry a String intern cache.
 - [x] Spustit závěrečný full suite, config, installed fixed-point a ELF audit.
 - [ ] Dokončit fault-injection hardening process setup/cleanup syscallů.
-- [ ] Změřit a zrychlit compiler/test runner bez změny deterministického výstupu.
+- [x] Změřit a zrychlit compiler/test runner bez změny deterministického výstupu (full −59 %, compiler −9 %, peak RSS −5,6 %).
 
 ## Feature scope 0.7 bez GPU
 

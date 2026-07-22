@@ -15,15 +15,20 @@ end
 
 function little(value, width):
     result = []
-    remaining = value
+    # Compiler-internal direct calls carry scalar arguments as boxed Ints.
+    # Normalize once into typed raw locals; keeping `remaining` as Any made the
+    # byte encoder depend on generic heap classification under peak self-host
+    # memory pressure and very rarely emitted another boxed payload.
+    remaining = __lsl_typed_int(value)
+    byte_width = __lsl_typed_int(width)
     if remaining < 0:
         limit = 1
-        for index in rang(width):
+        for index in rang(byte_width):
             limit *= 256
         end
         remaining += limit
     end
-    for index in rang(width):
+    for index in rang(byte_width):
         result.append(remaining % 256)
         remaining = remaining // 256
     end

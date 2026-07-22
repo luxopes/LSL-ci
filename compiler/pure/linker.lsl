@@ -64,15 +64,51 @@ function private_class(statement):
     return False
 end
 
-function function_names(program):
-    result = {}
-    for statement in program:
-        if statement["kind"] == "function" or statement["kind"] == "class":
+function collect_names(statements, result):
+    for statement in statements:
+        kind = statement["kind"]
+        if kind == "function" or kind == "class":
+            # Function/class bodies have their own local namespace.
             result[statement["name"]] = statement["name"]
-        elif statement["kind"] == "assign":
+        elif kind == "assign":
             if statement["target"]["kind"] == "name":
                 result[statement["target"]["name"]] = statement["target"]["name"]
             end
+        elif kind == "for":
+            result[statement["name"]] = statement["name"]
+            call collect_names(statement["body"], result)
+        elif kind == "if":
+            for branch in statement["branches"]:
+                call collect_names(branch[1], result)
+            end
+            call collect_names(statement["otherwise"], result)
+        elif kind == "while" or kind == "loop" or kind == "safe":
+            call collect_names(statement["body"], result)
+        elif kind == "try":
+            call collect_names(statement["body"], result)
+            call collect_names(statement["otherwise"], result)
+        end
+    end
+end
+
+function function_names(program):
+    result = {}
+    call collect_names(program, result)
+    return result
+end
+
+function scoped_names(names, parameters, body):
+    result = Dictionary(names)
+    for parameter in parameters:
+        if parameter in result:
+            del(result[parameter])
+        end
+    end
+    locals = {}
+    call collect_names(body, locals)
+    for name in locals.keys():
+        if name in result:
+            del(result[name])
         end
     end
     return result
@@ -237,7 +273,8 @@ function transform_statements(statements, own_functions, imported_names, namespa
         kind = statement["kind"]
         if kind == "function":
             statement["name"] = own_functions[statement["name"]]
-            call transform_statements(statement["body"], own_functions, imported_names, namespaces)
+            local_names = scoped_names(own_functions, statement["parameters"], statement["body"])
+            call transform_statements(statement["body"], local_names, imported_names, namespaces)
         elif kind == "assign":
             call transform_expression(statement["target"], own_functions, imported_names, namespaces)
             call transform_expression(statement["value"], own_functions, imported_names, namespaces)
@@ -259,6 +296,9 @@ function transform_statements(statements, own_functions, imported_names, namespa
             call transform_expression(statement["condition"], own_functions, imported_names, namespaces)
             call transform_statements(statement["body"], own_functions, imported_names, namespaces)
         elif kind == "for":
+            if statement["name"] in own_functions:
+                statement["name"] = own_functions[statement["name"]]
+            end
             call transform_expression(statement["iterable"], own_functions, imported_names, namespaces)
             call transform_statements(statement["body"], own_functions, imported_names, namespaces)
         elif kind == "loop" or kind == "safe":
@@ -268,12 +308,15 @@ function transform_statements(statements, own_functions, imported_names, namespa
             call transform_statements(statement["otherwise"], own_functions, imported_names, namespaces)
         elif kind == "error":
             call transform_expression(statement["message"], own_functions, imported_names, namespaces)
+        elif kind == "delete":
+            call transform_expression(statement["target"], own_functions, imported_names, namespaces)
         elif kind == "class":
             statement["name"] = own_functions[statement["name"]]
             call transform_expression(statement["condition"], own_functions, imported_names, namespaces)
             for member in statement["body"]:
                 if member["kind"] == "function":
-                    call transform_statements(member["body"], own_functions, imported_names, namespaces)
+                    local_names = scoped_names(own_functions, member["parameters"], member["body"])
+                    call transform_statements(member["body"], local_names, imported_names, namespaces)
                 elif member["kind"] == "assign":
                     call transform_expression(member["target"], own_functions, imported_names, namespaces)
                     call transform_expression(member["value"], own_functions, imported_names, namespaces)

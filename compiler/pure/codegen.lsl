@@ -189,7 +189,7 @@ function infer_expression_type(syntax, types, function_returns):
             if name == "sum":
                 return "Any"
             end
-            if name == "len" or name == "Int" or name == "ord" or name == "arg_count" or name == "run" or name == "capture_status" or name == "native_u64" or name == "native_size" or name == "native_call" or name == "native_close" or name == "__lsl_type_code" or name == "__lsl_raw_equal" or name == "__lsl_float_bits" or name == "__lsl_float_to_int" or name == "__lsl_unbox_int" or name == "__lsl_raw_int" or name == "__lsl_address" or name == "__lsl_object_table_mask" or name == "__lsl_intern_table_mask":
+            if name == "len" or name == "Int" or name == "ord" or name == "arg_count" or name == "run" or name == "capture_status" or name == "native_u64" or name == "native_size" or name == "native_call" or name == "native_close" or name == "__lsl_type_code" or name == "__lsl_raw_equal" or name == "__lsl_float_bits" or name == "__lsl_float_to_int" or name == "__lsl_unbox_int" or name == "__lsl_raw_int" or name == "__lsl_typed_int" or name == "__lsl_parse_literal_int" or name == "__lsl_address" or name == "__lsl_object_table_mask" or name == "__lsl_intern_table_mask":
                 return "Int"
             elif name == "Float":
                 return "Float"
@@ -439,6 +439,15 @@ function emit_condition(generator, syntax):
     end
 end
 
+function integer_literal(syntax):
+    stored = __lsl_unbox_int(syntax["integer_value"])
+    parsed = __lsl_parse_literal_int(syntax["value"])
+    if stored != parsed:
+        Error(CompilerInvariantError: "integer literal AST changed before emission")
+    end
+    return parsed
+end
+
 function power_of_two_exponent(syntax):
     # k if syntax is a positive power-of-two Int literal (2^k), else -1.
     if syntax["kind"] != "literal":
@@ -451,7 +460,7 @@ function power_of_two_exponent(syntax):
     if value.find(".") >= 0 or value.find("e") >= 0 or value.find("E") >= 0:
         return -1
     end
-    number = Int(value)
+    number = integer_literal(syntax)
     if number <= 0:
         return -1
     end
@@ -592,7 +601,7 @@ end
 function emit_int_leaf(generator, syntax, register):
     output = generator["builder"]
     if syntax["kind"] == "literal":
-        call assembler.emit(output, x86_64.mov_imm64(register, Int(syntax["value"])))
+        call assembler.emit(output, x86_64.mov_imm64(register, integer_literal(syntax)))
     else:
         name = syntax["name"]
         if name in generator["variables"]:
@@ -755,7 +764,7 @@ function emit_expression(generator, syntax):
                 call assembler.emit(output, x86_64.mov_imm64(7, float_bits(value)))
                 call assembler.relative(output, [232], "runtime_float_new")
             else:
-                call assembler.emit(output, x86_64.mov_imm64(0, Int(value)))
+                call assembler.emit(output, x86_64.mov_imm64(0, integer_literal(syntax)))
             end
         elif value == "True":
             call assembler.emit(output, x86_64.mov_imm64(0, 1))
@@ -827,7 +836,7 @@ function emit_expression(generator, syntax):
     elif kind == "slice":
         if syntax.get("step", None) != None:
             # Strided slice via pure-LSL helper (Python step semantics).
-            zero_literal = {"kind": "literal", "literal_kind": "number", "value": "0", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]}
+            zero_literal = {"kind": "literal", "literal_kind": "number", "value": "0", "integer_value": 0, "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]}
             true_literal = {"kind": "literal", "literal_kind": "name", "value": "True", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]}
             false_literal = {"kind": "literal", "literal_kind": "name", "value": "False", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]}
             start_arg = zero_literal
@@ -1101,16 +1110,16 @@ function emit_expression(generator, syntax):
             # including negatives and INT64_MIN. No idiv, no -1/overflow guard.
             power_exponent = power_of_two_exponent(syntax["right"])
             if operator == "%":
-                call assembler.emit(output, x86_64.mov_imm64(1, Int(syntax["right"]["value"]) - 1))
+                call assembler.emit(output, x86_64.mov_imm64(1, integer_literal(syntax["right"]) - 1))
                 call assembler.emit(output, x86_64.and_reg_reg(0, 1))
             else:
                 call assembler.emit(output, x86_64.shift_right_arithmetic_imm(0, power_exponent))
             end
-        elif (operator == "//" or operator == "%") and syntax["right"]["kind"] == "literal" and syntax["right"]["literal_kind"] == "number" and syntax["right"]["value"].find(".") < 0 and syntax["right"]["value"].find("e") < 0 and syntax["right"]["value"].find("E") < 0 and Int(syntax["right"]["value"]) >= 3 and Int(syntax["right"]["value"]) < 2147483648 and power_of_two_exponent(syntax["right"]) < 0:
+        elif (operator == "//" or operator == "%") and syntax["right"]["kind"] == "literal" and syntax["right"]["literal_kind"] == "number" and syntax["right"]["value"].find(".") < 0 and syntax["right"]["value"].find("e") < 0 and syntax["right"]["value"].find("E") < 0 and integer_literal(syntax["right"]) >= 3 and integer_literal(syntax["right"]) < 2147483648 and power_of_two_exponent(syntax["right"]) < 0:
             # Magic-number division: replace idiv by a signed high-multiply.
             # n is already in reg0. quotient q = floor(n/d); remainder via
             # n - q*d. d is a positive non-power-of-two constant in [3, 2^31).
-            divisor_value = Int(syntax["right"]["value"])
+            divisor_value = integer_literal(syntax["right"])
             magic_pair = magic_signed(divisor_value)
             magic_number = magic_pair[0]
             magic_shift = magic_pair[1]
@@ -1306,6 +1315,16 @@ function emit_expression(generator, syntax):
                 # takes the static Int path without the is_heap/type_code probe
                 # in Int() (which errors on raw 0, whose type code reads as None).
                 call emit_expression(generator, syntax["arguments"][0])
+                return
+            elif target["name"] == "__lsl_typed_int":
+                call emit_expression(generator, syntax["arguments"][0])
+                call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+                return
+            elif target["name"] == "__lsl_parse_literal_int":
+                call emit_expression(generator, syntax["arguments"][0])
+                call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                call assembler.relative(output, [232], "runtime_parse_literal_int")
                 return
             elif target["name"] == "__lsl_string_chars":
                 call emit_expression(generator, syntax["arguments"][0])
@@ -2445,7 +2464,7 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 call unsupported(generator["path"], generator["lines"], statement, "rang expects one to three arguments", "use rang(stop), rang(start, stop), or rang(start, stop, step)")
             end
             if len(arguments) == 1:
-                start_expression = {"kind": "literal", "literal_kind": "number", "value": "0", "line": statement["line"], "column": statement["column"], "end_column": statement["end_column"]}
+                start_expression = {"kind": "literal", "literal_kind": "number", "value": "0", "integer_value": 0, "line": statement["line"], "column": statement["column"], "end_column": statement["end_column"]}
                 stop_expression = arguments[0]
             else:
                 start_expression = arguments[0]

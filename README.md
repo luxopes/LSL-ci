@@ -18,10 +18,14 @@ LSL 0.7 je self-hostovaný jazyk pro běžné programování, deklarativní konf
 ```text
 ./compiler/pure/lslc-direct compiler/pure/lslc_direct.lsl /tmp/lslc-next
 cmp compiler/pure/lslc-direct /tmp/lslc-next
-./compiler/pure/lsl-test
+./compiler/pure/lsl-test              # plný suite (výchozí)
+./compiler/pure/lsl-test fast         # pozitivní conformance bez auditních kroků
+./compiler/pure/lsl-test fixed-point  # pouze bitová reprodukce compileru
 ```
 
-`lsl-test` bez shellu spustí scalar a Float smoke testy, celý selfhost conformance test a bitovou fixed-point kontrolu. Aktuální fixed-point SHA-256 je zaznamenán v `PURE_LSL_PROGRESS.md`.
+`lsl-test` bez shellu linkuje pozitivní corpus do jednoho agregovaného ELF se
+zachováním původních source spans; plný režim navíc spouští negative corpus,
+config a fixed-point kontrolu. Aktuální SHA-256 je v `PURE_LSL_PROGRESS.md`.
 
 ## Instalace
 

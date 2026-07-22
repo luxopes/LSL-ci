@@ -544,6 +544,22 @@ zachytává také neomezené stderr přes anonymous memfd (bez pipe deadlocku) a
 vrací `{stdout,stderr,status,ok}`. Conformance ověřuje stdout, uncaught stderr a
 exit 1.
 
+Výkonnostní a deterministický fixed point
+`d986f572c3bb82734222af7ace3de2ce2c526ed94cc5be0841258accffdd4615`
+přidává raw-or-boxed Int normalizaci v byte encoderu, lexer-validované Int tokeny
+parsuje přímým trust-core runtime helperem a uchovává jejich hodnotu v AST.
+Odstranil tak vzácnou (přibližně 1/10–1/30 high-memory self-host běhů) záměnu
+boxed payloadu při dynamickém `bytes.little`; 30 + 10 následných fixed-point
+reprodukcí bylo bitově shodných. Self-host compile klesl z 3,951 s na 3,615 s a
+peak RSS přibližně z 809 MiB na 764 MiB.
+
+Pozitivní testy jsou nyní linkované v `tests/full_conformance.lsl` do jednoho
+ELF. Linker kvůli tomu správně namespacuje i module-level proměnné uvnitř
+control-flow bloků, respektuje parameter/local shadowing a transformuje `del`.
+Výstup agregátu je přesnou konkatenací původních `.out`. Plný runner klesl z
+23,205 s na 9,425 s (−59 %), `fast` běží 3,667 s a `fixed-point` 3,610 s;
+všechny tři režimy skončily 0. Config conformance zůstává bitově shodný.
+
 Finální předvýkonnostní hardening fixed point
 `0177dfcf593825157b60ea0f2962b7a6d39f4b4eaab8992d7e8eda7b0670706a`
 opravuje partial-read smyčku `readfile`, kontroluje lseek/read/input errors a

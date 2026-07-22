@@ -114,6 +114,11 @@ function parse_primary(parser):
         result = node("literal", token)
         result["literal_kind"] = kind
         result["value"] = value
+        if kind == "number" and value.find(".") < 0 and value.find("e") < 0 and value.find("E") < 0:
+            # Parse validated decimal tokens once, before code generation's
+            # high-memory runtime emission. The AST stores a boxed Int.
+            result["integer_value"] = __lsl_parse_literal_int(value)
+        end
     elif value == "True" or value == "False" or value == "None":
         result = node("literal", token)
         result["literal_kind"] = "name"

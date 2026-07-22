@@ -16,9 +16,9 @@ v `TODO.md`.
 - Repo: `/home/antonin/lsl`
 - Větev: `complete-roadmap`
 - Base větev: `master`
-- Poslední funkční milník: `a552158 Eliminate scalar pointer collisions`.
+- Poslední commit před aktuálním výkonnostním milníkem: `ed6ae24 Harden partial input paths`.
 - Aktuální fixed-point compiler SHA-256:
-  `0177dfcf593825157b60ea0f2962b7a6d39f4b4eaab8992d7e8eda7b0670706a`
+  `d986f572c3bb82734222af7ace3de2ce2c526ed94cc5be0841258accffdd4615`
 - `compiler/pure/lslc-direct` je bitově shodný s `compiler/lslc`.
 - `compiler/pure/lsl-cli` je bitově shodný s top-level `lsl`.
 - ELF má jediný RX `PT_LOAD`, žádný `INTERP` a žádné RWX.
@@ -61,8 +61,10 @@ nepushovat bez výslovného požadavku.
   textový formatter.
 - Dokumentované collection/String metody, Dictionary conversion, member delete.
 - Dynamický `rang` step, indexed augmented assignment, neomezený line `input`.
-- Aktuální `compiler/pure/lsl-test` včetně negative corpus a config conformance
-  jsou zelené. Instalovaný compiler z jiného cwd přeložil selfhost conformance;
+- Aktuální `compiler/pure/lsl-test` (`fast`, výchozí `full`, `fixed-point`)
+  včetně negative corpus a config conformance je zelený. Pozitivní corpus je
+  agregovaný se zachováním původních source spans; full čas klesl z 23,205 s na
+  9,425 s. Instalovaný compiler z jiného cwd přeložil selfhost conformance;
   z instalovaného source rootu znovu vytvořil bitově shodný fixed point.
 
 Nedávné commity na větvi:

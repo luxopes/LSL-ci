@@ -14,6 +14,8 @@ Kanonický fixed-point ELF je `pure/lslc-direct`; veřejná kopie je `compiler/l
 ./compiler/pure/lslc-direct compiler/pure/lslc_direct.lsl /tmp/next
 cmp ./compiler/pure/lslc-direct /tmp/next
 ./compiler/pure/lsl-test
+./compiler/pure/lsl-test fast
+./compiler/pure/lsl-test fixed-point
 ```
 
 Další čisté nástroje:
@@ -21,6 +23,7 @@ Další čisté nástroje:
 - `pure/lsl-cli` — veřejné run/compile/config CLI;
 - `pure/lsl-configure` — config wrapper generator;
 - `pure/lsl-install` — installer;
-- `pure/lsl-test` — conformance a fixed-point runner.
+- `pure/lsl-test` — agregovaný conformance runner s `fast`, `full` a
+  `fixed-point` režimy (`full` je výchozí).
 
 Repozitář neobsahuje C seed ani cizí produkční toolchain. Binární trust root je auditovatelný LSL-generovaný ELF a musí reprodukovat sám sebe bit po bitu. Aktuální hash a ověřené testy jsou v `PURE_LSL_PROGRESS.md`.

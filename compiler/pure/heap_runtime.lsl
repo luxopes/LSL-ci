@@ -240,6 +240,31 @@ function emit_object_checks(output):
     call assembler.emit(output, x86_64.ret())
 end
 
+function emit_parse_literal_int(output):
+    # Compiler trust-core helper: parse an already lexer-validated unsigned
+    # decimal token directly to a wrapping raw Int. It deliberately bypasses
+    # Any classification, so high-memory self-host builds cannot confuse the
+    # token String pointer with a scalar value.
+    call assembler.label(output, "runtime_parse_literal_int")
+    call assembler.emit(output, x86_64.load_memory(8, 7, 8))
+    call assembler.emit(output, x86_64.lea_base(7, 7, 16))
+    call assembler.emit(output, x86_64.xor_reg_reg(9, 9))
+    call assembler.emit(output, x86_64.xor_reg_reg(0, 0))
+    call assembler.emit(output, x86_64.mov_imm64(10, 10))
+    call assembler.emit(output, x86_64.mov_imm64(11, 48))
+    call assembler.label(output, "parse_literal_int_loop")
+    call assembler.emit(output, x86_64.cmp_reg_reg(9, 8))
+    call assembler.relative(output, [15, 141], "parse_literal_int_done")
+    call assembler.emit(output, x86_64.load_byte_indexed(1, 7, 9))
+    call assembler.emit(output, x86_64.sub_reg_reg(1, 11))
+    call assembler.emit(output, x86_64.imul_reg_reg(0, 10))
+    call assembler.emit(output, x86_64.add_reg_reg(0, 1))
+    call assembler.emit(output, x86_64.increment(9))
+    call assembler.relative(output, [233], "parse_literal_int_loop")
+    call assembler.label(output, "parse_literal_int_done")
+    call assembler.emit(output, x86_64.ret())
+end
+
 function emit_int_power(output):
     call assembler.label(output, "runtime_int_power")
     call assembler.emit(output, x86_64.mov_imm64(0, 1))
@@ -2335,6 +2360,7 @@ function emit_all(output):
     call emit_string_chars(output)
     call emit_object_table_growth(output)
     call emit_object_checks(output)
+    call emit_parse_literal_int(output)
     call emit_int_power(output)
     call emit_float_power(output)
     call emit_string_concat(output)
