@@ -1,0 +1,8 @@
+print "hello".upper(), "WORLD".lower()
+print "žluťoučký".upper()
+print "PŘÍLIŠ ŽLUŤOUČKÝ".lower()
+print "čeština a slovenčina".upper()
+print "ÀÉÎÕÜ".lower(), "àéîõü".upper()
+print "Ňácobserv123".upper()
+print "MIXED žluťoučký ABC".lower()
+print "".upper(), "a".upper(), "Z".lower()

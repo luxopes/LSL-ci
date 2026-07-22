@@ -4,15 +4,66 @@ function __lsl_is_space(character):
     return character == " " or character == "\t" or character == "\r" or character == "\n"
 end
 
+function __lsl_ext_case(code):
+    # Latin Extended-A: 1 = uppercase (lower is code+1), -1 = lowercase
+    # (upper is code-1), 0 = no simple single-char mapping. Reversed subblocks
+    # 0x139-0x148 and 0x179-0x17E have odd=upper; elsewhere even=upper.
+    if code == 304 or code == 305 or code == 312 or code == 329 or code == 383 or code == 376:
+        return 0
+    end
+    even = code % 2 == 0
+    if (code >= 313 and code <= 328) or (code >= 377 and code <= 382):
+        if even:
+            return -1
+        end
+        return 1
+    end
+    if even:
+        return 1
+    end
+    return -1
+end
+
+function __lsl_lower_code(code):
+    if code >= 65 and code <= 90:
+        return code + 32
+    elif code >= 192 and code <= 222 and code != 215:
+        return code + 32
+    elif code == 376:
+        return 255
+    elif code >= 256 and code <= 383:
+        if __lsl_ext_case(code) == 1:
+            return code + 1
+        end
+    end
+    return code
+end
+
+function __lsl_upper_code(code):
+    if code >= 97 and code <= 122:
+        return code - 32
+    elif code == 181:
+        return 924
+    elif code >= 224 and code <= 254 and code != 247:
+        return code - 32
+    elif code == 255:
+        return 376
+    elif code == 305:
+        return 73
+    elif code == 383:
+        return 83
+    elif code >= 256 and code <= 382:
+        if __lsl_ext_case(code) == -1:
+            return code - 1
+        end
+    end
+    return code
+end
+
 function __lsl_lower(text):
     result = ""
     for character in text:
-        code = ord(character)
-        if code >= 65 and code <= 90:
-            result += chr(code + 32)
-        else:
-            result += character
-        end
+        result += chr(__lsl_lower_code(ord(character)))
     end
     return result
 end
@@ -20,12 +71,7 @@ end
 function __lsl_upper(text):
     result = ""
     for character in text:
-        code = ord(character)
-        if code >= 97 and code <= 122:
-            result += chr(code - 32)
-        else:
-            result += character
-        end
+        result += chr(__lsl_upper_code(ord(character)))
     end
     return result
 end

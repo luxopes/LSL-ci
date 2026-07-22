@@ -68,6 +68,12 @@ if dict_keys_output != readfile("tests/dict_keys_conformance.out"):
     Error(TestFailure: "dict keys conformance output differs")
 end
 
+call require_success(run(compiler, ["tests/unicode_case_conformance.lsl", "/tmp/lsl-unicode-case-test"]), "compile unicode case conformance")
+unicode_case_output = capture("/tmp/lsl-unicode-case-test", [])
+if unicode_case_output != readfile("tests/unicode_case_conformance.out"):
+    Error(TestFailure: "unicode case conformance output differs")
+end
+
 call require_success(run(compiler, ["tests/float_exponent_conformance.lsl", "/tmp/lsl-float-exponent-test"]), "compile Float exponent conformance")
 float_exponent_output = capture("/tmp/lsl-float-exponent-test", [])
 if float_exponent_output != readfile("tests/float_exponent_conformance.out"):
