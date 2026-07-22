@@ -27,11 +27,12 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktu�
 - [x] Dokončit dokumentované collection metody a Dictionary konverzi.
 - [x] Odstranit pevný 4096B limit `input()` a číst přesně jeden řádek.
 - [x] Odstranit pevný 1MiB limit `capture()` dynamicky rostoucím bufferem.
-- [ ] Dokončit jednoznačný scalar tag ABI (Function type 10 je hotový; zbývá raw Any return hranice).
+- [x] Dokončit jednoznačný scalar tag ABI včetně metadata-tagged callback returns a raw-Int/live-pointer collision proof.
 - [x] Doplnit AI provider errors/retry/cancellation, lazy config/cycles/defaults/provenance, structured process status a pure-LSL zero-copy CPU Tensor.
 - [x] Doplnit omezený in-process CPU ET_DYN Int64 kernel ABI a neomezené stderr capture.
 - [x] Doplnit skutečné průběžné process/HTTP transport chunk callbacks.
-- [ ] Pokračovat dynamic table growth, poslední tagged callback return a audit okruhy níže.
+- [x] Doplnit dynamický růst object registry a String intern cache.
+- [ ] Dokončit syscall failure hardening a závěrečný full audit.
 
 ## Feature scope 0.7 bez GPU
 
@@ -39,7 +40,6 @@ Feature scope je implementovaný: self-host compiler/runtime, jazyk a collection
 
 ## Zbývá hardening/bugfix/audit
 
-- dokončit jednoznačný scalar tag ABI tak, aby ani záměrný raw Int shodný s živou heap adresou nemohl kolidovat s object value;
 - další numerické edge cases; Int overflow má definovanou two's-complement modulo `2^64` sémantiku a conformance;
 - případná ABI v2 rozšíření nad hotovým self-contained CPU ET_DYN v1 (relocations/Tensor descriptors); GPU je mimo aktuální scope;
 - rozšířit negative/conformance, benchmarky a další targety;

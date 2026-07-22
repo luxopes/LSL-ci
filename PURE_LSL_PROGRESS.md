@@ -544,6 +544,15 @@ zachytává také neomezené stderr přes anonymous memfd (bez pipe deadlocku) a
 vrací `{stdout,stderr,status,ok}`. Conformance ověřuje stdout, uncaught stderr a
 exit 1.
 
+Scalar ABI fixed point
+`6dac5db225ab61f87c28837c03c20d7c390b7c61cbebfcca6a9df5df544459ef`
+metadata-taguje Int/Bool/None/Function callback returns, taguje polymorfní Any
+branches a normalizuje všechny dynamic arithmetic/equality boundaries. Audit
+intrinsic vytvoří raw Int bitově shodný s adresou živého List objektu; přes
+function/List/Dictionary/GC zůstává type 9 a nikdy se nerovná objektu.
+Object registry i String intern cache se při zaplnění zdvojnásobí a rehashují;
+test je zmenší na 8 slots a vynutí několik růstů.
+
 Feature scope LSL 0.7 bez GPU je tímto uzavřený: omezený foreign CPU ABI,
 zero-copy CPU Tensor, live process/HTTP chunks, AI SSE/retry/cancellation,
 structured process results a lazy/provenance config jsou implementované.

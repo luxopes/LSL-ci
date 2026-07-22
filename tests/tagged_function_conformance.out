@@ -3,3 +3,8 @@ Function 10 True <Function>
 Function 10 9
 Function 10 13 True
 17
+Bool 4 False
+None 5 None
+Function 10 21
+Int 9 0
+String 1 text

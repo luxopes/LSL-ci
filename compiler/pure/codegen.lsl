@@ -189,7 +189,7 @@ function infer_expression_type(syntax, types, function_returns):
             if name == "sum":
                 return "Any"
             end
-            if name == "len" or name == "Int" or name == "ord" or name == "arg_count" or name == "run" or name == "capture_status" or name == "native_u64" or name == "native_size" or name == "native_call" or name == "native_close" or name == "__lsl_type_code" or name == "__lsl_raw_equal" or name == "__lsl_float_bits" or name == "__lsl_float_to_int" or name == "__lsl_unbox_int" or name == "__lsl_raw_int":
+            if name == "len" or name == "Int" or name == "ord" or name == "arg_count" or name == "run" or name == "capture_status" or name == "native_u64" or name == "native_size" or name == "native_call" or name == "native_close" or name == "__lsl_type_code" or name == "__lsl_raw_equal" or name == "__lsl_float_bits" or name == "__lsl_float_to_int" or name == "__lsl_unbox_int" or name == "__lsl_raw_int" or name == "__lsl_address" or name == "__lsl_object_table_mask" or name == "__lsl_intern_table_mask":
                 return "Int"
             elif name == "Float":
                 return "Float"
@@ -599,6 +599,21 @@ function emit_int_leaf(generator, syntax, register):
     end
 end
 
+function runtime_scalar_tag(value_type):
+    if value_type == "Int":
+        return 0
+    elif value_type == "Bool":
+        return 4
+    elif value_type == "None":
+        return 5
+    elif value_type == "Float":
+        return 6
+    elif value_type == "Function":
+        return 10
+    end
+    return -1
+end
+
 function emit_collection_box(generator, syntax):
     value_type = infer_expression_type(syntax, generator["types"], generator["function_returns"])
     if value_type == "Bool":
@@ -606,17 +621,30 @@ function emit_collection_box(generator, syntax):
         call assembler.relative(generator["builder"], [232], "runtime_box_bool")
     elif value_type == "Int":
         call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
-        call assembler.relative(generator["builder"], [232], "runtime_box_int")
+        call assembler.relative(generator["builder"], [232], "runtime_box_typed_int")
     elif value_type == "Function":
-        # The self-host compiler backend is the typed/raw trust core. Keeping its
-        # internal callbacks raw prevents heap addresses from becoming encoder
-        # scalars; ordinary user modules receive the tagged public ABI.
+        # Function boxes carry the statically known return scalar tag so an
+        # indirect call can re-establish the tagged Any result ABI.
         if generator["path"].find("compiler/pure/") < 0:
+            return_type = "Any"
+            if syntax["kind"] == "name" and syntax["name"] in generator["function_returns"]:
+                return_type = generator["function_returns"][syntax["name"]]
+            end
+            call assembler.emit(generator["builder"], x86_64.mov_imm64(6, runtime_scalar_tag(return_type)))
             call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
-            call assembler.relative(generator["builder"], [232], "runtime_box_function")
+            call assembler.relative(generator["builder"], [232], "runtime_box_dynamic_function")
         end
+    elif value_type == "Any" and syntax["kind"] == "binary" and syntax["operator"] != "and" and syntax["operator"] != "or":
+        call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
+        call assembler.relative(generator["builder"], [232], "runtime_box_dynamic_int")
     elif value_type == "None":
         call assembler.relative(generator["builder"], [232], "runtime_box_none")
+    end
+end
+
+function emit_dynamic_boundary_box(generator, syntax):
+    if generator["path"].find("compiler/pure/") < 0:
+        call emit_collection_box(generator, syntax)
     end
 end
 
@@ -626,6 +654,13 @@ function emit_dictionary_key_box(generator, syntax):
         call unsupported(generator["path"], generator["lines"], syntax, "mutable or collection value cannot be a Dictionary key", "use String, Int, Bool, None, Float, or Function keys")
     end
     call emit_collection_box(generator, syntax)
+end
+
+function dynamic_numeric_runtime(generator, name):
+    if generator["path"].find("compiler/pure/") >= 0:
+        return name + "_raw"
+    end
+    return name
 end
 
 function emit_uncaught_runtime_error(generator):
@@ -819,6 +854,10 @@ function emit_expression(generator, syntax):
             call assembler.emit(output, x86_64.mov_imm64(0, 0))
         else:
             call emit_expression(generator, syntax["start"])
+            if infer_expression_type(syntax["start"], generator["types"], generator["function_returns"]) == "Any":
+                call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+            end
         end
         call assembler.emit(output, x86_64.push(0))
         if syntax["stop"] == None:
@@ -826,6 +865,10 @@ function emit_expression(generator, syntax):
             call assembler.relative(output, [232], "runtime_length")
         else:
             call emit_expression(generator, syntax["stop"])
+            if infer_expression_type(syntax["stop"], generator["types"], generator["function_returns"]) == "Any":
+                call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+            end
         end
         call assembler.emit(output, x86_64.move_reg_reg(2, 0))
         call assembler.emit(output, x86_64.pop(6))
@@ -864,7 +907,7 @@ function emit_expression(generator, syntax):
                 call assembler.relative(output, [232], "runtime_float_new")
             elif operand_type == "Any":
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
-                call assembler.relative(output, [232], "runtime_neg_any")
+                call assembler.relative(output, [232], dynamic_numeric_runtime(generator, "runtime_neg_any"))
             else:
                 call assembler.emit(output, x86_64.neg_reg(0))
             end
@@ -945,27 +988,35 @@ function emit_expression(generator, syntax):
             return
         elif operator == "+" and (expression_type == "String" or expression_type == "Any"):
             call emit_expression(generator, syntax["left"])
+            if expression_type == "Any":
+                call emit_dynamic_boundary_box(generator, syntax["left"])
+            end
             call assembler.emit(output, x86_64.push(0))
             call emit_expression(generator, syntax["right"])
+            if expression_type == "Any":
+                call emit_dynamic_boundary_box(generator, syntax["right"])
+            end
             call assembler.emit(output, x86_64.move_reg_reg(6, 0))
             call assembler.emit(output, x86_64.pop(7))
             if expression_type == "String":
                 call assembler.relative(output, [232], "runtime_string_concat")
             else:
-                call assembler.relative(output, [232], "runtime_add_any")
+                call assembler.relative(output, [232], dynamic_numeric_runtime(generator, "runtime_add_any"))
             end
             return
         elif (operator == "-" or operator == "*") and expression_type == "Any":
             # Dynamic - / * : dispatch Int vs boxed Float at runtime.
             call emit_expression(generator, syntax["left"])
+            call emit_dynamic_boundary_box(generator, syntax["left"])
             call assembler.emit(output, x86_64.push(0))
             call emit_expression(generator, syntax["right"])
+            call emit_dynamic_boundary_box(generator, syntax["right"])
             call assembler.emit(output, x86_64.move_reg_reg(6, 0))
             call assembler.emit(output, x86_64.pop(7))
             if operator == "-":
-                call assembler.relative(output, [232], "runtime_sub_any")
+                call assembler.relative(output, [232], dynamic_numeric_runtime(generator, "runtime_sub_any"))
             else:
-                call assembler.relative(output, [232], "runtime_mul_any")
+                call assembler.relative(output, [232], dynamic_numeric_runtime(generator, "runtime_mul_any"))
             end
             return
         elif operator == "**" and expression_type == "Any":
@@ -975,11 +1026,13 @@ function emit_expression(generator, syntax):
                 call unsupported(generator["path"], generator["lines"], syntax, "** requires an Int exponent", "use an Int exponent such as x ** 3")
             end
             call emit_expression(generator, syntax["left"])
+            call emit_dynamic_boundary_box(generator, syntax["left"])
             call assembler.emit(output, x86_64.push(0))
             call emit_expression(generator, syntax["right"])
+            call emit_dynamic_boundary_box(generator, syntax["right"])
             call assembler.emit(output, x86_64.move_reg_reg(6, 0))
             call assembler.emit(output, x86_64.pop(7))
-            call assembler.relative(output, [232], "runtime_pow_any")
+            call assembler.relative(output, [232], dynamic_numeric_runtime(generator, "runtime_pow_any"))
             return
         elif operator == "and" or operator == "or":
             short_label = label_name(generator, "bool_short")
@@ -1140,7 +1193,7 @@ function emit_expression(generator, syntax):
     elif kind == "call":
         target = syntax["target"]
         if target["kind"] == "name":
-            builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "Dictionary": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sum": 1, "type": 1, "exit": 1, "input": 1, "readfile": 1, "getenv": 1, "mkdir": 1, "unlink": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "help": 0, "run": 2, "capture": 2, "capture_stream": 3, "capture_status": 0, "capture_stderr": 0, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2, "native_open": 1, "native_size": 1, "native_u64": 2, "native_name_equal": 3, "native_function": 2, "native_call": 2, "native_close": 1}
+            builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "Dictionary": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sum": 1, "type": 1, "exit": 1, "input": 1, "readfile": 1, "getenv": 1, "mkdir": 1, "unlink": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "help": 0, "run": 2, "capture": 2, "capture_stream": 3, "capture_status": 0, "capture_stderr": 0, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2, "native_open": 1, "native_size": 1, "native_u64": 2, "native_name_equal": 3, "native_function": 2, "native_call": 2, "native_close": 1, "__lsl_test_small_tables": 0, "__lsl_object_table_mask": 0, "__lsl_intern_table_mask": 0}
             if target["name"] in builtin_arity:
                 expected_builtin = builtin_arity[target["name"]]
                 if len(syntax["arguments"]) != expected_builtin:
@@ -1230,6 +1283,20 @@ function emit_expression(generator, syntax):
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 call assembler.relative(output, [232], "runtime_is_heap_object")
                 return
+            elif target["name"] == "__lsl_test_small_tables":
+                call assembler.relative(output, [232], "runtime_test_small_tables")
+                return
+            elif target["name"] == "__lsl_object_table_mask":
+                call assembler.relative(output, [232], "runtime_object_table_mask")
+                return
+            elif target["name"] == "__lsl_intern_table_mask":
+                call assembler.relative(output, [232], "runtime_intern_table_mask")
+                return
+            elif target["name"] == "__lsl_address":
+                # Test/audit intrinsic: expose object bits as a statically typed
+                # Int to prove that every dynamic boundary boxes the collision.
+                call emit_expression(generator, syntax["arguments"][0])
+                return
             elif target["name"] == "__lsl_raw_int":
                 # Identity that types the value as Int, so a known-raw-Int Any
                 # takes the static Int path without the is_heap/type_code probe
@@ -1258,6 +1325,7 @@ function emit_expression(generator, syntax):
                 return
             elif target["name"] == "__lsl_box_function":
                 call emit_expression(generator, syntax["arguments"][0])
+                call assembler.emit(output, x86_64.mov_imm64(6, -1))
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 call assembler.relative(output, [232], "runtime_box_function")
                 return
@@ -1558,11 +1626,18 @@ function emit_expression(generator, syntax):
                 end
                 minmax_left_type = infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"])
                 minmax_right_type = infer_expression_type(syntax["arguments"][1], generator["types"], generator["function_returns"])
+                minmax_dynamic = minmax_left_type == "Float" or minmax_right_type == "Float" or minmax_left_type == "Any" or minmax_right_type == "Any"
                 call emit_expression(generator, syntax["arguments"][0])
+                if minmax_dynamic:
+                    call emit_dynamic_boundary_box(generator, syntax["arguments"][0])
+                end
                 call assembler.emit(output, x86_64.push(0))
                 call emit_expression(generator, syntax["arguments"][1])
+                if minmax_dynamic:
+                    call emit_dynamic_boundary_box(generator, syntax["arguments"][1])
+                end
                 done_label = label_name(generator, "minmax_done")
-                if minmax_left_type == "Float" or minmax_right_type == "Float" or minmax_left_type == "Any" or minmax_right_type == "Any":
+                if minmax_dynamic:
                     # Dispatch Int/Float; keep the original boxed value.
                     call assembler.emit(output, x86_64.move_reg_reg(6, 0))
                     call assembler.emit(output, x86_64.pop(0))
@@ -1608,7 +1683,7 @@ function emit_expression(generator, syntax):
                     call assembler.relative(output, [232], "runtime_float_new")
                 elif abs_arg_type == "Any":
                     call assembler.emit(output, x86_64.move_reg_reg(7, 0))
-                    call assembler.relative(output, [232], "runtime_abs_any")
+                    call assembler.relative(output, [232], dynamic_numeric_runtime(generator, "runtime_abs_any"))
                 else:
                     done_label = label_name(generator, "abs_done")
                     call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
@@ -1880,6 +1955,50 @@ function emit_expression(generator, syntax):
             call emit_uncaught_runtime_error(generator)
             call assembler.label(output, call_ok)
         end
+        if indirect_call and generator["path"].find("compiler/pure/") < 0:
+            call assembler.emit(output, x86_64.push(0))
+            if target["name"] in generator["variables"]:
+                call assembler.emit(output, x86_64.load_stack(7, generator["variables"][target["name"]]))
+            else:
+                call assembler.emit(output, x86_64.load_memory(7, 12, generator["global_variables"][target["name"]]))
+            end
+            call assembler.relative(output, [232], "runtime_function_return_tag")
+            call assembler.emit(output, x86_64.move_reg_reg(10, 0))
+            call assembler.emit(output, x86_64.pop(0))
+            callback_return_done = label_name(generator, "callback_return_done")
+            callback_return_bool = label_name(generator, "callback_return_bool")
+            callback_return_none = label_name(generator, "callback_return_none")
+            callback_return_function = label_name(generator, "callback_return_function")
+            call assembler.emit(output, x86_64.cmp_reg_imm8(10, 0))
+            call assembler.relative(output, [15, 132], callback_return_bool)
+            call assembler.emit(output, x86_64.cmp_reg_imm8(10, 4))
+            call assembler.relative(output, [15, 132], callback_return_bool)
+            call assembler.emit(output, x86_64.cmp_reg_imm8(10, 5))
+            call assembler.relative(output, [15, 132], callback_return_none)
+            call assembler.emit(output, x86_64.cmp_reg_imm8(10, 10))
+            call assembler.relative(output, [15, 132], callback_return_function)
+            call assembler.relative(output, [233], callback_return_done)
+            call assembler.label(output, callback_return_bool)
+            # Tag 0 means Int; tag 4 means Bool.
+            call assembler.emit(output, x86_64.cmp_reg_imm8(10, 4))
+            callback_box_bool = label_name(generator, "callback_box_bool")
+            call assembler.relative(output, [15, 132], callback_box_bool)
+            call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+            call assembler.relative(output, [232], "runtime_box_int")
+            call assembler.relative(output, [233], callback_return_done)
+            call assembler.label(output, callback_box_bool)
+            call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+            call assembler.relative(output, [232], "runtime_box_bool")
+            call assembler.relative(output, [233], callback_return_done)
+            call assembler.label(output, callback_return_none)
+            call assembler.relative(output, [232], "runtime_box_none")
+            call assembler.relative(output, [233], callback_return_done)
+            call assembler.label(output, callback_return_function)
+            call assembler.emit(output, x86_64.mov_imm64(6, -1))
+            call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+            call assembler.relative(output, [232], "runtime_box_dynamic_function")
+            call assembler.label(output, callback_return_done)
+        end
     elif kind == "compare":
         if len(syntax["operators"]) > 1:
             chain_false = label_name(generator, "compare_chain_false")
@@ -1967,8 +2086,10 @@ function emit_expression(generator, syntax):
                 end
             else:
                 call emit_expression(generator, left)
+                call emit_dynamic_boundary_box(generator, left)
                 call assembler.emit(output, x86_64.push(0))
                 call emit_expression(generator, right)
+                call emit_dynamic_boundary_box(generator, right)
                 call assembler.emit(output, x86_64.move_reg_reg(6, 0))
                 call assembler.emit(output, x86_64.pop(7))
                 call assembler.relative(output, [232], "runtime_equal_any")
@@ -1978,10 +2099,12 @@ function emit_expression(generator, syntax):
                 end
             end
         elif left_type == "Any" or right_type == "Any":
-            # Operand may be a boxed Float at runtime; dispatch Int/Float.
+            # Operand may be a boxed Float at runtime; dispatch tagged Int/Float.
             call emit_expression(generator, left)
+            call emit_dynamic_boundary_box(generator, left)
             call assembler.emit(output, x86_64.push(0))
             call emit_expression(generator, right)
+            call emit_dynamic_boundary_box(generator, right)
             call assembler.emit(output, x86_64.move_reg_reg(6, 0))
             call assembler.emit(output, x86_64.pop(7))
             call assembler.relative(output, [232], "runtime_compare_any")
@@ -2113,6 +2236,9 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             if target["kind"] == "name":
                 if statement["operator"] == "=":
                     call emit_expression(generator, statement["value"])
+                    if infer_expression_type(statement["value"], generator["types"], generator["function_returns"]) == "Function":
+                        call emit_collection_box(generator, statement["value"])
+                    end
                 else:
                     operator = statement["operator"][0:len(statement["operator"]) - 1]
                     combined = {"kind": "binary", "line": statement["line"], "column": statement["column"], "end_column": statement["end_column"], "operator": operator, "left": target, "right": statement["value"]}
@@ -2530,13 +2656,20 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             if return_label == "":
                 call unsupported(generator["path"], generator["lines"], statement, "return used outside a function", "move return into a function")
             end
+            dynamic_return = generator.get("current_return_type", "Any") == "Any"
             if statement["expression"] == None:
-                call assembler.emit(generator["builder"], x86_64.mov_imm64(0, 0))
+                if dynamic_return and generator["path"].find("compiler/pure/") < 0 and not generator.get("current_internal_function", False):
+                    call assembler.relative(generator["builder"], [232], "runtime_box_none")
+                else:
+                    call assembler.emit(generator["builder"], x86_64.mov_imm64(0, 0))
+                end
             else:
                 call emit_expression(generator, statement["expression"])
-                if generator["path"].find("compiler/pure/") < 0:
+                if generator["path"].find("compiler/pure/") < 0 and not generator.get("current_internal_function", False):
                     return_type = infer_expression_type(statement["expression"], generator["types"], generator["function_returns"])
-                    if return_type == "Any" and statement["expression"]["kind"] == "binary":
+                    if return_type == "Function" or (dynamic_return and (return_type == "Int" or return_type == "Bool" or return_type == "None")):
+                        call emit_collection_box(generator, statement["expression"])
+                    elif return_type == "Any" and statement["expression"]["kind"] == "binary":
                         call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
                         call assembler.relative(generator["builder"], [232], "runtime_box_dynamic_int")
                     end
@@ -2691,8 +2824,12 @@ function emit_function(generator, declaration):
     old_variables = generator["variables"]
     old_types = generator["types"]
     old_error_label = generator["error_label"]
+    old_current_return_type = generator.get("current_return_type", "Any")
+    old_internal_function = generator.get("current_internal_function", False)
     generator["variables"] = variables
     generator["types"] = types
+    generator["current_return_type"] = generator["function_returns"].get(name, "Any")
+    generator["current_internal_function"] = declaration.get("path", generator["path"]).find("compiler/pure/") >= 0
     call assembler.label(generator["builder"], "function_" + name)
     call assembler.emit(generator["builder"], x86_64.function_prologue(aligned_frame(variables)))
     argument_registers = [7, 6, 2, 1, 8, 9]
@@ -2716,6 +2853,8 @@ function emit_function(generator, declaration):
     generator["variables"] = old_variables
     generator["types"] = old_types
     generator["error_label"] = old_error_label
+    generator["current_return_type"] = old_current_return_type
+    generator["current_internal_function"] = old_internal_function
 end
 
 function generate(path, source, program):

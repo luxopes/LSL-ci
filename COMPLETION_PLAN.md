@@ -166,8 +166,9 @@ Nevydávat process JSON ABI za zero-copy řešení.
 - Object registry a String-template intern table mají stále pevnou kapacitu.
 - `brk` selhání a úplný object-registry probe jsou detekované a končí
   deterministickým `MemoryError`/status 70; nekonečný registry probe je odstraněn.
-- Object registry i intern cache mají full-probe ochranu a deterministický
-  `MemoryError`; zbývá jejich dynamický růst.
+- Object registry i intern cache mají full-probe ochranu, deterministický
+  `MemoryError` a dynamický 2× růst s rehash. Conformance je zmenší na 8 slots
+  a vynutí opakovaný růst.
 - Přidat stress testy milionů objektů, cyklů, reuse a hlubokých grafů.
 - Změřit a případně snížit virtuální rezervaci každého programu.
 

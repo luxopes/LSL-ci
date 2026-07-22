@@ -243,6 +243,18 @@ if tagged_argument_output != readfile("tests/tagged_argument_conformance.out"):
     Error(TestFailure: "tagged argument conformance output differs")
 end
 
+call require_success(run(compiler, ["tests/table_growth_conformance.lsl", "/tmp/lsl-table-growth-test"]), "compile table growth conformance")
+table_growth_output = capture("/tmp/lsl-table-growth-test", [])
+if table_growth_output != readfile("tests/table_growth_conformance.out"):
+    Error(TestFailure: "table growth conformance output differs")
+end
+
+call require_success(run(compiler, ["tests/pointer_collision_conformance.lsl", "/tmp/lsl-pointer-collision-test"]), "compile pointer collision conformance")
+pointer_collision_output = capture("/tmp/lsl-pointer-collision-test", [])
+if pointer_collision_output != readfile("tests/pointer_collision_conformance.out"):
+    Error(TestFailure: "pointer collision conformance output differs")
+end
+
 call require_success(run(compiler, ["tests/tagged_function_conformance.lsl", "/tmp/lsl-tagged-function-test"]), "compile tagged Function conformance")
 tagged_function_output = capture("/tmp/lsl-tagged-function-test", [])
 if tagged_function_output != readfile("tests/tagged_function_conformance.out"):

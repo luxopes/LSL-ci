@@ -36,3 +36,11 @@ computed = dynamic_add(2, -2)
 print type(computed), __lsl_type_code(computed), computed
 summed = sum([2, -2])
 print type(summed), __lsl_type_code(summed), summed
+function descend(value):
+    if value == 0:
+        return value
+    end
+    return descend(value - 1)
+end
+recursive = descend(4)
+print type(recursive), __lsl_type_code(recursive), recursive
