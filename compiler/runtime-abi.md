@@ -46,7 +46,7 @@ Heap používá conservative mark-sweep:
 - sweep bloky vrací do size-aware free listu;
 - `gc()` spouští collection explicitně.
 
-ELF image má pouze RX `PT_LOAD`; mutable allocator stav, 16M-entry object registry a 64K-entry String-template intern table jsou mimo image v `brk` heapu. Interned Strings jsou explicitní GC roots.
+ELF image má pouze RX `PT_LOAD`; mutable allocator stav, 16M-entry object registry a 64K-entry String-template intern table jsou mimo image v `brk` heapu. Interned Strings jsou explicitní GC roots. Počáteční i následné `brk` selhání a úplný object-registry probe končí deterministicky statusem 70 a `MemoryError`, nikoli zápisem přes neplatnou adresu nebo nekonečnou smyčkou.
 
 ## Exceptions
 

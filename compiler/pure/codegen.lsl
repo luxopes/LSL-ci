@@ -2667,6 +2667,8 @@ function generate(path, source, program):
     call assembler.emit(output, x86_64.add_reg_imm32(7, 1048576))
     call assembler.emit(output, x86_64.mov_imm64(0, 12))
     call assembler.emit(output, x86_64.syscall())
+    call assembler.emit(output, x86_64.cmp_reg_reg(0, 7))
+    call assembler.relative(output, [15, 133], "runtime_fatal_allocation")
     call assembler.emit(output, x86_64.store_memory(3, 32, 8))
     call assembler.emit(output, x86_64.mov_imm64(10, 16777215))
     call assembler.emit(output, x86_64.store_memory(3, 40, 10))

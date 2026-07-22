@@ -472,6 +472,12 @@ Config evaluator nyní materializuje chybějící option defaults do nested
 výsledku, validuje jejich typ a detekuje import cycles s celou cestou. Targeted
 conformance pro defaults, cycle i existující system config prochází.
 
+Allocator fixed point `4c248ff1a45cf8477f7338d6fe22e1e8df452ddb6b1fee65bceedfee93635424`
+kontroluje počáteční i každé následné `brk` a úplný object-registry probe.
+Vyčerpání končí deterministickým `MemoryError`/status 70; ověřeno spuštěním pod
+64MiB limitem. Fixed point, deterministická regenerace nástrojů a config jsou
+zelené.
+
 Přesný další krok: dokončit deterministické tagging raw Any argument/return
 výsledků a typed unbox na call sites, potom odstranit raw fallback a dokázat
 nemožnost live-pointer kolize. Následuje pure-LSL in-process

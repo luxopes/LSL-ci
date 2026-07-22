@@ -160,10 +160,10 @@ Nevydávat process JSON ABI za zero-copy řešení.
 
 ### 4. GC/allocator robustnost
 
-- Object registry má pevnou kapacitu; při zaplnění hrozí nekonečný probe.
-- String-template intern table je také pevná.
-- `brk`/alokace nemají úplnou strukturovanou OOM cestu.
-- Doplnit dynamický růst nebo alespoň detekci zaplnění a deterministický error.
+- Object registry a String-template intern table mají stále pevnou kapacitu.
+- `brk` selhání a úplný object-registry probe jsou detekované a končí
+  deterministickým `MemoryError`/status 70; nekonečný registry probe je odstraněn.
+- Zbývá dynamický růst tabulek a obdobná full-probe ochrana intern cache.
 - Přidat stress testy milionů objektů, cyklů, reuse a hlubokých grafů.
 - Změřit a případně snížit virtuální rezervaci každého programu.
 
