@@ -94,10 +94,15 @@ function infer_expression_type(syntax, types, function_returns):
         end
         return "None"
     elif kind == "name":
-        if syntax["name"] in function_returns:
+        # Lexical/local values shadow global function declarations. Checking the
+        # function table first misclassified locals such as current/image as
+        # callbacks and leaked their Function box address into generated code.
+        if syntax["name"] in types:
+            return types[syntax["name"]]
+        elif syntax["name"] in function_returns:
             return "Function"
         end
-        return types.get(syntax["name"], "Any")
+        return "Any"
     elif kind == "list":
         return "List"
     elif kind == "tuple":

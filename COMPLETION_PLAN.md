@@ -246,9 +246,10 @@ ověřuje identity return, min/max Int, Bool/None a class initializer/method.
 
 Fáze 4b-infrastruktura je hotová ve fixed pointu `19ec5a02…`: explicitní
 Function type 10, box/unbox, generic type/truth/equality/render, GC leaf a
-indirect call se zachováním argument registrů. Automatické Function boxování
-zatím není zapnuté, protože první pokus prokázal heap-address leak do výstupu
-compileru; explicitní conformance je deterministická.
+indirect call se zachováním argument registrů. Automatické Function boxování zatím není zapnuté. Opraveno bylo chybné
+shadowing pořadí v type inference, které boxovalo lokální `current`/`image` jako
+Function; další plný pokus ale odhalil Float-runtime regresi. Explicitní
+conformance a fixed point `01542437…` jsou deterministické.
 
 Následuje dokončení Any function ABI:
 
