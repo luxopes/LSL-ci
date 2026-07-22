@@ -498,6 +498,12 @@ Generic `sum()` Int výsledek je od fixed pointu
 na public Any hranici type 9; Float sum zůstává boxed Float. Targeted tagged
 conformance pro nulu prochází.
 
+Dictionary key ABI je explicitní ve fixed pointu
+`ca68c11434a74c88fcbc4f71c478f67e658a6454caf8889affb11fbdc010705d`:
+String/Int/Bool/None/Float/Function jsou tagované hashable scalar keys; mutable
+collection/Dictionary/Class/Instance keys compiler odmítá s E2001. Positive i
+negative targeted conformance prochází.
+
 Přesný další krok: dokončit zbývající raw Any callback return, potom odstranit
 raw fallback a dokázat nemožnost live-pointer kolize. Následuje pure-LSL in-process
 zero-copy tensor/shared-object loader.

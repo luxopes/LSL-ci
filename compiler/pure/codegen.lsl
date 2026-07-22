@@ -608,6 +608,14 @@ function emit_collection_box(generator, syntax):
     end
 end
 
+function emit_dictionary_key_box(generator, syntax):
+    key_type = infer_expression_type(syntax, generator["types"], generator["function_returns"])
+    if key_type == "List" or key_type == "Tuple" or key_type == "RealArray" or key_type == "Dictionary" or key_type.startswith("Class:") or key_type.startswith("Instance:"):
+        call unsupported(generator["path"], generator["lines"], syntax, "mutable or collection value cannot be a Dictionary key", "use String, Int, Bool, None, Float, or Function keys")
+    end
+    call emit_collection_box(generator, syntax)
+end
+
 function emit_uncaught_runtime_error(generator):
     call emit_static_write_fd(generator, "LSL runtime error: ", 2)
     call assembler.emit(generator["builder"], x86_64.load_memory(2, 13, 8))
@@ -742,6 +750,7 @@ function emit_expression(generator, syntax):
         call assembler.emit(output, x86_64.push(0))
         for entry in syntax["entries"]:
             call emit_expression(generator, entry[0])
+            call emit_dictionary_key_box(generator, entry[0])
             call assembler.emit(output, x86_64.push(0))
             call emit_expression(generator, entry[1])
             call emit_collection_box(generator, entry[1])
@@ -815,7 +824,9 @@ function emit_expression(generator, syntax):
         call emit_expression(generator, syntax["target"])
         call assembler.emit(output, x86_64.push(0))
         call emit_expression(generator, syntax["index"])
-        if target_type != "Dictionary" and infer_expression_type(syntax["index"], generator["types"], generator["function_returns"]) == "Any":
+        if target_type == "Dictionary":
+            call emit_dictionary_key_box(generator, syntax["index"])
+        elif infer_expression_type(syntax["index"], generator["types"], generator["function_returns"]) == "Any":
             call assembler.emit(output, x86_64.move_reg_reg(7, 0))
             call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
         end
@@ -2039,7 +2050,9 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 call emit_expression(generator, target["target"])
                 call assembler.emit(generator["builder"], x86_64.push(0))
                 call emit_expression(generator, target["index"])
-                if target_type != "Dictionary" and infer_expression_type(target["index"], generator["types"], generator["function_returns"]) == "Any":
+                if target_type == "Dictionary":
+                    call emit_dictionary_key_box(generator, target["index"])
+                elif infer_expression_type(target["index"], generator["types"], generator["function_returns"]) == "Any":
                     call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
                     call assembler.relative(generator["builder"], [232], "runtime_unbox_dynamic_int")
                 end

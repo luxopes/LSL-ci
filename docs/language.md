@@ -40,6 +40,8 @@ Vestavěné typy a návratové hodnoty `type(value)`:
 
 `Int` je signed 64-bit two's-complement hodnota. Aritmetika, mocnina, negace a převod z desetinného Stringu se definovaně redukují modulo `2^64`; nepoužívají `OverflowError`. `INT64_MIN // -1` proto vrací `INT64_MIN` a zbytek `0` bez CPU trapu.
 
+Dictionary klíče mohou být immutable scalar hodnoty `String`, `Int`, `Bool`, `None`, `Float` nebo `Function`. Collection, Dictionary, Class a Instance klíče compiler odmítá; tím hash index nezávisí na pozdější mutable změně klíče.
+
 ## Výstup a vstup
 
 ```lsl

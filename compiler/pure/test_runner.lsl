@@ -259,6 +259,13 @@ call require_failure(run(compiler, ["tests/builtin_arity_negative.lsl", "/tmp/ls
 call require_failure(run(compiler, ["tests/method_arity_negative.lsl", "/tmp/lsl-method-negative"]), "method arity mismatch unexpectedly compiled")
 call require_failure(run(compiler, ["tests/fixed_collection_negative.lsl", "/tmp/lsl-fixed-negative"]), "fixed collection mutation unexpectedly compiled")
 call require_failure(run(compiler, ["tests/private_class_negative.lsl", "/tmp/lsl-private-negative"]), "private module class unexpectedly compiled")
+call require_failure(run(compiler, ["tests/dictionary_key_negative.lsl", "/tmp/lsl-dictionary-key-negative"]), "collection Dictionary key unexpectedly compiled")
+
+call require_success(run(compiler, ["tests/dictionary_key_conformance.lsl", "/tmp/lsl-dictionary-key-test"]), "compile Dictionary key conformance")
+dictionary_key_output = capture("/tmp/lsl-dictionary-key-test", [])
+if dictionary_key_output != readfile("tests/dictionary_key_conformance.out"):
+    Error(TestFailure: "Dictionary key conformance output differs")
+end
 
 call require_success(run(compiler, ["tests/ai_conformance.lsl", "/tmp/lsl-ai-test"]), "compile AI conformance")
 ai_output = capture("/tmp/lsl-ai-test", [])
