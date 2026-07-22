@@ -476,7 +476,9 @@ Allocator fixed point `4c248ff1a45cf8477f7338d6fe22e1e8df452ddb6b1fee65bceedfee9
 kontroluje počáteční i každé následné `brk` a úplný object-registry probe.
 Vyčerpání končí deterministickým `MemoryError`/status 70; ověřeno spuštěním pod
 64MiB limitem. Fixed point, deterministická regenerace nástrojů a config jsou
-zelené.
+zelené. Následující fixed point
+`dfc81ddfd9fa0f57f3f86c12465891fd24003b752e6420769134f6405eea17e6`
+doplnil stejnou full-probe ochranu 64K String intern cache.
 
 Přesný další krok: dokončit deterministické tagging raw Any argument/return
 výsledků a typed unbox na call sites, potom odstranit raw fallback a dokázat
