@@ -1331,6 +1331,26 @@ function emit_neg_any(output):
     call assembler.emit(output, x86_64.function_epilogue())
 end
 
+function emit_pow_any(output):
+    # reg7=base, reg6=Int exponent -> reg0. Boxed Float base uses float_power;
+    # raw Int base uses int_power (negative-exponent guard is at the Int call
+    # sites; here Any base with negative exponent yields 1 for Int like the
+    # loop, and the reciprocal for Float).
+    call assembler.label(output, "runtime_pow_any")
+    call assembler.emit(output, x86_64.function_prologue(16))
+    call assembler.emit(output, x86_64.store_stack(-8, 6))
+    call assembler.relative(output, [232], "runtime_is_float")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+    call assembler.relative(output, [15, 132], "pow_any_int")
+    call assembler.emit(output, x86_64.load_stack(6, -8))
+    call assembler.relative(output, [232], "runtime_float_power")
+    call assembler.emit(output, x86_64.function_epilogue())
+    call assembler.label(output, "pow_any_int")
+    call assembler.emit(output, x86_64.load_stack(6, -8))
+    call assembler.relative(output, [232], "runtime_int_power")
+    call assembler.emit(output, x86_64.function_epilogue())
+end
+
 function emit_num_any(output, name, float_routine, is_add):
     # reg7,reg6 = operands. If either is a boxed Float, promote both to Float
     # and use float_routine (fixes mixed raw-Int + boxed-Float). Otherwise
@@ -1974,6 +1994,7 @@ function emit_all(output):
     call emit_abs_any(output)
     call emit_neg_any(output)
     call emit_compare_any(output)
+    call emit_pow_any(output)
     call emit_num_any(output, "runtime_add_any", "runtime_float_add", True)
     call emit_num_any(output, "runtime_sub_any", "runtime_float_sub", False)
     call emit_num_any(output, "runtime_mul_any", "runtime_float_mul", False)

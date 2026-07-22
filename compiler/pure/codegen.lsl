@@ -143,6 +143,8 @@ function infer_expression_type(syntax, types, function_returns):
         elif syntax["operator"] == "**":
             if left == "Float" or right == "Float":
                 return "Float"
+            elif left == "Any" or right == "Any":
+                return "Any"
             end
         end
         if syntax["operator"] == "and" or syntax["operator"] == "or":
@@ -895,6 +897,19 @@ function emit_expression(generator, syntax):
             else:
                 call assembler.relative(output, [232], "runtime_mul_any")
             end
+            return
+        elif operator == "**" and expression_type == "Any":
+            # Dynamic ** : base may be boxed Float or raw Int; Int exponent.
+            any_exp_type = infer_expression_type(syntax["right"], generator["types"], generator["function_returns"])
+            if any_exp_type != "Int" and any_exp_type != "Any":
+                call unsupported(generator["path"], generator["lines"], syntax, "** requires an Int exponent", "use an Int exponent such as x ** 3")
+            end
+            call emit_expression(generator, syntax["left"])
+            call assembler.emit(output, x86_64.push(0))
+            call emit_expression(generator, syntax["right"])
+            call assembler.emit(output, x86_64.move_reg_reg(6, 0))
+            call assembler.emit(output, x86_64.pop(7))
+            call assembler.relative(output, [232], "runtime_pow_any")
             return
         elif operator == "and" or operator == "or":
             short_label = label_name(generator, "bool_short")
