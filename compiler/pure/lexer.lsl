@@ -58,12 +58,13 @@ function join_chars(chars, start, stop):
 end
 
 function build_lines(chars, count):
+    newline = chr(10)
     lines = []
     current = ""
     index = 0
     while index < count:
         character = chars[index]
-        if character == chr(10):
+        if character == newline:
             lines.append(current)
             current = ""
         else:
@@ -80,15 +81,16 @@ function tokenize(path, source):
     chars = __lsl_string_chars(source)
     count = len(chars)
     lines = build_lines(chars, count)
+    newline = chr(10)
     index = 0
     line = 1
     column = 1
     depth = 0
     while index < count:
         character = chars[index]
-        if character == chr(10):
+        if character == newline:
             if depth == 0:
-                result.append(token("newline", chr(10), line, column, column + 1))
+                result.append(token("newline", newline, line, column, column + 1))
             end
             index += 1
             line += 1
@@ -97,7 +99,7 @@ function tokenize(path, source):
             index += 1
             column += 1
         elif character == "#":
-            while index < count and chars[index] != chr(10):
+            while index < count and chars[index] != newline:
                 index += 1
                 column += 1
             end
@@ -124,7 +126,7 @@ function tokenize(path, source):
                     value += decode_escape(path, lines, line, column, escaped)
                     index += 2
                     column += 2
-                elif character == chr(10):
+                elif character == newline:
                     call diagnostics.fail(path, start_line, start_column, max(1, column - start_column), source_line(lines, start_line), "E0001", "unterminated String literal", "close the String before the end of the line")
                 else:
                     value += character
