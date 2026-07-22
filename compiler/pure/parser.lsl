@@ -126,6 +126,15 @@ function parse_primary(parser):
     elif kind == "name":
         result = node("name", token)
         result["name"] = value
+        # Original LSL input syntax is expression-like but omits call
+        # parentheses: `name = input "Prompt: "`. Lower it to the same call AST
+        # as `input("Prompt: ")`; keep a bare `input` name first-class.
+        if value == "input" and check_kind(parser, "string"):
+            input_call = node("call", token)
+            input_call["target"] = result
+            input_call["arguments"] = [parse_expression(parser)]
+            result = finish_node(input_call, parser)
+        end
     elif value == "(":
         if match(parser, ")"):
             result = node("tuple", token)
