@@ -170,9 +170,10 @@ Nevydávat process JSON ABI za zero-copy řešení.
 
 ### 5. Process/I/O error parity
 
-- `capture()` už roste, ale API vrací jen stdout String, ne exit status/stderr.
-- Navrhnout `capture_result` Dictionary `{stdout, stderr, status}` nebo podobné.
-- Ošetřit všechny syscall error/partial paths (`pipe`, `fork`, `dup2`, `wait4`,
+- `capture()` stdout i stderr rostou bez pevného limitu; stderr používá anonymous
+  memfd, takže nemůže zablokovat druhou pipe. `process.capture_result` vrací
+  `{stdout,stderr,status,ok}` a `process.check` propaguje status.
+- Zbývá ošetřit všechny syscall error/partial paths (`pipe`, `fork`, `dup2`, `wait4`,
   `close`, read errors), ne pouze hlavní happy path.
 - Přidat čistý stdin-fed process helper; pak zapojit `input_conformance` přímo do
   pure `lsl-test` (nyní je 5000B input ověřen manuálním pipe testem).

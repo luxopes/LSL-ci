@@ -525,8 +525,11 @@ Structured capture fixed point
 `500691c46d6c7a21a77e2076dbaeefef63183387fe0ff887b5d026302e4ec495`
 uchovává dekódovaný status posledního capture v runtime state.
 `process.capture_result` vrací `{stdout,status,ok}` a `process.check` propaguje
-`ProcessError`; module je v installeru a targeted conformance ověřuje stdout +
-exit 7. Oddělené stderr zachycení stále vyžaduje druhou pipe/poll loop.
+`ProcessError`; module je v installeru. Následující fixed point
+`26f66960353e889aec2fee0dee4862773763cdaa5b6129c58f2c8eb7ef88a727`
+zachytává také neomezené stderr přes anonymous memfd (bez pipe deadlocku) a
+vrací `{stdout,stderr,status,ok}`. Conformance ověřuje stdout, uncaught stderr a
+exit 1.
 
 Přesný další krok: dokončit zbývající raw Any callback return, potom odstranit
 raw fallback a dokázat nemožnost live-pointer kolize. Následuje pure-LSL in-process

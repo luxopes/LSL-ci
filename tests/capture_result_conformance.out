@@ -1,2 +1,2 @@
-captured 7 False
-ProcessError: process exited with status 7
+captured LSL runtime error: ServerError: broken 1 False
+ProcessError: process exited with status 1

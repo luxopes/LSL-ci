@@ -3,7 +3,7 @@
 function capture_result(executable, arguments):
     output = capture(executable, arguments)
     status = capture_status()
-    return {"stdout": output, "status": status, "ok": status == 0}
+    return {"stdout": output, "stderr": capture_stderr(), "status": status, "ok": status == 0}
 end
 
 function check(executable, arguments):

@@ -1,2 +1,2 @@
 print "captured"
-exit(7)
+Error(ServerError: "broken")
