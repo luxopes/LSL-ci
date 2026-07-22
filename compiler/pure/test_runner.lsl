@@ -87,6 +87,16 @@ if mode == "fast":
     exit(0)
 end
 
+call require_success(run(compiler, ["tests/json_fuzz_conformance.lsl", "/tmp/lsl-json-fuzz-test"]), "compile JSON fuzz conformance")
+call require_output("/tmp/lsl-json-fuzz-test", [], "tests/json_fuzz_conformance.out", "JSON fuzz conformance output differs")
+call require_success(run(compiler, ["tests/gc_stress_conformance.lsl", "/tmp/lsl-gc-stress-test"]), "compile GC stress conformance")
+call require_output("/tmp/lsl-gc-stress-test", [], "tests/gc_stress_conformance.out", "GC stress conformance output differs")
+call require_success(run(compiler, ["compiler/pure/frontend_fuzz.lsl", "/tmp/lsl-frontend-fuzz-test"]), "compile frontend fuzz conformance")
+call require_output("/tmp/lsl-frontend-fuzz-test", [], "tests/frontend_fuzz.out", "frontend fuzz conformance output differs")
+call require_success(run(compiler, ["tests/process_fault_conformance.lsl", "/tmp/lsl-process-fault-test"]), "compile process fault conformance")
+call require_output("/tmp/lsl-process-fault-test", ["0"], "tests/process_fault_pipe.out", "pipe fault conformance output differs")
+call require_output("/tmp/lsl-process-fault-test", ["2"], "tests/process_fault_memfd.out", "memfd fault conformance output differs")
+
 # Compile-time diagnostics must remain failures and retain original source spans.
 call require_failure(run(compiler, ["tests/builtin_arity_negative.lsl", "/tmp/lsl-arity-negative"]), "builtin arity mismatch unexpectedly compiled")
 call require_failure(run(compiler, ["tests/method_arity_negative.lsl", "/tmp/lsl-method-negative"]), "method arity mismatch unexpectedly compiled")
@@ -112,6 +122,14 @@ call require_success(run(configure, ["tests/config/type_error.lsl", type_error_w
 call require_success(run(compiler, [type_error_wrapper, "/tmp/lsl-config-type-error-test"]), "compile config type-error evaluator")
 call unlink(type_error_wrapper)
 call require_output("/tmp/lsl-config-type-error-test", [], "tests/config/type_error.out", "config type-error provenance differs")
+
+generated_wrapper = "tests/config/.generated-test-evaluator.lsl"
+call require_success(run(configure, ["tests/config/generated.lsl", generated_wrapper]), "generate config fuzz evaluator")
+call require_success(run(compiler, [generated_wrapper, "/tmp/lsl-config-generated-test"]), "compile config fuzz evaluator")
+call unlink(generated_wrapper)
+generated_config_output = capture("/tmp/lsl-config-generated-test", [])
+call require_success(run(compiler, ["tests/config_generated_check.lsl", "/tmp/lsl-config-generated-check"]), "compile config fuzz checker")
+call require_output("/tmp/lsl-config-generated-check", [generated_config_output], "tests/config_generated_check.out", "config fuzz output differs")
 
 config_cycle_output = capture(configure, ["tests/config/cycle_a.lsl", "/tmp/lsl-cycle-evaluator.lsl"])
 if config_cycle_output != readfile("tests/config/cycle.out"):

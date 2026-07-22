@@ -34,7 +34,7 @@ Allocator před payloadem udržuje neveřejnou 32-byte GC hlavičku. Aktuální 
 
 String payload je UTF-8, ale jazykové `len`, indexace a slicing pracují s Unicode code points. List/Tuple/RealArray slots, Dictionary hodnoty a instance fields nesou dynamické hodnoty; staticky známé Int, Bool a None jsou na této hranici boxované. Generic truth, equality, comparison, numeric operations, rendering, JSON, conversions, indexing a `rang` přijímají raw i boxed Int. Typed Int fast path zůstává raw.
 
-Object identity se už neurčuje hranicí ELF adresy. Každá alokace se zapisuje do exact open-addressed pointer registry; static String templates se při prvním použití klonují do heapu a internují podle template pointeru. Tím dynamické Int hodnoty nad `0x400000` zůstávají Int. Staticky známé Int/Bool/None argumenty se při direct, indirect, method i initializer volání předávají do Any parametrů boxované; již tagged hodnoty lze bezpečně vracet beze změny. Zbývá otagovat raw výsledky výrazů inferovaných jako Any a sjednotit Function hodnoty/returns, potom odstranit raw fallback heuristiky. Do té doby stále existuje teoretická kolize raw Int, jehož bits jsou přesně rovné adrese živého heap objektu.
+Object identity se neurčuje hranicí ELF adresy. Každá alokace se zapisuje do exact open-addressed pointer registry; static String templates se při prvním použití klonují do heapu a internují podle template pointeru. Veřejné Any argumenty, collection slots, polymorfní returns a callback returns používají jednoznačné scalar tagy 9/4/5/10; typed self-host trust core může uvnitř výrazu držet raw Int. `pointer_collision_conformance` vytváří raw Int bitově shodný s živou heap adresou a ověřuje správný typ/equality přes Function, List, Dictionary i GC hranice.
 
 ## GC a vlastnictví
 
@@ -47,6 +47,10 @@ Heap používá conservative mark-sweep:
 - `gc()` spouští collection explicitně.
 
 ELF image má pouze RX `PT_LOAD`; mutable allocator stav, počáteční 16M-entry object registry a 64K-entry String-template intern table jsou mimo image v `brk` heapu. Obě open-addressed tabulky se při zaplnění zdvojnásobí a deterministicky rehashují; starý backing zůstane rezervovaný do konce procesu. Interned Strings jsou explicitní GC roots. Počáteční i následné `brk` selhání a úplný object-registry probe končí deterministicky statusem 70 a `MemoryError`, nikoli zápisem přes neplatnou adresu nebo nekonečnou smyčkou.
+
+## Process/I/O cleanup
+
+`capture` kontroluje pipe/memfd/fork/read/wait/lseek/dup2 a propaguje setup/I/O chyby jako catchable `ProcessError`; `capture_input` připraví stdin v seekable memfd, takže velký vstup nemůže uváznout proti stdout pipe. Již otevřené deskriptory se na chybových větvích zavírají. Linux `close(2)` je cleanup best-effort a po `EINTR` se neopakuje: descriptor už může být uvolněný a retry by mohl zavřít nově recyklované fd. Cleanup chyba nepřepisuje původní operation error.
 
 ## Exceptions
 

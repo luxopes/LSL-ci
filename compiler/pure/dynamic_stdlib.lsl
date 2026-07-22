@@ -899,11 +899,25 @@ function __lsl_str_repeat(text, count):
     return result
 end
 
-function __lsl_equal(left, right):
+function __lsl_equal_seen(left, right, seen_left, seen_right):
+    if __lsl_raw_equal(left, right):
+        return True
+    end
     left_code = __lsl_type_code(left)
     right_code = __lsl_type_code(right)
     if left_code != right_code:
-        return __lsl_raw_equal(left, right)
+        return False
+    end
+    if left_code == 2 or left_code == 7 or left_code == 8 or left_code == 3:
+        seen_index = 0
+        while seen_index < len(seen_left):
+            if __lsl_raw_equal(seen_left[seen_index], left):
+                return __lsl_raw_equal(seen_right[seen_index], right)
+            end
+            seen_index += 1
+        end
+        seen_left.append(left)
+        seen_right.append(right)
     end
     if left_code == 2 or left_code == 7 or left_code == 8:
         length = len(left)
@@ -912,7 +926,7 @@ function __lsl_equal(left, right):
         end
         index = 0
         while index < length:
-            if not __lsl_equal(left[index], right[index]):
+            if not __lsl_equal_seen(left[index], right[index], seen_left, seen_right):
                 return False
             end
             index += 1
@@ -926,13 +940,28 @@ function __lsl_equal(left, right):
             if not (key in right):
                 return False
             end
-            if not __lsl_equal(left[key], right[key]):
+            if not __lsl_equal_seen(left[key], right[key], seen_left, seen_right):
                 return False
             end
         end
         return True
     end
     return __lsl_raw_equal(left, right)
+end
+
+function __lsl_equal(left, right):
+    if __lsl_raw_equal(left, right):
+        return True
+    end
+    left_code = __lsl_type_code(left)
+    right_code = __lsl_type_code(right)
+    if left_code != right_code:
+        return False
+    end
+    if left_code == 2 or left_code == 7 or left_code == 8 or left_code == 3:
+        return __lsl_equal_seen(left, right, [], [])
+    end
+    return False
 end
 
 function __lsl_min(values):

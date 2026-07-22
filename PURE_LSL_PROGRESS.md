@@ -544,6 +544,26 @@ zachytává také neomezené stderr přes anonymous memfd (bez pipe deadlocku) a
 vrací `{stdout,stderr,status,ok}`. Conformance ověřuje stdout, uncaught stderr a
 exit 1.
 
+Fault-injection/fuzz fixed point
+`e3bb05e634d2ffbd2e4d7efff2ce71236b59191868fd47f1e4582572ceedf5e3`
+přidává test-only RLIMIT_NOFILE/memfd fault helper. Full runner skutečnými kernel
+failures ověřuje pipe failure i stav, kdy pipe uspěje a stderr memfd selže,
+včetně catchable `ProcessError`, status resetu a fd cleanup. close(2) cleanup je
+dokumentovaný best-effort bez EINTR retry. Generativní config corpus navíc
+ověřuje 100 defaults/overrides, 25 force priorit, List merge a assertions přes
+strict JSON checker. Rozšířený full suite (včetně fuzz a GC stress) běží 15,0 s,
+fast 4,2 s a fixed-point 3,7 s; všechny skončily 0.
+
+Fuzz/GC hardening fixed point
+`bd640ff9bd6e5f08dd657b3be7ef88e7025cffd227859c7c9801718b988e88cd`
+přidává 1000 deterministicky generovaných lexer/parser programů, 200 JSON
+round-trip případů, 24 malformed JSON vstupů a standalone GC stress s 10000
+cykly, 3000-uzlovým grafem a reuse sérií. JSON decoder nyní bounds-checkuje,
+odmítá trailing data, invalidní number/escape/surrogate gramatiku, přijímá
+Float exponenty a správně skládá surrogate pairs. Deep equality má identity
+fast path a visited-pair ochranu, takže self/cross-cyclic List/Dictionary grafy
+neskončí stack overflowem. Rozšířený full suite skončil 0.
+
 Process-I/O hardening fixed point
 `80ce6a7a62242bc2197c86335c4be64865cb0f2ed9a2d93c24711d42cf4635a0`
 kontroluje capture pipe/memfd/fork, parent read/wait/lseek a child dup2 chyby,

@@ -18,3 +18,15 @@ print [1, 2, 3] != [1, 2, 4]
 print [1, 2, 3] != [1, 2, 3]
 print [[1], [2, [3]]] == [[1], [2, [3]]]
 print 5 == 5, "a" == "a", 5 == 6, 1 == 2
+same_cycle = [1]
+same_cycle.append(same_cycle)
+other_cycle = [1]
+other_cycle.append(other_cycle)
+different_cycle = [2]
+different_cycle.append(different_cycle)
+print same_cycle == same_cycle, same_cycle == other_cycle, same_cycle == different_cycle
+left_dictionary = {}
+left_dictionary["self"] = left_dictionary
+right_dictionary = {}
+right_dictionary["self"] = right_dictionary
+print left_dictionary == right_dictionary

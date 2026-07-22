@@ -1,336 +1,111 @@
-# LSL completion handoff
+# LSL 0.7 completion handoff
 
-## Goal
+## Cíl a aktuální stav
 
-Dokončit produkční LSL 0.7 tak, aby udržovaná implementace obsahovala pouze LSL
-zdroje a LSL-generované Linux x86_64 ELF soubory. Compiler musí přímo generovat
-statický syscall-only ELF bez C/C++, libc, assembleru, linkeru, Pythonu nebo
-shell launcheru a musí reprodukovat sám sebe bit po bitu.
-
-Tento soubor je stručný zdroj pravdy pro pokračování po ztrátě/kompakci
-kontextu. Historie hashů a důkazů je v `PURE_LSL_PROGRESS.md`; veřejný seznam je
-v `TODO.md`.
-
-## Aktuální Git stav
+Produkční LSL obsahuje pouze LSL zdroje a LSL-generované Linux x86_64 ELF.
+Self-host compiler přímo zapisuje statický syscall-only ELF bez C/C++, libc,
+assembleru, linkeru, Pythonu nebo shell launcheru. Stage N reprodukuje stage
+N+1 bit po bitu.
 
 - Repo: `/home/antonin/lsl`
 - Větev: `complete-roadmap`
-- Base větev: `master`
-- Poslední commit: `ea2befb Accelerate compiler and full conformance`.
-- Aktuální fixed-point compiler SHA-256:
-  `80ce6a7a62242bc2197c86335c4be64865cb0f2ed9a2d93c24711d42cf4635a0`
-- `compiler/pure/lslc-direct` je bitově shodný s `compiler/lslc`.
-- `compiler/pure/lsl-cli` je bitově shodný s top-level `lsl`.
-- ELF má jediný RX `PT_LOAD`, žádný `INTERP` a žádné RWX.
-- Ve stromu nejsou `.c`, `.h`, `.py` ani `.sh` produkční soubory.
+- Poslední commit: `2d7334e Harden process capture and feed stdin`
+- Aktuální fixed-point SHA-256:
+  `e3bb05e634d2ffbd2e4d7efff2ce71236b59191868fd47f1e4582572ceedf5e3`
+- `compiler/pure/lslc-direct == compiler/lslc`
+- `compiler/pure/lsl-cli == lsl`
+- ELF: jediný RX `PT_LOAD`, bez `INTERP` a RWX
+- Produkční strom: žádné `.c`, `.h`, `.py` ani `.sh`
+- Cizí lokální změna `compiler/pure/hello.lsl` se nesmí měnit ani commitnout.
 
-Před každou změnou:
+Podrobné historické hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`; veřejný scope
+je v `TODO.md`.
+
+## Ověřeně dokončený scope 0.7 (bez GPU)
+
+- pure-LSL lexer/parser/linker, source spans a strukturovaná diagnostika;
+- přímý x86_64 encoder, assembler model, ELF writer a self-host fixed point;
+- Int/Bool/None/Float/String, List/Tuple/RealArray/Dictionary, Unicode a JSON;
+- jednoznačný tagged Any ABI včetně Function/callback returns a
+  raw-Int/live-pointer collision proof;
+- functions, recursion, classes, široké register/stack ABI a exceptions;
+- conservative cycle GC, free-list reuse, dynamický růst registry/intern cache;
+- filesystem, argv/env/input, partial I/O, process/capture/status/stderr;
+- deadlock-free memfd `capture_input` a live `capture_stream` callbacky;
+- strict JSON parser (Float/exponenty, bounds, escapes/surrogates, trailing data);
+- config defaults/types/provenance/lazy/cycles, AI retry/cancel/SSE streaming;
+- process JSON plugin ABI, zero-copy CPU Tensor a omezený in-process ET_DYN ABI;
+- relocatable pure-LSL CLI, configure tool, installer a test runner.
+
+## Testy, hardening a výkon
+
+`compiler/pure/lsl-test` má režimy:
 
 ```text
-git status --short --branch
-git log -5 --oneline
+./compiler/pure/lsl-test fast
+./compiler/pure/lsl-test              # full (výchozí)
+./compiler/pure/lsl-test fixed-point
 ```
 
-Používat jednu logickou změnu na commit. Před commitem vždy `git diff`,
-`git diff --check`, explicitní `git add <files>` a kontrola staged diffu. Nic
-nepushovat bez výslovného požadavku.
+Pozitivní corpus je agregovaný v `tests/full_conformance.lsl`, ale očekávaný
+výstup se stále skládá z původních `.out`, takže jednotlivé source spans a
+důkazy zůstávají zachované. Full navíc spouští:
 
-## Tvrdé provozní podmínky
+- negative compiler corpus a config conformance;
+- 1000 deterministicky generovaných validních lexer/parser programů;
+- 200 JSON round trips a 24 malformed JSON případů;
+- GC stress: 10000 cyklů, 3000-uzlový graf a reuse;
+- RLIMIT_NOFILE fault injection pro pipe/memfd setup/cleanup;
+- generativní config corpus se 100 options/defaults/overrides/force/list hodnotami;
+- fixed-point byte comparison.
 
-- Dlouhé kroky pouze sériově, nikdy paralelně.
-- Před buildem používat `ulimit -v 1048576`.
+Naměřené časy na současném hostu:
+
+- původní full: 23,2 s;
+- stejný agregovaný feature corpus před novými stress testy: 9,4 s;
+- aktuální rozšířený full: 15,0 s;
+- fast: 4,2 s;
+- fixed-point: 3,7 s;
+- self-host compile: 3,95 → přibližně 3,62 s;
+- self-host peak RSS: přibližně 809 → 764 MiB.
+
+Compiler byte encoder normalizuje raw/boxed Int do typed raw locals a Int tokeny
+parsuje trust-core helperem před high-memory codegenem. Tím zmizel vzácný
+fixed-point drift; 40 po sobě jdoucích reprodukcí bylo shodných.
+
+Process setup kontroluje pipe/memfd/fork/read/wait/lseek/dup2. Otevřené fd se na
+error větvích uklidí. Linux `close(2)` cleanup je best-effort a po `EINTR` se
+neopakuje, protože descriptor už může být recyklovaný.
+
+## Zbývající neblokující práce
+
+Feature scope 0.7 je uzavřený. Následující body nejsou release blockery:
+
+1. syntetická fault injection pro obtížně vyvolatelné fork/wait/read failures;
+2. další benchmark/regression limity a snížení compiler peak RSS;
+3. volitelná native ABI v2 (povolené relocations, Tensor descriptors);
+4. další CPU targety; GPU/device ABI je mimo scope 0.7.
+
+## Provozní pravidla
+
+- Dlouhé buildy pouze sériově pod `ulimit -v 1048576`.
 - Nepoužívat C/Python/assembler/linker ani jako dočasný backend.
-- Síť nespouštět bez výslovného požadavku.
-- Starý transition host/seed je odstraněn a nesmí se obnovovat.
-- Neoznačovat částečnou implementaci za hotovou.
-- Každý compiler/runtime zásah: conformance test → 2 až 3 self-host stage →
-  SHA/cmp → deterministická regenerace nástrojů → celý suite → config.
+- Nespouštět síť bez výslovného požadavku.
+- Před změnou číst okolní kód; dělat nejmenší úplnou změnu.
+- Každý compiler/runtime zásah: cílený test → 2–3 self-host stages → SHA/cmp →
+  deterministická regenerace nástrojů → full suite → config.
+- Před commitem: `git status`, `git diff`, `git diff --check`, explicitní `git add`.
+- Nic nepushovat bez výslovného požadavku.
 
-## Co je ověřeně hotové
-
-- Pure-LSL lexer/parser/linker/x86_64 encoder/ELF writer/runtime/compiler.
-- Self-host fixed point, veřejné ELF launchery, installer a pure test runner.
-- UTF-8 code-point String operace, Unicode case map alespoň Latin-1/Extended-A.
-- Int/Bool/None/boxed Float, List/Tuple/RealArray/Dictionary, deep equality.
-- Funkce, recursion, callbacks, classes, široké register/stack ABI, exceptions.
-- Modules, private/public classes, přesné linked-module diagnostics.
-- JSON, config evaluator, env, filesystem, process, neomezený `capture`, HTTP
-  přes bezpečný curl argv a JSON process plugin ABI.
-- Mark-sweep cycle GC a free-list reuse.
-- Float NaN/Infinity, comparisons, power, floor division/modulo a round-trip
-  textový formatter.
-- Dokumentované collection/String metody, Dictionary conversion, member delete.
-- Dynamický `rang` step, indexed augmented assignment, neomezený line `input`.
-- Aktuální `compiler/pure/lsl-test` (`fast`, výchozí `full`, `fixed-point`)
-  včetně negative corpus a config conformance je zelený. Pozitivní corpus je
-  agregovaný se zachováním původních source spans; full čas klesl z 23,205 s na
-  9,425 s. Instalovaný compiler z jiného cwd přeložil selfhost conformance;
-  z instalovaného source rootu znovu vytvořil bitově shodný fixed point.
-
-Nedávné commity na větvi:
+## Auditní příkazy
 
 ```text
-ccd1e5c Support indexed augmented assignment
-7a750a4 Allow dynamic rang steps
-fe45de4 Format Floats as round-trip decimals
-7bd31e9 Complete documented collection methods
-c5e125a Support deleting instance fields
-e187ccc Read unbounded input lines
-17b0d78 Grow capture output without a fixed limit
-e3ddd0b Pass wide class initializers on the stack
-```
-
-## Zbývající blokery — v pořadí
-
-### 1. Jednoznačný dynamic scalar tag ABI (hlavní blocker)
-
-Současný stav:
-
-- Heap pointery se rozpoznávají přes exact open-addressed allocation registry.
-- Bool/None jsou v collections boxované, Float je heap objekt.
-- Dynamický Int je stále často raw 64bit hodnota.
-- Pokud raw Int bits přesně odpovídají adrese živého heap objektu, generic
-  `is_heap/type/equality/render/arithmetic` jej může chybně považovat za objekt.
-- Raw Bool 0/1 versus raw Int 0/1 způsobuje obdobné chyby přes Any parametry;
-  například statické cesty jsou opravené, ale jednotný ABI ještě neexistuje.
-
-Doporučený návrh: **boxed dynamic ABI, unboxed typed fast path**.
-
-- Staticky inferovaný Int/Bool může zůstat raw pouze uvnitř typed výrazu.
-- Každá hodnota ukládaná do Any slotu, collection slotu, Dictionary key/value,
-  Any parametru nebo Any return musí mít jednoznačný runtime tag.
-- Přidat heap type `9 = boxed Int`; stávající 4/5/6 jsou Bool/None/Float.
-- Function hodnoty musí mít vlastní box/tag, pokud přecházejí přes Any.
-- Přidat `runtime_box_int`, `runtime_unbox_int`, generic scalar classifier a
-  checked unbox helpers.
-- Přepsat generic add/sub/mul/div/mod/pow/compare/equal/truth/print/render,
-  indexing a konverze tak, aby nikdy neinterpretovaly raw bits jako pointer.
-- `runtime_type_code` musí pro boxed Int veřejně hlásit Int, ale interně musí být
-  možné tag 9 rozlišit.
-- Codegen musí boxovat na každé typed→Any hranici a unboxovat Any→typed hranici.
-- GC musí boxed Int považovat za leaf.
-- Až poté lze odstranit teoretickou kolizi a případně zmenšit/změnit pointer
-  registry; registry je stále užitečná pro GC, ale nesmí určovat jazykový typ.
-
-Bezpečné migrační fáze:
-
-1. Přidat type 9 a runtime helpers, zatím je nepoužívat; fixed point + commit.
-2. Naučit všechny generic runtime operace přijmout raw i boxed Int; test + commit.
-3. Boxovat Int v collections/dictionary, opravit JSON/render/index; test + commit.
-4. Boxovat scalar argumenty/returns na Any ABI hranicích; test + commit.
-5. Boxovat Function/Bool/None konzistentně, odstranit raw fallback heuristiky.
-6. Přidat test-only/internal způsob vytvořit hodnotu se stejnými bits jako heap
-   adresa a dokázat, že je stále Int; potom označit okruh hotový.
-
-Rizika:
-
-- Compiler je sám velký dynamický LSL program; změna parametrického ABI snadno
-  rozbije bootstrap. Každá fáze musí zachovat přechodový dual-mode runtime.
-- `bytes.little`, encoder a magic division spoléhají na raw/wrapping Int fast
-  path; nesmí být omylem boxovány uprostřed typed aritmetiky.
-- Dictionary hash/equality, JSON a loops jsou citlivé na boxování.
-
-### 2. Integer overflow politika
-
-Současný Int je signed 64-bit a většina operací wrapuje. `INT64_MIN // -1` je
-explicitně ošetřen bez CPU pádu. TODO ale stále žádá kontrolovaný overflow.
-
-Rozhodnuto: LSL Int má oficiální signed 64-bit two's-complement wrapping
-sémantiku modulo `2^64`. Platí pro +, -, *, power, negaci i desetinný String
-conversion. `INT64_MIN // -1` vrací `INT64_MIN`, modulo vrací 0. Je to součást
-jazykové specifikace, nikoli neřízený host overflow. `integer_wrap_conformance`
-ověřuje typed i boxed dynamic cestu, min/max, power a String hranice.
-
-### 3. In-process native/shared-object/tensor ABI
-
-Hotový je izolovaný JSON process ABI, zero-copy pure-LSL CPU Tensor a omezený
-self-contained Linux x86_64 ET_DYN Int64 kernel ABI v1. ABI v1 nepovoluje
-relocations, libc, external symbols ani constructors a plugin nevidí LSL heap.
-Následující původní body popisují volitelnou bohatší ABI v2:
-
-Minimální čistý v1 scope:
-
-- pure-LSL loader pro omezený self-contained ET_DYN/LSL plugin formát;
-- syscall `mmap`/`munmap`, validace ELF headerů a bounds;
-- povolit jen jasně definované relocations (nejprve `R_X86_64_RELATIVE`);
-- najít verzovaný descriptor/symbol bez libc/dlopen;
-- intrinsic pro bezpečné volání function pointeru přes explicitní ABI;
-- opaque Native/Tensor handle s owner/destructor tagem;
-- dtype, rank, shape, strides, byte length, CPU pointer a explicitní lifetime;
-- žádný plugin nesmí vidět interní LSL heap layout;
-- negative testy: malformed ELF, wrong machine/version, bad relocation,
-  ABI mismatch, use-after-close, double close;
-- potom teprve async/device/GPU event rozšíření.
-
-Nevydávat process JSON ABI za zero-copy řešení.
-
-### 4. GC/allocator robustnost
-
-- Object registry a String-template intern table mají stále pevnou kapacitu.
-- `brk` selhání a úplný object-registry probe jsou detekované a končí
-  deterministickým `MemoryError`/status 70; nekonečný registry probe je odstraněn.
-- Object registry i intern cache mají full-probe ochranu, deterministický
-  `MemoryError` a dynamický 2× růst s rehash. Conformance je zmenší na 8 slots
-  a vynutí opakovaný růst.
-- Přidat stress testy milionů objektů, cyklů, reuse a hlubokých grafů.
-- Změřit a případně snížit virtuální rezervaci každého programu.
-
-### 5. Process/I/O error parity
-
-- `capture()` stdout i stderr rostou bez pevného limitu; stderr používá anonymous
-  memfd, takže nemůže zablokovat druhou pipe. `process.capture_result` vrací
-  `{stdout,stderr,status,ok}` a `process.check` propaguje status.
-- `runtime_write_all` i `readfile` iterují partial I/O; `readfile` kontroluje
-  open/lseek/read a `input` propaguje read error.
-- Capture kontroluje pipe/memfd/fork/read/wait/lseek/dup2, čistí otevřené fd a
-  propaguje catchable `ProcessError`; zbývá jen explicitní fault-injection pro
-  vzácné kernel failure větve a rozhodnutí o close(2)/EINTR politice.
-- `capture_input` používá memfd bez pipe deadlocku; 100000B stdin conformance je
-  přímo v agregovaném pure `lsl-test`.
-
-### 6. AI/config produkční rozšíření
-
-AI:
-
-- streaming response, cancellation, strukturované transport errors/retry;
-- zero-copy tensor/model API závisí na bodu 3;
-- rozhodnout, zda externí `/usr/bin/curl` zůstává podporovaná boundary, nebo je
-  požadován pure syscall TCP/TLS stack (TLS je samostatný velký projekt).
-
-Config:
-
-- lazy dependency/cycle diagnostics;
-- bohatší option schemas/types a source provenance konfliktů;
-- případná activation/service/package vrstva, pokud má LSL přímo spravovat OS.
-
-Nejdřív zkontrolovat cílový scope v `docs/configuration.md`; nedoplňovat
-spekulativní API bez testovatelné specifikace.
-
-### 7. Validace, audit, cleanup
-
-- Deterministický pure-LSL parser/JSON/config fuzz runner a negative corpus.
-- GC/memory stress a benchmark regressions.
-- Audit trust-root ELF a reprodukce v čistém Linux x86_64 prostředí.
-- Linux x86_64 je definovaný první/aktuální target; další target není blocker
-  0.7, dokud se explicitně nerozšíří scope.
-- Sjednotit dokumentaci s implementací.
-- Odstranit nepotřebné smoke zdroje a zkrátit historické transition poznámky až
-  po dokončení blockerů; nemaž diagnostické/conformance důkazy předčasně.
-
-## Přesný následující krok
-
-Začít **fází 1 tagged ABI** bez změny chování:
-
-Fáze 1 je hotová: heap type 9, `runtime_box_int`/`runtime_unbox_int`,
-intrinsics, GC leaf chování a edge-value round trip.
-
-Fáze 2 je hotová ve fixed pointu
-`4af21a1d72cbe2d53338e7ba06bf41d82def309524f283fcab5b02a1eb910277`.
-Generic truth/equal/compare/add/sub/mul/div/mod/pow/abs/neg, mixed Float
-promotion, print/render/JSON/conversions, sequence indexing, `chr` a `rang`
-přijímají raw i boxed Int. Samostatný conformance pokrývá tyto operace včetně
-RealArray, sum/min/max a GC; typed raw Int fast path zůstává zachován.
-
-Fáze 3 je hotová ve fixed pointu
-`1b529bd1e2ac92b6399170969f0d8c81fdccea2cdea38b9837fa7a35a2311333`.
-Staticky známé Int hodnoty se boxují v List/Tuple/RealArray, Dictionary values a
-instance fields včetně append/insert/setdefault/indexed/member assignment.
-Augmented assignment retaguje raw numerický výsledek. `type(Any)` používá
-runtime classifier a config chápe type 9 jako Int. Compiler fixed point vyžadoval
-explicitní Int konverzi interních register tabulek a writebytes unbox; nyní jsou
-všechny stage opět bitově shodné. Conformance ověřuje 0/1, min/max, mutace,
-JSON, Tuple, RealArray a Dictionary.
-
-Fáze 4a je hotová ve fixed pointu
-`b939f8c171dc086ff3794fdda5f2a163468097c23eed223c5f4414c6b42cbbd3`.
-Staticky známé Int/Bool/None argumenty se boxují před direct, indirect, method a
-initializer callem, v registrech i na stacku. Compiler self-hostuje i s tagged
-parametry; `%`/`//` dispatch byl rozšířen na jeden Any operand. Conformance
-ověřuje identity return, min/max Int, Bool/None a class initializer/method.
-
-Fáze 4b Function ABI je hotová ve fixed pointu `f876b40d…`: type 10,
-box/unbox, generic type/truth/equality/render, GC leaf, indirect call se
-zachováním registrů a automatické boxování v běžných user modulech. Self-host
-backend pod `compiler/pure/` je záměrně interní typed/raw trust core, takže jeho
-encoder nemůže použít heap pointer jako scalar. Float i callback conformance
-jsou deterministické.
-
-Následuje dokončení Any function ABI:
-
-1. Any binary numerické výsledky se už na user return hranici tagují (fixed
-   point `74077a0e…`). Zbývá generic builtin/callback return; staticky typed raw
-   fast path a compiler trust core zůstávají oddělené.
-2. Na Any argument hranici otagovat i výraz inferovaný `Any`. Již heap/tagged
-   hodnotu zachovat; raw numerický výsledek boxovat jako Int. Díky type 10 nesmí
-   být Function pointer zaměněn za Int.
-3. Na `return` hranici tagovat staticky známé Int/Bool/None/Function a raw
-   numerické Any výsledky. Call site se staticky typed očekáváním musí případně
-   explicitně unboxnout; Any call výsledek zůstane tagged.
-4. Přidat recursion/callback/select-callback tests a identity kolem raw výsledku
-   `sum`, aritmetiky a 0; vložit všechny return hodnoty do collections.
-5. Po fixed pointu odstranit raw scalar fallback z generic runtime classifieru
-   a přidat důkaz proti raw-Int/live-pointer kolizi.
-
-## Standardní ověřovací příkazy
-
-Spouštět sériově:
-
-```text
-cd /home/antonin/lsl
 ulimit -v 1048576
-./compiler/pure/lslc-direct compiler/pure/lslc_direct.lsl /tmp/lslc-1
-/tmp/lslc-1 compiler/pure/lslc_direct.lsl /tmp/lslc-2
-/tmp/lslc-2 compiler/pure/lslc_direct.lsl /tmp/lslc-3
-sha256sum /tmp/lslc-1 /tmp/lslc-2 /tmp/lslc-3
-cmp /tmp/lslc-2 /tmp/lslc-3
-```
-
-Po ověřeném fixed pointu zkopírovat stage 3 do
-`compiler/pure/lslc-direct` a `compiler/lslc`, pak každý nástroj generovat 2× a
-porovnat před nahrazením:
-
-```text
-./compiler/pure/lslc-direct compiler/pure/cli.lsl /tmp/lsl-cli-a
-./compiler/pure/lslc-direct compiler/pure/cli.lsl /tmp/lsl-cli-b
-cmp /tmp/lsl-cli-a /tmp/lsl-cli-b
-
-./compiler/pure/lslc-direct stdlib/configure.lsl /tmp/lsl-configure-a
-./compiler/pure/lslc-direct stdlib/configure.lsl /tmp/lsl-configure-b
-cmp /tmp/lsl-configure-a /tmp/lsl-configure-b
-
-./compiler/pure/lslc-direct compiler/pure/test_runner.lsl /tmp/lsl-test-a
-./compiler/pure/lslc-direct compiler/pure/test_runner.lsl /tmp/lsl-test-b
-cmp /tmp/lsl-test-a /tmp/lsl-test-b
-
-./compiler/pure/lslc-direct compiler/pure/install.lsl /tmp/lsl-install-a
-./compiler/pure/lslc-direct compiler/pure/install.lsl /tmp/lsl-install-b
-cmp /tmp/lsl-install-a /tmp/lsl-install-b
-```
-
-Nakonec:
-
-```text
+./compiler/pure/lslc-direct compiler/pure/lslc_direct.lsl /tmp/lsl-next
+cmp compiler/pure/lslc-direct /tmp/lsl-next
 ./compiler/pure/lsl-test
-./lsl config examples/config/system.lsl > /tmp/config.out
-cmp tests/config_expected.json /tmp/config.out
-cmp compiler/pure/lslc-direct compiler/lslc
-cmp compiler/pure/lsl-cli lsl
+./lsl config examples/config/system.lsl > /tmp/config.json
+cmp tests/config_expected.json /tmp/config.json
 readelf -l compiler/pure/lslc-direct
 find . -type f \( -name '*.c' -o -name '*.h' -o -name '*.py' -o -name '*.sh' \)
 ```
-
-## Důležité gotchas
-
-- Source změna runtime labelu často vyžaduje přechodovou stage: první nový
-  compiler může mít starý vlastní runtime, ale už generuje nový runtime. Fixed
-  point typicky nastane až stage 2/3.
-- Při novém intrinsic může být nutný dvoufázový bootstrap: nejprve naučit
-  codegen intrinsic rozpoznat, vytvořit fixed point, až potom jej použít v
-  `dynamic_stdlib.lsl`.
-- `Error` propagation musí uklidit stack argumenty před skokem do handleru.
-- Float parser/formatter je self-host součást; změna očekávaného tisku mění více
-  `.out` souborů záměrně.
-- Pure test runner tiskne diagnostiku očekávaných negative compile testů; status
-  0 a poslední `pure LSL tests passed` je rozhodující.
-- Git generované ELF soubory jsou zde záměrné trust-root/release artefakty a
-  musí být commitnuty spolu se zdrojem po deterministické regeneraci.
