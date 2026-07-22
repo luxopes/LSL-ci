@@ -27,7 +27,7 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktu�
 - [x] Dokončit dokumentované collection metody a Dictionary konverzi.
 - [x] Odstranit pevný 4096B limit `input()` a číst přesně jeden řádek.
 - [x] Odstranit pevný 1MiB limit `capture()` dynamicky rostoucím bufferem.
-- [ ] Dokončit jednoznačný scalar tag ABI (fáze 1–2: boxed Int type 9 a dual raw/boxed generic operace hotové).
+- [ ] Dokončit jednoznačný scalar tag ABI (fáze 1–3: type 9, dual generic operace a boxed collections hotové; zbývá Any function ABI).
 - [ ] Pokračovat zbývajícími runtime, plugin/AI/config a audit okruhy níže.
 
 ## Zbývá

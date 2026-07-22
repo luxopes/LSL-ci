@@ -591,6 +591,9 @@ function emit_collection_box(generator, syntax):
     if value_type == "Bool":
         call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
         call assembler.relative(generator["builder"], [232], "runtime_box_bool")
+    elif value_type == "Int":
+        call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
+        call assembler.relative(generator["builder"], [232], "runtime_box_int")
     elif value_type == "None":
         call assembler.relative(generator["builder"], [232], "runtime_box_none")
     end
@@ -1409,6 +1412,13 @@ function emit_expression(generator, syntax):
                 return
             elif target["name"] == "type":
                 value_type = infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"])
+                if value_type == "Any":
+                    call emit_expression(generator, syntax["arguments"][0])
+                    call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                    call assembler.relative(output, [232], "function___lsl_type_name")
+                    call emit_pending_error(generator)
+                    return
+                end
                 if value_type.startswith("Class:"):
                     value_type = "Class"
                 elif value_type.startswith("Instance:"):
@@ -1627,17 +1637,19 @@ function emit_expression(generator, syntax):
                     if len(combined_arguments) > 6:
                         call unsupported(generator["path"], generator["lines"], syntax, "method has too many native ABI arguments", "use at most six arguments")
                     end
+                    method_argument_index = 0
                     for argument in combined_arguments:
                         call emit_expression(generator, argument)
-                        if target["name"] == "setdefault" or target["name"] == "insert":
+                        if (target["name"] == "setdefault" or target["name"] == "insert") and method_argument_index == 2:
                             call emit_collection_box(generator, argument)
                         end
                         call assembler.emit(output, x86_64.push(0))
+                        method_argument_index += 1
                     end
                     method_registers = [7, 6, 2, 1, 8, 9]
                     method_index = len(combined_arguments) - 1
                     while method_index >= 0:
-                        call assembler.emit(output, x86_64.pop(method_registers[method_index]))
+                        call assembler.emit(output, x86_64.pop(Int(method_registers[method_index])))
                         method_index -= 1
                     end
                     call assembler.relative(output, [232], "function_" + method_target)
@@ -1680,7 +1692,7 @@ function emit_expression(generator, syntax):
                 register_count = min(total_arguments, len(argument_registers))
                 index = 0
                 while index < register_count:
-                    call assembler.emit(output, x86_64.pop(argument_registers[index]))
+                    call assembler.emit(output, x86_64.pop(Int(argument_registers[index])))
                     index += 1
                 end
                 call assembler.relative(output, [232], "function_" + initializer_name)
@@ -1726,7 +1738,7 @@ function emit_expression(generator, syntax):
         register_count = min(len(arguments), len(argument_registers))
         index = 0
         while index < register_count:
-            call assembler.emit(output, x86_64.pop(argument_registers[index]))
+            call assembler.emit(output, x86_64.pop(Int(argument_registers[index])))
             index += 1
         end
         if indirect_call:
@@ -2003,10 +2015,13 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 call assembler.emit(generator["builder"], x86_64.push(0))
                 if statement["operator"] == "=":
                     call emit_expression(generator, statement["value"])
+                    call emit_collection_box(generator, statement["value"])
                 else:
                     operator = statement["operator"][0:len(statement["operator"]) - 1]
                     combined = {"kind": "binary", "line": statement["line"], "column": statement["column"], "end_column": statement["end_column"], "operator": operator, "left": target, "right": statement["value"]}
                     call emit_expression(generator, combined)
+                    call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
+                    call assembler.relative(generator["builder"], [232], "runtime_box_dynamic_int")
                 end
                 call assembler.emit(generator["builder"], x86_64.move_reg_reg(2, 0))
                 call assembler.emit(generator["builder"], x86_64.pop(6))
@@ -2052,10 +2067,13 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 call assembler.emit(generator["builder"], x86_64.push(0))
                 if statement["operator"] == "=":
                     call emit_expression(generator, statement["value"])
+                    call emit_collection_box(generator, statement["value"])
                 else:
                     operator = statement["operator"][0:len(statement["operator"]) - 1]
                     combined = {"kind": "binary", "line": statement["line"], "column": statement["column"], "end_column": statement["end_column"], "operator": operator, "left": target, "right": statement["value"]}
                     call emit_expression(generator, combined)
+                    call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
+                    call assembler.relative(generator["builder"], [232], "runtime_box_dynamic_int")
                 end
                 call assembler.emit(generator["builder"], x86_64.move_reg_reg(2, 0))
                 call assembler.emit(generator["builder"], x86_64.pop(6))
@@ -2557,7 +2575,7 @@ function emit_function(generator, declaration):
     while index < len(declaration["parameters"]):
         parameter = declaration["parameters"][index]
         if index < len(argument_registers):
-            call assembler.emit(generator["builder"], x86_64.store_stack(variables[parameter], argument_registers[index]))
+            call assembler.emit(generator["builder"], x86_64.store_stack(variables[parameter], Int(argument_registers[index])))
         else:
             call assembler.emit(generator["builder"], x86_64.load_stack(0, 16 + (index - len(argument_registers)) * 8))
             call assembler.emit(generator["builder"], x86_64.store_stack(variables[parameter], 0))

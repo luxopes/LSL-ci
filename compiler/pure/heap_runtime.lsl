@@ -408,6 +408,17 @@ function emit_boxed_scalars(output):
     call assembler.emit(output, x86_64.load_stack(1, -8))
     call assembler.emit(output, x86_64.store_memory(0, 8, 1))
     call assembler.emit(output, x86_64.function_epilogue())
+    # Transitional Any numeric boundary: keep an already tagged heap value,
+    # otherwise box the raw signed Int. Call only for expressions known to be
+    # numeric-or-heap (for example indexed augmented assignment).
+    call assembler.label(output, "runtime_box_dynamic_int")
+    call assembler.relative(output, [232], "runtime_is_heap_object")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+    call assembler.relative(output, [15, 132], "box_dynamic_raw_int")
+    call assembler.emit(output, x86_64.move_reg_reg(0, 7))
+    call assembler.emit(output, x86_64.ret())
+    call assembler.label(output, "box_dynamic_raw_int")
+    call assembler.relative(output, [233], "runtime_box_int")
     call assembler.label(output, "runtime_box_none")
     call assembler.emit(output, x86_64.function_prologue(16))
     call assembler.emit(output, x86_64.mov_imm64(7, 16))

@@ -440,19 +440,19 @@ Konstruktor už není omezen na pět user argumentů: prvních šest hodnot vče
 error propagation. Conformance ověřuje osm argumentů konstruktoru a sedm
 argumentů bound metody. Fixed point i suite procházejí.
 
-Tagged ABI fáze 2 má fixed point
-`4af21a1d72cbe2d53338e7ba06bf41d82def309524f283fcab5b02a1eb910277`.
-Runtime má leaf heap type 9 a generic truth/equality/comparison/numeric operace,
-mixed Float promotion, print/render/JSON/conversions, sequence indexing, `chr`
-a `rang` přijímají raw i boxed Int. Conformance pokrývá edge values, GC,
-aritmetiku, Float mix, collections, RealArray, sum/min/max a JSON. Automatické
-boxování collection/Any hran zatím záměrně není zapnuté; tři stage, suite a
-config jsou zelené.
+Tagged ABI fáze 3 má fixed point
+`1b529bd1e2ac92b6399170969f0d8c81fdccea2cdea38b9837fa7a35a2311333`.
+Staticky známé Int hodnoty jsou type 9 v List/Tuple/RealArray, Dictionary values
+a instance fields včetně mutací; augmented assignment numerický výsledek znovu
+otaguje. `type(Any)` a config type schema rozpoznají type 9 jako Int. Self-host
+vyžadoval explicitní unbox register tabulek a byte outputu; tři boxed-collection
+stage jsou nyní bitově shodné. Conformance pokrývá 0/1, min/max, JSON, mutace,
+Tuple, RealArray a Dictionary; celý suite a config jsou zelené.
 
-Přesný další krok: tagged ABI fáze 3 — zapnout Int boxování v collections a
-Dictionary, sjednotit veřejnou type klasifikaci a teprve potom Any
-argument/return hranice. Následuje pure-LSL in-process zero-copy
-tensor/shared-object loader.
+Přesný další krok: tagged ABI fáze 4 — scalar boxování na Any function
+argument/return hranicích s explicitním typed interním ABI pro compiler backend,
+potom odstranit raw fallback a dokázat nemožnost live-pointer kolize. Následuje
+pure-LSL in-process zero-copy tensor/shared-object loader.
 
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,

@@ -31,9 +31,9 @@ Allocator před payloadem udržuje neveřejnou 32-byte GC hlavičku. Aktuální 
 - `8` RealArray
 - `9` boxed signed 64-bit Int (přechodový dynamic ABI)
 
-String payload je UTF-8, ale jazykové `len`, indexace a slicing pracují s Unicode code points. List/Tuple/RealArray slots a Dictionary hodnoty nesou dynamické hodnoty; Bool a None jsou na této hranici boxované. Generic truth, equality, comparison, numeric operations, rendering, JSON, conversions, indexing a `rang` už přijímají raw i boxed Int. Typed Int fast path zůstává raw.
+String payload je UTF-8, ale jazykové `len`, indexace a slicing pracují s Unicode code points. List/Tuple/RealArray slots, Dictionary hodnoty a instance fields nesou dynamické hodnoty; staticky známé Int, Bool a None jsou na této hranici boxované. Generic truth, equality, comparison, numeric operations, rendering, JSON, conversions, indexing a `rang` přijímají raw i boxed Int. Typed Int fast path zůstává raw.
 
-Object identity se už neurčuje hranicí ELF adresy. Každá alokace se zapisuje do exact open-addressed pointer registry; static String templates se při prvním použití klonují do heapu a internují podle template pointeru. Tím dynamické Int hodnoty nad `0x400000` zůstávají Int. K úplně jednoznačnému tag ABI ještě zbývá zapnout type 9 na všech collection/Any hranicích a poté odstranit raw fallback heuristiky; do té doby stále existuje teoretická kolize raw Int, jehož bits jsou přesně rovné adrese živého heap objektu.
+Object identity se už neurčuje hranicí ELF adresy. Každá alokace se zapisuje do exact open-addressed pointer registry; static String templates se při prvním použití klonují do heapu a internují podle template pointeru. Tím dynamické Int hodnoty nad `0x400000` zůstávají Int. K úplně jednoznačnému tag ABI ještě zbývá zapnout scalar boxování na Any function argument/return hranicích a poté odstranit raw fallback heuristiky; do té doby stále existuje teoretická kolize raw Int, jehož bits jsou přesně rovné adrese živého heap objektu.
 
 ## GC a vlastnictví
 

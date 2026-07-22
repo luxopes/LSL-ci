@@ -707,6 +707,30 @@ function __lsl_str_value(value):
     return __lsl_render(value, False)
 end
 
+function __lsl_type_name(value):
+    code = __lsl_type_code(value)
+    if code == 0 or code == 9:
+        return "Int"
+    elif code == 1:
+        return "String"
+    elif code == 2:
+        return "List"
+    elif code == 3:
+        return "Dictionary"
+    elif code == 4:
+        return "Bool"
+    elif code == 5:
+        return "None"
+    elif code == 6:
+        return "Float"
+    elif code == 7:
+        return "Tuple"
+    elif code == 8:
+        return "RealArray"
+    end
+    return "Any"
+end
+
 function __lsl_list_concat(left, right):
     result = []
     for value in left:

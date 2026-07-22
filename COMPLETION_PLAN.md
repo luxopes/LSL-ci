@@ -227,17 +227,31 @@ promotion, print/render/JSON/conversions, sequence indexing, `chr` a `rang`
 přijímají raw i boxed Int. Samostatný conformance pokrývá tyto operace včetně
 RealArray, sum/min/max a GC; typed raw Int fast path zůstává zachován.
 
-Následuje fáze 3:
+Fáze 3 je hotová ve fixed pointu
+`1b529bd1e2ac92b6399170969f0d8c81fdccea2cdea38b9837fa7a35a2311333`.
+Staticky známé Int hodnoty se boxují v List/Tuple/RealArray, Dictionary values a
+instance fields včetně append/insert/setdefault/indexed/member assignment.
+Augmented assignment retaguje raw numerický výsledek. `type(Any)` používá
+runtime classifier a config chápe type 9 jako Int. Compiler fixed point vyžadoval
+explicitní Int konverzi interních register tabulek a writebytes unbox; nyní jsou
+všechny stage opět bitově shodné. Conformance ověřuje 0/1, min/max, mutace,
+JSON, Tuple, RealArray a Dictionary.
 
-1. Upravit `emit_collection_box` tak, aby Int ukládaný do collection/dictionary
-   slotu byl type 9; pozor na Bool/None pořadí a RealArray payload.
-2. Zkontrolovat všechny runtime append/set/return cesty, aby nedocházelo k
-   dvojímu boxování již boxed Int.
-3. Opravit `runtime_type_code`/`type()`/config schema tak, aby type 9 veřejně
-   znamenal `Int`, interní classifier jej ale stále rozlišil.
-4. Přegenerovat očekávané výstupy pouze tam, kde opravují dříve chybnou raw
-   0/1 dynamickou klasifikaci; přidat JSON/config/list testy pro 0 a 1.
-5. Teprve po zeleném fixed pointu řešit Any function argument/return ABI.
+Následuje fáze 4 — Any function ABI:
+
+1. U každého direct/indirect/class callu určit statický typ argumentu a před
+   předáním do neanotovaného (Any) parametru boxovat Int/Bool/None; heap hodnoty
+   ponechat. U stack argumentů boxovat před push.
+2. Na vstupu funkce jsou všechny parametry Any. Auditovat compiler internals:
+   x86/bytes/backend funkce očekávají raw numerické parametry, takže buď zavést
+   interní typed-param metadata, nebo jejich parametry explicitně `Int(...)`
+   unboxnout. Nezapínat globálně bez tohoto auditu.
+3. Definovat return ABI: staticky známý Int/Bool/None boxovat jen pokud call site
+   očekává Any; praktičtější může být tagged return + explicitní typed unbox.
+4. Přidat conformance přes identity/callback/recursion/class metodu pro 0, 1,
+   min/max a Bool/None, včetně vložení return hodnoty do collection.
+5. Po fixed pointu odstranit raw scalar fallback z generic runtime classifieru
+   a přidat důkaz proti raw-Int/live-pointer kolizi.
 
 ## Standardní ověřovací příkazy
 
