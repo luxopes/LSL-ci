@@ -12,12 +12,12 @@ N+1 bit po bitu.
 - Aktuální implementační milníky jsou v `git log`; handoff záměrně neukládá
   self-referenční hash vlastního dokumentačního commitu.
 - Aktuální fixed-point SHA-256:
-  `b54092549bf5e5a651e8295172009c6e3d69816c66d21a43ae2e6a64c2ade94a`
+  `02c4b72be6fc33b87ed763bb164d85109893b5d1998171b8fff2772a6ed4e54b`
 - `compiler/pure/lslc-direct == compiler/lslc`
 - `compiler/pure/lsl-cli == lsl`
 - ELF: jediný RX `PT_LOAD`, bez `INTERP` a RWX
 - Produkční strom: žádné `.c`, `.h`, `.py` ani `.sh`
-- Cizí lokální změna `compiler/pure/hello.lsl` se nesmí měnit ani commitnout.
+- Příklad s bare input syntaxí je commitnutý jako `examples/hello.lsl`.
 
 Podrobné historické hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`; veřejný scope
 je v `TODO.md`.
@@ -40,12 +40,12 @@ je v `TODO.md`.
 
 ## Testy, hardening a výkon
 
-`compiler/pure/lsl-test` má režimy:
+`tests/lsl-test` má režimy:
 
 ```text
-./compiler/pure/lsl-test fast
-./compiler/pure/lsl-test              # full (výchozí)
-./compiler/pure/lsl-test fixed-point
+./tests/lsl-test fast
+./tests/lsl-test              # full (výchozí)
+./tests/lsl-test fixed-point
 ```
 
 Pozitivní corpus je agregovaný v `tests/full_conformance.lsl`, ale očekávaný
@@ -104,7 +104,7 @@ Feature scope 0.7 je uzavřený. Následující body nejsou release blockery:
 ulimit -v 1048576
 ./compiler/pure/lslc-direct compiler/pure/lslc_direct.lsl /tmp/lsl-next
 cmp compiler/pure/lslc-direct /tmp/lsl-next
-./compiler/pure/lsl-test
+./tests/lsl-test
 ./lsl config examples/config/system.lsl > /tmp/config.json
 cmp tests/config_expected.json /tmp/config.json
 readelf -l compiler/pure/lslc-direct

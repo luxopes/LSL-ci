@@ -35,6 +35,13 @@ function module_path(name, owner_path):
     if exists(local_path):
         return local_path
     end
+    # Compiler-focused tests live under tests/, while implementation modules stay
+    # exclusively in compiler/pure/. Allow those modules without test copies.
+    compiler_path = "compiler/pure/" + relative_name
+    test_owner = owner_path.startswith("tests/") or owner_path.find("/tests/") >= 0
+    if test_owner and exists(compiler_path):
+        return compiler_path
+    end
     standard_path = "stdlib/" + relative_name
     if exists(standard_path):
         return standard_path

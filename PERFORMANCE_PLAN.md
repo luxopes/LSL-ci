@@ -31,7 +31,7 @@ constraint.
   optimization must report measured deltas against this baseline.
 - Long builds remain serial under `ulimit -v 1048576`.
 - No C, Python, assembler, linker, shell launcher, or network dependency.
-- Preserve `compiler/pure/hello.lsl` as authored with bare input syntax.
+- Preserve `examples/hello.lsl` as authored with bare input syntax.
 
 ## State
 
@@ -57,7 +57,7 @@ was unsafe/pathological. A 2M registry table reached pathological probe density
 collapse above roughly 50% occupancy, so the final 8M table tracks unique entries
 and grows before crossing 50% rather than waiting for a complete probe wrap.
 
-Current fixed point after typed arrays/native kernels: `b54092549bf5e5a651e8295172009c6e3d69816c66d21a43ae2e6a64c2ade94a`.
-Regenerated full suite passed in 9.744 s, fixed-point mode in 2.020 s, config
+Current fixed point after repository cleanup: `02c4b72be6fc33b87ed763bb164d85109893b5d1998171b8fff2772a6ed4e54b`.
+Regenerated full suite passed in 13.421 s, fixed-point mode in 2.094 s, config
 output is bit-identical, the installed compiler reproduces the same fixed point,
 and every maintained ELF has one RX `PT_LOAD` with no `INTERP`/`DYNAMIC`/RWX.

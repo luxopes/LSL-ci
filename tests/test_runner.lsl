@@ -54,9 +54,9 @@ if mode == "fixed-point":
 end
 
 # Standalone smoke/fixed-table programs cannot safely share aggregate state.
-call require_success(run(compiler, ["compiler/pure/scalar_smoke.lsl", "/tmp/lsl-scalar-test"]), "compile scalar smoke")
+call require_success(run(compiler, ["tests/compiler/scalar_smoke.lsl", "/tmp/lsl-scalar-test"]), "compile scalar smoke")
 call require_success(run("/tmp/lsl-scalar-test", []), "run scalar smoke")
-call require_success(run(compiler, ["compiler/pure/float_smoke.lsl", "/tmp/lsl-float-test"]), "compile Float smoke")
+call require_success(run(compiler, ["tests/compiler/float_smoke.lsl", "/tmp/lsl-float-test"]), "compile Float smoke")
 call require_success(run("/tmp/lsl-float-test", []), "run Float smoke")
 call require_success(run(compiler, ["tests/selfhost_conformance.lsl", "/tmp/lsl-selfhost-test"]), "compile selfhost conformance")
 call require_output("/tmp/lsl-selfhost-test", [], "tests/selfhost_conformance.out", "selfhost conformance output differs")
@@ -92,7 +92,7 @@ call require_success(run(compiler, ["tests/json_fuzz_conformance.lsl", "/tmp/lsl
 call require_output("/tmp/lsl-json-fuzz-test", [], "tests/json_fuzz_conformance.out", "JSON fuzz conformance output differs")
 call require_success(run(compiler, ["tests/gc_stress_conformance.lsl", "/tmp/lsl-gc-stress-test"]), "compile GC stress conformance")
 call require_output("/tmp/lsl-gc-stress-test", [], "tests/gc_stress_conformance.out", "GC stress conformance output differs")
-call require_success(run(compiler, ["compiler/pure/frontend_fuzz.lsl", "/tmp/lsl-frontend-fuzz-test"]), "compile frontend fuzz conformance")
+call require_success(run(compiler, ["tests/compiler/frontend_fuzz.lsl", "/tmp/lsl-frontend-fuzz-test"]), "compile frontend fuzz conformance")
 call require_output("/tmp/lsl-frontend-fuzz-test", [], "tests/frontend_fuzz.out", "frontend fuzz conformance output differs")
 call require_success(run(compiler, ["tests/process_fault_conformance.lsl", "/tmp/lsl-process-fault-test"]), "compile process fault conformance")
 call require_output("/tmp/lsl-process-fault-test", ["0"], "tests/process_fault_pipe.out", "pipe fault conformance output differs")

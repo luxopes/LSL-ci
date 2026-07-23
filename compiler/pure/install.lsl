@@ -20,7 +20,7 @@ call mkdir(prefix + "/lib/lsl/stdlib")
 call copy("compiler/pure/lsl-cli", prefix + "/bin/lsl")
 call copy("compiler/pure/lslc-direct", prefix + "/bin/lslc")
 call copy("compiler/pure/lsl-configure", prefix + "/bin/lsl-configure")
-call copy("compiler/pure/lsl-test", prefix + "/bin/lsl-test")
+call copy("tests/lsl-test", prefix + "/bin/lsl-test")
 call copy("compiler/pure/lsl-install", prefix + "/bin/lsl-install")
 
 sources = [
@@ -41,7 +41,6 @@ sources = [
     "native_plugin_runtime.lsl",
     "parser.lsl",
     "process_runtime.lsl",
-    "test_runner.lsl",
     "x86_64.lsl"
 ]
 for name in sources:

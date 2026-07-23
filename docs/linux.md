@@ -7,7 +7,7 @@ První produkční target je Linux x86_64. `lsl` a `lslc` jsou statické LSL-gen
 ```text
 ./compiler/pure/lslc-direct compiler/pure/lslc_direct.lsl /tmp/lslc-next
 cmp ./compiler/pure/lslc-direct /tmp/lslc-next
-./compiler/pure/lsl-test
+./tests/lsl-test
 ```
 
 Test runner spouští procesy přímo přes `fork`, `execve` a `wait4`. Fixed point musí být bitově shodný; aktuální SHA-256 je v `PURE_LSL_PROGRESS.md`.

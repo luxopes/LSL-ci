@@ -18,9 +18,9 @@ LSL 0.7 je self-hostovaný jazyk pro běžné programování, deklarativní konf
 ```text
 ./compiler/pure/lslc-direct compiler/pure/lslc_direct.lsl /tmp/lslc-next
 cmp compiler/pure/lslc-direct /tmp/lslc-next
-./compiler/pure/lsl-test              # plný suite (výchozí)
-./compiler/pure/lsl-test fast         # pozitivní conformance bez auditních kroků
-./compiler/pure/lsl-test fixed-point  # pouze bitová reprodukce compileru
+./tests/lsl-test              # plný suite (výchozí)
+./tests/lsl-test fast         # pozitivní conformance bez auditních kroků
+./tests/lsl-test fixed-point  # pouze bitová reprodukce compileru
 ```
 
 `lsl-test` bez shellu linkuje pozitivní corpus do jednoho agregovaného ELF se

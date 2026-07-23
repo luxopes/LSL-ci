@@ -143,7 +143,7 @@ exceptions, Unicode, classes, modules a JSON). Čistě LSL `stdlib/configure.lsl
 navíc vygeneroval evaluator pro `examples/config/system.lsl`; jeho výstup je
 bitově shodný s `tests/config_expected.json`, včetně recursive merge priorit,
 List concatenation, `mkForce`, options a assertions. Čistý
-`compiler/pure/lsl-test` následně bez shellu/Pythonu spustil přes syscall-only
+`tests/lsl-test` následně bez shellu/Pythonu spustil přes syscall-only
 `run` scalar smoke, celý selfhost conformance a fixed-point byte comparison;
 skončil 0 s `pure LSL tests passed`. `compiler/pure/lsl-cli` navíc čistě
 zvládá usage/exit 2 bez argumentů, `compile SOURCE OUTPUT`, compile-and-run s
@@ -603,7 +603,7 @@ Finální předvýkonnostní hardening fixed point
 `0177dfcf593825157b60ea0f2962b7a6d39f4b4eaab8992d7e8eda7b0670706a`
 opravuje partial-read smyčku `readfile`, kontroluje lseek/read/input errors a
 opravuje type-flow augmented assignment tak, aby dynamický Float výsledek nebyl
-znovu boxován jako Int. Celý `compiler/pure/lsl-test` skončil 0 s `pure LSL
+znovu boxován jako Int. Celý `tests/lsl-test` skončil 0 s `pure LSL
 tests passed`; config output je bitově shodný, všechny udržované ELF mají jediný
 RX `PT_LOAD` bez `INTERP`, produkční strom nemá `.c/.h/.py/.sh`. Installer byl
 ověřen v `/tmp/lsl-final-prefix`: nainstalovaný compiler z jiného cwd přeložil
@@ -668,6 +668,16 @@ vrací přes `munmap`; compiler profil si ponechává 8M start kvůli rychlosti.
 Opraveno i shadowing lokálního `left`/`right` proti stejně pojmenovaným globálním
 typům a class-return inference pro modulové Tensor konstruktory. Regenerovaný full suite (9,744 s), fixed point (2,020 s), config,
 installed fixed point, ELF a pure-production audit prošly.
+
+Cleanup fixed point
+`02c4b72be6fc33b87ed763bb164d85109893b5d1998171b8fff2772a6ed4e54b`
+soustřeďuje veškeré testy, fixtures, smoke drivery i LSL-generovaný runner pod
+`tests/`; příklad je v `examples/hello.lsl`. `compiler/pure/` nyní obsahuje
+výhradně 18 produkčních LSL modulů/entrypointů a 4 generované release ELF.
+Linker umí testům dohledat compiler moduly bez jejich kopírování. Full suite
+(13,421 s), fixed point (2,094 s), config, installer a ELF audit prošly.
+Produkční implementace (`compiler/pure/*.lsl` + `stdlib/*.lsl`) má 12454 fyzických
+řádků, z toho 11728 neprázdných nekomentářových řádků.
 
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,
