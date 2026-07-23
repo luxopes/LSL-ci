@@ -12,7 +12,7 @@ N+1 bit po bitu.
 - Aktuální implementační milníky jsou v `git log`; handoff záměrně neukládá
   self-referenční hash vlastního dokumentačního commitu.
 - Aktuální fixed-point SHA-256:
-  `cf0758cc570194bece4fb86931f1b9adea01bde27e3197aee3cfae473998460b`
+  `29d717fde4b57517291ef30c92606e73e6e0cbb4c059e39197db42bbeb794f7a`
 - `compiler/pure/lslc-direct == compiler/lslc`
 - `compiler/pure/lsl-cli == lsl`
 - ELF: jediný RX `PT_LOAD`, bez `INTERP` a RWX

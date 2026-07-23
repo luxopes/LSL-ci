@@ -2954,11 +2954,12 @@ function generate(path, source, program):
     call assembler.emit(output, x86_64.mov_imm64(7, 0))
     call assembler.emit(output, x86_64.syscall())
     call assembler.emit(output, x86_64.move_reg_reg(3, 0))
-    call assembler.emit(output, x86_64.lea_base(8, 3, 80))
+    # State uses bytes 0..87; keep the large object table 16-byte aligned.
+    call assembler.emit(output, x86_64.lea_base(8, 3, 96))
     call assembler.emit(output, x86_64.move_reg_reg(9, 8))
-    # Four million initial registry slots keep compiler lookup load low while
+    # Eight million initial registry slots keep compiler lookup load low while
     # avoiding the former 128 MiB table; runtime growth remains available.
-    call assembler.emit(output, x86_64.add_reg_imm32(9, 33554432))
+    call assembler.emit(output, x86_64.add_reg_imm32(9, 67108864))
     call assembler.emit(output, x86_64.move_reg_reg(7, 9))
     call assembler.emit(output, x86_64.add_reg_imm32(7, 1048576))
     call assembler.emit(output, x86_64.mov_imm64(0, 12))
@@ -2966,7 +2967,7 @@ function generate(path, source, program):
     call assembler.emit(output, x86_64.cmp_reg_reg(0, 7))
     call assembler.relative(output, [15, 133], "runtime_fatal_allocation")
     call assembler.emit(output, x86_64.store_memory(3, 32, 8))
-    call assembler.emit(output, x86_64.mov_imm64(10, 4194303))
+    call assembler.emit(output, x86_64.mov_imm64(10, 8388607))
     call assembler.emit(output, x86_64.store_memory(3, 40, 10))
     call assembler.emit(output, x86_64.store_memory(3, 48, 9))
     call assembler.emit(output, x86_64.mov_imm64(10, 65535))

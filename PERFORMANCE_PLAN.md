@@ -42,9 +42,9 @@ Bare input compatibility is committed. Initial phase profile for self-host
 The current fixed-point candidate keeps compiler-internal typed Int/Bool/None and
 selected Any boundaries raw, materializes diagnostic lines only on failure,
 appends little-endian instruction bytes without an intermediate List, and starts
-the growable object registry at 4M rather than 16M slots. Five self-host runs are
-1.814–1.850 s; sampled peak RSS is 339840 KiB. Against the 3.713–3.749 s /
-782100 KiB baseline this is about 51% less wall time and 56.5% less peak RSS.
+the growable object registry at 8M rather than 16M slots. Five self-host runs are
+1.804–1.830 s; sampled peak RSS is 376236 KiB. Against the 3.713–3.749 s /
+782100 KiB baseline this is about 51% less wall time and 51.9% less peak RSS.
 Latest phase profile (microseconds, before the small byte append/table changes):
 read 49, stdlib parse 49038, recursive link/parse 883695, codegen 873937, write
 6219.
@@ -52,10 +52,12 @@ read 49, stdlib parse 49038, recursive link/parse 883695, codegen 873937, write
 Rejected experiments: direct-fill List literals enlarged the compiler without a
 measured win; explicit `gc()` between phases was pathologically slow; recycling
 assembler instruction Lists through the general free list or a one-entry cache
-was unsafe/pathological; a 2M registry table reached pathological probe density
-(about 693 s), while 4M is stable and did not grow during self-host.
+was unsafe/pathological. A 2M registry table reached pathological probe density
+(about 693 s). A later allocation benchmark showed that 4M could likewise
+collapse above roughly 50% occupancy, so the final 8M table tracks unique entries
+and grows before crossing 50% rather than waiting for a complete probe wrap.
 
-Final fixed point: `cf0758cc570194bece4fb86931f1b9adea01bde27e3197aee3cfae473998460b`.
-Regenerated full suite passed in 8.659 s, fixed-point mode in 2.096 s, config
+Final fixed point: `29d717fde4b57517291ef30c92606e73e6e0cbb4c059e39197db42bbeb794f7a`.
+Regenerated full suite passed in 8.843 s, fixed-point mode in 1.831 s, config
 output is bit-identical, the installed compiler reproduces the same fixed point,
 and every maintained ELF has one RX `PT_LOAD` with no `INTERP`/`DYNAMIC`/RWX.

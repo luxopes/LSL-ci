@@ -629,14 +629,16 @@ dokázat nemožnost live-pointer kolize; potom full suite/audit a zrychlení. N�
 zero-copy tensor/shared-object loader.
 
 Výkonnostní fixed point
-`cf0758cc570194bece4fb86931f1b9adea01bde27e3197aee3cfae473998460b`
-redukuje self-host z 3,713–3,749 s / 782100 KiB na 1,814–1,850 s / 339840
-KiB (přibližně −51 % času a −56,5 % peak RSS). Compiler-internal ABI drží
+`29d717fde4b57517291ef30c92606e73e6e0cbb4c059e39197db42bbeb794f7a`
+redukuje self-host z 3,713–3,749 s / 782100 KiB na 1,804–1,830 s / 376236
+KiB (přibližně −51 % času a −51,9 % peak RSS). Compiler-internal ABI drží
 typované Int/Bool/None a vybrané Any hranice raw; lexer/parser/linker/codegen
 materializují source lines pouze při diagnostické chybě; x86 encoder zapisuje
 little-endian immediate přímo do cílového Listu a počáteční dynamicky rostoucí
-object registry má 4M místo 16M slots. Tři self-host stages jsou bitově shodné,
-regenerovaný full suite prošel za 8,659 s, fixed-point režim za 2,096 s, config
+object registry má 8M místo 16M slots. Registry sleduje počet unikátních adres a
+roste před překročením 50% obsazení; allocation benchmark tím odhalil a odstranil
+patologický linear-probe běh 4M varianty. Tři self-host stages jsou bitově shodné,
+regenerovaný full suite prošel za 8,843 s, fixed-point režim za 1,831 s, config
 je bitově shodný a nainstalovaný compiler reprodukuje tentýž hash. Všechny
 udržované ELF mají jediný RX `PT_LOAD` bez `INTERP`, `DYNAMIC` a RWX.
 

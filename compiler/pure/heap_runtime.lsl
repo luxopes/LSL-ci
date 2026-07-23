@@ -151,8 +151,9 @@ function emit_object_table_growth(output):
 end
 
 function emit_object_checks(output):
-    # The main frame reserves a zeroed open-addressed table at state+32/+40.
-    # Entries are never removed; a freed block is rejected by its GC header.
+    # The main frame reserves a zeroed open-addressed table at state+32/+40 and
+    # its unique-entry count at state+80. Entries are never removed; a freed
+    # block is rejected by its GC header.
     call assembler.label(output, "runtime_register_object")
     call assembler.emit(output, x86_64.load_memory(8, 3, 32))
     call assembler.emit(output, x86_64.load_memory(9, 3, 40))
@@ -163,7 +164,7 @@ function emit_object_checks(output):
     call assembler.label(output, "register_object_probe")
     call assembler.emit(output, x86_64.load_indexed(10, 8, 0, 3))
     call assembler.emit(output, x86_64.cmp_reg_imm8(10, 0))
-    call assembler.relative(output, [15, 132], "register_object_store")
+    call assembler.relative(output, [15, 132], "register_object_candidate")
     call assembler.emit(output, x86_64.cmp_reg_reg(10, 7))
     call assembler.relative(output, [15, 132], "register_object_done")
     call assembler.emit(output, x86_64.increment(0))
@@ -175,8 +176,22 @@ function emit_object_checks(output):
     call assembler.relative(output, [232], "runtime_grow_object_table")
     call assembler.emit(output, x86_64.move_reg_reg(7, 0))
     call assembler.relative(output, [233], "runtime_register_object")
+    call assembler.label(output, "register_object_candidate")
+    # Grow before the linear-probing table exceeds 50% occupancy. Waiting for a
+    # complete wrap made correlated heap addresses pathologically slow.
+    call assembler.emit(output, x86_64.load_memory(1, 3, 80))
+    call assembler.emit(output, x86_64.move_reg_reg(2, 1))
+    call assembler.emit(output, x86_64.shift_left_imm(2, 1))
+    call assembler.emit(output, x86_64.cmp_reg_reg(2, 9))
+    call assembler.relative(output, [15, 140], "register_object_store")
+    call assembler.relative(output, [232], "runtime_grow_object_table")
+    call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+    call assembler.relative(output, [233], "runtime_register_object")
     call assembler.label(output, "register_object_store")
     call assembler.emit(output, x86_64.store_indexed(8, 0, 3, 7))
+    call assembler.emit(output, x86_64.load_memory(1, 3, 80))
+    call assembler.emit(output, x86_64.increment(1))
+    call assembler.emit(output, x86_64.store_memory(3, 80, 1))
     call assembler.label(output, "register_object_done")
     call assembler.emit(output, x86_64.move_reg_reg(0, 7))
     call assembler.emit(output, x86_64.ret())
@@ -230,6 +245,7 @@ function emit_object_checks(output):
     call assembler.label(output, "small_tables_ready")
     call assembler.emit(output, x86_64.store_memory_imm32(3, 40, 7))
     call assembler.emit(output, x86_64.store_memory_imm32(3, 56, 7))
+    call assembler.emit(output, x86_64.store_memory_imm32(3, 80, 0))
     call assembler.emit(output, x86_64.xor_reg_reg(0, 0))
     call assembler.emit(output, x86_64.ret())
     call assembler.label(output, "runtime_object_table_mask")
