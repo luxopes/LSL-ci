@@ -1,0 +1,22 @@
+lux install lux-editor
+lux
+lux install lux-solo
+lux
+apt install|-y|--|git
+apt
+lux update lux-editor
+lux
+apt install|-y|--only-upgrade|--|curl
+apt
+lux remove lux-editor
+lux
+apt remove|-y|--|nano
+apt
+apt install|-y|--|apt-fail
+apt-failure True
+lux-failure True True
+manager-failure True
+ValueError: package name cannot start with '-'
+ValueError: package name cannot be empty
+ValueError: package name cannot contain whitespace
+TypeError: package name must be a String

@@ -49,5 +49,6 @@ statusem `127`. `os.which` ověřuje existenci, nikoli executable permission;
 konečné rozhodnutí dělá `execve`.
 
 Pro složitější datový protokol nebo vstup použijte modul `process`, zejména
-`capture_input_result`. `os` je ambientní process capability a v čistém
+`capture_input_result`. Pro LuxOS/Debian package operace použijte vyšší modul
+[`system`](system.md). `os` je ambientní process capability a v čistém
 `lsl config` režimu je zakázán.

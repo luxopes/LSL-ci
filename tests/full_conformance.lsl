@@ -8,6 +8,7 @@ load io_error_conformance
 load io_conformance
 load time_conformance
 load os_conformance
+load system_conformance
 load capture_large_conformance
 load magic_division_conformance
 load equality_conformance

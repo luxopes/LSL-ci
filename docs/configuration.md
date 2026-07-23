@@ -2,6 +2,10 @@
 
 Produkční evaluator je `stdlib/configure.lsl`, sám přeložený self-hostovaným compilerem. Python se nepoužívá.
 
+Tento čistý evaluator je určený jen pro skládání datového JSON výstupu. Správa
+LuxOS není zvláštní DSL: napište běžný `.lsl` program, načtěte modul `system` a
+spusťte jej přes `./lsl machine.lsl`; viz [system.md](system.md).
+
 LSL má oddělený čistý evaluator pro konfigurace ve stylu NixOS. Konfigurační modul je běžný `.lsl` soubor, který exportuje `config` a volitelně `imports`, `options` a `assertions`.
 
 ```lsl
@@ -48,7 +52,7 @@ Importy se vyhodnocují jednou v deterministickém post-order pořadí, root mod
 
 ## Čistota a reprodukovatelnost
 
-V config režimu nejsou dostupné `input`, souborové funkce, hodiny ani moduly `http`, `env`, `time` a `os`. Jedinými hostitelskými vstupy jsou root soubor a explicitní graf `imports`. Výsledek je deterministicky serializovatelný do kompaktního JSON. Config generator staticky odmítá ambientní I/O a síťové funkce. Kryptografický derivační store a generation hash ještě patří do vyššího aktivačního nástroje, nikoli do evaluatoru.
+V config režimu nejsou dostupné `input`, souborové funkce, hodiny ani moduly `http`, `env`, `time`, `os` a `system`. Jedinými hostitelskými vstupy jsou root soubor a explicitní graf `imports`. Výsledek je deterministicky serializovatelný do kompaktního JSON. Config generator staticky odmítá ambientní I/O a síťové funkce. Kryptografický derivační store a generation hash ještě patří do vyššího aktivačního nástroje, nikoli do evaluatoru.
 
 Deklarované options se kontrolují a descriptor nese provenance souboru, který option deklaroval; missing/type diagnostika tento soubor vypíše. Chybějící nepovinná option se materializuje do výsledného stromu ze svého defaultu; chybějící required option je chyba. Typ option i defaultu musí odpovídat `Bool`, `Int`, `Float`, `String`, `List`, `Dictionary`, `None`, `Any` nebo sjednocení, například `String|None`.
 

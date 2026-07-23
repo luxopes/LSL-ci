@@ -723,6 +723,19 @@ installed fixed point/os/stdin, ELF, markdown links a pure-tree audit prošly.
 Produkční implementace má 13550 fyzických / 12768 neprázdných nekomentářových
 LSL řádků.
 
+LuxOS package helper zachovává fixed point
+`7822a3a60e3361ce05ecbfdc2890a0bb538d1c01de0dfe402acb6d026b1928a8` a
+přidává běžný imperativní standardní modul `system`, nikoli nový config jazyk.
+`system.install/update/remove(name)` nejprve spustí přímým argv `lux` a při
+nenulovém statusu použije `apt`, případně `apt-get`; explicitní `*_with`
+varianty podporují custom cesty/chroot a hermetické testy. Apt update jednoho
+balíčku používá `install --only-upgrade`. Jména jsou validovaná, shell se nikdy
+nespouští, chyba posledního backendu je `PackageError` a čistý `lsl config`
+modul `system` odmítá. Mock Lux/apt corpus, full (13,448 s), fixed point
+(2,068 s), legacy config, installer/installed modul+fixed point, ELF, markdown
+a pure-tree audit prošly. Produkční implementace má 13648 fyzických / 12852
+neprázdných nekomentářových LSL řádků.
+
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,
 collections, GC robustnost, syscall I/O, native/tensor ABI, AI vrstva,

@@ -61,7 +61,7 @@ Bez argumentu installer používá `/usr/local` (podle oprávnění procesu). In
 - classes/instances, static i bound metody, public/private module class lowering;
 - recursive modules, `safe`, `try/else`, `Error`, `check`, `last_error`;
 - conservative stack/global-root mark-sweep GC s reusable free-list;
-- JSON, čistý config evaluator, wall/monotonic time a sleep, filesystem, argv, environment, bezpečné `os.run("ls -al")`, process/capture, HTTP(S) přes bezpečné `curl` argv a verzované JSON process plugin ABI bez shellu;
+- JSON, čistý config evaluator, LuxOS/Debian `system.install/update/remove`, wall/monotonic time a sleep, filesystem, argv, environment, bezpečné `os.run("ls -al")`, process/capture, HTTP(S) přes bezpečné `curl` argv a verzované JSON process plugin ABI bez shellu;
 - strukturované compile errors: kód, soubor, řádek, sloupec, výřez, caret a help.
 
 `tests/selfhost_conformance.lsl` produkuje přesně `tests/selfhost_conformance.out`. Config příklad produkuje přesně `tests/config_expected.json`.
@@ -75,6 +75,7 @@ Bez argumentu installer používá `/usr/local` (podle oprávnění procesu). In
 - [AI aplikace](docs/ai.md)
 - [Čas a měření](docs/time.md)
 - [Linux příkazy přes modul os](docs/os.md)
+- [Správa balíčků LuxOS](docs/system.md)
 - [Native/plugin ABI](docs/native-plugins.md)
 - [Linux target](docs/linux.md)
 

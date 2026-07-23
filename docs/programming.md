@@ -257,6 +257,21 @@ Zápis `os.run(ls -al)` bez uvozovek není command literal: v LSL by znamenal
 odečítání proměnných `ls` a `al`. `os` podporuje quotes/backslash a PATH lookup,
 ale záměrně ne shell pipes, redirection ani expanzi. Viz [os.md](os.md).
 
+Konfigurace balíčků LuxOS je obyčejný LSL program. Modul `system` nejdřív zkusí
+Lux a při nenulovém statusu použije apt:
+
+```lsl
+load system
+
+for package in ["git", "curl"]:
+    call system.install(package)
+end
+```
+
+Program spusťte běžně jako `./lsl machine.lsl`; nejde o čistý `lsl config`
+režim. Funkce skutečně mění systém a vyžadují odpovídající oprávnění. Viz
+[system.md](system.md).
+
 `http` používá `/usr/bin/curl` přes `execve`, bez shellové interpolace. Secrets
 načítejte přes modul `env`; neukládejte je do config výstupu. Podrobnosti jsou v
 [ai.md](ai.md), [configuration.md](configuration.md) a
