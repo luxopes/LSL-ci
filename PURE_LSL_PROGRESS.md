@@ -750,6 +750,18 @@ odložen na další krok. Full (15,159 s), fixed point (2,071 s), config,
 installer/installed system corpus+fixed point prošly. Produkční implementace má
 14176 fyzických / 13316 neprázdných nekomentářových LSL řádků.
 
+Lux archive manifest support zachovává fixed point
+`7822a3a60e3361ce05ecbfdc2890a0bb538d1c01de0dfe402acb6d026b1928a8` a
+přidává pure-LSL strict codec `lconf` pro budoucí `.lux/config.lconf` dependency
+zdroje `apt`, `lux` a `lsl`. Parser podporuje opakované řádky a comma lists,
+vrací vždy tři Lists, odmítá unknown sources, invalid/empty names a duplicity a
+udržuje přesné path:line diagnostiky. Encoder zapisuje deterministicky po jedné
+dependency. Dokumentovaný rezervovaný `.lux` layout je POSIX tar s `ABOUT`,
+`config.lconf` a jedním executable; katalog/signatures/server jsou záměrně
+odložené. Full (14,832 s), fixed point (2,086 s), config a fresh installed
+lconf/fixed point prošly. Produkční implementace má 14259 fyzických / 13392
+neprázdných nekomentářových LSL řádků.
+
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,
 collections, GC robustnost, syscall I/O, native/tensor ABI, AI vrstva,

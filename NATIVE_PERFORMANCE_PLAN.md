@@ -51,8 +51,8 @@ medians (7 serial runs, same checksums):
   registry; compiler-profile outputs retain an 8M initial registry to avoid
   rehash cost.
 
-Current LuxOS system-library fixed point: `7822a3a60e3361ce05ecbfdc2890a0bb538d1c01de0dfe402acb6d026b1928a8`.
-Regenerated full suite (15.159 s), fixed point (2.071 s), config, installed fixed
+Current lconf-manifest fixed point: `7822a3a60e3361ce05ecbfdc2890a0bb538d1c01de0dfe402acb6d026b1928a8`.
+Regenerated full suite (14.832 s), fixed point (2.086 s), config, installed fixed
 point, ELF and pure-production-tree audits pass. Remaining high-performance work
 is optional SIMD/vectorization, unchecked/range-proven byte loops, and broader
 Tensor ops; the required compact CPU/AI/OS substrate is present.

@@ -1,0 +1,8 @@
+{"apt":["gimp","libjpeg62-turbo:amd64"],"lux":["lux-ai"],"lsl":["external_pckg"]}
+True
+True
+LConfError: bad.lconf:1: unknown dependency source: unknown
+LConfError: bad.lconf:1: expected SOURCE: DEPENDENCY
+LConfError: bad.lconf:1: dependency name is empty
+LConfError: bad.lconf:1: invalid dependency name: bad name
+LConfError: bad.lconf:2: duplicate lux dependency: duplicate

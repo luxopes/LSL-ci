@@ -206,7 +206,7 @@ print lux.version, value_type([1, 2])
 
 `load foo.bar` hledá `foo/bar.lsl` nejprve vedle zdrojového souboru a poté v instalovaném `lib/lsl/stdlib`, odvozeném od cesty compileru. Modulové symbols dostávají deterministický namespace prefix. Třídy označené `ctype Private` nejsou dostupné přes vnější namespace; public classes lze přímo konstruovat. `native` modul podporuje omezené self-contained Linux x86_64 ET_DYN Int64 kernels; obecné relocatable/libc pluginy nejsou součástí ABI v1.
 
-Vestavěný modul `lux` exportuje `version`, `language` a `l` (alias `type`). Další standardní moduly jsou `json`, `http`, `env`, `config`, `time`, `os` a `system`; podrobnosti jsou v `configuration.md`, `ai.md`, `time.md`, `os.md` a `system.md`.
+Vestavěný modul `lux` exportuje `version`, `language` a `l` (alias `type`). Další standardní moduly jsou `json`, `lconf`, `http`, `env`, `config`, `time`, `os` a `system`; podrobnosti jsou v `configuration.md`, `lconf.md`, `ai.md`, `time.md`, `os.md` a `system.md`.
 
 ## Standardní funkce
 

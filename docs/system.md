@@ -54,7 +54,8 @@ apt remove -y -- NAME
 
 Samostatný Lux package katalog a příkaz pro bezpečné rozlišení „balíček
 neexistuje“ od síťové chyby budou doplněny společně se správcem Lux balíčků.
-Do té doby každý nenulový Lux status znamená apt fallback.
+Do té doby každý nenulový Lux status znamená apt fallback. Formát budoucích
+apt/lux/lsl dependencies je už strictně definovaný v [`config.lconf`](lconf.md).
 
 ## Služby
 
