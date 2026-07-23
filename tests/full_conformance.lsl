@@ -40,6 +40,8 @@ load boxed_collection_conformance
 load tagged_argument_conformance
 load realarray_conformance
 load intarray_conformance
+load floatarray_conformance
+load bytearray_conformance
 load dictionary_key_conformance
 load native_elf_conformance
 load tensor_conformance

@@ -57,7 +57,7 @@ was unsafe/pathological. A 2M registry table reached pathological probe density
 collapse above roughly 50% occupancy, so the final 8M table tracks unique entries
 and grows before crossing 50% rather than waiting for a complete probe wrap.
 
-Current fixed point after the additive `IntArray` fast path: `25f26c531189d54e3659093dab3d81f6a10572e36661c34408e34962ff84ab37`.
-Regenerated full suite passed in 8.923 s, fixed-point mode in 1.824 s, config
+Current fixed point after typed arrays/native kernels: `b54092549bf5e5a651e8295172009c6e3d69816c66d21a43ae2e6a64c2ade94a`.
+Regenerated full suite passed in 9.744 s, fixed-point mode in 2.020 s, config
 output is bit-identical, the installed compiler reproduces the same fixed point,
 and every maintained ELF has one RX `PT_LOAD` with no `INTERP`/`DYNAMIC`/RWX.

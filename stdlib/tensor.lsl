@@ -1,4 +1,5 @@
-# Pure-LSL dense CPU tensor with zero-copy views over a shared RealArray.
+# Pure-LSL dense CPU tensor with zero-copy views over shared RealArray or
+# native-performance FloatArray storage.
 
 function element_count(shape):
     count = 1
@@ -64,11 +65,22 @@ class Tensor(True):
     end
 
     function get(self, indices):
-        return self.data[self.position(indices)]
+        position = self.position(indices)
+        if __lsl_type_code(self.data) == 14:
+            data = FloatArray(self.data)
+            return data[position]
+        end
+        return self.data[position]
     end
 
     function set(self, indices, value):
-        self.data[self.position(indices)] = value
+        position = self.position(indices)
+        if __lsl_type_code(self.data) == 14:
+            data = FloatArray(self.data)
+            data[position] = Float(value)
+        else:
+            self.data[position] = value
+        end
     end
 
     function reshape(self, shape):
@@ -81,20 +93,74 @@ class Tensor(True):
     function view(self, shape, strides, offset):
         return Tensor(self.data, List(shape), List(strides), self.offset + Int(offset), self.dtype)
     end
+
+    function require_contiguous(self):
+        if self.offset != 0 or self.size() != len(self.data):
+            Error(TensorLayoutError: "native kernel requires a full contiguous Tensor")
+        end
+    end
+
+    function sum(self):
+        call self.require_contiguous()
+        return float_sum(FloatArray(self.data))
+    end
+
+    function dot(self, other_data):
+        call self.require_contiguous()
+        if self.rank() != 1:
+            Error(TensorShapeError: "dot requires a one-dimensional Tensor")
+        end
+        return float_dot(FloatArray(self.data), FloatArray(other_data))
+    end
+
+    function axpy(self, alpha, x_data):
+        call self.require_contiguous()
+        call float_axpy(Float(alpha), FloatArray(x_data), FloatArray(self.data))
+    end
+
+    function matmul(self, other_data, other_shape):
+        call self.require_contiguous()
+        shape = List(other_shape)
+        if self.rank() != 2 or len(shape) != 2:
+            Error(TensorShapeError: "matmul requires rank-2 Tensors")
+        end
+        m = Int(self.shape[0])
+        k = Int(self.shape[1])
+        if k != Int(shape[0]):
+            Error(TensorShapeError: "matmul inner dimensions differ")
+        end
+        n = Int(shape[1])
+        data = float_matmul(FloatArray(self.data), FloatArray(other_data), m, k, n)
+        return Tensor(data, [m, n], [n, 1], 0, "Float64")
+    end
 end
 
 function from_values(values, shape):
     if len(values) != element_count(shape):
         Error(TensorShapeError: "tensor data length does not match shape")
     end
-    data = RealArray(values)
+    data = FloatArray()
+    for value in values:
+        data.append(Float(value))
+    end
     return Tensor(data, List(shape), contiguous_strides(shape), 0, "Float64")
 end
 
 function zeros(shape):
-    values = []
-    for index in rang(element_count(shape)):
-        values.append(0.0)
-    end
-    return from_values(values, shape)
+    data = float_zeros(element_count(shape))
+    return Tensor(data, List(shape), contiguous_strides(shape), 0, "Float64")
+end
+
+# Raw contiguous kernels are also exported directly so performance-sensitive
+# code does not pay class/member dispatch and can retain static FloatArray types.
+function dot_data(left, right):
+    return float_dot(FloatArray(left), FloatArray(right))
+end
+
+function axpy_data(alpha, x, y):
+    call float_axpy(Float(alpha), FloatArray(x), FloatArray(y))
+end
+
+function matmul_data(left, right, m, k, n):
+    return float_matmul(FloatArray(left), FloatArray(right), Int(m), Int(k), Int(n))
 end

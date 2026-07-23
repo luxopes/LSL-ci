@@ -1,0 +1,9 @@
+FloatArray 3 FloatArray([1.5, -2.25, 3.0]) 1.5 3.0
+FloatArray([1.5, 7.5, 3.5]) 12.5 70.75
+FloatArray FloatArray([7.5, 3.5])
+FloatArray([2.5, 8.5, 4.5]) 15.5
+FloatArray FloatArray([58.0, 64.0, 139.0, 154.0]) 415.0
+True
+TypeError: FloatArray cast requires an existing FloatArray
+ValueError: float_zeros size cannot be negative
+ValueError: float_dot requires equal lengths

@@ -258,7 +258,22 @@ end
 
 function __lsl_list(values):
     result = []
-    if __lsl_type_code(values) == 13:
+    value_code = __lsl_type_code(values)
+    if value_code == 13:
+        index = 0
+        while index < len(values):
+            result.append(__lsl_raw_int(values[index]))
+            index += 1
+        end
+        return result
+    elif value_code == 14:
+        index = 0
+        while index < len(values):
+            result.append(__lsl_float_from_bits(__lsl_raw_int(values[index])))
+            index += 1
+        end
+        return result
+    elif value_code == 15:
         index = 0
         while index < len(values):
             result.append(__lsl_raw_int(values[index]))
@@ -702,6 +717,28 @@ function __lsl_render(value, quote):
             index += 1
         end
         return result + "])"
+    elif code == 14:
+        result = "FloatArray(["
+        index = 0
+        while index < len(value):
+            if index > 0:
+                result += ", "
+            end
+            result += __lsl_format_float(__lsl_float_from_bits(__lsl_raw_int(value[index])))
+            index += 1
+        end
+        return result + "])"
+    elif code == 15:
+        result = "ByteArray(["
+        index = 0
+        while index < len(value):
+            if index > 0:
+                result += ", "
+            end
+            result += __lsl_int_to_string(__lsl_raw_int(value[index]))
+            index += 1
+        end
+        return result + "])"
     end
     open_bracket = "["
     close_bracket = "]"
@@ -752,6 +789,10 @@ function __lsl_type_name(value):
         return "Function"
     elif code == 13:
         return "IntArray"
+    elif code == 14:
+        return "FloatArray"
+    elif code == 15:
+        return "ByteArray"
     end
     return "Any"
 end
@@ -966,6 +1007,34 @@ function __lsl_equal_seen(left, right, seen_left, seen_right):
             index += 1
         end
         return True
+    elif left_code == 14:
+        length = len(left)
+        if length != len(right):
+            return False
+        end
+        index = 0
+        while index < length:
+            left_value = __lsl_float_from_bits(__lsl_raw_int(left[index]))
+            right_value = __lsl_float_from_bits(__lsl_raw_int(right[index]))
+            if left_value != right_value:
+                return False
+            end
+            index += 1
+        end
+        return True
+    elif left_code == 15:
+        length = len(left)
+        if length != len(right):
+            return False
+        end
+        index = 0
+        while index < length:
+            if __lsl_raw_int(left[index]) != __lsl_raw_int(right[index]):
+                return False
+            end
+            index += 1
+        end
+        return True
     elif left_code == 3:
         if len(left) != len(right):
             return False
@@ -992,7 +1061,7 @@ function __lsl_equal(left, right):
     if left_code != right_code:
         return False
     end
-    if left_code == 2 or left_code == 7 or left_code == 8 or left_code == 13 or left_code == 3:
+    if left_code == 2 or left_code == 7 or left_code == 8 or left_code == 13 or left_code == 14 or left_code == 15 or left_code == 3:
         return __lsl_equal_seen(left, right, [], [])
     end
     return False

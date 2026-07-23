@@ -654,6 +654,21 @@ slotů a rendering/equality/List conversion jsou pointer-collision safe. Původn
 (8,923 s), fixed point (1,824 s), config, installer a ELF audit prošly. Další
 native-performance kroky jsou `FloatArray`/Tensor kernels a `ByteArray`.
 
+Dokončený native-memory fixed point
+`b54092549bf5e5a651e8295172009c6e3d69816c66d21a43ae2e6a64c2ade94a`
+přidává raw contiguous `FloatArray`, packed `ByteArray`, přímé binary
+`readbytes`/`writebytes`, Float64 `sum`/`dot`/`axpy`/`matmul` kernely a Tensor
+data wrappers. 200k×100 dot je přibližně 1,2× C při nižším RSS; 64×64 matmul
+(20 průchodů) 2,3× C při srovnatelném RSS. IntArray benchmark po malém mmap
+registry klesl na 8288 us / 3584 KiB (4,5× C / 1,1× RSS) a tiny program na
+přibližně 1776 KiB. Packed byte scalar loop je stále 21,5× C, ale bulk file I/O
+zapisuje/čte backing přímo bez per-byte objektů či kopie. Object registry nyní
+začíná u běžných programů na 64K mmap slots, roste při 50% obsazení a starou mapu
+vrací přes `munmap`; compiler profil si ponechává 8M start kvůli rychlosti.
+Opraveno i shadowing lokálního `left`/`right` proti stejně pojmenovaným globálním
+typům a class-return inference pro modulové Tensor konstruktory. Regenerovaný full suite (9,744 s), fixed point (2,020 s), config,
+installed fixed point, ELF a pure-production audit prošly.
+
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,
 collections, GC robustnost, syscall I/O, native/tensor ABI, AI vrstva,

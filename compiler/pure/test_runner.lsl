@@ -105,6 +105,8 @@ call require_failure(run(compiler, ["tests/fixed_collection_negative.lsl", "/tmp
 call require_failure(run(compiler, ["tests/private_class_negative.lsl", "/tmp/lsl-private-negative"]), "private module class unexpectedly compiled")
 call require_failure(run(compiler, ["tests/dictionary_key_negative.lsl", "/tmp/lsl-dictionary-key-negative"]), "collection Dictionary key unexpectedly compiled")
 call require_failure(run(compiler, ["tests/intarray_type_negative.lsl", "/tmp/lsl-intarray-type-negative"]), "non-Int IntArray append unexpectedly compiled")
+call require_failure(run(compiler, ["tests/floatarray_type_negative.lsl", "/tmp/lsl-floatarray-type-negative"]), "non-Float FloatArray append unexpectedly compiled")
+call require_failure(run(compiler, ["tests/bytearray_type_negative.lsl", "/tmp/lsl-bytearray-type-negative"]), "non-Int ByteArray append unexpectedly compiled")
 
 configure = "./compiler/pure/lsl-configure"
 config_wrapper = "tests/config/.defaults-test-evaluator.lsl"

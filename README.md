@@ -40,7 +40,7 @@ Bez argumentu installer používá `/usr/local` (podle oprávnění procesu). In
 
 - Int, Bool, None a boxed IEEE-754 Float;
 - UTF-8 String s code-point `len`, indexací, slicingem, `chr` a `ord`;
-- List, Tuple, RealArray, Dictionary a neboxovaný contiguous `IntArray`;
+- List, Tuple, RealArray, Dictionary a neboxované `IntArray`/`FloatArray`/packed `ByteArray`;
 - functions, recursion, first-class Function pointers a callbacks;
 - classes/instances, static i bound metody, public/private module class lowering;
 - recursive modules, `safe`, `try/else`, `Error`, `check`, `last_error`;
@@ -54,6 +54,6 @@ Bez argumentu installer používá `/usr/local` (podle oprávnění procesu). In
 
 Vstupní bod je `compiler/pure/lslc_direct.lsl`. Lexer, parser, linker, x86_64 encoder, ELF writer a runtime jsou moduly v `compiler/pure/`. Standardní moduly jsou v `stdlib/`.
 
-Známé zbývající mezery jsou vedené výhradně v `PURE_LSL_PROGRESS.md`; zejména úplně jednotný dynamický scalar tag ABI, pokročilé RealArray enforcement a nativní plugin/tensor ABI nejsou vydávány za hotové.
+Známé zbývající mezery jsou vedené výhradně v `PURE_LSL_PROGRESS.md`; zejména GPU/device backend, SIMD autovektorizace, širší Tensor operace a obecné foreign shared-object ABI nejsou vydávány za hotové.
 
 Licence: MIT, viz `LICENSE`.

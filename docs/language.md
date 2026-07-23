@@ -35,9 +35,11 @@ Vestavěné typy a návratové hodnoty `type(value)`:
 | `{key: value}` | `Dictionary` |
 | `![...]` | `RealArray` |
 | `IntArray()` | `IntArray` |
+| `FloatArray()` | `FloatArray` |
+| `ByteArray()` | `ByteArray` |
 | `None` | `None` |
 
-`Bool(value)`, `Int(value)`, `Float(value)`, `String(value)`, `List(value)`, `Tuple(value)` a `Dictionary(value)` převádějí hodnoty. `IntArray()` vytváří prázdné, měnitelné pole s neboxovanými contiguous signed 64-bit prvky. Přiřazení podporuje také `+=`, `-=`, `*=`, `/=` a `%=`.
+`Bool(value)`, `Int(value)`, `Float(value)`, `String(value)`, `List(value)`, `Tuple(value)` a `Dictionary(value)` převádějí hodnoty. `IntArray()`, `FloatArray()` a `ByteArray()` vytvářejí prázdná měnitelná typed pole; volání s jedním argumentem je checked cast existujícího pole stejného typu. Přiřazení podporuje také `+=`, `-=`, `*=`, `/=` a `%=`.
 
 `Int` je signed 64-bit two's-complement hodnota. Aritmetika, mocnina, negace a převod z desetinného Stringu se definovaně redukují modulo `2^64`; nepoužívají `OverflowError`. `INT64_MIN // -1` proto vrací `INT64_MIN` a zbytek `0` bez CPU trapu.
 
@@ -166,7 +168,7 @@ del(items[0])
 
 Čárky mezi řádky jednoduchého víceřádkového dictionary jsou volitelné. `RealArray` lze indexově měnit, ale jeho délka je pevná: `append`, `extend`, `pop` a `del(fixed[i])` selžou.
 
-`IntArray` ukládá hodnoty přímo jako contiguous Int64 bez per-element objektu. Indexace i iterace mají statický typ `Int`; `append` a indexové přiřazení odmítnou jiné typy už při kompilaci. Podporované změny délky jsou zatím `append`, `clear` a `del(array[index])`; slicing zachovává `IntArray`. Pro heterogenní data zůstává `List`.
+`IntArray` ukládá hodnoty přímo jako contiguous Int64 bez per-element objektu. `FloatArray` stejně ukládá raw IEEE-754 Float64 bity a poskytuje nativní `float_zeros`, `float_fill`, `float_sum`, `float_dot`, `float_axpy` a `float_matmul` kernely. `ByteArray` je packed byte buffer (jeden byte na prvek) pro `readbytes`/`writebytes` a nativní/OS I/O. Indexace a iterace mají statický typ `Int`, resp. `Float`; `append` a indexové přiřazení odmítnou chybný typ a ByteArray navíc hodnoty mimo `0..255`. Pro heterogenní data zůstává `List`.
 
 Povolené metody:
 
@@ -175,6 +177,8 @@ Povolené metody:
 - String: `lower`, `upper`, `split`, `strip`, `lstrip`, `rstrip`, `replace`, `join`, `startswith`, `endswith`, `title`, `capitalize`, `find`, `count`
 - Tuple/RealArray: `index`, `count`; RealArray navíc `copy`
 - IntArray: `append`, `clear`; dále indexace, indexové přiřazení, slicing, `len` a iterace
+- FloatArray: `append`, `clear`; dále indexace, indexové přiřazení, slicing, `len`, iterace a nativní Float kernely
+- ByteArray: `append`, `clear`; dále packed indexace, indexové přiřazení, `len`, iterace, `readbytes` a `writebytes`
 
 Indexace a slicing (`value[start:stop]`) mají pravou mez exkluzivní a podporují záporné indexy. String indexy, `len`, slicing, iterace, `find` a `index` počítají validní Unicode code points, ne UTF-8 bajty.
 

@@ -36,7 +36,7 @@ Tato hranice je vhodná pro AI model servery, GPU workery a pluginy, kde isolati
 
 ## Podporovaný pure-LSL CPU Tensor
 
-`stdlib/tensor.lsl` poskytuje dense CPU `Tensor` nad sdíleným `RealArray`: shape, strides, offset, dtype, bounds-checked get/set, reshape a explicitní zero-copy views. Více Tensor objektů může sdílet stejný mutable data owner; změna přes view je okamžitě viditelná ostatním views. Jde o in-process LSL objekt, nikoli ABI pro cizí shared object nebo GPU driver.
+`stdlib/tensor.lsl` poskytuje dense CPU `Tensor` nad sdíleným `RealArray` nebo raw contiguous `FloatArray`: shape, strides, offset, dtype, bounds-checked get/set, reshape a explicitní zero-copy views. FloatArray cesta přidává syscall-only nativní Float64 kernely `float_sum`, `float_dot`, `float_axpy` a `float_matmul`; modul je exportuje také jako `dot_data`, `axpy_data` a `matmul_data`. Více Tensor objektů může sdílet stejný mutable data owner; změna přes view je okamžitě viditelná ostatním views. Jde o in-process LSL objekt, nikoli ABI pro cizí shared object nebo GPU driver.
 
 ## Podporované: omezené in-process CPU ET_DYN ABI v1
 

@@ -18,8 +18,11 @@ preserving dynamic `List` semantics. The first acceptance benchmark is the
 - [x] Add conformance tests and benchmark `IntArray` against C.
 - [x] Reach 3-stage fixed point; regenerate tools; run full/config/install/ELF
   audits.
-- [ ] Follow with `FloatArray`/native Tensor kernels and `ByteArray` for OS I/O.
-- [ ] Replace the fixed initial object registry reservation with a small mmap-backed
+- [x] Add raw `FloatArray` storage plus native sum/dot/axpy/matmul kernels and
+  route Tensor numeric work through them.
+- [x] Add packed `ByteArray` plus direct `readbytes`/`writebytes` integration for
+  OS-level binary I/O.
+- [x] Replace the fixed initial object registry reservation with a small mmap-backed
   growable table so tiny programs do not reserve compiler-sized metadata.
 
 ## Notes / decisions
@@ -32,10 +35,24 @@ preserving dynamic `List` semantics. The first acceptance benchmark is the
 
 ## State
 
-`IntArray` object code 13 is implemented. Seven runs of the exact workload now
-have a 9070 us / 9780 KiB median versus C 1850 us / 3240 KiB: about 4.9x time
-and 3.0x RSS, down from dynamic List's ~425x / 58.5x. Fixed point
-`25f26c531189d54e3659093dab3d81f6a10572e36661c34408e34962ff84ab37`
-is stable; regenerated full/config/install/ELF audits pass. Next implement
-`FloatArray`/native Tensor kernels, then `ByteArray` and a small mmap-backed
-object registry.
+All planned CPU/native-memory foundations are implemented. Final measured
+medians (7 serial runs, same checksums):
+
+- IntArray workload: 8288 us / 3584 KiB versus C 1850 us / 3240 KiB
+  (4.5x time, 1.1x RSS; dynamic List was ~425x / 58.5x).
+- Float64 dot kernel: 18526 us / 3072 KiB versus C 15289 us / 4776 KiB
+  (1.2x time, lower RSS).
+- 64x64 Float64 matmul, 20 passes: 7161 us / 1716 KiB versus C 3096 us /
+  1776 KiB (2.3x time, comparable RSS).
+- Packed byte loop: 27610 us / 2048 KiB versus C 1284 us / 2600 KiB; bulk file
+  I/O itself is zero-copy through ByteArray backing. Scalar byte-loop range
+  analysis/vectorization remains a future optimizer opportunity.
+- Tiny generated program peak RSS is about 1776 KiB with a 64K-slot public mmap
+  registry; compiler-profile outputs retain an 8M initial registry to avoid
+  rehash cost.
+
+Current fixed point: `b54092549bf5e5a651e8295172009c6e3d69816c66d21a43ae2e6a64c2ade94a`.
+Regenerated full suite (9.744 s), fixed point (2.020 s), config, installed fixed
+point, ELF and pure-production-tree audits pass. Remaining high-performance work
+is optional SIMD/vectorization, unchecked/range-proven byte loops, and broader
+Tensor ops; the required compact CPU/AI/OS substrate is present.

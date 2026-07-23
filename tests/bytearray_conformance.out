@@ -1,0 +1,9 @@
+ByteArray 3 True ByteArray([0, 65, 255]) 65 255
+ByteArray([7, 66, 255]) [7, 66, 255] 328
+ByteArray ByteArray([7, 66, 255]) True
+ByteArray([7, 66, 255, 1])
+True
+ValueError: ByteArray value is outside 0..255
+ValueError: ByteArray value is outside 0..255
+300 0 255 43 True
+0 False ByteArray([])
