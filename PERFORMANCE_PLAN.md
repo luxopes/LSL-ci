@@ -57,7 +57,10 @@ was unsafe/pathological. A 2M registry table reached pathological probe density
 collapse above roughly 50% occupancy, so the final 8M table tracks unique entries
 and grows before crossing 50% rather than waiting for a complete probe wrap.
 
-Current fixed point after repository cleanup: `02c4b72be6fc33b87ed763bb164d85109893b5d1998171b8fff2772a6ed4e54b`.
-Regenerated full suite passed in 13.421 s, fixed-point mode in 2.094 s, config
-output is bit-identical, the installed compiler reproduces the same fixed point,
+Current optimizing-codegen fixed point: `15ef7f3e07e65e3d78ad30dee2aa016caa34c0cc9de684318afd83d9dd703ae5`.
+Compact signed-correct x86 encodings, constant/control-flow folding, literal
+deduplication and guarded direct-function specialization reduce the compiler ELF
+from 857964 to 669920 bytes and a tiny ELF from 71977 to 53634 bytes. Five-run
+self-host median is 2.030 s; full suite 10.056 s and fixed-point mode 2.024 s.
+Config is bit-identical, the installed compiler reproduces the same fixed point,
 and every maintained ELF has one RX `PT_LOAD` with no `INTERP`/`DYNAMIC`/RWX.

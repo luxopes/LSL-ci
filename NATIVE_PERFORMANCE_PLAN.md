@@ -51,8 +51,8 @@ medians (7 serial runs, same checksums):
   registry; compiler-profile outputs retain an 8M initial registry to avoid
   rehash cost.
 
-Current fixed point after test-tree cleanup: `02c4b72be6fc33b87ed763bb164d85109893b5d1998171b8fff2772a6ed4e54b`.
-Regenerated full suite (13.421 s), fixed point (2.094 s), config, installed fixed
+Current optimizing-codegen fixed point: `15ef7f3e07e65e3d78ad30dee2aa016caa34c0cc9de684318afd83d9dd703ae5`.
+Regenerated full suite (10.056 s), fixed point (2.024 s), config, installed fixed
 point, ELF and pure-production-tree audits pass. Remaining high-performance work
 is optional SIMD/vectorization, unchecked/range-proven byte loops, and broader
 Tensor ops; the required compact CPU/AI/OS substrate is present.

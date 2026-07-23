@@ -6,7 +6,7 @@ load bytes
 load x86_64
 
 function emit_allocator(output):
-    # RBX points at a 64-byte writable state block followed by value/intern tables.
+    # RBX points at an 88-byte writable state block followed by the intern table.
     call assembler.label(output, "runtime_set_global_roots")
     call assembler.emit(output, x86_64.move_reg_reg(10, 3))
     call assembler.emit(output, x86_64.store_memory(10, 16, 7))

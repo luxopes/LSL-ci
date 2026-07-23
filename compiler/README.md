@@ -27,4 +27,4 @@ Další čisté nástroje:
   `fixed-point` režimy (`full` je výchozí); jeho zdroj je `tests/test_runner.lsl`
   (cesty jsou relativní ke kořeni repozitáře).
 
-Repozitář neobsahuje C seed ani cizí produkční toolchain. Binární trust root je auditovatelný LSL-generovaný ELF a musí reprodukovat sám sebe bit po bitu. Aktuální hash a ověřené testy jsou v `PURE_LSL_PROGRESS.md`.
+Repozitář neobsahuje C seed ani cizí produkční toolchain. Binární trust root je auditovatelný LSL-generovaný ELF a musí reprodukovat sám sebe bit po bitu. Architektura, optimalizační pravidla, stage build a release checklist jsou v `docs/compiler-development.md`; aktuální hash a ověřené testy jsou v `PURE_LSL_PROGRESS.md`.

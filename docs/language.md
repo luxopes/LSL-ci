@@ -121,6 +121,8 @@ result = motor(10)
 
 `call` zahodí návratovou hodnotu; běžné volání ji lze použít ve výrazu. Parametry jsou povinné a předávají se pozičně. `return` bez hodnoty vrátí `None`. Funkce čtou globální scope, zápis je lokální pro aktuální volání. Funkce jsou first-class hodnoty: lze je uložit, vrátit a předat jako callback (`type(callback)` je `Function`). Lexikální closures a keyword arguments nejsou součástí syntaxe 0.7.
 
+Pořadí vyhodnocení více argumentů není v 0.7 součástí veřejného kontraktu; kód nesmí záviset na pořadí jejich vedlejších efektů. Compiler smí neunikající přímou funkci specializovat podle stabilně odvozených typů argumentů. First-class callback a dynamická introspekční hranice vždy zachovávají obecný tagged ABI.
+
 ## Třídy a instance
 
 ```lsl
@@ -215,6 +217,12 @@ Vestavěný modul `lux` exportuje `version`, `language` a `l` (alias `type`). Da
 - environment: `getenv(name)` vrátí String nebo `None`; v pure config režimu není dostupné
 - chyby: `last_error()` vrátí poslední chybu zachycenou `safe` nebo `try`
 - nápověda: `help()`
+
+## Garantované optimalizace codegenu
+
+Optimalizace nemění pozorovatelnou sémantiku ani pořadí dynamických vedlejších efektů. Compiler skládá konstantní Int podvýrazy, odstraňuje konstantně mrtvé větve a nedosažitelný kód za terminátorem, používá immediate scalar aritmetiku/compare, deduplikuje String templates a konzervativně specializuje přímé neunikající funkce. Pro callbacky, explicitní dynamickou introspekci a nejednoznačné typy zůstává obecný boxed/tagged kód.
+
+Int constant folding používá stejné modulo `2^64` a floor `//`/`%` chování jako runtime. Float výrazy se compile-time neskládají, aby zůstaly přesné NaN, Infinity, signed-zero a subnormal hrany. Podrobnosti a výkonová doporučení jsou v [programming.md](programming.md).
 
 ## Bezpečnost
 

@@ -4,7 +4,7 @@ Stav: interní Linux x86_64 ABI verze 0.7. Není to veřejné plugin ABI.
 
 ## Strojová hranice
 
-Compiler generuje SysV-like volání: prvních šest argumentů je v `rdi`, `rsi`, `rdx`, `rcx`, `r8`, `r9`, další argumenty jsou na zásobníku a výsledek je v `rax`. `r12` ukazuje na main/global frame, `r13` drží poslední error String, `r14` error flag a `rbx` adresu 80-byte allocator/GC/process state bloku rezervovaného přes `brk`.
+Compiler generuje SysV-like volání: prvních šest argumentů je v `rdi`, `rsi`, `rdx`, `rcx`, `r8`, `r9`, další argumenty jsou na zásobníku a výsledek je v `rax`. `r12` ukazuje na main/global frame, `r13` drží poslední error String, `r14` error flag, `r15` původní process stack a `rbx` adresu 88-byte allocator/GC/process state bloku rezervovaného přes `brk`.
 
 Runtime je emitován přímo jako x86_64 bytes z LSL modulů. Nepoužívá libc, C ABI runtime, assembler ani linker.
 
@@ -31,6 +31,11 @@ Allocator před payloadem udržuje neveřejnou 32-byte GC hlavičku. Aktuální 
 - `8` RealArray
 - `9` boxed signed 64-bit Int (přechodový dynamic ABI)
 - `10` boxed Function code pointer (veřejné dynamic ABI; self-host backend používá interní raw typed fast path)
+- `11` opaque native library handle
+- `12` opaque native Function handle
+- `13` contiguous raw `IntArray`
+- `14` contiguous raw IEEE-754 `FloatArray`
+- `15` packed `ByteArray`
 
 String payload je UTF-8, ale jazykové `len`, indexace a slicing pracují s Unicode code points. List/Tuple/RealArray slots, Dictionary hodnoty a instance fields nesou dynamické hodnoty; staticky známé Int, Bool a None jsou na této hranici boxované. Generic truth, equality, comparison, numeric operations, rendering, JSON, conversions, indexing a `rang` přijímají raw i boxed Int. Typed Int fast path zůstává raw.
 
@@ -46,7 +51,7 @@ Heap používá conservative mark-sweep:
 - sweep bloky vrací do size-aware free listu;
 - `gc()` spouští collection explicitně.
 
-ELF image má pouze RX `PT_LOAD`; mutable allocator stav, počáteční 16M-entry object registry a 64K-entry String-template intern table jsou mimo image v `brk` heapu. Obě open-addressed tabulky se při zaplnění zdvojnásobí a deterministicky rehashují; starý backing zůstane rezervovaný do konce procesu. Interned Strings jsou explicitní GC roots. Počáteční i následné `brk` selhání a úplný object-registry probe končí deterministicky statusem 70 a `MemoryError`, nikoli zápisem přes neplatnou adresu nebo nekonečnou smyčkou.
+ELF image má pouze RX `PT_LOAD`. Mutable allocator stav a počáteční 64K-entry String-template intern table jsou v `brk` oblasti. Object registry je samostatný anonymous `mmap`: běžný program začíná na 64K slots, compiler profil na 8M slots; před překročením 50% occupancy se zdvojnásobí, deterministicky rehashuje a starou mapu vrátí přes `munmap`. Intern table se při zaplnění také zdvojnásobí a rehashuje v rostoucí `brk` oblasti. Interned Strings jsou explicitní GC roots. Selhání alokace nebo úplný probe končí deterministicky statusem 70 a `MemoryError`, nikoli zápisem přes neplatnou adresu nebo nekonečnou smyčkou.
 
 ## Process/I/O cleanup
 

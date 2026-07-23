@@ -49,3 +49,5 @@ Feature scope je implementovaný: self-host compiler/runtime, jazyk a collection
 - případná ABI v2 rozšíření nad hotovým self-contained CPU ET_DYN v1 (relocations/Tensor descriptors); GPU je mimo aktuální scope;
 - rozšířit negative corpus a benchmarky; další targety nejsou blocker 0.7;
 - [x] Přesunout veškeré testy/smoke fixtures a runner pod `tests/`; v `compiler/pure/` ponechat jen produkční funkcionalitu.
+- [x] Doplnit kompaktní x86 encoding, constant/control-flow optimalizace, guarded direct-function specialization a code-size quality guard.
+- [x] Dopsat praktický programming guide a interní compiler/release guide.

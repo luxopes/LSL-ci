@@ -50,6 +50,16 @@ Bez argumentu installer používá `/usr/local` (podle oprávnění procesu). In
 
 `tests/selfhost_conformance.lsl` produkuje přesně `tests/selfhost_conformance.out`. Config příklad produkuje přesně `tests/config_expected.json`.
 
+## Dokumentace
+
+- [Praktické programování v LSL](docs/programming.md)
+- [Jazyková specifikace](docs/language.md)
+- [Vývoj compileru a release workflow](docs/compiler-development.md)
+- [Deklarativní konfigurace](docs/configuration.md)
+- [AI aplikace](docs/ai.md)
+- [Native/plugin ABI](docs/native-plugins.md)
+- [Linux target](docs/linux.md)
+
 ## Zdroj compileru
 
 Vstupní bod je `compiler/pure/lslc_direct.lsl`. Lexer, parser, linker, x86_64 encoder, ELF writer a runtime jsou moduly v `compiler/pure/`. Standardní moduly jsou v `stdlib/`.

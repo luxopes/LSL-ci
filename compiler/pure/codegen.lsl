@@ -57,12 +57,24 @@ function collect_variables(statements, variables):
                 end
             end
         elif kind == "if":
-            for branch in statement["branches"]:
-                call collect_variables(branch[1], variables)
+            selected = constant_if_body(statement)
+            if selected[0]:
+                call collect_variables(selected[1], variables)
+            else:
+                for branch in statement["branches"]:
+                    call collect_variables(branch[1], variables)
+                end
+                call collect_variables(statement["otherwise"], variables)
             end
-            call collect_variables(statement["otherwise"], variables)
         elif kind == "while" or kind == "loop":
-            call collect_variables(statement["body"], variables)
+            include_body = True
+            if kind == "while":
+                condition = constant_truth_expression(statement["condition"])
+                include_body = not condition[0] or condition[1]
+            end
+            if include_body:
+                call collect_variables(statement["body"], variables)
+            end
         elif kind == "safe" or kind == "try":
             call collect_variables(statement["body"], variables)
             call collect_variables(statement["otherwise"], variables)
@@ -78,6 +90,9 @@ function collect_variables(statements, variables):
             statement["iterator_name"] = iterator_name
             statement["index_name"] = index_name
             call collect_variables(statement["body"], variables)
+        end
+        if kind == "return" or kind == "break" or kind == "continue" or kind == "error":
+            break
         end
     end
 end
@@ -313,15 +328,30 @@ function collect_types(statements, types, function_returns):
             end
             call collect_types(statement["body"], types, function_returns)
         elif kind == "if":
-            for branch in statement["branches"]:
-                call collect_types(branch[1], types, function_returns)
+            selected = constant_if_body(statement)
+            if selected[0]:
+                call collect_types(selected[1], types, function_returns)
+            else:
+                for branch in statement["branches"]:
+                    call collect_types(branch[1], types, function_returns)
+                end
+                call collect_types(statement["otherwise"], types, function_returns)
             end
-            call collect_types(statement["otherwise"], types, function_returns)
         elif kind == "while" or kind == "loop":
-            call collect_types(statement["body"], types, function_returns)
+            include_body = True
+            if kind == "while":
+                condition = constant_truth_expression(statement["condition"])
+                include_body = not condition[0] or condition[1]
+            end
+            if include_body:
+                call collect_types(statement["body"], types, function_returns)
+            end
         elif kind == "safe" or kind == "try":
             call collect_types(statement["body"], types, function_returns)
             call collect_types(statement["otherwise"], types, function_returns)
+        end
+        if kind == "return" or kind == "break" or kind == "continue" or kind == "error":
+            break
         end
     end
 end
@@ -405,13 +435,18 @@ function align_data(generator):
 end
 
 function emit_string_pointer(generator, text):
-    call align_data(generator)
-    offset = len(generator["data"])
-    payload = bytes.utf8(text)
-    generator["data"].extend(bytes.little(1, 8))
-    generator["data"].extend(bytes.little(len(payload), 8))
-    generator["data"].extend(payload)
-    generator["data"].append(0)
+    if text in generator["string_offsets"]:
+        offset = generator["string_offsets"][text]
+    else:
+        call align_data(generator)
+        offset = len(generator["data"])
+        payload = bytes.utf8(text)
+        generator["data"].extend(bytes.little(1, 8))
+        generator["data"].extend(bytes.little(len(payload), 8))
+        generator["data"].extend(payload)
+        generator["data"].append(0)
+        generator["string_offsets"][text] = offset
+    end
     lea_start = assembler.position(generator["builder"])
     call assembler.emit(generator["builder"], x86_64.lea_rip(0, 0))
     generator["relocations"].append([lea_start + 3, lea_start + 7, offset])
@@ -470,6 +505,130 @@ function integer_literal(syntax):
         Error(CompilerInvariantError: "integer literal AST changed before emission")
     end
     return parsed
+end
+
+function constant_int_expression(syntax):
+    if syntax == None:
+        return [False, 0]
+    end
+    kind = syntax["kind"]
+    if kind == "literal":
+        if syntax["literal_kind"] != "number":
+            return [False, 0]
+        end
+        text = syntax["value"]
+        if text.find(".") >= 0 or text.find("e") >= 0 or text.find("E") >= 0:
+            return [False, 0]
+        end
+        return [True, integer_literal(syntax)]
+    elif kind == "unary" and syntax["operator"] == "-":
+        operand = constant_int_expression(syntax["operand"])
+        if operand[0]:
+            return [True, -operand[1]]
+        end
+        return [False, 0]
+    elif kind != "binary":
+        return [False, 0]
+    end
+    left = constant_int_expression(syntax["left"])
+    right = constant_int_expression(syntax["right"])
+    if not left[0] or not right[0]:
+        return [False, 0]
+    end
+    operator = syntax["operator"]
+    if operator == "+":
+        return [True, left[1] + right[1]]
+    elif operator == "-":
+        return [True, left[1] - right[1]]
+    elif operator == "*":
+        return [True, left[1] * right[1]]
+    elif operator == "//" and right[1] != 0:
+        return [True, left[1] // right[1]]
+    elif operator == "%" and right[1] != 0:
+        return [True, left[1] % right[1]]
+    elif operator == "**" and right[1] >= 0 and right[1] <= 63:
+        return [True, left[1] ** right[1]]
+    end
+    return [False, 0]
+end
+
+function constant_truth_expression(syntax):
+    if syntax == None:
+        return [False, False]
+    end
+    kind = syntax["kind"]
+    if kind == "literal":
+        if syntax["value"] == "True":
+            return [True, True]
+        elif syntax["value"] == "False" or syntax["value"] == "None":
+            return [True, False]
+        end
+        integer = constant_int_expression(syntax)
+        if integer[0]:
+            return [True, integer[1] != 0]
+        end
+        return [False, False]
+    elif kind == "unary" and syntax["operator"] == "not":
+        operand = constant_truth_expression(syntax["operand"])
+        if operand[0]:
+            return [True, not operand[1]]
+        end
+        return [False, False]
+    elif kind == "binary" and (syntax["operator"] == "and" or syntax["operator"] == "or"):
+        left_truth = constant_truth_expression(syntax["left"])
+        right_truth = constant_truth_expression(syntax["right"])
+        if left_truth[0] and right_truth[0]:
+            if syntax["operator"] == "and":
+                return [True, left_truth[1] and right_truth[1]]
+            end
+            return [True, left_truth[1] or right_truth[1]]
+        end
+        return [False, False]
+    elif kind != "compare":
+        return [False, False]
+    end
+    index = 0
+    while index < len(syntax["operators"]):
+        left = constant_int_expression(syntax["operands"][index])
+        right = constant_int_expression(syntax["operands"][index + 1])
+        if not left[0] or not right[0]:
+            return [False, False]
+        end
+        operator = syntax["operators"][index]
+        matches = False
+        if operator == "==" or operator == "is":
+            matches = left[1] == right[1]
+        elif operator == "!=" or operator == "is not":
+            matches = left[1] != right[1]
+        elif operator == "<":
+            matches = left[1] < right[1]
+        elif operator == "<=":
+            matches = left[1] <= right[1]
+        elif operator == ">":
+            matches = left[1] > right[1]
+        elif operator == ">=":
+            matches = left[1] >= right[1]
+        else:
+            return [False, False]
+        end
+        if not matches:
+            return [True, False]
+        end
+        index += 1
+    end
+    return [True, True]
+end
+
+function constant_if_body(statement):
+    for branch in statement["branches"]:
+        condition = constant_truth_expression(branch[0])
+        if not condition[0]:
+            return [False, []]
+        elif condition[1]:
+            return [True, branch[1]]
+        end
+    end
+    return [True, statement["otherwise"]]
 end
 
 function power_of_two_exponent(syntax):
@@ -553,8 +712,12 @@ function magic_signed(divisor):
 end
 
 function inverted_branch(operator):
-    # jcc bytes that jump when the ordered comparison is FALSE.
-    if operator == "<":
+    # jcc bytes that jump when the comparison is FALSE.
+    if operator == "==" or operator == "is":
+        return [15, 133]
+    elif operator == "!=" or operator == "is not":
+        return [15, 132]
+    elif operator == "<":
         return [15, 141]
     elif operator == "<=":
         return [15, 143]
@@ -566,10 +729,14 @@ function inverted_branch(operator):
     return []
 end
 
+function direct_scalar_equality(left_type, right_type):
+    return left_type == right_type and (left_type == "Int" or left_type == "Bool" or left_type == "None")
+end
+
 function emit_branch_if_false(generator, syntax, target_label):
-    # Ordered Int comparison branches directly on flags (cmp + inverted jcc),
-    # skipping the setcc/movzx/cmp-0 bool materialization. Returns True if it
-    # handled the branch.
+    # Static scalar comparisons branch directly on flags (cmp + inverted jcc),
+    # skipping setcc/movzx/cmp-0 and dynamic equality dispatch. Returns True if
+    # it handled the branch.
     if syntax["kind"] != "compare":
         return False
     end
@@ -577,18 +744,30 @@ function emit_branch_if_false(generator, syntax, target_label):
         return False
     end
     operator = syntax["operators"][0]
-    if operator != "<" and operator != "<=" and operator != ">" and operator != ">=":
+    ordered = operator == "<" or operator == "<=" or operator == ">" or operator == ">="
+    equality = operator == "==" or operator == "!=" or operator == "is" or operator == "is not"
+    if not ordered and not equality:
         return False
     end
     left = syntax["operands"][0]
     right = syntax["operands"][1]
     left_type = infer_expression_type(left, generator["types"], generator["function_returns"])
     right_type = infer_expression_type(right, generator["types"], generator["function_returns"])
-    if left_type == "Float" or right_type == "Float" or left_type == "Any" or right_type == "Any":
+    if equality:
+        if not direct_scalar_equality(left_type, right_type):
+            return False
+        end
+    elif left_type == "Float" or right_type == "Float" or left_type == "Any" or right_type == "Any":
         return False
     end
     output = generator["builder"]
-    if is_int_leaf(generator, right):
+    right_constant = constant_int_expression(right)
+    if right_constant[0] and x86_64.fits_signed32(right_constant[1]):
+        call emit_expression(generator, left)
+        call assembler.emit(output, x86_64.cmp_reg_imm32(0, right_constant[1]))
+        call assembler.relative(output, inverted_branch(operator), target_label)
+        return True
+    elif is_int_leaf(generator, right):
         call emit_expression(generator, left)
         call emit_int_leaf(generator, right, 6)
     elif is_int_leaf(generator, left):
@@ -798,6 +977,23 @@ end
 function emit_expression(generator, syntax):
     output = generator["builder"]
     kind = syntax["kind"]
+    if kind == "binary" or kind == "unary":
+        constant_integer = constant_int_expression(syntax)
+        if constant_integer[0]:
+            call assembler.emit(output, x86_64.mov_imm64(0, constant_integer[1]))
+            return
+        end
+    elif kind == "compare":
+        constant_truth = constant_truth_expression(syntax)
+        if constant_truth[0]:
+            truth_value = 0
+            if constant_truth[1]:
+                truth_value = 1
+            end
+            call assembler.emit(output, x86_64.mov_imm64(0, truth_value))
+            return
+        end
+    end
     if kind == "literal":
         value = syntax["value"]
         if syntax["literal_kind"] == "string":
@@ -1143,8 +1339,46 @@ function emit_expression(generator, syntax):
             call assembler.label(output, done_label)
             return
         end
-        # Int arithmetic path (Float/String/List handled above). Avoid the
-        # push/pop spill when an operand is a literal or variable leaf.
+        # Int arithmetic path (Float/String/List handled above). Fold constant
+        # subtrees into immediate operations while preserving evaluation of the
+        # non-constant side. This makes mechanically generated or noisy source
+        # as cheap as the direct spelling without reordering side effects.
+        right_constant = constant_int_expression(syntax["right"])
+        left_constant = constant_int_expression(syntax["left"])
+        if right_constant[0] and x86_64.fits_signed32(right_constant[1]) and (operator == "+" or operator == "-" or operator == "*"):
+            immediate = right_constant[1]
+            call emit_expression(generator, syntax["left"])
+            if operator == "+" and immediate != 0:
+                call assembler.emit(output, x86_64.add_reg_imm32(0, immediate))
+            elif operator == "-" and immediate != 0:
+                call assembler.emit(output, x86_64.sub_reg_imm(0, immediate))
+            elif operator == "*":
+                if immediate == 0:
+                    call assembler.emit(output, x86_64.mov_imm64(0, 0))
+                elif immediate == -1:
+                    call assembler.emit(output, x86_64.neg_reg(0))
+                elif immediate != 1:
+                    call assembler.emit(output, x86_64.imul_reg_imm(0, 0, immediate))
+                end
+            end
+            return
+        elif left_constant[0] and x86_64.fits_signed32(left_constant[1]) and (operator == "+" or operator == "*"):
+            immediate = left_constant[1]
+            call emit_expression(generator, syntax["right"])
+            if operator == "+" and immediate != 0:
+                call assembler.emit(output, x86_64.add_reg_imm32(0, immediate))
+            elif operator == "*":
+                if immediate == 0:
+                    call assembler.emit(output, x86_64.mov_imm64(0, 0))
+                elif immediate == -1:
+                    call assembler.emit(output, x86_64.neg_reg(0))
+                elif immediate != 1:
+                    call assembler.emit(output, x86_64.imul_reg_imm(0, 0, immediate))
+                end
+            end
+            return
+        end
+        # Avoid the push/pop spill when an operand is a literal or variable leaf.
         if is_int_leaf(generator, syntax["right"]):
             call emit_expression(generator, syntax["left"])
             call emit_int_leaf(generator, syntax["right"], 1)
@@ -2200,7 +2434,13 @@ function emit_expression(generator, syntax):
         index = len(arguments) - 1
         while index >= 0:
             call emit_expression(generator, arguments[index])
-            call emit_collection_box(generator, arguments[index])
+            expected_parameter_type = "Any"
+            if not indirect_call:
+                expected_parameter_type = generator["function_parameters"][target["name"]][index]
+            end
+            if expected_parameter_type == "Any":
+                call emit_collection_box(generator, arguments[index])
+            end
             call assembler.emit(output, x86_64.push(0))
             index -= 1
         end
@@ -2369,7 +2609,25 @@ function emit_expression(generator, syntax):
             left_equal_type = infer_expression_type(left, generator["types"], generator["function_returns"])
             right_equal_type = infer_expression_type(right, generator["types"], generator["function_returns"])
             use_deep = (operator == "==" or operator == "!=") and maybe_collection(left_equal_type) and maybe_collection(right_equal_type)
-            if use_deep:
+            if direct_scalar_equality(left_equal_type, right_equal_type):
+                right_constant = constant_int_expression(right)
+                if right_constant[0] and x86_64.fits_signed32(right_constant[1]):
+                    call emit_expression(generator, left)
+                    call assembler.emit(output, x86_64.cmp_reg_imm32(0, right_constant[1]))
+                elif is_int_leaf(generator, right):
+                    call emit_expression(generator, left)
+                    call emit_int_leaf(generator, right, 6)
+                    call assembler.emit(output, x86_64.cmp_reg_reg(0, 6))
+                else:
+                    call emit_expression(generator, left)
+                    call assembler.emit(output, x86_64.push(0))
+                    call emit_expression(generator, right)
+                    call assembler.emit(output, x86_64.move_reg_reg(6, 0))
+                    call assembler.emit(output, x86_64.pop(0))
+                    call assembler.emit(output, x86_64.cmp_reg_reg(0, 6))
+                end
+                call assembler.emit(output, x86_64.set_condition(opcode))
+            elif use_deep:
                 # Deep equality for collections (recursive, element-wise). Scalar
                 # pairs stay on the runtime_equal_any fast path below.
                 equal_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_equal"}, "arguments": [left, right]}
@@ -2405,9 +2663,16 @@ function emit_expression(generator, syntax):
             call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
             call assembler.emit(output, x86_64.set_condition(opcode))
         else:
-            # Ordered comparison compiles to cmp reg0, reg6. emit_int_leaf yields
-            # the same value as emit_expression for a leaf, so skip the spill.
-            if is_int_leaf(generator, right):
+            # Ordered comparison compiles directly against a constant when it
+            # fits x86-64's sign-extended imm32 form; otherwise leaf operands
+            # still avoid a stack spill.
+            right_constant = constant_int_expression(right)
+            if right_constant[0] and x86_64.fits_signed32(right_constant[1]):
+                call emit_expression(generator, left)
+                call assembler.emit(output, x86_64.cmp_reg_imm32(0, right_constant[1]))
+                call assembler.emit(output, x86_64.set_condition(opcode))
+                return
+            elif is_int_leaf(generator, right):
                 call emit_expression(generator, left)
                 call emit_int_leaf(generator, right, 6)
             elif is_int_leaf(generator, left):
@@ -2679,28 +2944,40 @@ function emit_statements(generator, statements, break_label, continue_label, ret
         elif kind == "expression":
             call emit_expression(generator, statement["expression"])
         elif kind == "if":
-            end_label = label_name(generator, "if_end")
-            branch_index = 0
-            while branch_index < len(statement["branches"]):
-                next_label = label_name(generator, "if_next")
-                branch = statement["branches"][branch_index]
-                if not emit_branch_if_false(generator, branch[0], next_label):
-                    call emit_condition(generator, branch[0])
-                    call assembler.emit(generator["builder"], x86_64.cmp_reg_imm8(0, 0))
-                    call assembler.relative(generator["builder"], [15, 132], next_label)
+            selected = constant_if_body(statement)
+            if selected[0]:
+                call emit_statements(generator, selected[1], break_label, continue_label, return_label)
+            else:
+                end_label = label_name(generator, "if_end")
+                branch_index = 0
+                while branch_index < len(statement["branches"]):
+                    next_label = label_name(generator, "if_next")
+                    branch = statement["branches"][branch_index]
+                    if not emit_branch_if_false(generator, branch[0], next_label):
+                        call emit_condition(generator, branch[0])
+                        call assembler.emit(generator["builder"], x86_64.cmp_reg_imm8(0, 0))
+                        call assembler.relative(generator["builder"], [15, 132], next_label)
+                    end
+                    call emit_statements(generator, branch[1], break_label, continue_label, return_label)
+                    call assembler.relative(generator["builder"], [233], end_label)
+                    call assembler.label(generator["builder"], next_label)
+                    branch_index += 1
                 end
-                call emit_statements(generator, branch[1], break_label, continue_label, return_label)
-                call assembler.relative(generator["builder"], [233], end_label)
-                call assembler.label(generator["builder"], next_label)
-                branch_index += 1
+                call emit_statements(generator, statement["otherwise"], break_label, continue_label, return_label)
+                call assembler.label(generator["builder"], end_label)
             end
-            call emit_statements(generator, statement["otherwise"], break_label, continue_label, return_label)
-            call assembler.label(generator["builder"], end_label)
         elif kind == "while" or kind == "loop":
+            constant_condition = [False, False]
+            if kind == "while":
+                constant_condition = constant_truth_expression(statement["condition"])
+            end
+            if kind == "while" and constant_condition[0] and not constant_condition[1]:
+                continue
+            end
             start_label = label_name(generator, "loop_start")
             end_label = label_name(generator, "loop_end")
             call assembler.label(generator["builder"], start_label)
-            if kind == "while":
+            if kind == "while" and not constant_condition[0]:
                 if not emit_branch_if_false(generator, statement["condition"], end_label):
                     call emit_condition(generator, statement["condition"])
                     call assembler.emit(generator["builder"], x86_64.cmp_reg_imm8(0, 0))
@@ -3026,6 +3303,11 @@ function emit_statements(generator, statements, break_label, continue_label, ret
         else:
             call unsupported(generator["path"], generator["lines"], statement, "statement kind " + kind + " is not implemented", "use scalar assignment, print, if, while, loop, break, or continue")
         end
+        # No following statement in this block can execute after an
+        # unconditional transfer. Avoid dead code and its literal data.
+        if kind == "return" or kind == "break" or kind == "continue" or kind == "error":
+            break
+        end
     end
 end
 
@@ -3093,26 +3375,431 @@ function returned_type(statements, types, function_returns):
         if kind == "return":
             result = merge_return_type(result, infer_expression_type(statement["expression"], types, function_returns))
         elif kind == "if":
-            for branch in statement["branches"]:
-                branch_type = returned_type(branch[1], types, function_returns)
+            selected = constant_if_body(statement)
+            if selected[0]:
+                branch_type = returned_type(selected[1], types, function_returns)
+                result = merge_return_type(result, branch_type)
+            else:
+                for branch in statement["branches"]:
+                    branch_type = returned_type(branch[1], types, function_returns)
+                    result = merge_return_type(result, branch_type)
+                end
+                branch_type = returned_type(statement["otherwise"], types, function_returns)
                 result = merge_return_type(result, branch_type)
             end
-            branch_type = returned_type(statement["otherwise"], types, function_returns)
-            result = merge_return_type(result, branch_type)
         elif kind == "while" or kind == "loop" or kind == "for":
-            branch_type = returned_type(statement["body"], types, function_returns)
-            result = merge_return_type(result, branch_type)
+            include_body = True
+            if kind == "while":
+                condition = constant_truth_expression(statement["condition"])
+                include_body = not condition[0] or condition[1]
+            end
+            if include_body:
+                branch_type = returned_type(statement["body"], types, function_returns)
+                result = merge_return_type(result, branch_type)
+            end
         elif kind == "safe" or kind == "try":
             branch_type = returned_type(statement["body"], types, function_returns)
             result = merge_return_type(result, branch_type)
             branch_type = returned_type(statement["otherwise"], types, function_returns)
             result = merge_return_type(result, branch_type)
         end
+        if kind == "return" or kind == "break" or kind == "continue" or kind == "error":
+            break
+        end
     end
     return result
 end
 
-function infer_function_returns(functions, classes):
+function specializable_parameter_type(value_type):
+    return value_type == "Int" or value_type == "Bool" or value_type == "None" or value_type == "Float" or value_type == "String" or value_type == "List" or value_type == "Tuple" or value_type == "RealArray" or value_type == "Dictionary" or value_type == "IntArray" or value_type == "FloatArray" or value_type == "ByteArray" or value_type.startswith("Class:") or value_type.startswith("Instance:")
+end
+
+function empty_parameter_types(functions):
+    result = {}
+    for name in functions.keys():
+        values = []
+        for parameter in functions[name]["parameters"]:
+            values.append("")
+        end
+        result[name] = values
+    end
+    return result
+end
+
+function dynamic_parameter_types(functions):
+    result = empty_parameter_types(functions)
+    for name in functions.keys():
+        index = 0
+        while index < len(result[name]):
+            result[name][index] = "Any"
+            index += 1
+        end
+    end
+    return result
+end
+
+function observe_parameter(observations, name, index, value_type):
+    if not specializable_parameter_type(value_type):
+        value_type = "Any"
+    end
+    current = observations[name][index]
+    if current == "":
+        observations[name][index] = value_type
+    elif current != value_type:
+        observations[name][index] = "Any"
+    end
+end
+
+function observe_expression_types(syntax, types, function_returns, functions, observations, escaped):
+    if syntax == None:
+        return
+    end
+    kind = syntax["kind"]
+    if kind == "name":
+        name = syntax["name"]
+        if name in functions:
+            escaped[name] = True
+        end
+    elif kind == "list" or kind == "tuple" or kind == "real_array":
+        for item in syntax["items"]:
+            call observe_expression_types(item, types, function_returns, functions, observations, escaped)
+        end
+    elif kind == "dictionary":
+        for entry in syntax["entries"]:
+            call observe_expression_types(entry[0], types, function_returns, functions, observations, escaped)
+            call observe_expression_types(entry[1], types, function_returns, functions, observations, escaped)
+        end
+    elif kind == "member":
+        call observe_expression_types(syntax["target"], types, function_returns, functions, observations, escaped)
+    elif kind == "slice":
+        call observe_expression_types(syntax["target"], types, function_returns, functions, observations, escaped)
+        call observe_expression_types(syntax["start"], types, function_returns, functions, observations, escaped)
+        call observe_expression_types(syntax["stop"], types, function_returns, functions, observations, escaped)
+        call observe_expression_types(syntax.get("step", None), types, function_returns, functions, observations, escaped)
+    elif kind == "index":
+        call observe_expression_types(syntax["target"], types, function_returns, functions, observations, escaped)
+        call observe_expression_types(syntax["index"], types, function_returns, functions, observations, escaped)
+    elif kind == "unary":
+        call observe_expression_types(syntax["operand"], types, function_returns, functions, observations, escaped)
+    elif kind == "binary":
+        call observe_expression_types(syntax["left"], types, function_returns, functions, observations, escaped)
+        call observe_expression_types(syntax["right"], types, function_returns, functions, observations, escaped)
+    elif kind == "compare":
+        for operand in syntax["operands"]:
+            call observe_expression_types(operand, types, function_returns, functions, observations, escaped)
+        end
+    elif kind == "call":
+        target = syntax["target"]
+        direct_name = ""
+        if target["kind"] == "name" and target["name"] in functions:
+            direct_name = target["name"]
+        else:
+            call observe_expression_types(target, types, function_returns, functions, observations, escaped)
+        end
+        index = 0
+        while index < len(syntax["arguments"]):
+            argument = syntax["arguments"][index]
+            call observe_expression_types(argument, types, function_returns, functions, observations, escaped)
+            if direct_name != "" and index < len(observations[direct_name]):
+                call observe_parameter(observations, direct_name, index, infer_expression_type(argument, types, function_returns))
+            end
+            index += 1
+        end
+    end
+end
+
+function observe_statement_types(statements, types, function_returns, functions, observations, escaped):
+    for statement in statements:
+        kind = statement["kind"]
+        if kind == "assign":
+            target = statement["target"]
+            if target["kind"] != "name":
+                call observe_expression_types(target, types, function_returns, functions, observations, escaped)
+            end
+            call observe_expression_types(statement["value"], types, function_returns, functions, observations, escaped)
+            if target["kind"] == "name":
+                if statement["operator"] == "=":
+                    assigned_type = infer_expression_type(statement["value"], types, function_returns)
+                else:
+                    operator = statement["operator"][0:len(statement["operator"]) - 1]
+                    combined = {"kind": "binary", "operator": operator, "left": target, "right": statement["value"]}
+                    assigned_type = infer_expression_type(combined, types, function_returns)
+                end
+                types[target["name"]] = assigned_type
+            end
+        elif kind == "print":
+            for expression in statement["expressions"]:
+                call observe_expression_types(expression, types, function_returns, functions, observations, escaped)
+            end
+        elif kind == "expression":
+            call observe_expression_types(statement["expression"], types, function_returns, functions, observations, escaped)
+        elif kind == "if":
+            selected = constant_if_body(statement)
+            if selected[0]:
+                call observe_statement_types(selected[1], types, function_returns, functions, observations, escaped)
+            else:
+                for branch in statement["branches"]:
+                    call observe_expression_types(branch[0], types, function_returns, functions, observations, escaped)
+                    call observe_statement_types(branch[1], types, function_returns, functions, observations, escaped)
+                end
+                call observe_statement_types(statement["otherwise"], types, function_returns, functions, observations, escaped)
+            end
+        elif kind == "while" or kind == "loop":
+            include_body = True
+            if kind == "while":
+                call observe_expression_types(statement["condition"], types, function_returns, functions, observations, escaped)
+                condition = constant_truth_expression(statement["condition"])
+                include_body = not condition[0] or condition[1]
+            end
+            if include_body:
+                call observe_statement_types(statement["body"], types, function_returns, functions, observations, escaped)
+            end
+        elif kind == "for":
+            iterable = statement["iterable"]
+            call observe_expression_types(iterable, types, function_returns, functions, observations, escaped)
+            iterable_type = infer_expression_type(iterable, types, function_returns)
+            item_type = "Any"
+            if iterable["kind"] == "call" and iterable["target"]["kind"] == "name" and (iterable["target"]["name"] == "rang" or iterable["target"]["name"] == "range"):
+                item_type = "Int"
+            elif iterable_type == "String":
+                item_type = "String"
+            elif iterable_type == "IntArray" or iterable_type == "ByteArray":
+                item_type = "Int"
+            elif iterable_type == "FloatArray":
+                item_type = "Float"
+            end
+            types[statement["name"]] = item_type
+            call observe_statement_types(statement["body"], types, function_returns, functions, observations, escaped)
+        elif kind == "safe" or kind == "try":
+            call observe_statement_types(statement["body"], types, function_returns, functions, observations, escaped)
+            call observe_statement_types(statement["otherwise"], types, function_returns, functions, observations, escaped)
+        elif kind == "return":
+            call observe_expression_types(statement["expression"], types, function_returns, functions, observations, escaped)
+        elif kind == "error":
+            call observe_expression_types(statement["message"], types, function_returns, functions, observations, escaped)
+        elif kind == "delete":
+            call observe_expression_types(statement["target"], types, function_returns, functions, observations, escaped)
+        elif kind == "class":
+            call observe_expression_types(statement["condition"], types, function_returns, functions, observations, escaped)
+            types[statement["name"]] = "Class:" + statement["name"]
+            for member in statement["body"]:
+                if member["kind"] == "assign":
+                    call observe_expression_types(member["value"], types, function_returns, functions, observations, escaped)
+                end
+            end
+        end
+        if kind == "return" or kind == "break" or kind == "continue" or kind == "error":
+            break
+        end
+    end
+end
+
+function expression_blocks_specialization(syntax):
+    if syntax == None:
+        return False
+    end
+    kind = syntax["kind"]
+    if kind == "call":
+        target = syntax["target"]
+        if target["kind"] == "name":
+            name = target["name"]
+            if name.startswith("__lsl_") or name == "type" or name == "Int" or name == "Bool" or name == "String":
+                return True
+            end
+        end
+        if expression_blocks_specialization(target):
+            return True
+        end
+        for argument in syntax["arguments"]:
+            if expression_blocks_specialization(argument):
+                return True
+            end
+        end
+    elif kind == "list" or kind == "tuple" or kind == "real_array":
+        for item in syntax["items"]:
+            if expression_blocks_specialization(item):
+                return True
+            end
+        end
+    elif kind == "dictionary":
+        for entry in syntax["entries"]:
+            if expression_blocks_specialization(entry[0]) or expression_blocks_specialization(entry[1]):
+                return True
+            end
+        end
+    elif kind == "member":
+        return expression_blocks_specialization(syntax["target"])
+    elif kind == "slice":
+        return expression_blocks_specialization(syntax["target"]) or expression_blocks_specialization(syntax["start"]) or expression_blocks_specialization(syntax["stop"]) or expression_blocks_specialization(syntax.get("step", None))
+    elif kind == "index":
+        return expression_blocks_specialization(syntax["target"]) or expression_blocks_specialization(syntax["index"])
+    elif kind == "unary":
+        return expression_blocks_specialization(syntax["operand"])
+    elif kind == "binary":
+        return expression_blocks_specialization(syntax["left"]) or expression_blocks_specialization(syntax["right"])
+    elif kind == "compare":
+        for operand in syntax["operands"]:
+            if expression_blocks_specialization(operand):
+                return True
+            end
+        end
+    end
+    return False
+end
+
+function statements_block_specialization(statements):
+    for statement in statements:
+        kind = statement["kind"]
+        if kind == "assign":
+            if expression_blocks_specialization(statement["target"]) or expression_blocks_specialization(statement["value"]):
+                return True
+            end
+        elif kind == "print":
+            for expression in statement["expressions"]:
+                if expression_blocks_specialization(expression):
+                    return True
+                end
+            end
+        elif kind == "expression" and expression_blocks_specialization(statement["expression"]):
+            return True
+        elif kind == "return" and expression_blocks_specialization(statement["expression"]):
+            return True
+        elif kind == "error" and expression_blocks_specialization(statement["message"]):
+            return True
+        elif kind == "delete" and expression_blocks_specialization(statement["target"]):
+            return True
+        elif kind == "if":
+            for branch in statement["branches"]:
+                if expression_blocks_specialization(branch[0]) or statements_block_specialization(branch[1]):
+                    return True
+                end
+            end
+            if statements_block_specialization(statement["otherwise"]):
+                return True
+            end
+        elif kind == "while" or kind == "loop" or kind == "for":
+            if kind == "while" and expression_blocks_specialization(statement["condition"]):
+                return True
+            elif kind == "for" and expression_blocks_specialization(statement["iterable"]):
+                return True
+            end
+            if statements_block_specialization(statement["body"]):
+                return True
+            end
+        elif kind == "safe" or kind == "try":
+            if statements_block_specialization(statement["body"]) or statements_block_specialization(statement["otherwise"]):
+                return True
+            end
+        elif kind == "function":
+            if statements_block_specialization(statement["body"]):
+                return True
+            end
+        elif kind == "class":
+            if expression_blocks_specialization(statement["condition"]):
+                return True
+            end
+            for member in statement["body"]:
+                if member["kind"] == "function":
+                    if statements_block_specialization(member["body"]):
+                        return True
+                    end
+                elif member["kind"] == "assign" and expression_blocks_specialization(member["value"]):
+                    return True
+                end
+            end
+        end
+    end
+    return False
+end
+
+function has_specialization_candidate(functions):
+    for name in functions.keys():
+        declaration = functions[name]
+        declaration_path = declaration.get("path", "")
+        if declaration_path.find("compiler/pure/") < 0 and len(declaration["parameters"]) > 0:
+            if not statements_block_specialization(declaration["body"]):
+                return True
+            end
+        end
+    end
+    return False
+end
+
+function program_blocks_specialization(program):
+    for statement in program:
+        statement_path = statement.get("path", "")
+        if statement_path.find("compiler/pure/") < 0:
+            if statements_block_specialization([statement]):
+                return True
+            end
+        end
+    end
+    return False
+end
+
+function infer_function_parameters(program, functions, function_returns, global_types):
+    result = empty_parameter_types(functions)
+    blocked = {}
+    for name in functions.keys():
+        blocked[name] = name.startswith("__lsl_") or statements_block_specialization(functions[name]["body"])
+    end
+    iteration = 0
+    while iteration < len(functions) + 2:
+        observations = empty_parameter_types(functions)
+        escaped = {}
+        main_types = {}
+        call observe_statement_types(program, main_types, function_returns, functions, observations, escaped)
+        for name in functions.keys():
+            if not blocked[name]:
+                types = {}
+                for global_name in global_types.keys():
+                    types[global_name] = global_types[global_name]
+                end
+                index = 0
+                while index < len(functions[name]["parameters"]):
+                    parameter_type = result[name][index]
+                    if parameter_type == "":
+                        parameter_type = "Any"
+                    end
+                    types[functions[name]["parameters"][index]] = parameter_type
+                    index += 1
+                end
+                call observe_statement_types(functions[name]["body"], types, function_returns, functions, observations, escaped)
+            end
+        end
+        changed = False
+        for name in functions.keys():
+            index = 0
+            while index < len(result[name]):
+                candidate = observations[name][index]
+                if name in escaped or blocked[name]:
+                    candidate = "Any"
+                end
+                if candidate != "" and candidate != result[name][index]:
+                    result[name][index] = candidate
+                    changed = True
+                end
+                index += 1
+            end
+        end
+        if not changed:
+            break
+        end
+        iteration += 1
+    end
+    for name in functions.keys():
+        index = 0
+        while index < len(result[name]):
+            if result[name][index] == "":
+                result[name][index] = "Any"
+            end
+            index += 1
+        end
+    end
+    return result
+end
+
+function infer_function_returns(functions, classes, parameter_types):
     # Least-fixed-point over the 3-level lattice None < concrete < Any. Start at
     # bottom (None) so a not-yet-resolved recursive call is the merge identity
     # rather than Any; otherwise merge(Bool, Any) = Any poisoned recursive
@@ -3134,8 +3821,10 @@ function infer_function_returns(functions, classes):
         for name in names:
             declaration = functions[name]
             types = {}
+            parameter_index = 0
             for parameter in declaration["parameters"]:
-                types[parameter] = "Any"
+                types[parameter] = parameter_types[name][parameter_index]
+                parameter_index += 1
             end
             call collect_types(declaration["body"], types, result)
             inferred = returned_type(declaration["body"], types, result)
@@ -3167,8 +3856,10 @@ function emit_function(generator, declaration):
             del(types[local_name])
         end
     end
+    parameter_index = 0
     for parameter in declaration["parameters"]:
-        types[parameter] = "Any"
+        types[parameter] = generator["function_parameters"][name][parameter_index]
+        parameter_index += 1
     end
     if "class_name" in declaration:
         if len(declaration["parameters"]) > 0:
@@ -3218,13 +3909,23 @@ function generate(path, source, program):
     lines = source
     classes = class_table(program)
     functions = function_table(path, lines, program)
-    function_returns = infer_function_returns(functions, classes)
+    parameter_types = dynamic_parameter_types(functions)
+    function_returns = infer_function_returns(functions, classes, parameter_types)
     main_variables = {}
     call collect_variables(program, main_variables)
     main_types = {}
     call collect_types(program, main_types, function_returns)
+    internal_abi = path.find("compiler/pure/") >= 0
+    if not internal_abi and has_specialization_candidate(functions) and not program_blocks_specialization(program):
+        # Direct-call observations propagate parameter types through helper
+        # chains. Escaping callbacks retain their dynamic ABI.
+        parameter_types = infer_function_parameters(program, functions, function_returns, main_types)
+        function_returns = infer_function_returns(functions, classes, parameter_types)
+        main_types = {}
+        call collect_types(program, main_types, function_returns)
+    end
     output = assembler.builder()
-    generator = {"path": path, "internal_abi": path.find("compiler/pure/") >= 0, "lines": lines, "variables": {}, "types": {}, "global_variables": main_variables, "global_types": main_types, "functions": functions, "classes": classes, "function_returns": function_returns, "builder": output, "data": [], "relocations": [], "counter": 0, "error_label": ""}
+    generator = {"path": path, "internal_abi": internal_abi, "lines": lines, "variables": {}, "types": {}, "global_variables": main_variables, "global_types": main_types, "functions": functions, "classes": classes, "function_returns": function_returns, "function_parameters": parameter_types, "builder": output, "data": [], "string_offsets": {}, "relocations": [], "counter": 0, "error_label": ""}
     registry_bytes = 524288
     registry_mask = 65535
     if generator["internal_abi"]:

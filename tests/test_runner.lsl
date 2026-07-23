@@ -58,6 +58,11 @@ call require_success(run(compiler, ["tests/compiler/scalar_smoke.lsl", "/tmp/lsl
 call require_success(run("/tmp/lsl-scalar-test", []), "run scalar smoke")
 call require_success(run(compiler, ["tests/compiler/float_smoke.lsl", "/tmp/lsl-float-test"]), "compile Float smoke")
 call require_success(run("/tmp/lsl-float-test", []), "run Float smoke")
+call require_success(run(compiler, ["tests/codegen_optimization_conformance.lsl", "/tmp/lsl-codegen-optimization-test"]), "compile codegen optimization conformance")
+call require_output("/tmp/lsl-codegen-optimization-test", [], "tests/codegen_optimization_conformance.out", "codegen optimization output differs")
+if len(readbytes("/tmp/lsl-codegen-optimization-test")) > 60000:
+    Error(TestFailure: "optimized standalone ELF exceeds 60000 bytes")
+end
 call require_success(run(compiler, ["tests/selfhost_conformance.lsl", "/tmp/lsl-selfhost-test"]), "compile selfhost conformance")
 call require_output("/tmp/lsl-selfhost-test", [], "tests/selfhost_conformance.out", "selfhost conformance output differs")
 call require_success(run(compiler, ["tests/table_growth_conformance.lsl", "/tmp/lsl-table-growth-test"]), "compile table growth conformance")

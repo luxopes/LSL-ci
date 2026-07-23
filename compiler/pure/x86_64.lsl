@@ -11,7 +11,24 @@ function modrm(mod, reg, rm):
     return mod * 64 + (reg % 8) * 8 + (rm % 8)
 end
 
+function fits_signed8(value):
+    return value >= -128 and value <= 127
+end
+
+function fits_signed32(value):
+    return value >= -2147483648 and value <= 2147483647
+end
+
 function mov_imm64(register, value):
+    # Prefer shorter encodings while preserving the full signed Int64 value.
+    # mov r32,imm32 zero-extends; C7 /0 sign-extends imm32 to r64.
+    if value >= 0 and value <= 4294967295:
+        return mov_imm32(register, value)
+    elif fits_signed32(value):
+        result = [rex(True, False, False, register >= 8), 199, modrm(3, 0, register)]
+        call bytes.append_little(result, value, 4)
+        return result
+    end
     result = [rex(True, False, False, register >= 8), 184 + register % 8]
     call bytes.append_little(result, value, 8)
     return result
@@ -73,6 +90,15 @@ end
 
 function imul_reg_reg(destination, source):
     return [rex(True, destination >= 8, False, source >= 8), 15, 175, modrm(3, destination, source)]
+end
+
+function imul_reg_imm(destination, source, value):
+    if fits_signed8(value):
+        return [rex(True, destination >= 8, False, source >= 8), 107, modrm(3, destination, source), value % 256]
+    end
+    result = [rex(True, destination >= 8, False, source >= 8), 105, modrm(3, destination, source)]
+    call bytes.append_little(result, value, 4)
+    return result
 end
 
 function cmp_reg_reg(left, right):
@@ -162,24 +188,42 @@ function move_reg_reg(destination, source):
 end
 
 function load_stack(register, displacement):
-    # mov register, [rbp + disp32]
-    result = [rex(True, register >= 8, False, False), 139, modrm(2, register, 5)]
-    call bytes.append_little(result, displacement, 4)
+    mode = 2
+    if fits_signed8(displacement):
+        mode = 1
+    end
+    result = [rex(True, register >= 8, False, False), 139, modrm(mode, register, 5)]
+    if mode == 1:
+        result.append(displacement % 256)
+    else:
+        call bytes.append_little(result, displacement, 4)
+    end
     return result
 end
 
 function store_stack(displacement, register):
-    # mov [rbp + disp32], register
-    result = [rex(True, register >= 8, False, False), 137, modrm(2, register, 5)]
-    call bytes.append_little(result, displacement, 4)
+    mode = 2
+    if fits_signed8(displacement):
+        mode = 1
+    end
+    result = [rex(True, register >= 8, False, False), 137, modrm(mode, register, 5)]
+    if mode == 1:
+        result.append(displacement % 256)
+    else:
+        call bytes.append_little(result, displacement, 4)
+    end
     return result
 end
 
 function function_prologue(frame_size):
     result = [85, 72, 137, 229]
     if frame_size > 0:
-        result.extend([72, 129, 236])
-        call bytes.append_little(result, frame_size, 4)
+        if fits_signed8(frame_size):
+            result.extend([72, 131, 236, frame_size])
+        else:
+            result.extend([72, 129, 236])
+            call bytes.append_little(result, frame_size, 4)
+        end
     end
     return result
 end
@@ -193,7 +237,19 @@ function add_reg_imm8(register, value):
 end
 
 function add_reg_imm32(register, value):
+    if fits_signed8(value):
+        return add_reg_imm8(register, value)
+    end
     result = [rex(True, False, False, register >= 8), 129, modrm(3, 0, register)]
+    call bytes.append_little(result, value, 4)
+    return result
+end
+
+function sub_reg_imm(register, value):
+    if fits_signed8(value):
+        return [rex(True, False, False, register >= 8), 131, modrm(3, 5, register), value % 256]
+    end
+    result = [rex(True, False, False, register >= 8), 129, modrm(3, 5, register)]
     call bytes.append_little(result, value, 4)
     return result
 end
@@ -203,6 +259,9 @@ function cmp_reg_imm8(register, value):
 end
 
 function cmp_reg_imm32(register, value):
+    if fits_signed8(value):
+        return cmp_reg_imm8(register, value)
+    end
     result = [rex(True, False, False, register >= 8), 129, modrm(3, 7, register)]
     call bytes.append_little(result, value, 4)
     return result
@@ -280,46 +339,69 @@ function memory_tail(base_register, mode, reg_field):
     return result
 end
 
+function memory_mode(base_register, displacement):
+    if displacement == 0 and base_register % 8 != 5:
+        return 0
+    elif fits_signed8(displacement):
+        return 1
+    end
+    return 2
+end
+
+function append_displacement(result, mode, displacement):
+    if mode == 1:
+        result.append(displacement % 256)
+    elif mode == 2:
+        call bytes.append_little(result, displacement, 4)
+    end
+end
+
 function load_memory(destination, base_register, displacement):
+    mode = memory_mode(base_register, displacement)
     result = [rex(True, destination >= 8, False, base_register >= 8), 139]
-    result.extend(memory_tail(base_register, 2, destination))
-    call bytes.append_little(result, displacement, 4)
+    result.extend(memory_tail(base_register, mode, destination))
+    call append_displacement(result, mode, displacement)
     return result
 end
 
 function store_memory(base_register, displacement, source_register):
+    mode = memory_mode(base_register, displacement)
     result = [rex(True, source_register >= 8, False, base_register >= 8), 137]
-    result.extend(memory_tail(base_register, 2, source_register))
-    call bytes.append_little(result, displacement, 4)
+    result.extend(memory_tail(base_register, mode, source_register))
+    call append_displacement(result, mode, displacement)
     return result
 end
 
 function store_memory_imm32(base_register, displacement, value):
+    mode = memory_mode(base_register, displacement)
     result = [rex(True, False, False, base_register >= 8), 199]
-    result.extend(memory_tail(base_register, 2, 0))
-    call bytes.append_little(result, displacement, 4)
+    result.extend(memory_tail(base_register, mode, 0))
+    call append_displacement(result, mode, displacement)
     call bytes.append_little(result, value, 4)
     return result
 end
 
 function lea_base(destination, base_register, displacement):
+    mode = memory_mode(base_register, displacement)
     result = [rex(True, destination >= 8, False, base_register >= 8), 141]
-    result.extend(memory_tail(base_register, 2, destination))
-    call bytes.append_little(result, displacement, 4)
+    result.extend(memory_tail(base_register, mode, destination))
+    call append_displacement(result, mode, displacement)
     return result
 end
 
 function load_byte_zero_extend(destination, base_register, displacement):
+    mode = memory_mode(base_register, displacement)
     result = [rex(True, destination >= 8, False, base_register >= 8), 15, 182]
-    result.extend(memory_tail(base_register, 2, destination))
-    call bytes.append_little(result, displacement, 4)
+    result.extend(memory_tail(base_register, mode, destination))
+    call append_displacement(result, mode, displacement)
     return result
 end
 
 function store_byte_reg_disp(base_register, displacement, source_register):
+    mode = memory_mode(base_register, displacement)
     result = [rex(False, source_register >= 8, False, base_register >= 8), 136]
-    result.extend(memory_tail(base_register, 2, source_register))
-    call bytes.append_little(result, displacement, 4)
+    result.extend(memory_tail(base_register, mode, source_register))
+    call append_displacement(result, mode, displacement)
     return result
 end
 

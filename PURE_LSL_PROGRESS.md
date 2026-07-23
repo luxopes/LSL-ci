@@ -679,6 +679,22 @@ Linker umí testům dohledat compiler moduly bez jejich kopírování. Full suit
 Produkční implementace (`compiler/pure/*.lsl` + `stdlib/*.lsl`) má 12454 fyzických
 řádků, z toho 11728 neprázdných nekomentářových řádků.
 
+Optimalizující-codegen fixed point
+`15ef7f3e07e65e3d78ad30dee2aa016caa34c0cc9de684318afd83d9dd703ae5`
+přidává signed-correct kompaktní MOV/immediate/disp8/prologue encoding, Int
+constant folding, constant branch/loop pruning, terminal dead-code elimination,
+immediate scalar aritmetiku/compare/branch, přímou statickou equality,
+deduplikaci String templates a guarded specializaci neunikajících přímých
+funkcí. Callbacky a introspekční programy zůstávají na tagged Any ABI; pointer
+collision corpus prochází. Compiler ELF klesl z 857964 na 669920 B (−21,92 %),
+tiny ELF z 71977 na 53634 B (−25,48 %) a 2M volání triviálního helperu z mediánu
+2,976 s na 0,006 s. Pětiběhový self-host medián je 2,030 s proti 2,136 s; peak
+RSS je 420436 KiB proti 406200 KiB. Full suite (10,056 s), fixed point (2,024 s),
+config, installed fixed point, ELF i pure-tree audit prošly. Produkční LSL
+implementace má nyní 13237 fyzických / 12482 neprázdných nekomentářových řádků.
+Praktický programming guide a compiler/release guide jsou v `docs/programming.md` a
+`docs/compiler-development.md`.
+
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,
 collections, GC robustnost, syscall I/O, native/tensor ABI, AI vrstva,
