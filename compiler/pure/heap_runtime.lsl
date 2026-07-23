@@ -846,6 +846,8 @@ function emit_gc(output):
     call assembler.relative(output, [15, 132], "mark_list")
     call assembler.emit(output, x86_64.cmp_reg_imm8(1, 8))
     call assembler.relative(output, [15, 132], "mark_list")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(1, 13))
+    call assembler.relative(output, [15, 132], "mark_raw_list")
     call assembler.emit(output, x86_64.cmp_reg_imm8(1, 3))
     call assembler.relative(output, [15, 132], "mark_dict")
     call assembler.relative(output, [233], "mark_done")
@@ -868,6 +870,13 @@ function emit_gc(output):
     call assembler.emit(output, x86_64.increment(1))
     call assembler.emit(output, x86_64.store_stack(-24, 1))
     call assembler.relative(output, [233], "mark_list_loop")
+    call assembler.label(output, "mark_raw_list")
+    # IntArray slots are raw Int64 values, not object references. Keep only its
+    # separately allocated backing block alive.
+    call assembler.emit(output, x86_64.load_stack(7, -8))
+    call assembler.emit(output, x86_64.load_memory(7, 7, 24))
+    call assembler.relative(output, [232], "runtime_mark_shallow")
+    call assembler.relative(output, [233], "mark_done")
     call assembler.label(output, "mark_dict")
     call assembler.emit(output, x86_64.load_memory(7, 7, 24))
     call assembler.emit(output, x86_64.store_stack(-16, 7))

@@ -34,9 +34,10 @@ Vestavěné typy a návratové hodnoty `type(value)`:
 | `(...)` | `Tuple` |
 | `{key: value}` | `Dictionary` |
 | `![...]` | `RealArray` |
+| `IntArray()` | `IntArray` |
 | `None` | `None` |
 
-`Bool(value)`, `Int(value)`, `Float(value)`, `String(value)`, `List(value)`, `Tuple(value)` a `Dictionary(value)` převádějí hodnoty. Přiřazení podporuje také `+=`, `-=`, `*=`, `/=` a `%=`.
+`Bool(value)`, `Int(value)`, `Float(value)`, `String(value)`, `List(value)`, `Tuple(value)` a `Dictionary(value)` převádějí hodnoty. `IntArray()` vytváří prázdné, měnitelné pole s neboxovanými contiguous signed 64-bit prvky. Přiřazení podporuje také `+=`, `-=`, `*=`, `/=` a `%=`.
 
 `Int` je signed 64-bit two's-complement hodnota. Aritmetika, mocnina, negace a převod z desetinného Stringu se definovaně redukují modulo `2^64`; nepoužívají `OverflowError`. `INT64_MIN // -1` proto vrací `INT64_MIN` a zbytek `0` bez CPU trapu.
 
@@ -146,6 +147,9 @@ Podmínka `class Name(condition)` určuje, zda se tělo třídy vykoná. Při `F
 items = ["A", 1, True]
 point = (10, 20)
 fixed = ![1, 2, 3]
+integers = IntArray()
+integers.append(10)
+integers.append(20)
 data = {
     "A": "ahoj"
     "B": "balet"
@@ -162,12 +166,15 @@ del(items[0])
 
 Čárky mezi řádky jednoduchého víceřádkového dictionary jsou volitelné. `RealArray` lze indexově měnit, ale jeho délka je pevná: `append`, `extend`, `pop` a `del(fixed[i])` selžou.
 
+`IntArray` ukládá hodnoty přímo jako contiguous Int64 bez per-element objektu. Indexace i iterace mají statický typ `Int`; `append` a indexové přiřazení odmítnou jiné typy už při kompilaci. Podporované změny délky jsou zatím `append`, `clear` a `del(array[index])`; slicing zachovává `IntArray`. Pro heterogenní data zůstává `List`.
+
 Povolené metody:
 
 - List: `append`, `extend`, `insert`, `pop`, `remove`, `clear`, `index`, `count`, `sort`, `reverse`, `copy`
 - Dictionary: `get`, `keys`, `values`, `items`, `update`, `pop`, `clear`, `setdefault`, `copy`
 - String: `lower`, `upper`, `split`, `strip`, `lstrip`, `rstrip`, `replace`, `join`, `startswith`, `endswith`, `title`, `capitalize`, `find`, `count`
 - Tuple/RealArray: `index`, `count`; RealArray navíc `copy`
+- IntArray: `append`, `clear`; dále indexace, indexové přiřazení, slicing, `len` a iterace
 
 Indexace a slicing (`value[start:stop]`) mají pravou mez exkluzivní a podporují záporné indexy. String indexy, `len`, slicing, iterace, `find` a `index` počítají validní Unicode code points, ne UTF-8 bajty.
 

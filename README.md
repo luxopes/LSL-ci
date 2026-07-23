@@ -40,7 +40,7 @@ Bez argumentu installer používá `/usr/local` (podle oprávnění procesu). In
 
 - Int, Bool, None a boxed IEEE-754 Float;
 - UTF-8 String s code-point `len`, indexací, slicingem, `chr` a `ord`;
-- List, Tuple, RealArray a Dictionary včetně běžných metod;
+- List, Tuple, RealArray, Dictionary a neboxovaný contiguous `IntArray`;
 - functions, recursion, first-class Function pointers a callbacks;
 - classes/instances, static i bound metody, public/private module class lowering;
 - recursive modules, `safe`, `try/else`, `Error`, `check`, `last_error`;

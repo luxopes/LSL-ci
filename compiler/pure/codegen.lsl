@@ -173,6 +173,8 @@ function infer_expression_type(syntax, types, function_returns):
         target_type = infer_expression_type(syntax["target"], types, function_returns)
         if target_type == "String":
             return "String"
+        elif target_type == "IntArray":
+            return "Int"
         end
         return "Any"
     elif kind == "slice":
@@ -213,6 +215,8 @@ function infer_expression_type(syntax, types, function_returns):
                 return "Tuple"
             elif name == "RealArray":
                 return "RealArray"
+            elif name == "IntArray":
+                return "IntArray"
             elif name == "Dictionary":
                 return "Dictionary"
             elif "__class__" + name in function_returns:
@@ -288,6 +292,8 @@ function collect_types(statements, types, function_returns):
                 types[statement["name"]] = "Int"
             elif iterable_type == "String":
                 types[statement["name"]] = "String"
+            elif iterable_type == "IntArray":
+                types[statement["name"]] = "Int"
             else:
                 # List/Tuple/RealArray/Dictionary/Any elements are dynamic; Int
                 # would miscompile boxed Float/None elements (e.g. sum of Floats).
@@ -415,7 +421,7 @@ function emit_truth(generator):
 end
 
 function maybe_collection(value_type):
-    return value_type == "List" or value_type == "Tuple" or value_type == "RealArray" or value_type == "Dictionary" or value_type == "Any"
+    return value_type == "List" or value_type == "Tuple" or value_type == "RealArray" or value_type == "IntArray" or value_type == "Dictionary" or value_type == "Any"
 end
 
 function condition_is_bool(syntax):
@@ -684,7 +690,7 @@ end
 
 function emit_dictionary_key_box(generator, syntax):
     key_type = infer_expression_type(syntax, generator["types"], generator["function_returns"])
-    if key_type == "List" or key_type == "Tuple" or key_type == "RealArray" or key_type == "Dictionary" or key_type.startswith("Class:") or key_type.startswith("Instance:"):
+    if key_type == "List" or key_type == "Tuple" or key_type == "RealArray" or key_type == "IntArray" or key_type == "Dictionary" or key_type.startswith("Class:") or key_type.startswith("Instance:"):
         call unsupported(generator["path"], generator["lines"], syntax, "mutable or collection value cannot be a Dictionary key", "use String, Int, Bool, None, Float, or Function keys")
     end
     call emit_collection_box(generator, syntax)
@@ -736,13 +742,17 @@ function emit_runtime_raise(generator, message):
     end
 end
 
-function emit_bounds_check(generator, syntax):
+function emit_bounds_check(generator, syntax, target_type):
     source_path = syntax.get("path", generator["path"])
     bounds_nonnegative = label_name(generator, "bounds_nonnegative")
     bounds_ok = label_name(generator, "bounds_ok")
     call assembler.emit(generator["builder"], x86_64.push(7))
     call assembler.emit(generator["builder"], x86_64.push(6))
-    call assembler.relative(generator["builder"], [232], "runtime_length")
+    if target_type == "List" or target_type == "Tuple" or target_type == "RealArray" or target_type == "IntArray":
+        call assembler.emit(generator["builder"], x86_64.load_memory(0, 7, 8))
+    else:
+        call assembler.relative(generator["builder"], [232], "runtime_length")
+    end
     call assembler.emit(generator["builder"], x86_64.move_reg_reg(8, 0))
     call assembler.emit(generator["builder"], x86_64.pop(6))
     call assembler.emit(generator["builder"], x86_64.pop(7))
@@ -879,6 +889,8 @@ function emit_expression(generator, syntax):
                 call assembler.emit(output, x86_64.store_memory_imm32(0, 0, 7))
             elif target_slice_type == "RealArray":
                 call assembler.emit(output, x86_64.store_memory_imm32(0, 0, 8))
+            elif target_slice_type == "IntArray":
+                call assembler.emit(output, x86_64.store_memory_imm32(0, 0, 13))
             end
             return
         end
@@ -908,6 +920,14 @@ function emit_expression(generator, syntax):
         call assembler.emit(output, x86_64.pop(6))
         call assembler.emit(output, x86_64.pop(7))
         call assembler.relative(output, [232], "runtime_slice")
+        target_slice_type = infer_expression_type(syntax["target"], generator["types"], generator["function_returns"])
+        if target_slice_type == "Tuple":
+            call assembler.emit(output, x86_64.store_memory_imm32(0, 0, 7))
+        elif target_slice_type == "RealArray":
+            call assembler.emit(output, x86_64.store_memory_imm32(0, 0, 8))
+        elif target_slice_type == "IntArray":
+            call assembler.emit(output, x86_64.store_memory_imm32(0, 0, 13))
+        end
     elif kind == "index":
         target_type = infer_expression_type(syntax["target"], generator["types"], generator["function_returns"])
         call emit_expression(generator, syntax["target"])
@@ -924,10 +944,14 @@ function emit_expression(generator, syntax):
         if target_type == "Dictionary":
             call assembler.relative(output, [232], "runtime_dict_get")
         else:
-            if target_type == "String" or target_type == "List" or target_type == "Tuple" or target_type == "RealArray":
-                call emit_bounds_check(generator, syntax)
+            if target_type == "String" or target_type == "List" or target_type == "Tuple" or target_type == "RealArray" or target_type == "IntArray":
+                call emit_bounds_check(generator, syntax, target_type)
             end
-            call assembler.relative(output, [232], "runtime_get")
+            if target_type == "List" or target_type == "Tuple" or target_type == "RealArray" or target_type == "IntArray":
+                call assembler.relative(output, [232], "runtime_list_get")
+            else:
+                call assembler.relative(output, [232], "runtime_get")
+            end
         end
         call emit_pending_error(generator)
     elif kind == "unary":
@@ -1227,14 +1251,20 @@ function emit_expression(generator, syntax):
     elif kind == "call":
         target = syntax["target"]
         if target["kind"] == "name":
-            builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "Dictionary": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sum": 1, "type": 1, "exit": 1, "input": 1, "readfile": 1, "getenv": 1, "mkdir": 1, "unlink": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "help": 0, "run": 2, "capture": 2, "capture_stream": 3, "capture_input": 3, "capture_status": 0, "capture_stderr": 0, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2, "native_open": 1, "native_size": 1, "native_u64": 2, "native_name_equal": 3, "native_function": 2, "native_call": 2, "native_close": 1, "__lsl_test_small_tables": 0, "__lsl_test_fd_fault": 1, "__lsl_object_table_mask": 0, "__lsl_intern_table_mask": 0}
+            builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "IntArray": 0, "Dictionary": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sum": 1, "type": 1, "exit": 1, "input": 1, "readfile": 1, "getenv": 1, "mkdir": 1, "unlink": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "help": 0, "run": 2, "capture": 2, "capture_stream": 3, "capture_input": 3, "capture_status": 0, "capture_stderr": 0, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2, "native_open": 1, "native_size": 1, "native_u64": 2, "native_name_equal": 3, "native_function": 2, "native_call": 2, "native_close": 1, "__lsl_test_small_tables": 0, "__lsl_test_fd_fault": 1, "__lsl_object_table_mask": 0, "__lsl_intern_table_mask": 0}
             if target["name"] in builtin_arity:
                 expected_builtin = builtin_arity[target["name"]]
                 if len(syntax["arguments"]) != expected_builtin:
                     call unsupported(generator["path"], generator["lines"], syntax, "builtin " + target["name"] + " expects " + String(expected_builtin) + " argument(s), got " + String(len(syntax["arguments"])), "pass exactly " + String(expected_builtin) + " argument(s)")
                 end
             end
-            if target["name"] == "Bool":
+            if target["name"] == "IntArray":
+                call assembler.emit(output, x86_64.mov_imm64(7, 0))
+                call assembler.emit(output, x86_64.mov_imm64(6, 0))
+                call assembler.relative(output, [232], "runtime_list_new")
+                call assembler.emit(output, x86_64.store_memory_imm32(0, 0, 13))
+                return
+            elif target["name"] == "Bool":
                 call emit_expression(generator, syntax["arguments"][0])
                 call emit_truth(generator)
                 call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
@@ -1726,7 +1756,7 @@ function emit_expression(generator, syntax):
                 call assembler.label(output, done_label)
                 return
             elif target["name"] == "help":
-                call emit_static_write(generator, "Lux Simple Lang (LSL) 0.7" + chr(10) + "functions: print printl input for loop safe if elif else try class ctype function type del len help" + chr(10) + "types: Bool Int Float String List Tuple RealArray Dictionary" + chr(10) + "docs: see README.md and docs/" + chr(10))
+                call emit_static_write(generator, "Lux Simple Lang (LSL) 0.7" + chr(10) + "functions: print printl input for loop safe if elif else try class ctype function type del len help" + chr(10) + "types: Bool Int Float String List Tuple RealArray IntArray Dictionary" + chr(10) + "docs: see README.md and docs/" + chr(10))
                 call assembler.emit(output, x86_64.mov_imm64(0, 0))
                 return
             elif target["name"] == "abs":
@@ -1796,14 +1826,23 @@ function emit_expression(generator, syntax):
                 combined_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": native_method_name}, "arguments": combined_arguments}
                 call emit_expression(generator, combined_call)
                 return
+            elif receiver_type == "IntArray" and target["name"] != "append" and target["name"] != "clear":
+                call unsupported(generator["path"], generator["lines"], syntax, "IntArray method is not implemented: " + target["name"], "use append, clear, indexed access, indexed assignment, len, or iteration")
             elif target["name"] == "append":
                 if receiver_type == "Tuple" or receiver_type == "RealArray":
                     call unsupported(generator["path"], generator["lines"], syntax, "fixed collection does not support append", "convert it with List(value) before appending")
                 end
+                if receiver_type == "IntArray":
+                    if infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"]) != "Int":
+                        call unsupported(generator["path"], generator["lines"], syntax["arguments"][0], "IntArray append requires an Int", "convert the value with Int(...) before appending")
+                    end
+                end
                 call emit_expression(generator, target["target"])
                 call assembler.emit(output, x86_64.push(0))
                 call emit_expression(generator, syntax["arguments"][0])
-                call emit_collection_box(generator, syntax["arguments"][0])
+                if receiver_type != "IntArray":
+                    call emit_collection_box(generator, syntax["arguments"][0])
+                end
                 call assembler.emit(output, x86_64.move_reg_reg(6, 0))
                 call assembler.emit(output, x86_64.pop(7))
                 call assembler.relative(output, [232], "runtime_list_append")
@@ -1852,7 +1891,7 @@ function emit_expression(generator, syntax):
                         call unsupported(generator["path"], generator["lines"], syntax, "fixed collection does not support " + target["name"], "convert it with List(value) before changing its length")
                     end
                 end
-                if receiver_type == "List" or receiver_type == "Tuple" or receiver_type == "RealArray":
+                if receiver_type == "List" or receiver_type == "Tuple" or receiver_type == "RealArray" or receiver_type == "IntArray":
                     if target["name"] == "index":
                         method_target = "__lsl_list_index"
                     elif target["name"] == "count":
@@ -2218,7 +2257,7 @@ function emit_print_value(generator, expression):
     end
     if True:
         value_type = infer_expression_type(expression, generator["types"], generator["function_returns"])
-        if value_type == "List" or value_type == "Tuple" or value_type == "RealArray" or value_type == "Dictionary" or value_type == "Any":
+        if value_type == "List" or value_type == "Tuple" or value_type == "RealArray" or value_type == "IntArray" or value_type == "Dictionary" or value_type == "Any":
             str_call = {"kind": "call", "line": expression["line"], "column": expression["column"], "end_column": expression["end_column"], "target": {"kind": "name", "name": "__lsl_str_value"}, "arguments": [expression]}
             call emit_expression(generator, str_call)
             call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
@@ -2315,14 +2354,24 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 end
                 call assembler.emit(generator["builder"], x86_64.push(0))
                 if statement["operator"] == "=":
+                    if target_type == "IntArray" and infer_expression_type(statement["value"], generator["types"], generator["function_returns"]) != "Int":
+                        call unsupported(generator["path"], generator["lines"], statement["value"], "IntArray assignment requires an Int", "convert the value with Int(...) before assignment")
+                    end
                     call emit_expression(generator, statement["value"])
-                    call emit_collection_box(generator, statement["value"])
+                    if target_type != "IntArray":
+                        call emit_collection_box(generator, statement["value"])
+                    end
                 else:
                     operator = statement["operator"][0:len(statement["operator"]) - 1]
                     combined = {"kind": "binary", "line": statement["line"], "column": statement["column"], "end_column": statement["end_column"], "operator": operator, "left": target, "right": statement["value"]}
+                    if target_type == "IntArray" and infer_expression_type(combined, generator["types"], generator["function_returns"]) != "Int":
+                        call unsupported(generator["path"], generator["lines"], statement["value"], "IntArray assignment requires an Int result", "use integer arithmetic for augmented assignment")
+                    end
                     call emit_expression(generator, combined)
-                    call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
-                    call assembler.relative(generator["builder"], [232], "runtime_box_dynamic_int")
+                    if target_type != "IntArray":
+                        call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
+                        call assembler.relative(generator["builder"], [232], "runtime_box_dynamic_int")
+                    end
                 end
                 call assembler.emit(generator["builder"], x86_64.move_reg_reg(2, 0))
                 call assembler.emit(generator["builder"], x86_64.pop(6))
@@ -2331,7 +2380,7 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                     call unsupported(generator["path"], generator["lines"], statement, "Tuple items are immutable", "use List or RealArray for indexed mutation")
                 elif target_type == "Dictionary":
                     call assembler.relative(generator["builder"], [232], "runtime_dict_set")
-                elif target_type == "List" or target_type == "RealArray":
+                elif target_type == "List" or target_type == "RealArray" or target_type == "IntArray":
                     if target_type == "RealArray":
                         call assembler.emit(generator["builder"], x86_64.push(7))
                         call assembler.emit(generator["builder"], x86_64.push(6))
@@ -2351,7 +2400,7 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                         call assembler.emit(generator["builder"], x86_64.pop(7))
                     end
                     call assembler.emit(generator["builder"], x86_64.push(2))
-                    call emit_bounds_check(generator, statement)
+                    call emit_bounds_check(generator, statement, target_type)
                     call assembler.emit(generator["builder"], x86_64.pop(2))
                     call assembler.relative(generator["builder"], [232], "runtime_list_set")
                 else:
@@ -2640,7 +2689,7 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 if target_type == "Tuple" or target_type == "RealArray":
                     call unsupported(generator["path"], generator["lines"], statement, "fixed collection does not support del", "convert it with List(value) before deleting")
                 end
-                if target_type == "List":
+                if target_type == "List" or target_type == "IntArray":
                     delete_call = {"kind": "call", "line": statement["line"], "column": statement["column"], "end_column": statement["end_column"], "target": {"kind": "name", "name": "__lsl_delete_at"}, "arguments": [target["target"], target["index"]]}
                     call emit_expression(generator, delete_call)
                 else:

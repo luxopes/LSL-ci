@@ -642,6 +642,18 @@ regenerovaný full suite prošel za 8,843 s, fixed-point režim za 1,831 s, conf
 je bitově shodný a nainstalovaný compiler reprodukuje tentýž hash. Všechny
 udržované ELF mají jediný RX `PT_LOAD` bez `INTERP`, `DYNAMIC` a RWX.
 
+Native-performance fixed point
+`25f26c531189d54e3659093dab3d81f6a10572e36661c34408e34962ff84ab37`
+přidává explicitní `IntArray`: mutable contiguous pole raw signed Int64 bez
+per-element heap objektů. Indexace a iterace jsou staticky `Int`, append/set
+odmítají jiné typy, slicing zachovává typ, GC značí backing bez interpretace raw
+slotů a rendering/equality/List conversion jsou pointer-collision safe. Původní
+200000-prvkový/10-pass benchmark klesl z mediánu 785331 us / 189472 KiB na
+9070 us / 9780 KiB; GCC 15.3 `-O3` má 1850 us / 3240 KiB. Rozdíl je tedy přibližně
+4,9× čas a 3,0× RSS místo 425× / 58,5× dynamického Listu. Regenerovaný full suite
+(8,923 s), fixed point (1,824 s), config, installer a ELF audit prošly. Další
+native-performance kroky jsou `FloatArray`/Tensor kernels a `ByteArray`.
+
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,
 collections, GC robustnost, syscall I/O, native/tensor ABI, AI vrstva,
