@@ -4,7 +4,7 @@ Stav: interní Linux x86_64 ABI verze 0.7. Není to veřejné plugin ABI.
 
 ## Strojová hranice
 
-Compiler generuje SysV-like volání: prvních šest argumentů je v `rdi`, `rsi`, `rdx`, `rcx`, `r8`, `r9`, další argumenty jsou na zásobníku a výsledek je v `rax`. `r12` ukazuje na main/global frame, `r13` drží poslední error String, `r14` error flag, `r15` původní process stack a `rbx` adresu 88-byte allocator/GC/process state bloku rezervovaného přes `brk`.
+Compiler generuje SysV-like volání: prvních šest argumentů je v `rdi`, `rsi`, `rdx`, `rcx`, `r8`, `r9`, další argumenty jsou na zásobníku a výsledek je v `rax`. `r12` ukazuje na main/global frame, `r13` drží poslední error String, `r14` error flag, `r15` původní process stack a `rbx` adresu 96-byte allocator/GC/process/input state bloku rezervovaného přes `brk`.
 
 Runtime je emitován přímo jako x86_64 bytes z LSL modulů. Nepoužívá libc, C ABI runtime, assembler ani linker.
 
@@ -56,6 +56,8 @@ ELF image má pouze RX `PT_LOAD`. Mutable allocator stav a počáteční 64K-ent
 ## Process/I/O cleanup
 
 `capture` kontroluje pipe/memfd/fork/read/wait/lseek/dup2 a propaguje setup/I/O chyby jako catchable `ProcessError`; `capture_input` připraví stdin v seekable memfd, takže velký vstup nemůže uváznout proti stdout pipe. Již otevřené deskriptory se na chybových větvích zavírají. Linux `close(2)` je cleanup best-effort a po `EINTR` se neopakuje: descriptor už může být uvolněný a retry by mohl zavřít nově recyklované fd. Cleanup chyba nepřepisuje původní operation error.
+
+State offset `+88` drží interní EOF marker posledního `input`; veřejné CLI jím rozlišuje prázdný řádek od konce pipe. TTY detekce používá `ioctl(TCGETS)`. `time` modul používá `clock_gettime` a `nanosleep`; sleep po `EINTR` opakuje syscall se zbývajícím `timespec`.
 
 ## Exceptions
 

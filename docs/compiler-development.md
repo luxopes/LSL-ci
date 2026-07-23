@@ -33,9 +33,9 @@ ulimit -v 1048576
 | `compiler/pure/codegen.lsl` | typový tok, optimalizace a native lowering |
 | `compiler/pure/x86_64.lsl` | auditable instruction encoder |
 | `compiler/pure/assembler.lsl` | labely, rel32 fixups, byte stream |
-| `compiler/pure/native_runtime.lsl` | základní scalar/syscall runtime emission |
+| `compiler/pure/native_runtime.lsl` | scalar runtime, clock_gettime a nanosleep emission |
 | `compiler/pure/heap_runtime.lsl` | allocator, registry, GC, kolekce |
-| `compiler/pure/io_runtime.lsl` | soubory, argv/env a text/binární I/O |
+| `compiler/pure/io_runtime.lsl` | soubory, argv/env, text/binární I/O a TTY/EOF stav |
 | `compiler/pure/process_runtime.lsl` | fork/exec/capture/status/streaming |
 | `compiler/pure/native_plugin_runtime.lsl` | omezený ET_DYN loader ABI v1 |
 | `compiler/pure/elf_image.lsl` | finální ELF64 image |
@@ -158,8 +158,8 @@ Režimy veřejného runneru:
 ```
 
 Pozitivní běžný corpus je agregovaný kvůli cold startu. Test, který potřebuje
-vlastní proces, compile failure, resource fault nebo quality limit, přidejte
-samostatně do `tests/test_runner.lsl`. Každý deterministický program má
+vlastní proces, compile failure, resource fault, CLI stdin nebo quality limit,
+přidejte samostatně do `tests/test_runner.lsl`. Každý deterministický program má
 odpovídající `.out`.
 
 ### 4. Regenerace release nástrojů

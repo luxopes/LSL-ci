@@ -5,13 +5,24 @@ LSL 0.7 je self-hostovaný jazyk pro běžné programování, deklarativní konf
 ## Použití
 
 ```text
+./lsl                              # interaktivní zdroj ze stdin, konec řádkem exit
 ./lsl program.lsl arg1 arg2
 ./lsl compile program.lsl program
 ./lsl config examples/config/system.lsl
 ./compiler/lslc program.lsl program
 ```
 
-`lsl` i `compiler/lslc` jsou LSL-generované ELF soubory. Výstup compileru je statický syscall-only ELF bez section headeru a bez dynamic interpreteru.
+`lsl` i `compiler/lslc` jsou LSL-generované ELF soubory. Výstup compileru je statický syscall-only ELF bez section headeru a bez dynamic interpreteru. Bez argumentů `lsl` na terminálu zobrazí `>>>`, sbírá jednu společnou translation unit do řádku `exit` a pak ji přeloží/spustí. Stejný režim bez promptů funguje pro pipe a heredoc:
+
+```text
+./lsl <<'LSL'
+load time
+print time.time()
+exit
+LSL
+```
+
+EOF je také platný konec vstupu; samostatný řádek `exit` se do programu nepřidává.
 
 ## Čistý build a test
 
@@ -45,7 +56,7 @@ Bez argumentu installer používá `/usr/local` (podle oprávnění procesu). In
 - classes/instances, static i bound metody, public/private module class lowering;
 - recursive modules, `safe`, `try/else`, `Error`, `check`, `last_error`;
 - conservative stack/global-root mark-sweep GC s reusable free-list;
-- JSON, čistý config evaluator, filesystem, argv, environment, process/capture, HTTP(S) přes bezpečné `curl` argv a verzované JSON process plugin ABI bez shellu;
+- JSON, čistý config evaluator, wall/monotonic time a sleep, filesystem, argv, environment, process/capture, HTTP(S) přes bezpečné `curl` argv a verzované JSON process plugin ABI bez shellu;
 - strukturované compile errors: kód, soubor, řádek, sloupec, výřez, caret a help.
 
 `tests/selfhost_conformance.lsl` produkuje přesně `tests/selfhost_conformance.out`. Config příklad produkuje přesně `tests/config_expected.json`.
@@ -57,6 +68,7 @@ Bez argumentu installer používá `/usr/local` (podle oprávnění procesu). In
 - [Vývoj compileru a release workflow](docs/compiler-development.md)
 - [Deklarativní konfigurace](docs/configuration.md)
 - [AI aplikace](docs/ai.md)
+- [Čas a měření](docs/time.md)
 - [Native/plugin ABI](docs/native-plugins.md)
 - [Linux target](docs/linux.md)
 

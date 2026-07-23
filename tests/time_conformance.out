@@ -1,0 +1,5 @@
+True True True
+True
+True
+ValueError: sleep duration cannot be negative
+ValueError: invalid sleep duration

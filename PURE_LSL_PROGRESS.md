@@ -695,6 +695,20 @@ implementace má nyní 13237 fyzických / 12482 neprázdných nekomentářových
 Praktický programming guide a compiler/release guide jsou v `docs/programming.md` a
 `docs/compiler-development.md`.
 
+Time/stdin fixed point
+`de2318717ddad01786b49adabe50041b0fb717f0b35ebd3b5424e50f8b908b47`
+přidává standardní `time.time`/`now` (CLOCK_REALTIME),
+`monotonic`/`perf_counter` (CLOCK_MONOTONIC) a EINTR-safe syscall-only
+`time.sleep`. No-argument `lsl` přes `ioctl(TCGETS)` rozliší TTY od pipe,
+načte společný `<stdin>` zdroj do přesného řádku `exit` nebo EOF a jednou jej
+přeloží/spustí; pipe/heredoc nevypisuje prompty. Interní input EOF marker nyní
+rozlišuje prázdný řádek od skutečného EOF. Full suite testuje terminated stdin,
+EOF, `exit` vs `exit(7)`, stdlib lookup, realtime/monotonic/sleep i config zákaz
+ambientního času. Full (12,785 s), fixed point (2,059 s), config, installed
+fixed point z kanonické relativní source cesty, installed stdin/time, ELF a
+pure-tree audit prošly. Produkční implementace má 13403 fyzických / 12633
+neprázdných nekomentářových LSL řádků.
+
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,
 collections, GC robustnost, syscall I/O, native/tensor ABI, AI vrstva,

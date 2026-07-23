@@ -47,7 +47,7 @@ for name in sources:
     call copy("compiler/pure/" + name, prefix + "/lib/lsl/compiler/pure/" + name)
 end
 
-standard_modules = ["ai.lsl", "config.lsl", "configure.lsl", "env.lsl", "http.lsl", "json.lsl", "lux.lsl", "native.lsl", "plugin.lsl", "process.lsl", "tensor.lsl"]
+standard_modules = ["ai.lsl", "config.lsl", "configure.lsl", "env.lsl", "http.lsl", "json.lsl", "lux.lsl", "native.lsl", "plugin.lsl", "process.lsl", "tensor.lsl", "time.lsl"]
 for name in standard_modules:
     call copy("stdlib/" + name, prefix + "/lib/lsl/stdlib/" + name)
 end

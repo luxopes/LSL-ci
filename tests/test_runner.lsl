@@ -63,6 +63,24 @@ call require_output("/tmp/lsl-codegen-optimization-test", [], "tests/codegen_opt
 if len(readbytes("/tmp/lsl-codegen-optimization-test")) > 60000:
     Error(TestFailure: "optimized standalone ELF exceeds 60000 bytes")
 end
+call require_success(run(compiler, ["compiler/pure/cli.lsl", "/tmp/lsl-stdin-cli-test"]), "compile stdin CLI")
+stdin_source = "value = 6 * 7" + chr(10) + "if value == 42:" + chr(10) + "    print \"stdin\", value" + chr(10) + "end" + chr(10) + "exit" + chr(10)
+stdin_output = capture_input("/tmp/lsl-stdin-cli-test", [], stdin_source)
+if capture_status() != 0 or stdin_output != "stdin 42" + chr(10):
+    Error(TestFailure: "stdin CLI terminated source differs")
+end
+eof_output = capture_input("/tmp/lsl-stdin-cli-test", [], "print \"eof\", 9" + chr(10))
+if capture_status() != 0 or eof_output != "eof 9" + chr(10):
+    Error(TestFailure: "stdin CLI EOF source differs")
+end
+time_output = capture_input("/tmp/lsl-stdin-cli-test", [], "load time" + chr(10) + "print time.time() > 1577836800.0" + chr(10) + "exit" + chr(10))
+if capture_status() != 0 or time_output != "True" + chr(10):
+    Error(TestFailure: "stdin CLI module lookup differs")
+end
+exit_output = capture_input("/tmp/lsl-stdin-cli-test", [], "exit(7)" + chr(10) + "exit" + chr(10))
+if capture_status() != 7 or exit_output != "":
+    Error(TestFailure: "stdin CLI exact exit terminator differs")
+end
 call require_success(run(compiler, ["tests/selfhost_conformance.lsl", "/tmp/lsl-selfhost-test"]), "compile selfhost conformance")
 call require_output("/tmp/lsl-selfhost-test", [], "tests/selfhost_conformance.out", "selfhost conformance output differs")
 call require_success(run(compiler, ["tests/table_growth_conformance.lsl", "/tmp/lsl-table-growth-test"]), "compile table growth conformance")
@@ -113,7 +131,12 @@ call require_failure(run(compiler, ["tests/intarray_type_negative.lsl", "/tmp/ls
 call require_failure(run(compiler, ["tests/floatarray_type_negative.lsl", "/tmp/lsl-floatarray-type-negative"]), "non-Float FloatArray append unexpectedly compiled")
 call require_failure(run(compiler, ["tests/bytearray_type_negative.lsl", "/tmp/lsl-bytearray-type-negative"]), "non-Int ByteArray append unexpectedly compiled")
 
-configure = "./compiler/pure/lsl-configure"
+configure = "/tmp/lsl-configure-test"
+call require_success(run(compiler, ["stdlib/configure.lsl", configure]), "compile config generator")
+time_impure_output = capture(configure, ["tests/config/time_impure.lsl", "/tmp/lsl-time-impure-evaluator.lsl"])
+if time_impure_output != readfile("tests/config/time_impure.out") or exists("/tmp/lsl-time-impure-evaluator.lsl"):
+    Error(TestFailure: "config time purity diagnostic differs")
+end
 config_wrapper = "tests/config/.defaults-test-evaluator.lsl"
 call require_success(run(configure, ["tests/config/defaults.lsl", config_wrapper]), "generate config defaults evaluator")
 call require_success(run(compiler, [config_wrapper, "/tmp/lsl-config-defaults-test"]), "compile config defaults evaluator")

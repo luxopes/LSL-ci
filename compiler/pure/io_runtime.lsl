@@ -44,6 +44,9 @@ end
 function emit_input(output):
     call assembler.label(output, "runtime_input")
     call assembler.emit(output, x86_64.function_prologue(80))
+    # State+88 is an internal EOF marker used by the stdin source frontend.
+    call assembler.emit(output, x86_64.xor_reg_reg(1, 1))
+    call assembler.emit(output, x86_64.store_memory(3, 88, 1))
     call assembler.relative(output, [232], "runtime_print_string")
     call assembler.emit(output, x86_64.mov_imm64(7, 273))
     call assembler.relative(output, [232], "runtime_alloc")
@@ -94,15 +97,18 @@ function emit_input(output):
     call assembler.emit(output, x86_64.syscall())
     call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
     call assembler.relative(output, [15, 140], "input_read_error")
-    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 1))
-    call assembler.relative(output, [15, 133], "input_finish")
+    call assembler.relative(output, [15, 132], "input_eof")
     call assembler.emit(output, x86_64.load_stack(1, -16))
     call assembler.emit(output, x86_64.load_byte_zero_extend(8, 6, 0))
     call assembler.emit(output, x86_64.increment(1))
     call assembler.emit(output, x86_64.store_stack(-16, 1))
     call assembler.emit(output, x86_64.cmp_reg_imm8(8, 10))
     call assembler.relative(output, [15, 133], "input_read_loop")
+    call assembler.relative(output, [233], "input_finish")
 
+    call assembler.label(output, "input_eof")
+    call assembler.emit(output, x86_64.mov_imm64(1, 1))
+    call assembler.emit(output, x86_64.store_memory(3, 88, 1))
     call assembler.label(output, "input_finish")
     call assembler.emit(output, x86_64.load_stack(0, -16))
     call assembler.emit(output, x86_64.load_stack(1, -8))
@@ -517,6 +523,23 @@ function emit_exists(output):
     call assembler.emit(output, x86_64.ret())
 end
 
+function emit_terminal_state(output):
+    call assembler.label(output, "runtime_stdin_eof")
+    call assembler.emit(output, x86_64.load_memory(0, 3, 88))
+    call assembler.emit(output, x86_64.ret())
+
+    call assembler.label(output, "runtime_isatty")
+    call assembler.emit(output, x86_64.function_prologue(64))
+    # ioctl(fd, TCGETS, &termios): success identifies a terminal without libc.
+    call assembler.emit(output, x86_64.mov_imm64(6, 21505))
+    call assembler.emit(output, x86_64.lea_base(2, 5, -64))
+    call assembler.emit(output, x86_64.mov_imm64(0, 16))
+    call assembler.emit(output, x86_64.syscall())
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+    call assembler.emit(output, x86_64.set_condition(157))
+    call assembler.emit(output, x86_64.function_epilogue())
+end
+
 function emit_all(output):
     call emit_cstring(output)
     call emit_input(output)
@@ -528,4 +551,5 @@ function emit_all(output):
     call emit_writebytes(output)
     call emit_paths(output)
     call emit_exists(output)
+    call emit_terminal_state(output)
 end

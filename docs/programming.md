@@ -23,6 +23,34 @@ Spuštění ze zdroje, vytvoření samostatného ELF a jeho spuštění:
 spouštění používejte jednou přeložený ELF. Výsledek je statický Linux x86_64
 program bez libc a dynamic loaderu.
 
+Bez argumentů se spustí interaktivní zápis jedné společné translation unit:
+
+```text
+$ ./lsl
+Lux Simple Lang 0.7 interactive source mode
+Enter code; type exit on its own line to compile and run.
+>>> value = 6 * 7
+>>> print value
+>>> exit
+42
+```
+
+Bloky pište normálně včetně `end`. Samostatný řádek `exit` zápis ukončí a celý
+zdroj jednou přeloží/spustí; `exit(status)` uvnitř programu zůstává běžná
+funkce. Ctrl-D/EOF je také konec. Pipe a heredoc nedostávají banner ani prompty:
+
+```text
+./lsl <<'LSL'
+print "ze stdin", 21 * 2
+exit
+LSL
+```
+
+Jde o interaktivní native source mode, nikoli interpretaci každého řádku zvlášť:
+díky tomu mají všechny řádky společný scope a žádný dřívější side effect se při
+dalším vstupu neopakuje. Diagnostika používá cestu `<stdin>` a relativní `load`
+hledá moduly z aktuálního pracovního adresáře.
+
 Argumenty jsou dostupné přes `arg(index)`, `arg_count()` a globální `args`:
 
 ```lsl
@@ -212,6 +240,22 @@ print result["stdout"]
 načítejte přes modul `env`; neukládejte je do config výstupu. Podrobnosti jsou v
 [ai.md](ai.md), [configuration.md](configuration.md) a
 [native-plugins.md](native-plugins.md).
+
+## Čas a timeouty
+
+```lsl
+load time
+
+started = time.monotonic()
+call time.sleep(0.1)
+print time.monotonic() - started
+print time.time()  # Unix timestamp
+```
+
+Intervaly měřte přes `time.monotonic()` nebo `time.perf_counter()`, ne přes wall
+clock, který může správce systému změnit. `time.sleep()` používá `nanosleep` a
+po `EINTR` pokračuje se zbývající dobou. Celé API a chyby popisuje
+[time.md](time.md).
 
 ## Co compiler optimalizuje automaticky
 

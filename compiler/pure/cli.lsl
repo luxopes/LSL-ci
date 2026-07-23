@@ -4,14 +4,17 @@ load codegen
 load linker
 load parser
 
-function compile_file(source_path, output_path):
-    source = readfile(source_path)
+function compile_source(source_path, source, output_path):
     stdlib_path = resource_path("compiler/pure/dynamic_stdlib.lsl")
     stdlib_source = readfile(stdlib_path)
     program = parser.parse(stdlib_path, stdlib_source)
     call linker.annotate_statements(program, stdlib_path)
     program.extend(linker.link(source_path, source))
     call writebytes(output_path, codegen.generate(source_path, source, program))
+end
+
+function compile_file(source_path, output_path):
+    call compile_source(source_path, readfile(source_path), output_path)
 end
 
 function dirname(path):
@@ -55,10 +58,44 @@ function tool_path(repository_path, installed_name):
     return dirname(executable_path()) + "/" + installed_name
 end
 
+function read_stdin_source():
+    lines = []
+    terminal = __lsl_isatty(0)
+    if terminal:
+        print "Lux Simple Lang 0.7 interactive source mode"
+        print "Enter code; type exit on its own line to compile and run."
+    end
+    loop:
+        prompt = ""
+        if terminal:
+            prompt = ">>> "
+        end
+        line = input(prompt)
+        eof = __lsl_stdin_eof()
+        if line == "exit":
+            break
+        elif eof and line == "":
+            break
+        end
+        lines.append(line)
+        if eof:
+            break
+        end
+    end
+    if len(lines) == 0:
+        return ""
+    end
+    return chr(10).join(lines) + chr(10)
+end
+
 command = arg(1)
 if command == None:
-    print "usage: lsl SOURCE [ARGS...] | lsl compile SOURCE OUTPUT | lsl config ENTRY"
-    exit(2)
+    source = read_stdin_source()
+    if source == "":
+        exit(0)
+    end
+    call compile_source("<stdin>", source, "/tmp/lsl-stdin-program")
+    exit(run("/tmp/lsl-stdin-program", []))
 end
 
 if command == "compile":

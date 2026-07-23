@@ -23,6 +23,8 @@ cd /tmp
 
 Bez prefixu se instaluje do `/usr/local`. Standardní moduly jsou v `<prefix>/lib/lsl`; compiler jejich cestu odvodí přes syscall `readlink("/proc/self/exe")`.
 
+No-argument `lsl` rozlišuje terminál přes `ioctl(TCGETS)`. TTY dostane interaktivní banner/prompty, zatímco pipe a heredoc mají čistý stdout. Řádky se sbírají do `exit` nebo EOF a výsledný `<stdin>` zdroj se přímo přeloží do dočasného syscall-only ELF; shell ani interpreter se nepouští. Modul `time` používá `clock_gettime(CLOCK_REALTIME/CLOCK_MONOTONIC)` a `nanosleep`.
+
 ## Runtime syscalls
 
 Runtime přímo používá mimo jiné `read`, `write`, `open`, `close`, `access`, `lseek`, `brk`, `fork`, `execve`, `wait4`, `pipe`, `dup2`, `readlink`, `mkdir` a `unlink`. HTTP(S) modul spouští systémový `/usr/bin/curl` bezpečným argv bez shellové interpolace.

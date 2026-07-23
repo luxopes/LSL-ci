@@ -14,6 +14,7 @@ All test runners, fixtures and generated test tools live under this tree.
   corpus; `full_conformance.lsl` aggregates positive cases.
 - `*_negative.lsl` files are compile-failure checks.
 - `codegen_optimization_conformance.lsl` is a standalone semantic and generated-ELF size guard for optimizer changes.
+- `time_conformance.lsl` covers realtime/monotonic/sleep; the runner separately drives the no-argument CLI through a pipe, `exit`, EOF and module lookup.
 - `compiler/` contains compiler-focused smoke drivers and their local fixtures.
 - `config/` and `modules/` contain subsystem-specific fixtures.
 

@@ -1,6 +1,7 @@
 # Syscall-only native helper routines emitted directly as x86_64 bytes.
 
 load assembler
+load bytes
 load heap_runtime
 load io_runtime
 load process_runtime
@@ -481,10 +482,10 @@ function emit_float_to_string(output):
     call assembler.emit(output, [1, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 110, 97, 110, 0])
 end
 
-function emit_clock(output):
-    call assembler.label(output, "runtime_clock")
+function emit_clock_source(output, label, clock_id):
+    call assembler.label(output, label)
     call assembler.emit(output, x86_64.function_prologue(32))
-    call assembler.emit(output, x86_64.mov_imm64(7, 1))
+    call assembler.emit(output, x86_64.mov_imm64(7, clock_id))
     call assembler.emit(output, x86_64.lea_base(6, 5, -16))
     call assembler.emit(output, x86_64.mov_imm64(0, 228))
     call assembler.emit(output, x86_64.syscall())
@@ -499,6 +500,59 @@ function emit_clock(output):
     call assembler.emit(output, x86_64.movq_reg_from_xmm(7, 0))
     call assembler.relative(output, [232], "runtime_float_new")
     call assembler.emit(output, x86_64.function_epilogue())
+end
+
+function emit_clock(output):
+    call emit_clock_source(output, "runtime_clock", 1)
+    call emit_clock_source(output, "runtime_wall_time", 0)
+end
+
+function emit_sleep(output):
+    call assembler.label(output, "runtime_sleep")
+    call assembler.emit(output, x86_64.function_prologue(64))
+    # Convert boxed Float seconds into a timespec using truncation toward zero.
+    call assembler.emit(output, x86_64.load_memory(0, 7, 8))
+    call assembler.emit(output, x86_64.movq_xmm_from_reg(0, 0))
+    call assembler.emit(output, x86_64.double_to_int(8, 0))
+    call assembler.emit(output, x86_64.int_to_double(1, 8))
+    call assembler.emit(output, x86_64.sub_double(0, 1))
+    call assembler.emit(output, x86_64.mov_imm64(0, 4741671816366391296))
+    call assembler.emit(output, x86_64.movq_xmm_from_reg(2, 0))
+    call assembler.emit(output, x86_64.mul_double(0, 2))
+    call assembler.emit(output, x86_64.double_to_int(9, 0))
+    call assembler.emit(output, x86_64.store_stack(-32, 8))
+    call assembler.emit(output, x86_64.store_stack(-24, 9))
+    call assembler.emit(output, x86_64.xor_reg_reg(0, 0))
+    call assembler.emit(output, x86_64.store_stack(-16, 0))
+    call assembler.emit(output, x86_64.store_stack(-8, 0))
+    call assembler.label(output, "sleep_retry")
+    call assembler.emit(output, x86_64.lea_base(7, 5, -32))
+    call assembler.emit(output, x86_64.lea_base(6, 5, -16))
+    call assembler.emit(output, x86_64.mov_imm64(0, 35))
+    call assembler.emit(output, x86_64.syscall())
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, -4))
+    call assembler.relative(output, [15, 133], "sleep_complete")
+    call assembler.emit(output, x86_64.load_stack(8, -16))
+    call assembler.emit(output, x86_64.load_stack(9, -8))
+    call assembler.emit(output, x86_64.store_stack(-32, 8))
+    call assembler.emit(output, x86_64.store_stack(-24, 9))
+    call assembler.relative(output, [233], "sleep_retry")
+    call assembler.label(output, "sleep_complete")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+    call assembler.relative(output, [15, 140], "sleep_error")
+    call assembler.emit(output, x86_64.xor_reg_reg(0, 0))
+    call assembler.emit(output, x86_64.function_epilogue())
+    call assembler.label(output, "sleep_error")
+    call assembler.relative(output, x86_64.lea_rip_prefix(13), "sleep_error_data")
+    call assembler.emit(output, x86_64.mov_imm64(14, 1))
+    call assembler.emit(output, x86_64.xor_reg_reg(0, 0))
+    call assembler.emit(output, x86_64.function_epilogue())
+    call assembler.label(output, "sleep_error_data")
+    message = "ValueError: invalid sleep duration"
+    call assembler.emit(output, bytes.little(1, 8))
+    call assembler.emit(output, bytes.little(len(bytes.utf8(message)), 8))
+    call assembler.emit(output, bytes.utf8(message))
+    call assembler.emit(output, [0])
 end
 
 function emit_print_scalar_names(output):
@@ -583,6 +637,7 @@ function emit_all(output):
     call emit_print_float(output)
     call emit_float_to_string(output)
     call emit_clock(output)
+    call emit_sleep(output)
     call emit_print_scalar_names(output)
     call emit_print_any(output)
 end
