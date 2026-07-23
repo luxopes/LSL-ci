@@ -2,3 +2,5 @@
 print "Hello from pure LSL"
 print 42
 print True
+a = input "Test: "
+print a
