@@ -57,11 +57,11 @@ was unsafe/pathological. A 2M registry table reached pathological probe density
 collapse above roughly 50% occupancy, so the final 8M table tracks unique entries
 and grows before crossing 50% rather than waiting for a complete probe wrap.
 
-Current time/stdin fixed point: `de2318717ddad01786b49adabe50041b0fb717f0b35ebd3b5424e50f8b908b47`.
+Current os/stdin fixed point: `7822a3a60e3361ce05ecbfdc2890a0bb538d1c01de0dfe402acb6d026b1928a8`.
 Compact signed-correct x86 encodings, constant/control-flow folding, literal
 deduplication and guarded direct-function specialization keep the compiler ELF
-at 676042 bytes versus the 857964-byte pre-optimizer baseline and a tiny ELF at
+at 676668 bytes versus the 857964-byte pre-optimizer baseline and a tiny ELF at
 53978 versus 71977 bytes. A measured self-host run is 2.051 s; the expanded full
-suite is 12.785 s and fixed-point mode 2.059 s. Config is bit-identical, the
+suite is 15.850 s and fixed-point mode 2.135 s. Config is bit-identical, the
 installed compiler reproduces the same fixed point,
 and every maintained ELF has one RX `PT_LOAD` with no `INTERP`/`DYNAMIC`/RWX.

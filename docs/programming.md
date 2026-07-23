@@ -35,18 +35,24 @@ Enter code; type exit on its own line to compile and run.
 42
 ```
 
-Bloky pište normálně včetně `end`. Samostatný řádek `exit` zápis ukončí a celý
-zdroj jednou přeloží/spustí; `exit(status)` uvnitř programu zůstává běžná
-funkce. Ctrl-D/EOF je také konec. Pipe a heredoc nedostávají banner ani prompty:
+Bloky pište normálně včetně `end`. Na TTY samostatný řádek `exit` zápis ukončí
+a celý zdroj jednou přeloží/spustí; `exit(status)` uvnitř programu zůstává
+běžná funkce. Ctrl-D/EOF je také konec. Pipe skončí EOF a nepoužívá `exit`:
 
 ```text
-./lsl <<'LSL'
-print "ze stdin", 21 * 2
-exit
-LSL
+printf 'print "ze stdin", 21 * 2\n' | ./lsl
 ```
 
-Jde o interaktivní native source mode, nikoli interpretaci každého řádku zvlášť:
+Heredoc používá právě jeden shellový delimiter a žádný vnitřní terminátor:
+
+```text
+./lsl <<'EOF'
+print "ze stdin", 21 * 2
+EOF
+```
+
+`EOF` je libovolně pojmenovaný marker shellu, nikoli LSL syntaxe. Jde o
+interaktivní native source mode, nikoli interpretaci každého řádku zvlášť:
 díky tomu mají všechny řádky společný scope a žádný dřívější side effect se při
 dalším vstupu neopakuje. Diagnostika používá cestu `<stdin>` a relativní `load`
 hledá moduly z aktuálního pracovního adresáře.
@@ -235,6 +241,21 @@ if not result["ok"]:
 end
 print result["stdout"]
 ```
+
+Pro pohodlné Linux příkazy bez shellu použijte `os`; command musí být String
+nebo List[String]:
+
+```lsl
+load os
+
+call os.run("ls -al")
+result = os.capture_result(["uname", "-a"])
+print result["stdout"], result["status"]
+```
+
+Zápis `os.run(ls -al)` bez uvozovek není command literal: v LSL by znamenal
+odečítání proměnných `ls` a `al`. `os` podporuje quotes/backslash a PATH lookup,
+ale záměrně ne shell pipes, redirection ani expanzi. Viz [os.md](os.md).
 
 `http` používá `/usr/bin/curl` přes `execve`, bez shellové interpolace. Secrets
 načítejte přes modul `env`; neukládejte je do config výstupu. Podrobnosti jsou v

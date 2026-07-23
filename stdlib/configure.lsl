@@ -65,7 +65,7 @@ function extract_imports(source):
 end
 
 function validate_pure(source, path):
-    forbidden = ["input ", "input(", "readfile(", "writefile(", "appendfile(", "load http", "load env", "load native", "load time", "from time ", "getenv(", "run(", "capture(", "native_open(", "native_call(", "clock(", "__lsl_wall_time(", "__lsl_sleep(", "exit("]
+    forbidden = ["input ", "input(", "readfile(", "writefile(", "appendfile(", "load http", "load env", "load native", "load os", "from os ", "load time", "from time ", "getenv(", "run(", "capture(", "native_open(", "native_call(", "clock(", "__lsl_wall_time(", "__lsl_sleep(", "__lsl_run(", "__lsl_capture(", "exit("]
     for feature in forbidden:
         if feature in source:
             print "Impure configuration feature", feature, "in", path

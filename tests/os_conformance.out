@@ -1,0 +1,12 @@
+4 hello world|plain value|
+3 pipe|literal|>file
+3 list value|tail
+True
+1 False True
+2 direct
+0
+2 checked
+check True
+True
+127
+OSCommandError: command has an unclosed quote

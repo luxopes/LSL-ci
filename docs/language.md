@@ -55,7 +55,7 @@ printl "ahoj {name}, je ti {1 + 10}"
 
 `print` odděluje hodnoty mezerou a přidá nový řádek. `printl` nejdřív vyhodnotí svůj argument jako řetězec a pak vyhodnotí výrazy v `{...}`. Původní zkrácená syntaxe `input "prompt"` i obecná call syntaxe `input("prompt")` vypíšou prompt bez newline, přečtou jeden celý stdin řádek do dynamicky rostoucího bufferu, odstraní koncové LF/CRLF a vrátí UTF-8 `String`.
 
-Veřejné CLI bez argumentů čte jednu translation unit ze stdin. Na TTY zobrazuje banner a `>>>`; samostatný řádek `exit` nebo EOF vstup ukončí, poté se celek jednou přeloží a spustí. V pipe/heredoc režimu se prompty nevypisují. Terminátor `exit` není součást jazyka a nesmí se zaměňovat s voláním `exit(status)`.
+Veřejné CLI bez argumentů čte jednu translation unit ze stdin. Na TTY zobrazuje banner a `>>>`; samostatný řádek `exit` nebo Ctrl-D vstup ukončí. Pipe končí pouze EOF a heredoc pouze svým shellovým delimiterem — nepřidává se do něj ještě `exit`. Poté se celek jednou přeloží a spustí. V pipe/heredoc režimu se prompty nevypisují. Interaktivní terminátor `exit` není součást jazyka a nesmí se zaměňovat s voláním `exit(status)`.
 
 ## Podmínky
 
@@ -206,7 +206,7 @@ print lux.version, value_type([1, 2])
 
 `load foo.bar` hledá `foo/bar.lsl` nejprve vedle zdrojového souboru a poté v instalovaném `lib/lsl/stdlib`, odvozeném od cesty compileru. Modulové symbols dostávají deterministický namespace prefix. Třídy označené `ctype Private` nejsou dostupné přes vnější namespace; public classes lze přímo konstruovat. `native` modul podporuje omezené self-contained Linux x86_64 ET_DYN Int64 kernels; obecné relocatable/libc pluginy nejsou součástí ABI v1.
 
-Vestavěný modul `lux` exportuje `version`, `language` a `l` (alias `type`). Další standardní moduly jsou `json`, `http`, `env`, `config` a `time`; podrobnosti jsou v `configuration.md`, `ai.md` a `time.md`.
+Vestavěný modul `lux` exportuje `version`, `language` a `l` (alias `type`). Další standardní moduly jsou `json`, `http`, `env`, `config`, `time` a `os`; podrobnosti jsou v `configuration.md`, `ai.md`, `time.md` a `os.md`.
 
 ## Standardní funkce
 
@@ -215,7 +215,7 @@ Vestavěný modul `lux` exportuje `version`, `language` a `l` (alias `type`). Da
 - čas: `clock()` — monotónní čas v sekundách; aplikační modul `time` přidává wall clock, pojmenovaný monotonic/perf counter a `sleep`
 - soubory UTF-8: `readfile(path)`, `writefile(path, value)`, `appendfile(path, value)`, `exists(path)`
 - Linux/POSIX filesystem: `cwd()`, `chdir(path)`, `mkdir(path)`, `remove_path(path)`
-- proces: globální `args`, `arg(index)`, `arg_count()`, `run(program, arguments)`, `capture(program, arguments)`, `capture_stream(program, arguments, callback)`, `capture_input(program, arguments, input_text)`, `capture_status()`, `exit(status)`; `process.capture_result`/`process.capture_input_result` vrací `{stdout, stderr, status, ok}` a `process.check`/`process.check_input` vyvolá `ProcessError`; status je exit code, pro signál `128 + signal`, při selhání fork/wait 126 a při selhání exec 127
+- proces: globální `args`, `arg(index)`, `arg_count()`, `run(program, arguments)`; modul `os` přidává bezpečné command String/List API a PATH lookup; dále `capture(program, arguments)`, `capture_stream(program, arguments, callback)`, `capture_input(program, arguments, input_text)`, `capture_status()`, `exit(status)`; `process.capture_result`/`process.capture_input_result` vrací `{stdout, stderr, status, ok}` a `process.check`/`process.check_input` vyvolá `ProcessError`; status je exit code, pro signál `128 + signal`, při selhání fork/wait 126 a při selhání exec 127
 - environment: `getenv(name)` vrátí String nebo `None`; v pure config režimu není dostupné
 - chyby: `last_error()` vrátí poslední chybu zachycenou `safe` nebo `try`
 - nápověda: `help()`

@@ -52,3 +52,4 @@ Feature scope je implementovaný: self-host compiler/runtime, jazyk a collection
 - [x] Doplnit kompaktní x86 encoding, constant/control-flow optimalizace, guarded direct-function specialization a code-size quality guard.
 - [x] Dopsat praktický programming guide a interní compiler/release guide.
 - [x] Přidat syscall-only `time` modul a no-argument TTY/pipe/heredoc source režim ukončený `exit` nebo EOF.
+- [x] Přidat shell-free `os` modul pro command String/List, PATH, run/capture/status/check a sjednotit stdin terminátory.

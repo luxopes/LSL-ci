@@ -94,7 +94,8 @@ servers = [
     ["tests/input_conformance.lsl", "/tmp/lsl-input-server"],
     ["tests/input_bare_server.lsl", "/tmp/lsl-input-bare-server"],
     ["tests/process_status_server.lsl", "/tmp/lsl-process-status-server"],
-    ["tests/plugin_process_server.lsl", "/tmp/lsl-plugin-process-server"]
+    ["tests/plugin_process_server.lsl", "/tmp/lsl-plugin-process-server"],
+    ["tests/os_command_server.lsl", "/tmp/lsl-os-command-server"]
 ]
 for server in servers:
     call require_success(run(compiler, server), "compile process conformance server")
@@ -136,6 +137,10 @@ call require_success(run(compiler, ["stdlib/configure.lsl", configure]), "compil
 time_impure_output = capture(configure, ["tests/config/time_impure.lsl", "/tmp/lsl-time-impure-evaluator.lsl"])
 if time_impure_output != readfile("tests/config/time_impure.out") or exists("/tmp/lsl-time-impure-evaluator.lsl"):
     Error(TestFailure: "config time purity diagnostic differs")
+end
+os_impure_output = capture(configure, ["tests/config/os_impure.lsl", "/tmp/lsl-os-impure-evaluator.lsl"])
+if os_impure_output != readfile("tests/config/os_impure.out") or exists("/tmp/lsl-os-impure-evaluator.lsl"):
+    Error(TestFailure: "config os purity diagnostic differs")
 end
 config_wrapper = "tests/config/.defaults-test-evaluator.lsl"
 call require_success(run(configure, ["tests/config/defaults.lsl", config_wrapper]), "generate config defaults evaluator")

@@ -12,17 +12,22 @@ LSL 0.7 je self-hostovaný jazyk pro běžné programování, deklarativní konf
 ./compiler/lslc program.lsl program
 ```
 
-`lsl` i `compiler/lslc` jsou LSL-generované ELF soubory. Výstup compileru je statický syscall-only ELF bez section headeru a bez dynamic interpreteru. Bez argumentů `lsl` na terminálu zobrazí `>>>`, sbírá jednu společnou translation unit do řádku `exit` a pak ji přeloží/spustí. Stejný režim bez promptů funguje pro pipe a heredoc:
+`lsl` i `compiler/lslc` jsou LSL-generované ELF soubory. Výstup compileru je statický syscall-only ELF bez section headeru a bez dynamic interpreteru. Bez argumentů `lsl` na terminálu zobrazí `>>>`, sbírá jednu společnou translation unit do řádku `exit` a pak ji přeloží/spustí. Pipe skončí prostým EOF a nepotřebuje `exit`:
 
 ```text
-./lsl <<'LSL'
-load time
-print time.time()
-exit
-LSL
+printf 'print 6 * 7\n' | ./lsl
 ```
 
-EOF je také platný konec vstupu; samostatný řádek `exit` se do programu nepřidává.
+Víceřádkový heredoc má pouze shellový delimiter, ne ještě LSL `exit`:
+
+```text
+./lsl <<'EOF'
+load time
+print time.time()
+EOF
+```
+
+Slovo `EOF` je libovolný marker shellu, nikoli součást LSL. Interaktivní TTY používá místo shellového markeru samostatný řádek `exit` nebo Ctrl-D.
 
 ## Čistý build a test
 
@@ -56,7 +61,7 @@ Bez argumentu installer používá `/usr/local` (podle oprávnění procesu). In
 - classes/instances, static i bound metody, public/private module class lowering;
 - recursive modules, `safe`, `try/else`, `Error`, `check`, `last_error`;
 - conservative stack/global-root mark-sweep GC s reusable free-list;
-- JSON, čistý config evaluator, wall/monotonic time a sleep, filesystem, argv, environment, process/capture, HTTP(S) přes bezpečné `curl` argv a verzované JSON process plugin ABI bez shellu;
+- JSON, čistý config evaluator, wall/monotonic time a sleep, filesystem, argv, environment, bezpečné `os.run("ls -al")`, process/capture, HTTP(S) přes bezpečné `curl` argv a verzované JSON process plugin ABI bez shellu;
 - strukturované compile errors: kód, soubor, řádek, sloupec, výřez, caret a help.
 
 `tests/selfhost_conformance.lsl` produkuje přesně `tests/selfhost_conformance.out`. Config příklad produkuje přesně `tests/config_expected.json`.
@@ -69,6 +74,7 @@ Bez argumentu installer používá `/usr/local` (podle oprávnění procesu). In
 - [Deklarativní konfigurace](docs/configuration.md)
 - [AI aplikace](docs/ai.md)
 - [Čas a měření](docs/time.md)
+- [Linux příkazy přes modul os](docs/os.md)
 - [Native/plugin ABI](docs/native-plugins.md)
 - [Linux target](docs/linux.md)
 

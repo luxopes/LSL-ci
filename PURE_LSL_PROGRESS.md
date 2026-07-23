@@ -709,6 +709,20 @@ fixed point z kanonické relativní source cesty, installed stdin/time, ELF a
 pure-tree audit prošly. Produkční implementace má 13403 fyzických / 12633
 neprázdných nekomentářových LSL řádků.
 
+OS/stdin fixed point
+`7822a3a60e3361ce05ecbfdc2890a0bb538d1c01de0dfe402acb6d026b1928a8`
+přidává standardní pure-LSL `os` modul s command String/List tokenizerem,
+quotes/backslash, PATH lookup, přímým `execve`, run/capture/result/check a argv
+variantami. Modul nikdy nepouští `/bin/sh -c`; shell metaznaky jsou obyčejné
+argumenty a config režim `load/from os` i interní process aliasy odmítá. Corpus
+ověřuje quoted/empty argumenty, PATH `ls`, inherited stdout, capture stdout/stderr,
+status, check, missing executable 127 a parse errors. Pipe dokumentace nyní končí
+jen EOF a heredoc jen jedním shellovým `EOF` markerem bez vnitřního `exit`; TTY
+si ponechává `exit`/Ctrl-D. Full (15,850 s), fixed point (2,135 s), config,
+installed fixed point/os/stdin, ELF, markdown links a pure-tree audit prošly.
+Produkční implementace má 13550 fyzických / 12768 neprázdných nekomentářových
+LSL řádků.
+
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,
 collections, GC robustnost, syscall I/O, native/tensor ABI, AI vrstva,

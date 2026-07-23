@@ -23,10 +23,10 @@ cd /tmp
 
 Bez prefixu se instaluje do `/usr/local`. Standardní moduly jsou v `<prefix>/lib/lsl`; compiler jejich cestu odvodí přes syscall `readlink("/proc/self/exe")`.
 
-No-argument `lsl` rozlišuje terminál přes `ioctl(TCGETS)`. TTY dostane interaktivní banner/prompty, zatímco pipe a heredoc mají čistý stdout. Řádky se sbírají do `exit` nebo EOF a výsledný `<stdin>` zdroj se přímo přeloží do dočasného syscall-only ELF; shell ani interpreter se nepouští. Modul `time` používá `clock_gettime(CLOCK_REALTIME/CLOCK_MONOTONIC)` a `nanosleep`.
+No-argument `lsl` rozlišuje terminál přes `ioctl(TCGETS)`. TTY dostane interaktivní banner/prompty a končí řádkem `exit` nebo Ctrl-D. Pipe končí pouze EOF; heredoc pouze svým shellovým delimiterem, bez vnitřního `exit`. Výsledný `<stdin>` zdroj se přímo přeloží do dočasného syscall-only ELF; shell ani interpreter se nepouští. Modul `time` používá `clock_gettime(CLOCK_REALTIME/CLOCK_MONOTONIC)` a `nanosleep`.
 
 ## Runtime syscalls
 
-Runtime přímo používá mimo jiné `read`, `write`, `open`, `close`, `access`, `lseek`, `brk`, `fork`, `execve`, `wait4`, `pipe`, `dup2`, `readlink`, `mkdir` a `unlink`. HTTP(S) modul spouští systémový `/usr/bin/curl` bezpečným argv bez shellové interpolace.
+Runtime přímo používá mimo jiné `read`, `write`, `open`, `close`, `access`, `lseek`, `brk`, `fork`, `execve`, `wait4`, `pipe`, `dup2`, `readlink`, `mkdir` a `unlink`. HTTP(S) modul spouští systémový `/usr/bin/curl` bezpečným argv bez shellové interpolace. Modul `os` tokenizuje String nebo přijme List[String], hledá executable v `PATH` a také volá přímý `execve`; `/bin/sh -c` nepoužívá.
 
 ELF má jediný RX `PT_LOAD`; writable stav allocatoru/GC je rezervován přes `brk`, takže image není RWX.
