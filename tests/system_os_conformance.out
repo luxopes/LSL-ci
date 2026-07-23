@@ -1,0 +1,51 @@
+apt update
+apt
+systemctl enable|--now|ssh.service
+systemctl disable|--now|old.service
+systemctl restart|web.service
+True
+False
+systemctl set-hostname|luxos
+systemctl set-timezone|Europe/Prague
+systemctl set-locale|LANG=C.UTF-8
+False
+account --|developers
+True
+account --|oldgroup
+account --shell|/bin/luxsh|--append|--groups|adm,sudo|existing
+False
+account --create-home|--shell|/bin/luxsh|--groups|developers|ada
+True
+account --remove|--|olduser
+file -p|--|/tmp
+file 0640|--|/tmp/lsl-system-managed-temp
+file -f|--|/tmp/lsl-system-managed-temp|/tmp/lsl-system-managed-file
+True
+file -p|--|/tmp
+file 0600|--|/tmp/lsl-system-managed-temp
+file root:root|--|/tmp/lsl-system-managed-temp
+file -f|--|/tmp/lsl-system-managed-temp|/tmp/lsl-system-managed-file
+True
+file -p|--|/tmp/lsl-system-directory
+file 0750|--|/tmp/lsl-system-directory
+True
+mount -p|--|/tmp/lsl-system-mount
+mount -t|ext4|-o|rw,noatime|--|/dev/vdb1|/tmp/lsl-system-mount
+True
+False
+mount --|/tmp/lsl-system-mount
+lux check|-c|/etc/luxos/system.lsl
+lux apply|-c|/etc/luxos/system.lsl
+lux apply|-c|/etc/luxos/system.lsl|--dry-run
+generation: test-generation
+* test-generation
+lux rollback|test-generation
+lux rollback|test-generation|--dry-run
+ValueError: service name cannot contain whitespace
+service-failure True
+service-query-failure True
+ValueError: group name contains an invalid character
+ValueError: file path must be an absolute path
+TypeError: mount options must be a List
+ValueError: directory path cannot be /
+ValueError: file mode must contain three or four octal digits

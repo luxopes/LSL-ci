@@ -736,6 +736,20 @@ modul `system` odmítá. Mock Lux/apt corpus, full (13,448 s), fixed point
 a pure-tree audit prošly. Produkční implementace má 13648 fyzických / 12852
 neprázdných nekomentářových LSL řádků.
 
+LuxOS system completion zachovává fixed point
+`7822a3a60e3361ce05ecbfdc2890a0bb538d1c01de0dfe402acb6d026b1928a8` a
+rozšiřuje normální LSL modul `system` o APT refresh, hostname/timezone/locale,
+systemd enable/disable/restart/status, idempotentní groups/users, bezpečné
+mazání, mktemp+rename atomické soubory, directories, mountpoint-aware mounty a
+wrappery existujících LuxOS check/apply/status/generations/rollback operací.
+Externí příkazy jsou vždy přímé argv a explicitní `*_with` varianty umožňují
+custom paths/chroot i hermetický corpus bez zásahu hosta. Přímé operace nejsou
+předstírány jako atomická transakce; generation boundary je `lux apply` a
+`rollback`. Lux package katalog/exists protokol je po potvrzení uživatele
+odložen na další krok. Full (15,159 s), fixed point (2,071 s), config,
+installer/installed system corpus+fixed point prošly. Produkční implementace má
+14176 fyzických / 13316 neprázdných nekomentářových LSL řádků.
+
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,
 collections, GC robustnost, syscall I/O, native/tensor ABI, AI vrstva,

@@ -96,7 +96,13 @@ servers = [
     ["tests/process_status_server.lsl", "/tmp/lsl-process-status-server"],
     ["tests/plugin_process_server.lsl", "/tmp/lsl-plugin-process-server"],
     ["tests/os_command_server.lsl", "/tmp/lsl-os-command-server"],
-    ["tests/system_package_server.lsl", "/tmp/lsl-system-package-server"]
+    ["tests/system_package_server.lsl", "/tmp/lsl-system-package-server"],
+    ["tests/system_command_server.lsl", "/tmp/lsl-system-command-apt"],
+    ["tests/system_command_server.lsl", "/tmp/lsl-system-command-systemctl"],
+    ["tests/system_command_server.lsl", "/tmp/lsl-system-command-account"],
+    ["tests/system_command_server.lsl", "/tmp/lsl-system-command-file-tool"],
+    ["tests/system_command_server.lsl", "/tmp/lsl-system-command-mount-tool"],
+    ["tests/system_command_server.lsl", "/tmp/lsl-system-command-lux"]
 ]
 for server in servers:
     call require_success(run(compiler, server), "compile process conformance server")

@@ -269,8 +269,9 @@ end
 ```
 
 Program spusťte běžně jako `./lsl machine.lsl`; nejde o čistý `lsl config`
-režim. Funkce skutečně mění systém a vyžadují odpovídající oprávnění. Viz
-[system.md](system.md).
+režim. Stejný modul spravuje systemd služby, users/groups, atomické soubory,
+mounty a LuxOS generace/rollback. Funkce skutečně mění systém a vyžadují
+odpovídající oprávnění. Viz [system.md](system.md).
 
 `http` používá `/usr/bin/curl` přes `execve`, bez shellové interpolace. Secrets
 načítejte přes modul `env`; neukládejte je do config výstupu. Podrobnosti jsou v
