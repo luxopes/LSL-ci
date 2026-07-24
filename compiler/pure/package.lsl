@@ -133,13 +133,10 @@ function ensure_directory(path):
     end
 end
 
-function install(name, home, server, curl_path, sha256_path, move_path, chmod_path, lsl_path):
-    if not valid_name(name):
-        Error(PackageError: "invalid library name: " + String(name))
-    elif type(home) != "String" or len(home) == 0 or home[0] != "/":
+function user_directory(home):
+    if type(home) != "String" or len(home) == 0 or home[0] != "/":
         Error(PackageError: "HOME must be an absolute path")
     end
-    server = normalize_server(server)
     base = home + "/.local"
     call ensure_directory(base)
     base += "/lib"
@@ -148,6 +145,53 @@ function install(name, home, server, curl_path, sha256_path, move_path, chmod_pa
     call ensure_directory(base)
     directory = base + "/stdlib"
     call ensure_directory(directory)
+    return directory
+end
+
+function config_names(path):
+    if type(path) != "String" or len(path) == 0 or not exists(path):
+        Error(PackageError: "package config does not exist: " + String(path))
+    end
+    content = readfile(path)
+    if len(content) == 0 or len(content) > 65536:
+        Error(PackageError: "package config has an invalid size")
+    end
+    for character in content:
+        code = ord(character)
+        if character != chr(10) and (code < 32 or code > 126):
+            Error(PackageError: "package config must use printable UTF-8 ASCII and LF")
+        end
+    end
+    names = []
+    seen = {}
+    line_number = 0
+    for line in content.split(chr(10)):
+        line_number += 1
+        if line == "" or line.startswith("#"):
+            continue
+        elif not valid_name(line):
+            Error(PackageError: "config:" + String(line_number) + ": invalid library name: " + line)
+        elif line in seen:
+            Error(PackageError: "config:" + String(line_number) + ": duplicate library: " + line)
+        end
+        seen[line] = True
+        names.append(line)
+        if len(names) > 256:
+            Error(PackageError: "package config contains too many entries")
+        end
+    end
+    if len(names) == 0:
+        Error(PackageError: "package config contains no library names")
+    end
+    return names
+end
+
+function install(name, home, server, curl_path, sha256_path, move_path, chmod_path, lsl_path):
+    if not valid_name(name):
+        Error(PackageError: "invalid library name: " + String(name))
+    end
+    server = normalize_server(server)
+    directory = user_directory(home)
 
     source_url = server + "/" + name + ".lsl"
     hash_url = server + "/" + name + ".sha256"
@@ -191,4 +235,24 @@ function install(name, home, server, curl_path, sha256_path, move_path, chmod_pa
         call fail_after_cleanup("atomic library installation failed", stage, check_path)
     end
     print "Installed", name, "into", destination + "."
+end
+
+function update(name, home, server, curl_path, sha256_path, move_path, chmod_path, lsl_path):
+    if not valid_name(name):
+        Error(PackageError: "invalid library name: " + String(name))
+    end
+    destination = user_directory(home) + "/" + name + ".lsl"
+    if not exists(destination):
+        Error(PackageError: "library is not installed: " + name)
+    end
+    call install(name, home, server, curl_path, sha256_path, move_path, chmod_path, lsl_path)
+end
+
+function install_config(path, home, server, curl_path, sha256_path, move_path, chmod_path, lsl_path):
+    # Validate every line before the first download. Network or filesystem
+    # failures can still leave an earlier requested library installed.
+    names = config_names(path)
+    for name in names:
+        call install(name, home, server, curl_path, sha256_path, move_path, chmod_path, lsl_path)
+    end
 end

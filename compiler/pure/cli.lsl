@@ -141,11 +141,22 @@ elif command == "config":
     exit(status)
 elif command == "install":
     name = arg(2)
-    if name == None or arg(3) != None:
-        print "usage: lsl install NAME"
+    if name == "--config" and arg(3) != None and arg(4) == None:
+        call package.install_config(arg(3), user_home(), registry_server(), "/usr/bin/curl", "/usr/bin/sha256sum", "/usr/bin/mv", "/usr/bin/chmod", executable_path())
+    elif name != None and arg(3) == None:
+        call package.install(name, user_home(), registry_server(), "/usr/bin/curl", "/usr/bin/sha256sum", "/usr/bin/mv", "/usr/bin/chmod", executable_path())
+    else:
+        print "usage: lsl install NAME | lsl install --config FILE"
         exit(2)
     end
-    call package.install(name, user_home(), registry_server(), "/usr/bin/curl", "/usr/bin/sha256sum", "/usr/bin/mv", "/usr/bin/chmod", executable_path())
+    exit(0)
+elif command == "update":
+    name = arg(2)
+    if name == None or arg(3) != None:
+        print "usage: lsl update NAME"
+        exit(2)
+    end
+    call package.update(name, user_home(), registry_server(), "/usr/bin/curl", "/usr/bin/sha256sum", "/usr/bin/mv", "/usr/bin/chmod", executable_path())
     exit(0)
 elif command == "server":
     if arg(2) != None:

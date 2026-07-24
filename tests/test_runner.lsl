@@ -86,6 +86,8 @@ end
 # built-in modules retain precedence over the user directory.
 call require_success(run(compiler, ["tests/compiler/package_command_server.lsl", "/tmp/lsl-package-command-server"]), "compile package command server")
 call require_success(run(compiler, ["tests/compiler/package_install_conformance.lsl", "/tmp/lsl-package-install-test"]), "compile package install conformance")
+call require_success(run(compiler, ["tests/compiler/package_update_config_conformance.lsl", "/tmp/lsl-package-update-config-test"]), "compile package update/config conformance")
+call require_success(run(compiler, ["tests/compiler/package_config_negative.lsl", "/tmp/lsl-package-config-negative"]), "compile package config negative test")
 package_home = "/tmp/lsl-package-home"
 call mkdir(package_home)
 call mkdir(package_home + "/.local")
@@ -109,6 +111,14 @@ if exists(package_destination):
 end
 bad_name_arguments = ["Bad/Name", package_home, "http://127.0.0.1:8080/lsl", "/tmp/lsl-package-command-server", "/tmp/lsl-stdin-cli-test"]
 call require_failure(run("/tmp/lsl-package-install-test", bad_name_arguments), "unsafe package name unexpectedly installed")
+package_config = "/tmp/lsl-package-list.conf"
+call writefile(package_config, "# libraries" + chr(10) + "config_probe" + chr(10) + "second_probe" + chr(10))
+update_arguments = [package_home, "http://127.0.0.1:8080/lsl", "/tmp/lsl-package-command-server", "/tmp/lsl-stdin-cli-test", package_config]
+call require_success(run("/tmp/lsl-package-update-config-test", update_arguments), "package update/config install failed")
+call writefile(package_config, "duplicate" + chr(10) + "duplicate" + chr(10))
+call require_failure(run("/tmp/lsl-package-config-negative", [package_config]), "duplicate config library unexpectedly accepted")
+call writefile(package_config, "bad name" + chr(10))
+call require_failure(run("/tmp/lsl-package-config-negative", [package_config]), "unsafe config library unexpectedly accepted")
 call require_success(run(compiler, ["tests/compiler/user_module_path_conformance.lsl", "/tmp/lsl-user-module-path-test"]), "compile user module path conformance")
 call require_output("/tmp/lsl-user-module-path-test", [], "tests/compiler/user_module_path_conformance.out", "user module path output differs")
 

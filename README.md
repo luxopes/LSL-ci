@@ -57,12 +57,16 @@ Bez argumentu installer používá `/usr/local` (podle oprávnění procesu). In
 
 ```text
 ./lsl install textkit
-./lsl install statkit
+./lsl update textkit
+./lsl install --config libraries.conf
 ./lsl server
 ```
 
 Knihovna se stáhne z dočasného HTTPS registru, ověří zveřejněným SHA-256,
-zkušebně přeloží a atomicky uloží do `~/.local/lib/lsl/stdlib`. Built-in moduly
+zkušebně přeloží a atomicky uloží do `~/.local/lib/lsl/stdlib`. `update`
+vyžaduje existující knihovnu a používá stejnou ověřenou atomickou cestu. Config
+obsahuje jeden název na řádek; prázdné řádky a řádky začínající `#` se ignorují.
+Built-in moduly
 mají vždy přednost. `LSL_REGISTRY` může změnit základní URL; vzdálená URL musí
 používat HTTPS. Registr je zatím nepodepsaný, takže hash ze stejného serveru
 nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v

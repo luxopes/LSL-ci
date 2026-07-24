@@ -776,6 +776,15 @@ BusyBox wget pouze pro přesný dočasný Netlify origin; cílený skutečný do
 opakovaný full suite prošly. Finální CLI hash je
 `f0a3f68ad0a33c0fb52277aa6a69176185960b5539510a3fc12477e4fd58ece3`.
 
+Package update/config zachovává compiler fixed point
+`dc25f32f18a8f3544e659366f4aee332ab050ec6c57dd322624b81282088999c` a
+přidává `lsl update NAME` přes stejnou hash/compile/atomic cestu a
+`lsl install --config FILE`. Config nejprve validuje celý nejvýše 64KiB/256
+položkový seznam, komentáře, jména a duplicity. Hermetické update/config/negative
+testy, skutečná Netlify instalace dvou knihoven a update, tři shodné stages,
+full/fixed-point/config/installed-prefix a ELF audit prošly. CLI hash je
+`a6865be3e25faeff295bfc2b31830d50fc5f10f6bb529e17fd8a4f334fe12109`.
+
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,
 collections, GC robustnost, syscall I/O, native/tensor ABI, AI vrstva,

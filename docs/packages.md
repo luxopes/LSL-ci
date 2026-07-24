@@ -4,7 +4,8 @@ LSL 0.7 umí instalovat jednosouborové zdrojové moduly bez sudo:
 
 ```text
 lsl install textkit
-lsl install statkit
+lsl update textkit
+lsl install --config libraries.conf
 lsl server
 ```
 
@@ -31,6 +32,20 @@ Klient:
 5. spustí `lsl compile` nad staging zdrojem, takže syntakticky nebo linkově
    neplatná knihovna se nenainstaluje;
 6. nastaví mód `0644` a atomickým `mv` nahradí cílový soubor.
+
+`lsl update NAME` nejdřív vyžaduje existující cílový modul a potom používá
+stejné ověření, zkušební překlad a atomickou náhradu jako instalace.
+
+`lsl install --config FILE` načte nejvýše 64 KiB a 256 položek. Soubor používá
+LF a tisknutelnou ASCII podmnožinu UTF-8, obsahuje přesně jeden validní název na
+řádek a může obsahovat prázdné řádky nebo komentáře začínající `#`. Duplicitní či
+neplatná položka se odmítne ještě před prvním downloadem. Například:
+
+```text
+# Development libraries
+textkit
+statkit
+```
 
 Cíl je:
 
