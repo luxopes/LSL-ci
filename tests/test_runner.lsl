@@ -81,6 +81,37 @@ exit_output = capture_input("/tmp/lsl-stdin-cli-test", [], "exit(7)" + chr(10) +
 if capture_status() != 7 or exit_output != "":
     Error(TestFailure: "stdin CLI exact exit terminator differs")
 end
+
+# Per-user source libraries use a strict name/hash/compile/atomic-move path, and
+# built-in modules retain precedence over the user directory.
+call require_success(run(compiler, ["tests/compiler/package_command_server.lsl", "/tmp/lsl-package-command-server"]), "compile package command server")
+call require_success(run(compiler, ["tests/compiler/package_install_conformance.lsl", "/tmp/lsl-package-install-test"]), "compile package install conformance")
+package_home = "/tmp/lsl-package-home"
+call mkdir(package_home)
+call mkdir(package_home + "/.local")
+call mkdir(package_home + "/.local/lib")
+call mkdir(package_home + "/.local/lib/lsl")
+call mkdir(package_home + "/.local/lib/lsl/stdlib")
+package_destination = package_home + "/.local/lib/lsl/stdlib/registry_probe.lsl"
+if exists(package_destination):
+    call unlink(package_destination)
+end
+package_arguments = ["registry_probe", package_home, "http://127.0.0.1:8080/lsl", "/tmp/lsl-package-command-server", "/tmp/lsl-stdin-cli-test"]
+call require_output("/tmp/lsl-package-install-test", package_arguments, "tests/compiler/package_install_conformance.out", "package install output differs")
+if not exists(package_destination):
+    Error(TestFailure: "package install did not create the user module")
+end
+call unlink(package_destination)
+bad_hash_arguments = ["registry_probe", package_home, "http://127.0.0.1:8080/bad", "/tmp/lsl-package-command-server", "/tmp/lsl-stdin-cli-test"]
+call require_failure(run("/tmp/lsl-package-install-test", bad_hash_arguments), "package hash mismatch unexpectedly installed")
+if exists(package_destination):
+    Error(TestFailure: "package hash failure left an installed module")
+end
+bad_name_arguments = ["Bad/Name", package_home, "http://127.0.0.1:8080/lsl", "/tmp/lsl-package-command-server", "/tmp/lsl-stdin-cli-test"]
+call require_failure(run("/tmp/lsl-package-install-test", bad_name_arguments), "unsafe package name unexpectedly installed")
+call require_success(run(compiler, ["tests/compiler/user_module_path_conformance.lsl", "/tmp/lsl-user-module-path-test"]), "compile user module path conformance")
+call require_output("/tmp/lsl-user-module-path-test", [], "tests/compiler/user_module_path_conformance.out", "user module path output differs")
+
 call require_success(run(compiler, ["tests/selfhost_conformance.lsl", "/tmp/lsl-selfhost-test"]), "compile selfhost conformance")
 call require_output("/tmp/lsl-selfhost-test", [], "tests/selfhost_conformance.out", "selfhost conformance output differs")
 call require_success(run(compiler, ["tests/table_growth_conformance.lsl", "/tmp/lsl-table-growth-test"]), "compile table growth conformance")

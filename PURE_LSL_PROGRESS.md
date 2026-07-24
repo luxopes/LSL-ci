@@ -762,6 +762,18 @@ odložené. Full (14,832 s), fixed point (2,086 s), config a fresh installed
 lconf/fixed point prošly. Produkční implementace má 14259 fyzických / 13392
 neprázdných nekomentářových LSL řádků.
 
+Per-user registry fixed point
+`dc25f32f18a8f3544e659366f4aee332ab050ec6c57dd322624b81282088999c`
+přidává `lsl install NAME` pro jednosouborové knihovny z dočasného HTTPS
+registru. Klient validuje jméno/URL, limituje curl protokoly a velikost, ověřuje
+lowercase SHA-256, používá content-addressed staging, zkušební compile, mód 0644
+a atomický move do `~/.local/lib/lsl/stdlib`. Built-in/system moduly mají před
+uživatelskou cestou přednost. Hermetický corpus pokrývá úspěch, hash mismatch,
+path jméno a precedence; skutečný Netlify download `textkit` i `statkit`, tři
+shodné self-host stages, full suite, config, fresh installed fixed point a ELF/
+pure-tree audit prošly. Finální CLI hash je
+`d85ae0e03ccd01ccfcdba8117e010edb5bcd3ef199bf1925b7b6ca4ff0f43158`.
+
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,
 collections, GC robustnost, syscall I/O, native/tensor ABI, AI vrstva,

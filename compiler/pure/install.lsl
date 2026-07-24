@@ -39,6 +39,7 @@ sources = [
     "lslc_direct.lsl",
     "native_runtime.lsl",
     "native_plugin_runtime.lsl",
+    "package.lsl",
     "parser.lsl",
     "process_runtime.lsl",
     "x86_64.lsl"

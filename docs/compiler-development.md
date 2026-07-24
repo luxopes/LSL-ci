@@ -41,6 +41,7 @@ ulimit -v 1048576
 | `compiler/pure/elf_image.lsl` | finální ELF64 image |
 | `compiler/pure/dynamic_stdlib.lsl` | LSL helper funkce připojené ke každému programu |
 | `compiler/pure/lslc_direct.lsl` | produkční compiler entrypoint |
+| `compiler/pure/package.lsl` | bezpečná instalace per-user zdrojových knihoven |
 | `stdlib/` | veřejné staticky linkované moduly |
 | `tests/test_runner.lsl` | pure-LSL regression runner |
 

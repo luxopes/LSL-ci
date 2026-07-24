@@ -29,7 +29,7 @@ function module_prefix(name):
     return name.replace(".", "__") + "__"
 end
 
-function module_path(name, owner_path):
+function module_path_with_home(name, owner_path, home):
     relative_name = name.replace(".", "/") + ".lsl"
     local_path = dirname(owner_path) + "/" + relative_name
     if exists(local_path):
@@ -56,7 +56,23 @@ function module_path(name, owner_path):
         return root_candidate
     end
     prefix = dirname(dirname(executable))
-    return prefix + "/lib/lsl/" + standard_path
+    installed_path = prefix + "/lib/lsl/" + standard_path
+    if exists(installed_path):
+        return installed_path
+    end
+    # Registry libraries are user-owned and never shadow built-in modules.
+    if home != None and home != "":
+        user_path = home + "/.local/lib/lsl/stdlib/" + relative_name
+        if exists(user_path):
+            return user_path
+        end
+    end
+    # Preserve the deterministic missing-file diagnostic path.
+    return installed_path
+end
+
+function module_path(name, owner_path):
+    return module_path_with_home(name, owner_path, getenv("HOME"))
 end
 
 function private_class(statement):

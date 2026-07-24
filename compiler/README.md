@@ -20,9 +20,10 @@ cmp ./compiler/pure/lslc-direct /tmp/next
 
 Další čisté nástroje:
 
-- `pure/lsl-cli` — veřejné run/compile/config CLI;
+- `pure/lsl-cli` — veřejné run/compile/config/install CLI;
 - `pure/lsl-configure` — config wrapper generator;
-- `pure/lsl-install` — installer;
+- `pure/lsl-install` — toolchain installer;
+- `pure/package.lsl` — ověřená per-user instalace zdrojových knihoven;
 - `tests/lsl-test` — agregovaný conformance runner s `fast`, `full` a
   `fixed-point` režimy (`full` je výchozí); jeho zdroj je `tests/test_runner.lsl`
   (cesty jsou relativní ke kořeni repozitáře).

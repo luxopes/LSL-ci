@@ -2,6 +2,7 @@
 
 load codegen
 load linker
+load package
 load parser
 
 function compile_source(source_path, source, output_path):
@@ -56,6 +57,22 @@ function tool_path(repository_path, installed_name):
         return repository_path
     end
     return dirname(executable_path()) + "/" + installed_name
+end
+
+function registry_server():
+    server = getenv("LSL_REGISTRY")
+    if server == None or server == "":
+        server = "https://luxos-registry-temp-2026.netlify.app/lsl"
+    end
+    return package.normalize_server(server)
+end
+
+function user_home():
+    home = getenv("HOME")
+    if home == None or home == "":
+        Error(PackageError: "HOME is required for per-user library installation")
+    end
+    return home
 end
 
 function read_stdin_source():
@@ -122,6 +139,21 @@ elif command == "config":
     call unlink(wrapper)
     status = run("/tmp/lsl-config-evaluator", [])
     exit(status)
+elif command == "install":
+    name = arg(2)
+    if name == None or arg(3) != None:
+        print "usage: lsl install NAME"
+        exit(2)
+    end
+    call package.install(name, user_home(), registry_server(), "/usr/bin/curl", "/usr/bin/sha256sum", "/usr/bin/mv", "/usr/bin/chmod", executable_path())
+    exit(0)
+elif command == "server":
+    if arg(2) != None:
+        print "usage: lsl server"
+        exit(2)
+    end
+    print registry_server()
+    exit(0)
 end
 
 call compile_file(command, "/tmp/lsl-program")

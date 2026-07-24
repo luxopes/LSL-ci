@@ -1,0 +1,3 @@
+Fetching http://127.0.0.1:8080/lsl/registry_probe.lsl
+Installed registry_probe into /tmp/lsl-package-home/.local/lib/lsl/stdlib/registry_probe.lsl.
+package-install-ok

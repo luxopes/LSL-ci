@@ -9,6 +9,7 @@ LSL 0.7 je self-hostovaný jazyk pro běžné programování, deklarativní konf
 ./lsl program.lsl arg1 arg2
 ./lsl compile program.lsl program
 ./lsl config examples/config/system.lsl
+./lsl install textkit
 ./compiler/lslc program.lsl program
 ```
 
@@ -52,6 +53,21 @@ config a fixed-point kontrolu. Aktuální SHA-256 je v `PURE_LSL_PROGRESS.md`.
 
 Bez argumentu installer používá `/usr/local` (podle oprávnění procesu). Installer, build nástroje i test runner jsou LSL-generované ELF soubory. Instalovaný compiler hledá standardní moduly relativně k vlastnímu `/proc/self/exe`, takže funguje z libovolného pracovního adresáře.
 
+## Zdrojové knihovny
+
+```text
+./lsl install textkit
+./lsl install statkit
+./lsl server
+```
+
+Knihovna se stáhne z dočasného HTTPS registru, ověří zveřejněným SHA-256,
+zkušebně přeloží a atomicky uloží do `~/.local/lib/lsl/stdlib`. Built-in moduly
+mají vždy přednost. `LSL_REGISTRY` může změnit základní URL; vzdálená URL musí
+používat HTTPS. Registr je zatím nepodepsaný, takže hash ze stejného serveru
+nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
+[docs/packages.md](docs/packages.md).
+
 ## Implementované jádro
 
 - Int, Bool, None a boxed IEEE-754 Float;
@@ -75,6 +91,7 @@ Bez argumentu installer používá `/usr/local` (podle oprávnění procesu). In
 - [AI aplikace](docs/ai.md)
 - [Čas a měření](docs/time.md)
 - [Linux příkazy přes modul os](docs/os.md)
+- [Instalace LSL knihoven](docs/packages.md)
 - [Správa balíčků LuxOS](docs/system.md)
 - [Dependency manifest config.lconf](docs/lconf.md)
 - [Native/plugin ABI](docs/native-plugins.md)
