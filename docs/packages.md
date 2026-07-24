@@ -23,8 +23,9 @@ volbu procesu.
 Klient:
 
 1. povolí HTTPS; nezabezpečené HTTP přijme pouze pro `127.0.0.1` nebo
-   `localhost` při lokálním testu;
-2. stáhne nejvýše 1 MiB zdroje a SHA-256 sidecar přes přímé argv volání curlu;
+   `localhost` při lokálním testu; diskless LuxOS bez curlu smí použít
+   certificate-checking BusyBox wget pouze pro přesný dočasný Netlify origin;
+2. přes přímé argv volání transportu přijme nejvýše 1 MiB zdroje a SHA-256 sidecar;
 3. odmítne prázdný zdroj, NUL byte a neplatný 64znakový lowercase SHA-256;
 4. zapíše skrytý staging soubor a ověří jeho hash přes `sha256sum`;
 5. spustí `lsl compile` nad staging zdrojem, takže syntakticky nebo linkově

@@ -72,29 +72,41 @@ function fail_after_cleanup(message, stage, check_path):
 end
 
 function fetch(curl_path, server, url):
-    protocols = "=https"
-    if localhost_http(server):
-        protocols = "=http,https"
+    if exists(curl_path):
+        protocols = "=https"
+        if localhost_http(server):
+            protocols = "=http,https"
+        end
+        arguments = [
+            "--fail",
+            "--show-error",
+            "--silent",
+            "--location",
+            "--max-time", "120",
+            "--max-filesize", "1048576",
+            "--proto", protocols,
+            "--proto-redir", protocols,
+            url
+        ]
+        output = capture(curl_path, arguments)
+        tool = "curl"
+    elif server == "https://luxos-registry-temp-2026.netlify.app/lsl" and exists("/bin/wget"):
+        # The diskless image has pinned BusyBox and CA roots but intentionally
+        # omits curl. Keep this fallback scoped to the temporary HTTPS origin.
+        output = capture("/bin/wget", ["-q", "-T", "120", "-O", "-", url])
+        tool = "wget"
+    else:
+        Error(PackageError: "curl is required for this registry")
     end
-    arguments = [
-        "--fail",
-        "--show-error",
-        "--silent",
-        "--location",
-        "--max-time", "120",
-        "--max-filesize", "1048576",
-        "--proto", protocols,
-        "--proto-redir", protocols,
-        url
-    ]
-    output = capture(curl_path, arguments)
     status = capture_status()
     if status != 0:
         detail = capture_stderr().strip()
         if detail == "":
-            detail = "curl exited with status " + String(status)
+            detail = tool + " exited with status " + String(status)
         end
         Error(PackageError: "download failed: " + detail)
+    elif len(output) > 1048576:
+        Error(PackageError: "download exceeds 1 MiB")
     end
     return output
 end

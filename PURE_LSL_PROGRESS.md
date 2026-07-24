@@ -771,8 +771,10 @@ a atomický move do `~/.local/lib/lsl/stdlib`. Built-in/system moduly mají pře
 uživatelskou cestou přednost. Hermetický corpus pokrývá úspěch, hash mismatch,
 path jméno a precedence; skutečný Netlify download `textkit` i `statkit`, tři
 shodné self-host stages, full suite, config, fresh installed fixed point a ELF/
-pure-tree audit prošly. Finální CLI hash je
-`d85ae0e03ccd01ccfcdba8117e010edb5bcd3ef199bf1925b7b6ca4ff0f43158`.
+pure-tree audit prošly. Diskless LuxOS může bez curlu použít certificate-checking
+BusyBox wget pouze pro přesný dočasný Netlify origin; cílený skutečný download i
+opakovaný full suite prošly. Finální CLI hash je
+`f0a3f68ad0a33c0fb52277aa6a69176185960b5539510a3fc12477e4fd58ece3`.
 
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,
