@@ -785,6 +785,69 @@ testy, skutečná Netlify instalace dvou knihoven a update, tři shodné stages,
 full/fixed-point/config/installed-prefix a ELF audit prošly. CLI hash je
 `a6865be3e25faeff295bfc2b31830d50fc5f10f6bb529e17fd8a4f334fe12109`.
 
+GUI základ přidává stdlib `gfx` (IntArray Surface, rasterizace, 8x16
+bitmapový font s českou diakritikou, PPM výstup) a `display` (32bpp XRGB
+framebuffer přes /sys mode a writebytes present), oboje čisté LSL bez
+runtime změn. Runtime nově emituje raw fd builtins `__lsl_fd_open`,
+`__lsl_fd_read` (read count clampovaný na payload délku), `__lsl_fd_write`,
+`__lsl_fd_seek` a `__lsl_fd_close` pro device I/O (/dev/input, trvalý
+framebuffer fd); vracejí surový syscall výsledek a chyby zvedá stdlib
+wrapper. Tři shodné stages, full suite, fixed-point, config a ELF audit prošly.
+
+Následující fixed point opravuje tři chyby a mění environment API. Obě
+execve cesty (run i capture) nyní předávají rodičovské envp z r15 místo
+NULL, takže `./lsl program.lsl` i os/process children vidí environment.
+`__lsl_parse_float` škáluje exponent exaktními mocninami deseti (10^22 je
+největší přesný double) v jednom násobení/dělení na chunk, čímž je
+převod monotónní; korekční smyčka formatteru navíc detekuje přemostění
+cíle a bere bližší stranu, takže `FloatFormatError` už nemůže nastat
+(DBL_MIN/DBL_MAX řádky v `float_format_conformance.out` mají přesnější
+digity). Veřejný builtin `getenv` je odstraněn; environment čte pouze
+modul `env` (`get`/`has`/`require`) přes interní `__lsl_getenv` a
+bootstrap proběhl dvoufázově (přechodná registrace obou jmen). Tři
+shodné stages, full+fast suite, fixed-point, config, installed-prefix a
+ELF audit prošly. Compiler fixed point je
+`9f731ff25ef998a9eba45b4e23a18c7148c42aaaaa0ad0c364c0546b76f44b7e`,
+CLI hash je
+`8381ddb576d021966cb09e9277278e4a32c3efbfe1eee1126ff8a2de2805a65f`.
+
+Následující fixed point přidává okenní GUI. Runtime dostal socket
+builtiny `__lsl_fd_socket` (41) a `__lsl_fd_connect` (42) a `__lsl_fd_write`
+je přepsán na vlastní smyčku, která opakuje na EAGAIN, aby velký zápis do
+nonblocking socketu dojel. Nad tím stojí čistě-LSL X11 klient
+(`stdlib/x11.lsl`): unix socket, MIT-MAGIC-COOKIE-1 handshake, jedno okno,
+ZPixmap PutImage po pruzích, WM_DELETE_WINDOW a normalizované události.
+`stdlib/display.lsl` je sjednocený `Display` s backendy x11/framebuffer za
+jedním present/poll/should_close API (klávesové kódy jsou pro oba backendy
+linuxové/evdev). `stdlib/gfx.lsl` byl refaktorován na volné `raster_*`
+funkce nad raw pixel bufferem, na které Surface metody delegují a které
+používá i nový `stdlib/ui.lsl` (label/button/checkbox jako Dictionary,
+`process`/`paint`, callbacky přes sdílený state Dictionary). Návrh je
+vynucený tím, že LSL volá metody jen na staticky typovaných lokálech nebo
+`self`, ne na parametrech ani vnořených memberech — proto jsou display/
+gfx operace dostupné i jako volné funkce a event loop vlastní aplikace.
+Compiler fixed point (stdlib změny ho nemění, socket builtiny ano) je
+`511a0027d7f062cd31c8212a704936ffcc043ef86f5fd4ef1dc15de53aadadae`,
+CLI hash je
+`a0e4234b2b3deef46dfc307bf9734cdad8c653275c6296c748626bc2cb3c748f`.
+Odhalený codegen bug (zatím neopravený, workaround: cast na typovaný
+lokál): `bytearray.append(vypočtená hodnota)` na Any-typed parametru
+zapíše poškozenou hodnotu; `ByteArray(param)` cast to obejde.
+
+Liquid glass GUI (pouze stdlib, compiler beze změny): `gfx` má compositing
+v celočíselném fixed-pointu (alpha blending, diagonální gradient,
+anti-aliased zaoblené obdélníky s alpha a měkkým feather stínem, AA
+škálovaný text) — naivní float verze byla ~450x pomalejší a boxovala.
+`stdlib/css.lsl` parsuje podmnožinu CSS (barvy, linear-gradient,
+border-radius) pro deklarativní vzhled. `examples/gui_glass_calc.lsl` je
+kalkulačka v macOS „liquid glass" stylu s rekurzivním vyhodnocením výrazu.
+Odhalená vlastnost konzervativního GC: v render smyčce falešně drží
+krátkodobé snímkové buffery (stale ukazatele na zásobníku), takže paměť
+rostla ~200 MB/s; `display.present` proto volá `gc()` každý snímek (paměť
+je pak konstantní) a `display.wait_frame` stropuje FPS odděleně od
+present. put_image/read_events používají znovupoužitelné buffery. Přesnější
+GC (stack mapy) je budoucí runtime úloha.
+
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,
 collections, GC robustnost, syscall I/O, native/tensor ABI, AI vrstva,

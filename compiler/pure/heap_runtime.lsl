@@ -925,9 +925,14 @@ function emit_gc(output):
 
     call assembler.label(output, "runtime_gc")
     call assembler.emit(output, x86_64.function_prologue(64))
+    # Conservatively scan the whole live stack, from just above this frame
+    # up to the process stack base in r15, so roots held in any live caller
+    # frame (not only the immediate one) are marked. Scanning only the
+    # direct caller previously let gc() free objects still referenced by
+    # outer frames, corrupting long-lived state such as pending input.
     call assembler.emit(output, x86_64.lea_base(8, 5, 16))
     call assembler.emit(output, x86_64.store_stack(-8, 8))
-    call assembler.emit(output, x86_64.load_memory(8, 5, 0))
+    call assembler.emit(output, x86_64.move_reg_reg(8, 15))
     call assembler.emit(output, x86_64.store_stack(-32, 8))
     call assembler.label(output, "gc_root_loop")
     call assembler.emit(output, x86_64.load_stack(8, -8))
@@ -1034,6 +1039,40 @@ function emit_byte_array(output):
     call assembler.emit(output, x86_64.load_stack(1, -8))
     call assembler.emit(output, x86_64.store_memory(1, 24, 0))
     call assembler.emit(output, x86_64.move_reg_reg(0, 1))
+    call assembler.emit(output, x86_64.function_epilogue())
+
+    # runtime_byte_array_zeros: rdi = n -> a zeroed ByteArray of length n
+    # allocated in ONE data allocation (not per-element append), so building
+    # a large buffer registers 2 objects instead of n and never blows up the
+    # object table.
+    call assembler.label(output, "runtime_byte_array_zeros")
+    call assembler.emit(output, x86_64.function_prologue(32))
+    call assembler.emit(output, x86_64.store_stack(-8, 7))
+    call assembler.emit(output, x86_64.mov_imm64(7, 32))
+    call assembler.relative(output, [232], "runtime_alloc")
+    call assembler.emit(output, x86_64.store_stack(-16, 0))
+    call assembler.emit(output, x86_64.store_memory_imm32(0, 0, 15))
+    call assembler.emit(output, x86_64.load_stack(1, -8))
+    call assembler.emit(output, x86_64.store_memory(0, 8, 1))
+    call assembler.emit(output, x86_64.store_memory(0, 16, 1))
+    call assembler.emit(output, x86_64.load_stack(7, -8))
+    call assembler.emit(output, x86_64.add_reg_imm8(7, 1))
+    call assembler.relative(output, [232], "runtime_alloc")
+    call assembler.emit(output, x86_64.store_stack(-24, 0))
+    call assembler.emit(output, x86_64.load_stack(1, -16))
+    call assembler.emit(output, x86_64.store_memory(1, 24, 0))
+    call assembler.emit(output, x86_64.load_stack(8, -8))
+    call assembler.emit(output, x86_64.xor_reg_reg(2, 2))
+    call assembler.label(output, "byte_zeros_loop")
+    call assembler.emit(output, x86_64.cmp_reg_reg(2, 8))
+    call assembler.relative(output, [15, 141], "byte_zeros_done")
+    call assembler.emit(output, x86_64.load_stack(11, -24))
+    call assembler.emit(output, x86_64.xor_reg_reg(1, 1))
+    call assembler.emit(output, x86_64.store_byte_indexed(11, 2, 1))
+    call assembler.emit(output, x86_64.increment(2))
+    call assembler.relative(output, [233], "byte_zeros_loop")
+    call assembler.label(output, "byte_zeros_done")
+    call assembler.emit(output, x86_64.load_stack(0, -16))
     call assembler.emit(output, x86_64.function_epilogue())
 
     call assembler.label(output, "runtime_byte_array_append")

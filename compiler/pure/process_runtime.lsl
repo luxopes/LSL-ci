@@ -74,7 +74,12 @@ function emit_run(output):
     call assembler.emit(output, x86_64.load_stack(7, -8))
     call assembler.emit(output, x86_64.lea_base(7, 7, 16))
     call assembler.emit(output, x86_64.load_stack(6, -32))
-    call assembler.emit(output, x86_64.xor_reg_reg(2, 2))
+    # Pass the parent environment: envp sits after argc and the
+    # NULL-terminated argv on the original process stack in r15.
+    call assembler.emit(output, x86_64.load_memory(2, 15, 0))
+    call assembler.emit(output, x86_64.add_reg_imm8(2, 2))
+    call assembler.emit(output, x86_64.shift_left_imm(2, 3))
+    call assembler.emit(output, x86_64.add_reg_reg(2, 15))
     call assembler.emit(output, x86_64.mov_imm64(0, 59))
     call assembler.emit(output, x86_64.syscall())
     call assembler.emit(output, x86_64.mov_imm64(7, 127))
@@ -570,7 +575,12 @@ function emit_capture(output):
     call assembler.emit(output, x86_64.load_stack(7, -8))
     call assembler.emit(output, x86_64.lea_base(7, 7, 16))
     call assembler.emit(output, x86_64.load_stack(6, -32))
-    call assembler.emit(output, x86_64.xor_reg_reg(2, 2))
+    # Pass the parent environment: envp sits after argc and the
+    # NULL-terminated argv on the original process stack in r15.
+    call assembler.emit(output, x86_64.load_memory(2, 15, 0))
+    call assembler.emit(output, x86_64.add_reg_imm8(2, 2))
+    call assembler.emit(output, x86_64.shift_left_imm(2, 3))
+    call assembler.emit(output, x86_64.add_reg_reg(2, 15))
     call assembler.emit(output, x86_64.mov_imm64(0, 59))
     call assembler.emit(output, x86_64.syscall())
     call assembler.emit(output, x86_64.mov_imm64(7, 127))

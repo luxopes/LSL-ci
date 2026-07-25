@@ -89,6 +89,7 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 ## Dokumentace
 
 - [Praktické programování v LSL](docs/programming.md)
+- [GUI, okna a widgety](docs/gui.md)
 - [Jazyková specifikace](docs/language.md)
 - [Vývoj compileru a release workflow](docs/compiler-development.md)
 - [Deklarativní konfigurace](docs/configuration.md)

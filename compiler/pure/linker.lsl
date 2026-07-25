@@ -72,7 +72,7 @@ function module_path_with_home(name, owner_path, home):
 end
 
 function module_path(name, owner_path):
-    return module_path_with_home(name, owner_path, getenv("HOME"))
+    return module_path_with_home(name, owner_path, __lsl_getenv("HOME"))
 end
 
 function private_class(statement):

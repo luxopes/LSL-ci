@@ -60,7 +60,7 @@ function tool_path(repository_path, installed_name):
 end
 
 function registry_server():
-    server = getenv("LSL_REGISTRY")
+    server = __lsl_getenv("LSL_REGISTRY")
     if server == None or server == "":
         server = "https://luxos-registry-temp-2026.netlify.app/lsl"
     end
@@ -68,7 +68,7 @@ function registry_server():
 end
 
 function user_home():
-    home = getenv("HOME")
+    home = __lsl_getenv("HOME")
     if home == None or home == "":
         Error(PackageError: "HOME is required for per-user library installation")
     end

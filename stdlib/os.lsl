@@ -69,7 +69,7 @@ function which(name):
         end
         return None
     end
-    path = getenv("PATH")
+    path = __lsl_getenv("PATH")
     if path == None or path == "":
         path = "/usr/local/bin:/usr/bin:/bin"
     end

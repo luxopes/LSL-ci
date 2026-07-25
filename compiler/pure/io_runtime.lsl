@@ -498,6 +498,100 @@ function emit_writebytes(output):
     call assembler.emit(output, [0])
 end
 
+# Raw file-descriptor builtins for device I/O (framebuffer, /dev/input).
+# They return the raw syscall result; the stdlib fd module turns negative
+# values into catchable errors, so no error String is emitted here.
+function emit_fd_io(output):
+    # __lsl_fd_open: rdi String payload, rsi flags -> open(path, flags, 0666).
+    call assembler.label(output, "runtime_fd_open")
+    call assembler.emit(output, x86_64.lea_base(7, 7, 16))
+    call assembler.emit(output, x86_64.mov_imm64(2, 438))
+    call assembler.emit(output, x86_64.mov_imm64(0, 2))
+    call assembler.emit(output, x86_64.syscall())
+    call assembler.emit(output, x86_64.ret())
+
+    # __lsl_fd_read: rdi fd, rsi ByteArray payload, rdx max. The count is
+    # clamped to the payload length so the kernel cannot write past it.
+    call assembler.label(output, "runtime_fd_read")
+    call assembler.emit(output, x86_64.load_memory(1, 6, 8))
+    call assembler.emit(output, x86_64.cmp_reg_reg(2, 1))
+    call assembler.relative(output, [15, 142], "fd_read_size_ok")
+    call assembler.emit(output, x86_64.move_reg_reg(2, 1))
+    call assembler.label(output, "fd_read_size_ok")
+    call assembler.emit(output, x86_64.load_memory(6, 6, 24))
+    call assembler.emit(output, x86_64.mov_imm64(0, 0))
+    call assembler.emit(output, x86_64.syscall())
+    call assembler.emit(output, x86_64.ret())
+
+    # __lsl_fd_write: rdi fd, rsi ByteArray payload, rdx count. Loops
+    # until every byte is sent and retries on EAGAIN (-11) so a large
+    # write to a nonblocking socket completes instead of failing.
+    call assembler.label(output, "runtime_fd_write")
+    call assembler.emit(output, x86_64.load_memory(1, 6, 8))
+    call assembler.emit(output, x86_64.cmp_reg_reg(2, 1))
+    call assembler.relative(output, [15, 142], "fd_write_size_ok")
+    call assembler.emit(output, x86_64.move_reg_reg(2, 1))
+    call assembler.label(output, "fd_write_size_ok")
+    call assembler.emit(output, x86_64.load_memory(6, 6, 24))
+    call assembler.label(output, "fd_write_loop")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(2, 0))
+    call assembler.relative(output, [15, 142], "fd_write_done")
+    call assembler.emit(output, x86_64.push(7))
+    call assembler.emit(output, x86_64.push(6))
+    call assembler.emit(output, x86_64.push(2))
+    call assembler.emit(output, x86_64.mov_imm64(0, 1))
+    call assembler.emit(output, x86_64.syscall())
+    call assembler.emit(output, x86_64.pop(2))
+    call assembler.emit(output, x86_64.pop(6))
+    call assembler.emit(output, x86_64.pop(7))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+    call assembler.relative(output, [15, 143], "fd_write_advance")
+    call assembler.emit(output, x86_64.cmp_reg_imm32(0, -11))
+    call assembler.relative(output, [15, 132], "fd_write_loop")
+    call assembler.emit(output, x86_64.mov_imm64(0, -1))
+    call assembler.emit(output, x86_64.ret())
+    call assembler.label(output, "fd_write_advance")
+    call assembler.emit(output, x86_64.add_reg_reg(6, 0))
+    call assembler.emit(output, x86_64.sub_reg_reg(2, 0))
+    call assembler.relative(output, [233], "fd_write_loop")
+    call assembler.label(output, "fd_write_done")
+    call assembler.emit(output, x86_64.mov_imm64(0, 0))
+    call assembler.emit(output, x86_64.ret())
+
+    # __lsl_fd_seek: rdi fd, rsi offset -> lseek(fd, offset, SEEK_SET).
+    call assembler.label(output, "runtime_fd_seek")
+    call assembler.emit(output, x86_64.xor_reg_reg(2, 2))
+    call assembler.emit(output, x86_64.mov_imm64(0, 8))
+    call assembler.emit(output, x86_64.syscall())
+    call assembler.emit(output, x86_64.ret())
+
+    # __lsl_fd_close: rdi fd.
+    call assembler.label(output, "runtime_fd_close")
+    call assembler.emit(output, x86_64.mov_imm64(0, 3))
+    call assembler.emit(output, x86_64.syscall())
+    call assembler.emit(output, x86_64.ret())
+
+    # __lsl_fd_socket: rdi domain, rsi type -> socket(domain, type, 0).
+    call assembler.label(output, "runtime_fd_socket")
+    call assembler.emit(output, x86_64.xor_reg_reg(2, 2))
+    call assembler.emit(output, x86_64.mov_imm64(0, 41))
+    call assembler.emit(output, x86_64.syscall())
+    call assembler.emit(output, x86_64.ret())
+
+    # __lsl_fd_connect: rdi fd, rsi ByteArray sockaddr, rdx len clamped
+    # to the payload length.
+    call assembler.label(output, "runtime_fd_connect")
+    call assembler.emit(output, x86_64.load_memory(1, 6, 8))
+    call assembler.emit(output, x86_64.cmp_reg_reg(2, 1))
+    call assembler.relative(output, [15, 142], "fd_connect_size_ok")
+    call assembler.emit(output, x86_64.move_reg_reg(2, 1))
+    call assembler.label(output, "fd_connect_size_ok")
+    call assembler.emit(output, x86_64.load_memory(6, 6, 24))
+    call assembler.emit(output, x86_64.mov_imm64(0, 42))
+    call assembler.emit(output, x86_64.syscall())
+    call assembler.emit(output, x86_64.ret())
+end
+
 function emit_paths(output):
     call assembler.label(output, "runtime_mkdir")
     call assembler.emit(output, x86_64.lea_base(7, 7, 16))
@@ -549,6 +643,7 @@ function emit_all(output):
     call emit_writefile(output)
     call emit_appendfile(output)
     call emit_writebytes(output)
+    call emit_fd_io(output)
     call emit_paths(output)
     call emit_exists(output)
     call emit_terminal_state(output)

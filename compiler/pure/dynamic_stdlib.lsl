@@ -372,13 +372,27 @@ function __lsl_parse_float(text):
         Error(ValueError: "invalid Float String")
     end
     value /= fraction_scale
+    # Scale by exact powers of ten (10^22 is the largest exact double)
+    # in one multiply or divide per chunk. Per-digit scaling would round
+    # on every step and break the formatter round-trip search, which
+    # needs this conversion to be monotonic in the decimal digits.
     while exponent > 0:
-        if exponent_negative:
-            value /= 10.0
-        else:
-            value *= 10.0
+        step = exponent
+        if step > 22:
+            step = 22
         end
-        exponent -= 1
+        scale = 1.0
+        counter = 0
+        while counter < step:
+            scale *= 10.0
+            counter += 1
+        end
+        if exponent_negative:
+            value /= scale
+        else:
+            value *= scale
+        end
+        exponent -= step
     end
     return value * sign
 end
@@ -543,21 +557,61 @@ function __lsl_format_float(value):
 
     # Repeated decimal scaling above can drift by a few ulps. Correct the final
     # 17-digit integer against the original IEEE bits before shortening it.
+    # When one significand step jumps across the target the exact decimal is
+    # unreachable through the parser; the closer bracketing side then wins
+    # instead of failing the whole format.
     attempts = 0
     candidate = __lsl_float_candidate(significand, 17, exponent)
     parsed = __lsl_parse_float(candidate)
-    while __lsl_float_bits(parsed) != target_bits and attempts < 10000:
+    while __lsl_float_bits(parsed) != target_bits and attempts < 300:
+        previous_significand = significand
+        previous_exponent = exponent
+        previous_parsed = parsed
         if parsed < value:
             significand += 1
         else:
             significand -= 1
         end
+        if significand >= 100000000000000000:
+            significand = significand // 10
+            exponent += 1
+        elif significand < 10000000000000000:
+            significand = significand * 10 + 9
+            exponent -= 1
+        end
         candidate = __lsl_float_candidate(significand, 17, exponent)
         parsed = __lsl_parse_float(candidate)
         attempts += 1
-    end
-    if __lsl_float_bits(parsed) != target_bits:
-        Error(FloatFormatError: "could not produce a round-trip decimal")
+        if __lsl_float_bits(parsed) != target_bits:
+            crossed = False
+            if previous_parsed < value and parsed > value:
+                low_parsed = previous_parsed
+                low_significand = previous_significand
+                low_exponent = previous_exponent
+                high_parsed = parsed
+                high_significand = significand
+                high_exponent = exponent
+                crossed = True
+            elif previous_parsed > value and parsed < value:
+                low_parsed = parsed
+                low_significand = significand
+                low_exponent = exponent
+                high_parsed = previous_parsed
+                high_significand = previous_significand
+                high_exponent = previous_exponent
+                crossed = True
+            end
+            if crossed:
+                if value - low_parsed <= high_parsed - value:
+                    significand = low_significand
+                    exponent = low_exponent
+                else:
+                    significand = high_significand
+                    exponent = high_exponent
+                end
+                break
+            end
+        end
     end
 
     digit_count = 17
