@@ -47,6 +47,7 @@ load realarray_conformance
 load intarray_conformance
 load floatarray_conformance
 load bytearray_conformance
+load raster_kernel_conformance
 load dictionary_key_conformance
 load native_elf_conformance
 load tensor_conformance

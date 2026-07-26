@@ -425,6 +425,12 @@ function store_byte_indexed(base_register, index_register, source_register):
     return [rex(False, source_register >= 8, index_register >= 8, base_register >= 8), 136, modrm(0, source_register, 4), sib(0, index_register, base_register)]
 end
 
+function store_dword_indexed(base_register, index_register, scale, source_register):
+    # 32-bit store of the source's low dword: mov [base + index*2^scale], r32.
+    # Base register must not be rsp/rbp-class (no displacement path here).
+    return [rex(False, source_register >= 8, index_register >= 8, base_register >= 8), 137, modrm(0, source_register, 4), sib(scale, index_register, base_register)]
+end
+
 function lea_indexed(destination, base_register, index_register, scale):
     return [rex(True, destination >= 8, index_register >= 8, base_register >= 8), 141, modrm(0, destination, 4), sib(scale, index_register, base_register)]
 end

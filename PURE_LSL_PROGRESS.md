@@ -848,6 +848,29 @@ je pak konstantní) a `display.wait_frame` stropuje FPS odděleně od
 present. put_image/read_events používají znovupoužitelné buffery. Přesnější
 GC (stack mapy) je budoucí runtime úloha.
 
+Následující fixed point přidává nativní rastrové kernely — per-pixel
+smyčky GUI stacku přesunuté do runtime: `__lsl_raster_fill(arr, off,
+count, value)` (souvislý IntArray fill), `__lsl_raster_copy(dst, src,
+dst_off, src_off, count)` (řádková kopie IntArray→IntArray, dopředná) a
+`__lsl_raster_pack(src, dst, src_off_px, dst_off_bytes, count_px)`
+(0xRRGGBB → little-endian BGRX; jeden 64bit load + 32bit store na pixel,
+nový encoder `x86_64.store_dword_indexed`). Všechny tři ověřují heap type
+code (13/15) a clampují offsety/počty na skutečné délky polí, takže špatné
+volání je no-op, ne poškozená paměť; skalární argumenty jdou přes
+`runtime_unbox_dynamic_int` (Any i raw). `display.present`/`present_rect`
+balí řádky přes pack kernel, `gfx` `raster_clear`/`raster_hline`/
+`raster_fill_rect`/`raster_fill_circle`/`raster_blit` volají fill/copy a
+přibyl `gfx.raster_copy_rect` (obnovení výřezu z cache pozadí — kurzor).
+Měřeno na 1920x1080 (LSL_FB_DEV soubor, medián): present 24.2→6.3 ms,
+raster_clear 6.2→3.7 ms, raster_blit 9.8→5.6 ms, fill_rect 640x360
+0.63→0.18 ms. Konformance `tests/raster_kernel_conformance.lsl` pokrývá
+clamp, Any hranici i type-mismatch no-op. Tři shodné stages, full suite,
+fixed-point, config, installed-prefix i ELF audit prošly. Compiler fixed
+point je
+`8ec9ff3760004e9ca77e8be21ec8124b5a8ef6a045ea94e82e7fb64707bbe839`,
+CLI hash je
+`f06e37ef0d9a42f5c523a6d7e60e9cfa4544390e6caeae0e954d60b9aa0afb18`.
+
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,
 collections, GC robustnost, syscall I/O, native/tensor ABI, AI vrstva,

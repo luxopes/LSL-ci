@@ -72,17 +72,7 @@ class Display(True):
         row_stride = Int(self.stride)
         row = 0
         while row < rows:
-            src_base = row * src_width
-            out = row * row_stride
-            cursor = 0
-            while cursor < columns:
-                color = src[src_base + cursor]
-                packed[out] = color % 256
-                packed[out + 1] = color // 256 % 256
-                packed[out + 2] = color // 65536 % 256
-                cursor += 1
-                out += 4
-            end
+            call __lsl_raster_pack(src, packed, row * src_width, row * row_stride, columns)
             row += 1
         end
         # put_image and the pack loop reuse self.request/self.packed and use
@@ -135,19 +125,7 @@ class Display(True):
         segment = (x1 - x0) * 4
         row = y0
         while row < y1:
-            src_base = row * src_width + x0
-            out = 0
-            cursor = x0
-            while cursor < x1:
-                color = src[src_base]
-                packed[out] = color % 256
-                packed[out + 1] = color // 256 % 256
-                packed[out + 2] = color // 65536 % 256
-                packed[out + 3] = 0
-                src_base += 1
-                cursor += 1
-                out += 4
-            end
+            call __lsl_raster_pack(src, packed, row * src_width + x0, 0, x1 - x0)
             call fd.seek(self.handle, row * row_stride + x0 * 4)
             call fd.write(self.handle, packed, segment)
             row += 1

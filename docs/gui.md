@@ -175,14 +175,21 @@ socket/connect`) na catchable `FileError` a přidává `fd.connect_unix`,
 
 ## Výkon
 
-Horké smyčky používají checked casty (`IntArray(pixels)`, `Int(...)`),
-aby běžely nad neboxovanými poli místo tagged dispatchu (~400x rozdíl).
-Orientační časy na x86_64 (LSL-generovaný ELF, bez nativních kernelů):
+Souvislé per-pixel smyčky (fill, kopie, pack do BGRX) běží v nativních
+runtime kernelech `__lsl_raster_fill`/`__lsl_raster_copy`/
+`__lsl_raster_pack` — `raster_clear`, `raster_hline`, `raster_fill_rect`,
+`raster_fill_circle`, `raster_blit`, `raster_copy_rect` i
+`display.present`/`present_rect` je volají po řádcích. Kernely clampují
+rozsahy a kontrolují typy polí, takže jsou bezpečné i z Any hranice.
+Ostatní horké smyčky (AA tvary, text) používají checked casty
+(`IntArray(pixels)`, `Int(...)`), aby běžely nad neboxovanými poli místo
+tagged dispatchu (~400x rozdíl). Orientační časy na x86_64:
 
-- `fill_rect` 640x360: ~0.6 ms; `clear` 640x360: ~0.7 ms
-- `text` 33 znaků: ~0.18 ms; `blit` 32x32: ~4 us
+- `fill_rect` 640x360: ~0.18 ms; `clear` 1920x1080: ~3.7 ms
+- `text` 33 znaků: ~0.18 ms; `blit` 1920x1080 (celý): ~5.6 ms
 - `raster_round_rect` 74x74 (AA + alpha, fixed-point): ~0.45 ms
-- `present`: framebuffer 1920x1080 ~19 ms; X11 okno 640x400 pod 2 ms
+- `present`: framebuffer 1920x1080 ~6.3 ms (bez kernelů ~24 ms); X11
+  okno 640x400 pod 2 ms
 
 Compositing kernely počítají v celočíselném fixed-pointu; naivní float
 verze byla ~450x pomalejší a alokovala boxované Floaty. Vzor: v horké

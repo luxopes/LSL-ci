@@ -235,13 +235,7 @@ end
 # inner loops on native indexed stores.
 function raster_clear(pixels, width, height, color):
     data = IntArray(pixels)
-    value = Int(color)
-    total = Int(width) * Int(height)
-    index = 0
-    while index < total:
-        data[index] = value
-        index += 1
-    end
+    call __lsl_raster_fill(data, 0, Int(width) * Int(height), Int(color))
     return None
 end
 
@@ -266,12 +260,7 @@ function raster_hline(pixels, width, height, x, y, length, color):
     stop = min(Int(x) + Int(length), w)
     cursor = max(Int(x), 0)
     data = IntArray(pixels)
-    value = Int(color)
-    base = py * w
-    while cursor < stop:
-        data[base + cursor] = value
-        cursor += 1
-    end
+    call __lsl_raster_fill(data, py * w + cursor, stop - cursor, Int(color))
     return None
 end
 
@@ -300,14 +289,10 @@ function raster_fill_rect(pixels, width, height, x, y, w, h, color):
     x1 = min(Int(x) + Int(w), stride)
     y1 = min(Int(y) + Int(h), Int(height))
     data = IntArray(pixels)
+    span = x1 - x0
     row = y0
     while row < y1:
-        base = row * stride
-        cursor = x0
-        while cursor < x1:
-            data[base + cursor] = value
-            cursor += 1
-        end
+        call __lsl_raster_fill(data, row * stride + x0, span, value)
         row += 1
     end
     return None
@@ -364,15 +349,32 @@ function raster_blit(dst_pixels, dst_width, dst_height, src_pixels, src_width, s
     y1 = min(Int(src_height), Int(dst_height) - shift_y)
     dst = IntArray(dst_pixels)
     dwidth = Int(dst_width)
+    span = x1 - x0
     row = y0
     while row < y1:
-        src_base = row * swidth
-        dst_base = (row + shift_y) * dwidth + shift_x
-        cursor = x0
-        while cursor < x1:
-            dst[dst_base + cursor] = src[src_base + cursor]
-            cursor += 1
-        end
+        call __lsl_raster_copy(dst, src, (row + shift_y) * dwidth + shift_x + x0, row * swidth + x0, span)
+        row += 1
+    end
+    return None
+end
+
+# Copy an axis-aligned sub-rectangle between two surfaces at the same
+# coordinates (e.g. restoring a cursor-sized patch of a cached backdrop).
+# Rows go through the native copy kernel, so the cost is proportional to
+# the rectangle, not the surface.
+function raster_copy_rect(dst_pixels, dst_width, dst_height, src_pixels, src_width, src_height, x, y, w, h):
+    src = IntArray(src_pixels)
+    dst = IntArray(dst_pixels)
+    dwidth = Int(dst_width)
+    swidth = Int(src_width)
+    x0 = max(Int(x), 0)
+    y0 = max(Int(y), 0)
+    x1 = min(Int(x) + Int(w), min(dwidth, swidth))
+    y1 = min(Int(y) + Int(h), min(Int(dst_height), Int(src_height)))
+    span = x1 - x0
+    row = y0
+    while row < y1:
+        call __lsl_raster_copy(dst, src, row * dwidth + x0, row * swidth + x0, span)
         row += 1
     end
     return None
@@ -399,12 +401,7 @@ function raster_fill_circle(pixels, width, height, cx, cy, radius, color):
             end
             start = max(center_x - dx, 0)
             stop = min(center_x + dx + 1, w)
-            base = py * w
-            cursor = start
-            while cursor < stop:
-                data[base + cursor] = value
-                cursor += 1
-            end
+            call __lsl_raster_fill(data, py * w + start, stop - start, value)
         end
         dy += 1
     end
