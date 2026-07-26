@@ -97,6 +97,64 @@ class Display(True):
         return None
     end
 
+    # Pack and send only the given rectangle. On the file/framebuffer backend
+    # this writes just the touched rows/columns — far cheaper than a full
+    # present for small updates (a cursor, a progress bar): framebuffer VRAM
+    # writes are uncached, so cost is proportional to bytes written. Falls
+    # back to a full present on the X11 backend.
+    function present_rect(self, pixels, width, height, rx, ry, rw, rh):
+        if self.kind == "x11":
+            call self.present(pixels, width, height)
+            return None
+        end
+        src = IntArray(pixels)
+        src_width = Int(width)
+        x0 = Int(rx)
+        y0 = Int(ry)
+        x1 = x0 + Int(rw)
+        y1 = y0 + Int(rh)
+        if x0 < 0:
+            x0 = 0
+        end
+        if y0 < 0:
+            y0 = 0
+        end
+        limit_x = min(src_width, Int(self.width))
+        limit_y = min(Int(height), Int(self.height))
+        if x1 > limit_x:
+            x1 = limit_x
+        end
+        if y1 > limit_y:
+            y1 = limit_y
+        end
+        if x1 <= x0 or y1 <= y0:
+            return None
+        end
+        packed = ByteArray(self.packed)
+        row_stride = Int(self.stride)
+        segment = (x1 - x0) * 4
+        row = y0
+        while row < y1:
+            src_base = row * src_width + x0
+            out = 0
+            cursor = x0
+            while cursor < x1:
+                color = src[src_base]
+                packed[out] = color % 256
+                packed[out + 1] = color // 256 % 256
+                packed[out + 2] = color // 65536 % 256
+                packed[out + 3] = 0
+                src_base += 1
+                cursor += 1
+                out += 4
+            end
+            call fd.seek(self.handle, row * row_stride + x0 * 4)
+            call fd.write(self.handle, packed, segment)
+            row += 1
+        end
+        return None
+    end
+
     # Sleep to hold a target frame rate. Call once per loop after present.
     function wait_frame(self):
         call time.sleep(frame_interval)
