@@ -122,14 +122,19 @@ class Display(True):
         end
         packed = ByteArray(self.packed)
         row_stride = Int(self.stride)
-        segment = (x1 - x0) * 4
+        # Pack the touched rows full-width and send them as ONE contiguous
+        # write. The previous per-row seek+write pair issued hundreds of
+        # syscalls per frame, and deferred-io framebuffers (virtio-gpu/bochs
+        # fbdev) schedule a flush per write — animations took seconds and
+        # the pointer lagged. One write per present keeps one flush.
+        columns = limit_x
         row = y0
         while row < y1:
-            call __lsl_raster_pack(src, packed, row * src_width + x0, 0, x1 - x0)
-            call fd.seek(self.handle, row * row_stride + x0 * 4)
-            call fd.write(self.handle, packed, segment)
+            call __lsl_raster_pack(src, packed, row * src_width, (row - y0) * row_stride, columns)
             row += 1
         end
+        call fd.seek(self.handle, y0 * row_stride)
+        call fd.write(self.handle, packed, (y1 - y0) * row_stride)
         return None
     end
 
