@@ -75,6 +75,29 @@ function user_home():
     return home
 end
 
+# Scratch path for a compiled program. A fixed /tmp name is shared between
+# users: whoever creates it owns it, and the sticky bit stops anyone else
+# from replacing it, so every other account gets "cannot write file". Prefer
+# a private per-user cache and fall back to a name that carries the user.
+function scratch_program_path():
+    home = __lsl_getenv("HOME")
+    if home != None and home != "":
+        directory = home + "/.cache/lsl"
+        status = __lsl_run("/bin/mkdir", ["-p", directory])
+        if status == 0:
+            return directory + "/program"
+        end
+    end
+    user = __lsl_getenv("USER")
+    if user == None or user == "":
+        user = __lsl_getenv("LOGNAME")
+    end
+    if user == None or user == "":
+        user = "anon"
+    end
+    return "/tmp/lsl-program-" + user
+end
+
 function read_stdin_source():
     lines = []
     terminal = __lsl_isatty(0)
@@ -111,8 +134,9 @@ if command == None:
     if source == "":
         exit(0)
     end
-    call compile_source("<stdin>", source, "/tmp/lsl-stdin-program")
-    exit(run("/tmp/lsl-stdin-program", []))
+    scratch = scratch_program_path()
+    call compile_source("<stdin>", source, scratch)
+    exit(run(scratch, []))
 end
 
 if command == "compile":
@@ -135,9 +159,10 @@ elif command == "config":
     if status != 0:
         exit(status)
     end
-    call compile_file(wrapper, "/tmp/lsl-config-evaluator")
+    evaluator = scratch_program_path() + "-config"
+    call compile_file(wrapper, evaluator)
     call unlink(wrapper)
-    status = run("/tmp/lsl-config-evaluator", [])
+    status = run(evaluator, [])
     exit(status)
 elif command == "install":
     name = arg(2)
@@ -167,11 +192,12 @@ elif command == "server":
     exit(0)
 end
 
-call compile_file(command, "/tmp/lsl-program")
+scratch = scratch_program_path()
+call compile_file(command, scratch)
 arguments = []
 index = 2
 while index < arg_count():
     arguments.append(arg(index))
     index += 1
 end
-exit(run("/tmp/lsl-program", arguments))
+exit(run(scratch, arguments))
