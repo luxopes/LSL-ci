@@ -493,9 +493,16 @@ function open(width, height, title):
         safe:
             return open_drm()
         end
+        # Why the GPU path was refused, for the caller's diagnostics: a
+        # silent fall back to fbdev is otherwise indistinguishable from a
+        # machine with no KMS driver at all.
+        DRM_FALLBACK[0] = last_error()
     end
     return open_framebuffer()
 end
+
+# Set when the DRM backend was available but its initialisation failed.
+DRM_FALLBACK = [""]
 
 # Open the DRM/KMS backend directly: /dev/dri/card0, the firmware's current
 # mode, a mapped dumb buffer as the frame target.
