@@ -77,9 +77,9 @@ function get32(buffer, offset):
     return Int(b[offset]) + Int(b[offset + 1]) * 256 + Int(b[offset + 2]) * 65536 + Int(b[offset + 3]) * 16777216
 end
 
-# Raw data pointer of a ByteArray (object address + payload header).
+# Raw data pointer of a ByteArray's payload (the kernel writes there).
 function data_address(buffer):
-    return Int(__lsl_address(buffer)) + 24
+    return Int(__lsl_data_address(buffer))
 end
 
 class Display(True):
@@ -127,6 +127,11 @@ class Display(True):
             call put64(res, 16, data_address(conn_ids))
             call put32(res, 36, count_crtcs)
             call put32(res, 40, count_connectors)
+            # The framebuffer and encoder arrays are not wanted: their
+            # counts must be zeroed too, or the kernel writes through the
+            # NULL pointers left in the request and the call fails EFAULT.
+            call put32(res, 32, 0)
+            call put32(res, 44, 0)
             if fd.ioctl(self.handle, DRM_GETRESOURCES, res) < 0:
                 Error(DisplayError: "DRM GETRESOURCES(ids) failed")
             end

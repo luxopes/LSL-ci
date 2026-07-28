@@ -756,6 +756,20 @@ function emit_gpu(output):
     call assembler.emit(output, x86_64.mov_imm64(0, -1))
     call assembler.emit(output, x86_64.ret())
 
+    # __lsl_data_address: rdi ByteArray -> address of its payload bytes.
+    # Device ioctls that take pointers to caller buffers (DRM resource
+    # arrays) need the real data address, not the object address: the
+    # payload lives behind the pointer at offset 24, not inline.
+    call assembler.label(output, "runtime_data_address")
+    call assembler.emit(output, x86_64.load_memory(0, 7, 0))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 15))
+    call assembler.relative(output, [15, 133], "data_address_bad")
+    call assembler.emit(output, x86_64.load_memory(0, 7, 24))
+    call assembler.emit(output, x86_64.ret())
+    call assembler.label(output, "data_address_bad")
+    call assembler.emit(output, x86_64.xor_reg_reg(0, 0))
+    call assembler.emit(output, x86_64.ret())
+
     # __lsl_fd_mmap: rdi fd, rsi length, rdx offset ->
     # mmap(NULL, length, PROT_READ|PROT_WRITE, MAP_SHARED, fd, offset).
     # Returns the address, or a negative errno.
