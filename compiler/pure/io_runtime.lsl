@@ -731,6 +731,86 @@ function emit_raster(output):
     call assembler.emit(output, x86_64.ret())
 end
 
+# GPU/display plumbing: ioctl for DRM/KMS control, mmap for dumb-buffer
+# access, and a pack-to-raw-memory kernel so a frame can be written straight
+# into mapped video memory without an intermediate ByteArray + write().
+function emit_gpu(output):
+    # __lsl_fd_ioctl: rdi fd, rsi ByteArray payload, rdx request ->
+    # ioctl(fd, request, payload_data). An empty payload passes NULL.
+    call assembler.label(output, "runtime_fd_ioctl")
+    call assembler.emit(output, x86_64.load_memory(0, 6, 0))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 15))
+    call assembler.relative(output, [15, 133], "fd_ioctl_bad")
+    call assembler.emit(output, x86_64.load_memory(9, 6, 8))
+    call assembler.emit(output, x86_64.load_memory(10, 6, 24))
+    call assembler.emit(output, x86_64.move_reg_reg(6, 2))
+    call assembler.emit(output, x86_64.move_reg_reg(2, 10))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(9, 0))
+    call assembler.relative(output, [15, 143], "fd_ioctl_go")
+    call assembler.emit(output, x86_64.xor_reg_reg(2, 2))
+    call assembler.label(output, "fd_ioctl_go")
+    call assembler.emit(output, x86_64.mov_imm64(0, 16))
+    call assembler.emit(output, x86_64.syscall())
+    call assembler.emit(output, x86_64.ret())
+    call assembler.label(output, "fd_ioctl_bad")
+    call assembler.emit(output, x86_64.mov_imm64(0, -1))
+    call assembler.emit(output, x86_64.ret())
+
+    # __lsl_fd_mmap: rdi fd, rsi length, rdx offset ->
+    # mmap(NULL, length, PROT_READ|PROT_WRITE, MAP_SHARED, fd, offset).
+    # Returns the address, or a negative errno.
+    call assembler.label(output, "runtime_fd_mmap")
+    call assembler.emit(output, x86_64.move_reg_reg(8, 7))
+    call assembler.emit(output, x86_64.move_reg_reg(9, 2))
+    call assembler.emit(output, x86_64.xor_reg_reg(7, 7))
+    call assembler.emit(output, x86_64.mov_imm64(2, 3))
+    call assembler.emit(output, x86_64.mov_imm64(10, 1))
+    call assembler.emit(output, x86_64.mov_imm64(0, 9))
+    call assembler.emit(output, x86_64.syscall())
+    call assembler.emit(output, x86_64.ret())
+
+    # __lsl_mem_pack: rdi raw destination address, rsi IntArray src,
+    # rdx src_off (pixels), rcx dst_byte_off, r8 count (pixels). Same
+    # 0xRRGGBB -> BGRX dword stores as raster_pack, but the destination is
+    # mapped memory (a DRM dumb buffer). Bounds-checks the source array;
+    # the caller owns the mapping bounds.
+    call assembler.label(output, "runtime_mem_pack")
+    call assembler.emit(output, x86_64.load_memory(0, 6, 0))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 13))
+    call assembler.relative(output, [15, 133], "mem_pack_done")
+    call assembler.emit(output, x86_64.load_memory(9, 6, 8))
+    call assembler.emit(output, x86_64.load_memory(10, 6, 24))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(7, 0))
+    call assembler.relative(output, [15, 142], "mem_pack_done")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(8, 0))
+    call assembler.relative(output, [15, 142], "mem_pack_done")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(2, 0))
+    call assembler.relative(output, [15, 140], "mem_pack_done")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(1, 0))
+    call assembler.relative(output, [15, 140], "mem_pack_done")
+    call assembler.emit(output, x86_64.move_reg_reg(0, 9))
+    call assembler.emit(output, x86_64.sub_reg_reg(0, 2))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+    call assembler.relative(output, [15, 142], "mem_pack_done")
+    call assembler.emit(output, x86_64.cmp_reg_reg(8, 0))
+    call assembler.relative(output, [15, 142], "mem_pack_count_ok")
+    call assembler.emit(output, x86_64.move_reg_reg(8, 0))
+    call assembler.label(output, "mem_pack_count_ok")
+    call assembler.emit(output, x86_64.lea_indexed(10, 10, 2, 3))
+    call assembler.emit(output, x86_64.add_reg_reg(7, 1))
+    call assembler.emit(output, x86_64.xor_reg_reg(9, 9))
+    call assembler.label(output, "mem_pack_loop")
+    call assembler.emit(output, x86_64.cmp_reg_reg(9, 8))
+    call assembler.relative(output, [15, 141], "mem_pack_done")
+    call assembler.emit(output, x86_64.load_indexed(0, 10, 9, 3))
+    call assembler.emit(output, x86_64.store_dword_indexed(7, 9, 2, 0))
+    call assembler.emit(output, x86_64.increment(9))
+    call assembler.relative(output, [233], "mem_pack_loop")
+    call assembler.label(output, "mem_pack_done")
+    call assembler.emit(output, x86_64.xor_reg_reg(0, 0))
+    call assembler.emit(output, x86_64.ret())
+end
+
 function emit_paths(output):
     call assembler.label(output, "runtime_mkdir")
     call assembler.emit(output, x86_64.lea_base(7, 7, 16))
@@ -783,6 +863,7 @@ function emit_all(output):
     call emit_appendfile(output)
     call emit_writebytes(output)
     call emit_fd_io(output)
+    call emit_gpu(output)
     call emit_raster(output)
     call emit_paths(output)
     call emit_exists(output)

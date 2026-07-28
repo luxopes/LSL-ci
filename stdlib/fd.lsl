@@ -87,6 +87,20 @@ function close(handle):
     return None
 end
 
+# ioctl(2). The buffer's bytes are the request argument (kernel reads and
+# writes them in place); an empty buffer passes NULL. Returns the raw
+# result, negative errno included — device control flows branch on it.
+function ioctl(handle, request, buffer):
+    return __lsl_fd_ioctl(handle, buffer, request)
+end
+
+# mmap(2) with PROT_READ|PROT_WRITE and MAP_SHARED: maps `length` bytes of
+# the descriptor at `offset` and returns the raw address (negative errno
+# on failure). Pair with __lsl_mem_pack to write pixels into the mapping.
+function mmap(handle, length, offset):
+    return __lsl_fd_mmap(handle, length, offset)
+end
+
 # Read a whole file through the descriptor path. Unlike readfile this
 # also works for procfs/sysfs and device nodes whose stat size is zero.
 function read_all(path):
