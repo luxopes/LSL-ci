@@ -43,6 +43,12 @@ DRM_DIRTYFB = 3222824113
 DRM_CREATE_DUMB = 3223348402
 DRM_MAP_DUMB = 3222299827
 
+# Descriptor of the DRM card currently open, -1 when none: a failed
+# initialisation is closed through this, which releases the master lease.
+DRM_HANDLE = [0 - 1]
+# Set when the DRM backend was available but its initialisation failed.
+DRM_FALLBACK = [""]
+
 function put16(buffer, offset, value):
     b = ByteArray(buffer)
     v = Int(value)
@@ -108,7 +114,14 @@ class Display(True):
         elif kind == "drm":
             self.device = title
             self.handle = fd.open(title, fd.read_write)
-            call fd.ioctl(self.handle, DRM_SET_MASTER, ByteArray())
+            # Recorded before anything can fail: if initialisation throws,
+            # open() closes this descriptor, which is what releases the
+            # master lease that would otherwise leave fbdev dead.
+            DRM_HANDLE[0] = self.handle
+            master_rc = fd.ioctl(self.handle, DRM_SET_MASTER, ByteArray())
+            if master_rc < 0:
+                Error(DisplayError: "DRM SET_MASTER failed (" + String(master_rc) + ")")
+            end
             # Resource discovery: first call returns counts, second fills
             # the id arrays. Layout: crtc_ptr @8, connector_ptr @16,
             # count_crtcs @36, count_connectors @40.
@@ -475,6 +488,7 @@ class Display(True):
             # framebuffer console scanout.
             call fd.ioctl(self.handle, DRM_DROP_MASTER, ByteArray())
             call fd.close(self.handle)
+            DRM_HANDLE[0] = 0 - 1
         else:
             call fd.close(self.handle)
         end
@@ -495,20 +509,49 @@ function open(width, height, title):
     if forced == "drm":
         return open_drm()
     end
-    if forced != "fb" and exists("/dev/dri/card0"):
+    # The GPU path is opt-in until the KMS handshake is proven on the
+    # target: a half-initialised DRM client holds the master lease, and
+    # while it is held the kernel's fbdev emulation stops scanning out —
+    # a bad probe would black out a machine that renders fine on fbdev.
+    if forced == "gpu" and exists("/dev/dri/card0"):
+        display = None
         safe:
-            return open_drm()
+            display = open_drm()
+        end
+        if display != None:
+            return display
         end
         # Why the GPU path was refused, for the caller's diagnostics: a
         # silent fall back to fbdev is otherwise indistinguishable from a
         # machine with no KMS driver at all.
         DRM_FALLBACK[0] = last_error()
+        # CRITICAL: a half-initialised DRM client still holds the master
+        # lease, and while anyone holds it the kernel's fbdev emulation
+        # stops scanning out — the fbdev fall back below would draw into a
+        # dead framebuffer ("display output is not active"). Close every
+        # card node so the lease is released before falling back.
+        safe:
+            call drm_release()
+        end
     end
     return open_framebuffer()
 end
 
-# Set when the DRM backend was available but its initialisation failed.
-DRM_FALLBACK = [""]
+# Close the descriptor a failed DRM Display() left behind. The master
+# lease belongs to that exact open file, so dropping it through a fresh
+# open would do nothing — the failed descriptor is recorded in DRM_HANDLE
+# the moment it exists, precisely so this can close it.
+function drm_release():
+    handle = Int(DRM_HANDLE[0])
+    if handle >= 0:
+        safe:
+            call fd.ioctl(handle, DRM_DROP_MASTER, ByteArray())
+        end
+        call fd.close(handle)
+        DRM_HANDLE[0] = 0 - 1
+    end
+    return None
+end
 
 # Open the DRM/KMS backend directly: /dev/dri/card0, the firmware's current
 # mode, a mapped dumb buffer as the frame target.
