@@ -71,13 +71,30 @@ class Terminal(True):
     end
 
     # Queue a string for output; nothing is sent until flush(). Batching a whole
-    # frame into one write avoids flicker.
+    # frame into one write avoids flicker. Code points above ASCII are UTF-8
+    # encoded — ByteArray.append rejects values over 255, so a frame containing
+    # "↑" used to abort the caller's render loop mid-frame.
     function emit(self, text):
         buffer = ByteArray(self.out)
         i = 0
         limit = len(text)
         while i < limit:
-            call buffer.append(ord(text[i]))
+            cp = ord(text[i])
+            if cp < 128:
+                call buffer.append(cp)
+            elif cp < 2048:
+                call buffer.append(192 + cp // 64)
+                call buffer.append(128 + cp % 64)
+            elif cp < 65536:
+                call buffer.append(224 + cp // 4096)
+                call buffer.append(128 + cp // 64 % 64)
+                call buffer.append(128 + cp % 64)
+            else:
+                call buffer.append(240 + cp // 262144)
+                call buffer.append(128 + cp // 4096 % 64)
+                call buffer.append(128 + cp // 64 % 64)
+                call buffer.append(128 + cp % 64)
+            end
             i = i + 1
         end
         self.out = buffer
