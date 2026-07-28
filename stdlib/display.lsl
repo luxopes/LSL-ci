@@ -336,6 +336,7 @@ class Display(True):
             # Reusable damage request: one clip rectangle per flush.
             self.clip = __lsl_byte_zeros(8)
             self.dirty = __lsl_byte_zeros(24)
+            self.dirty_warned = 0
             call put32(self.dirty, 0, self.fb_id)
             call put32(self.dirty, 12, 1)
             call put64(self.dirty, 16, data_address(self.clip))
@@ -367,7 +368,19 @@ class Display(True):
         call put16(self.clip, 2, y1)
         call put16(self.clip, 4, x2)
         call put16(self.clip, 6, y2)
-        call fd.ioctl(self.handle, DRM_DIRTYFB, self.dirty)
+        # The clip pointer is refreshed per call, not cached at init: an
+        # address recorded once is only valid while the heap leaves that
+        # object alone, and a stale pointer makes the kernel reject the
+        # damage report — frames then never reach a driver that uploads
+        # (virtio-gpu), leaving a black screen while rendering "works".
+        call put64(self.dirty, 16, data_address(self.clip))
+        dirty_rc = fd.ioctl(self.handle, DRM_DIRTYFB, self.dirty)
+        # -38 (ENOSYS) simply means the driver scans out our pages directly
+        # and needs no upload; anything else is a real failure worth seeing.
+        if dirty_rc < 0 and dirty_rc != 0 - 38 and Int(self.dirty_warned) == 0:
+            self.dirty_warned = 1
+            DRM_FALLBACK[0] = "DIRTYFB failed (" + String(dirty_rc) + ")"
+        end
         return None
     end
 
