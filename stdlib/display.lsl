@@ -514,12 +514,12 @@ function open(width, height, title):
     # while it is held the kernel's fbdev emulation stops scanning out —
     # a bad probe would black out a machine that renders fine on fbdev.
     if forced == "gpu" and exists("/dev/dri/card0"):
-        display = None
+        # The return stays inside the safe block: binding the result to a
+        # local first would widen this function's inferred return type away
+        # from Display, and every caller's d.width/d.height would stop
+        # type-checking.
         safe:
-            display = open_drm()
-        end
-        if display != None:
-            return display
+            return open_drm()
         end
         # Why the GPU path was refused, for the caller's diagnostics: a
         # silent fall back to fbdev is otherwise indistinguishable from a
