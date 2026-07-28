@@ -200,7 +200,14 @@ class Display(True):
             # sysfs-derived size and avoids a visible mode switch).
             crtc = __lsl_byte_zeros(104)
             call put32(crtc, 12, crtc_id)
-            if fd.ioctl(self.handle, DRM_GETCRTC, crtc) >= 0:
+            got_crtc = fd.ioctl(self.handle, DRM_GETCRTC, crtc)
+            # Everything needed to put the console's scanout back exactly as
+            # it was: the driver is supposed to restore it on the last close,
+            # but not every driver does, and a session that leaves a dead
+            # screen behind is worse than one that never took it.
+            self.restore = __lsl_byte_zeros(104)
+            self.restore_ok = 0
+            if got_crtc >= 0:
                 if get32(crtc, 32) == 1 and get16(crtc, 40) > 0:
                     modeb = ByteArray(self.mode)
                     crtcb = ByteArray(crtc)
@@ -250,31 +257,6 @@ class Display(True):
             if self.vram < 0:
                 Error(DisplayError: "DRM mmap failed")
             end
-            # Scan out our framebuffer. A fresh request buffer: the one used
-            # for GETCRTC carries fields (gamma_size and the driver's own
-            # reply state) that must not be fed back into SETCRTC. The
-            # connector-id array lives in a member so its address stays
-            # valid for the call.
-            self.conn_buf = __lsl_byte_zeros(4)
-            call put32(self.conn_buf, 0, conn_id)
-            setreq = __lsl_byte_zeros(104)
-            call put64(setreq, 0, data_address(self.conn_buf))
-            call put32(setreq, 8, 1)
-            call put32(setreq, 12, crtc_id)
-            call put32(setreq, 16, self.fb_id)
-            call put32(setreq, 32, 1)
-            setb = ByteArray(setreq)
-            modeb = ByteArray(self.mode)
-            mi = 0
-            while mi < 68:
-                setb[36 + mi] = modeb[mi]
-                mi += 1
-            end
-            rc = fd.ioctl(self.handle, DRM_SETCRTC, setreq)
-            if rc < 0:
-                Error(DisplayError: "DRM SETCRTC failed (" + String(rc) + ")")
-            end
-            self.crtc_id = crtc_id
             # Throughput gate. A dumb buffer can land in uncached video
             # memory (firmware-style KMS drivers, discrete cards over PCIe),
             # where writing a frame is several times slower than the fbdev
@@ -306,6 +288,44 @@ class Display(True):
                     Error(DisplayError: "DRM scanout memory is too slow (" + String(Int(probe_rate / 1000000.0)) + " MB/s)")
                 end
             end
+            # Scan out our framebuffer. A fresh request buffer: the one used
+            # for GETCRTC carries fields (gamma_size and the driver's own
+            # reply state) that must not be fed back into SETCRTC. The
+            # connector-id array lives in a member so its address stays
+            # valid for the call.
+            self.conn_buf = __lsl_byte_zeros(4)
+            call put32(self.conn_buf, 0, conn_id)
+            if got_crtc >= 0:
+                restb = ByteArray(self.restore)
+                crtcb0 = ByteArray(crtc)
+                ri = 0
+                while ri < 104:
+                    restb[ri] = crtcb0[ri]
+                    ri += 1
+                end
+                call put64(self.restore, 0, data_address(self.conn_buf))
+                call put32(self.restore, 8, 1)
+                call put32(self.restore, 12, crtc_id)
+                self.restore_ok = 1
+            end
+            setreq = __lsl_byte_zeros(104)
+            call put64(setreq, 0, data_address(self.conn_buf))
+            call put32(setreq, 8, 1)
+            call put32(setreq, 12, crtc_id)
+            call put32(setreq, 16, self.fb_id)
+            call put32(setreq, 32, 1)
+            setb = ByteArray(setreq)
+            modeb = ByteArray(self.mode)
+            mi = 0
+            while mi < 68:
+                setb[36 + mi] = modeb[mi]
+                mi += 1
+            end
+            rc = fd.ioctl(self.handle, DRM_SETCRTC, setreq)
+            if rc < 0:
+                Error(DisplayError: "DRM SETCRTC failed (" + String(rc) + ")")
+            end
+            self.crtc_id = crtc_id
             # Reusable damage request: one clip rectangle per flush.
             self.clip = __lsl_byte_zeros(8)
             self.dirty = __lsl_byte_zeros(24)
@@ -515,8 +535,12 @@ class Display(True):
         if self.kind == "x11":
             call x11.close(self.handle)
         elif self.kind == "drm":
-            # Dropping master + the last close makes the kernel restore the
-            # framebuffer console scanout.
+            # Hand the console's scanout back before letting go of master.
+            if Int(self.restore_ok) == 1:
+                safe:
+                    call fd.ioctl(self.handle, DRM_SETCRTC, self.restore)
+                end
+            end
             call fd.ioctl(self.handle, DRM_DROP_MASTER, ByteArray())
             call fd.close(self.handle)
             DRM_HANDLE[0] = 0 - 1
