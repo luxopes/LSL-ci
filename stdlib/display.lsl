@@ -208,8 +208,9 @@ class Display(True):
             call put32(dumb, 0, self.height)
             call put32(dumb, 4, self.width)
             call put32(dumb, 8, 32)
-            if fd.ioctl(self.handle, DRM_CREATE_DUMB, dumb) < 0:
-                Error(DisplayError: "DRM CREATE_DUMB failed")
+            rc = fd.ioctl(self.handle, DRM_CREATE_DUMB, dumb)
+            if rc < 0:
+                Error(DisplayError: "DRM CREATE_DUMB failed (" + String(rc) + ")")
             end
             self.bo_handle = get32(dumb, 16)
             self.stride = get32(dumb, 20)
@@ -221,39 +222,44 @@ class Display(True):
             call put32(addfb, 16, 32)
             call put32(addfb, 20, 24)
             call put32(addfb, 24, self.bo_handle)
-            if fd.ioctl(self.handle, DRM_ADDFB, addfb) < 0:
-                Error(DisplayError: "DRM ADDFB failed")
+            rc = fd.ioctl(self.handle, DRM_ADDFB, addfb)
+            if rc < 0:
+                Error(DisplayError: "DRM ADDFB failed (" + String(rc) + ")")
             end
             self.fb_id = get32(addfb, 0)
             mapreq = __lsl_byte_zeros(16)
             call put32(mapreq, 0, self.bo_handle)
-            if fd.ioctl(self.handle, DRM_MAP_DUMB, mapreq) < 0:
-                Error(DisplayError: "DRM MAP_DUMB failed")
+            rc = fd.ioctl(self.handle, DRM_MAP_DUMB, mapreq)
+            if rc < 0:
+                Error(DisplayError: "DRM MAP_DUMB failed (" + String(rc) + ")")
             end
             self.vram = fd.mmap(self.handle, bo_size, get32(mapreq, 8) + get32(mapreq, 12) * 4294967296)
             if self.vram < 0:
                 Error(DisplayError: "DRM mmap failed")
             end
-            # Scan out our framebuffer. The connector-id array and the mode
-            # live in members so their addresses stay valid for the call.
+            # Scan out our framebuffer. A fresh request buffer: the one used
+            # for GETCRTC carries fields (gamma_size and the driver's own
+            # reply state) that must not be fed back into SETCRTC. The
+            # connector-id array lives in a member so its address stays
+            # valid for the call.
             self.conn_buf = __lsl_byte_zeros(4)
             call put32(self.conn_buf, 0, conn_id)
-            call put64(crtc, 0, data_address(self.conn_buf))
-            call put32(crtc, 8, 1)
-            call put32(crtc, 12, crtc_id)
-            call put32(crtc, 16, self.fb_id)
-            call put32(crtc, 20, 0)
-            call put32(crtc, 24, 0)
-            call put32(crtc, 32, 1)
-            crtcb = ByteArray(crtc)
+            setreq = __lsl_byte_zeros(104)
+            call put64(setreq, 0, data_address(self.conn_buf))
+            call put32(setreq, 8, 1)
+            call put32(setreq, 12, crtc_id)
+            call put32(setreq, 16, self.fb_id)
+            call put32(setreq, 32, 1)
+            setb = ByteArray(setreq)
             modeb = ByteArray(self.mode)
             mi = 0
             while mi < 68:
-                crtcb[36 + mi] = modeb[mi]
+                setb[36 + mi] = modeb[mi]
                 mi += 1
             end
-            if fd.ioctl(self.handle, DRM_SETCRTC, crtc) < 0:
-                Error(DisplayError: "DRM SETCRTC failed")
+            rc = fd.ioctl(self.handle, DRM_SETCRTC, setreq)
+            if rc < 0:
+                Error(DisplayError: "DRM SETCRTC failed (" + String(rc) + ")")
             end
             self.crtc_id = crtc_id
             # Reusable damage request: one clip rectangle per flush.
