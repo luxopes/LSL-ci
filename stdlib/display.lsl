@@ -275,6 +275,37 @@ class Display(True):
                 Error(DisplayError: "DRM SETCRTC failed (" + String(rc) + ")")
             end
             self.crtc_id = crtc_id
+            # Throughput gate. A dumb buffer can land in uncached video
+            # memory (firmware-style KMS drivers, discrete cards over PCIe),
+            # where writing a frame is several times slower than the fbdev
+            # path this replaces — fbdev renders into a cached RAM shadow the
+            # driver flushes itself. Measure the real thing once and refuse
+            # the backend when it would be a downgrade; the caller then falls
+            # back to fbdev and the descriptor is closed, releasing master.
+            probe_px = __lsl_int_zeros(self.width)
+            probe_rows = Int(min(64, self.height))
+            probe_w = Int(self.width)
+            probe_stride = Int(self.stride)
+            probe_vram = Int(self.vram)
+            row = 0
+            while row < probe_rows:
+                call __lsl_mem_pack(probe_vram, probe_px, 0, row * probe_stride, probe_w)
+                row += 1
+            end
+            probe_t0 = time.monotonic()
+            row = 0
+            while row < probe_rows:
+                call __lsl_mem_pack(probe_vram, probe_px, 0, row * probe_stride, probe_w)
+                row += 1
+            end
+            probe_elapsed = time.monotonic() - probe_t0
+            probe_bytes = probe_rows * probe_w * 4
+            if probe_elapsed > 0.0:
+                probe_rate = Float(probe_bytes) / probe_elapsed
+                if probe_rate < 700000000.0:
+                    Error(DisplayError: "DRM scanout memory is too slow (" + String(Int(probe_rate / 1000000.0)) + " MB/s)")
+                end
+            end
             # Reusable damage request: one clip rectangle per flush.
             self.clip = __lsl_byte_zeros(8)
             self.dirty = __lsl_byte_zeros(24)
@@ -509,11 +540,13 @@ function open(width, height, title):
     if forced == "drm":
         return open_drm()
     end
-    # The GPU path is opt-in until the KMS handshake is proven on the
-    # target: a half-initialised DRM client holds the master lease, and
-    # while it is held the kernel's fbdev emulation stops scanning out —
-    # a bad probe would black out a machine that renders fine on fbdev.
-    if forced == "gpu" and exists("/dev/dri/card0"):
+    # GPU scanout is tried first on a console: the KMS dumb buffer is
+    # written directly, with no fbdev shadow copy and no deferred-io flush.
+    # Every failure path (including a buffer too slow to be worth it) closes
+    # the descriptor, which releases the master lease — holding it would
+    # stop the kernel's fbdev emulation from scanning out and black out the
+    # machine. LSL_DISPLAY=fb forces the legacy path.
+    if forced != "fb" and exists("/dev/dri/card0"):
         # The return stays inside the safe block: binding the result to a
         # local first would widen this function's inferred return type away
         # from Display, and every caller's d.width/d.height would stop
