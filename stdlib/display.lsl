@@ -584,13 +584,16 @@ function open(width, height, title):
     if forced == "drm":
         return open_drm()
     end
-    # GPU scanout is tried first on a console: the KMS dumb buffer is
-    # written directly, with no fbdev shadow copy and no deferred-io flush.
+    # GPU scanout is opt-in (LSL_DISPLAY=gpu) while the last piece is
+    # settled: on virtio-gpu the kernel accepts the mode set and reports our
+    # framebuffer on the CRTC, yet the host still shows the previous image —
+    # frames reach the buffer but not the screen. A wrong guess here is a
+    # black machine, so the proven fbdev path stays the default.
     # Every failure path (including a buffer too slow to be worth it) closes
     # the descriptor, which releases the master lease — holding it would
     # stop the kernel's fbdev emulation from scanning out and black out the
     # machine. LSL_DISPLAY=fb forces the legacy path.
-    if forced != "fb" and exists("/dev/dri/card0"):
+    if forced == "gpu" and exists("/dev/dri/card0"):
         # The return stays inside the safe block: binding the result to a
         # local first would widen this function's inferred return type away
         # from Display, and every caller's d.width/d.height would stop
