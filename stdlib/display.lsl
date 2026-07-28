@@ -578,40 +578,41 @@ end
 # forces a backend.
 function open(width, height, title):
     forced = env.get("LSL_DISPLAY", "")
-    if forced == "x11" or (forced != "fb" and forced != "drm" and x11_available()):
+    if forced == "x11" or (forced == "" and x11_available()):
         return Display("x11", width, height, title, Int(width) * 4)
     end
     if forced == "drm":
         return open_drm()
     end
-    # GPU scanout is opt-in (LSL_DISPLAY=gpu) while the last piece is
-    # settled: on virtio-gpu the kernel accepts the mode set and reports our
-    # framebuffer on the CRTC, yet the host still shows the previous image —
-    # frames reach the buffer but not the screen. A wrong guess here is a
-    # black machine, so the proven fbdev path stays the default.
-    # Every failure path (including a buffer too slow to be worth it) closes
-    # the descriptor, which releases the master lease — holding it would
-    # stop the kernel's fbdev emulation from scanning out and black out the
-    # machine. LSL_DISPLAY=fb forces the legacy path.
-    if forced == "gpu" and exists("/dev/dri/card0"):
-        # The return stays inside the safe block: binding the result to a
-        # local first would widen this function's inferred return type away
-        # from Display, and every caller's d.width/d.height would stop
-        # type-checking.
-        safe:
-            return open_drm()
-        end
-        # Why the GPU path was refused, for the caller's diagnostics: a
-        # silent fall back to fbdev is otherwise indistinguishable from a
-        # machine with no KMS driver at all.
-        DRM_FALLBACK[0] = last_error()
-        # CRITICAL: a half-initialised DRM client still holds the master
-        # lease, and while anyone holds it the kernel's fbdev emulation
-        # stops scanning out — the fbdev fall back below would draw into a
-        # dead framebuffer ("display output is not active"). Close every
-        # card node so the lease is released before falling back.
-        safe:
-            call drm_release()
+    # GPU scanout is the console default. Every failure path — a card with
+    # no connected output, a driver refusing part of the handshake, or a
+    # dumb buffer measured too slow to beat fbdev (firmware VGA exposes
+    # uncached video memory) — closes the descriptor and falls back to the
+    # fbdev path below. Closing is what releases the master lease; while a
+    # client holds it the kernel's fbdev emulation stops scanning out and
+    # the fallback would draw into a dead framebuffer. LSL_DISPLAY=fb pins
+    # the legacy path, =gpu keeps meaning "try DRM" for existing configs.
+    if forced != "fb":
+        card = 0
+        while card < 4:
+            device = "/dev/dri/card" + String(card)
+            if exists(device):
+                # The return stays inside the safe block: binding the
+                # result to a local first would widen this function's
+                # inferred return type away from Display, and every
+                # caller's d.width/d.height would stop type-checking.
+                safe:
+                    return Display("drm", 0, 0, device, 4)
+                end
+                # Why this card was refused, for the caller's diagnostics:
+                # a silent fall back to fbdev is otherwise identical to a
+                # machine with no KMS driver at all.
+                DRM_FALLBACK[0] = device + ": " + last_error()
+                safe:
+                    call drm_release()
+                end
+            end
+            card += 1
         end
     end
     return open_framebuffer()
