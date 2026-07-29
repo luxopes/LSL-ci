@@ -416,8 +416,8 @@
 
 <nav id="sidebar">
   <div class="logo">LSL <span>0.5</span></div>
-  <a href="./">🚀 Vydání 0.5</a>
-  <a href="./#downloads">↓ Ke stažení</a>
+  <a href="./" data-home="home">🚀 Vydání 0.5</a>
+  <a href="./#downloads" data-home="downloads">↓ Ke stažení</a>
   <a href="#" data-page="README">📘 Přehled manuálu</a>
   <div class="section">Základy</div>
   <a href="#" data-page="01-getting-started">1. Začínáme s LSL</a>
@@ -502,6 +502,8 @@
 </main>
 
 <script>
+const releaseHomeHTML = document.getElementById('content').innerHTML;
+
 function guidePageName(href) {
   let legacyPages = {
     '../language.md': 'reference',
@@ -692,7 +694,7 @@ function renderMarkdown(md) {
 }
 
 // ── Load & render a page ──
-async function loadPage(name) {
+async function loadPage(name, updateHistory = true) {
   let main = document.getElementById('content');
   main.innerHTML = '<div id="loading">Načítám...</div>';
 
@@ -715,8 +717,11 @@ async function loadPage(name) {
     // Close mobile sidebar
     document.getElementById('sidebar').classList.remove('open');
 
-    // Update URL hash
-    history.pushState(null, '', '#' + name);
+    // Update URL hash for user-driven navigation. Initial routing and browser
+    // back/forward already carry the correct URL.
+    if (updateHistory && location.hash !== '#' + name) {
+      history.pushState(null, '', '#' + name);
+    }
   } catch (e) {
     main.innerHTML = `<h1>Chyba</h1><p>Nepodařilo se načíst stránku: <code>${name}.md</code></p><p>${esc(e.message)}</p>`;
   }
@@ -727,9 +732,15 @@ function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>
 // ── Navigation ──
 document.querySelectorAll('#sidebar a').forEach(a => {
   a.addEventListener('click', e => {
-    e.preventDefault();
     let page = a.dataset.page;
-    if (page) loadPage(page);
+    let home = a.dataset.home;
+    if (page) {
+      e.preventDefault();
+      loadPage(page);
+    } else if (home !== undefined) {
+      e.preventDefault();
+      showRelease(home === 'home' ? '' : home);
+    }
   });
 });
 
@@ -761,7 +772,7 @@ function buildWelcomeGrid() {
     ['12-compiler-internals', '12', 'Interní architektura', 'Self-host, fixed point, parser, codegen, runtime, ABI a garbage collector.'],
   ];
   grid.innerHTML = chapters.map(([page, num, title, desc]) =>
-    `<a class="welcome-card" href="#" data-page="${page}" onclick="event.preventDefault();loadPage('${page}')">
+    `<a class="welcome-card" href="#${page}" data-page="${page}">
       <div class="num">Kapitola ${num}</div>
       <h3>${title}</h3>
       <p>${desc}</p>
@@ -769,16 +780,48 @@ function buildWelcomeGrid() {
   ).join('');
 }
 
-buildWelcomeGrid();
+function showRelease(section = '', updateHistory = true) {
+  let main = document.getElementById('content');
+  main.innerHTML = releaseHomeHTML;
+  buildWelcomeGrid();
 
-// ── Handle initial hash ──
-if (location.hash) {
+  document.querySelectorAll('#sidebar a').forEach(a => {
+    let expected = section === '' ? 'home' : section;
+    a.classList.toggle('active', a.dataset.home === expected);
+  });
+  document.getElementById('sidebar').classList.remove('open');
+
+  if (updateHistory) {
+    let target = location.pathname + location.search;
+    if (section !== '') target += '#' + section;
+    history.pushState(null, '', target);
+  }
+
+  requestAnimationFrame(() => {
+    if (section !== '') {
+      let target = document.getElementById(section);
+      if (target) target.scrollIntoView();
+    } else {
+      main.scrollTop = 0;
+      window.scrollTo(0, 0);
+    }
+  });
+}
+
+function routeFromLocation() {
   let page = location.hash.slice(1);
   if (page.endsWith('.md')) page = page.slice(0, -3);
   if (/^\d\d-/.test(page) || page === 'README' || page === 'reference') {
-    loadPage(page);
+    loadPage(page, false);
+  } else if (page === 'downloads' || page === 'manual') {
+    showRelease(page, false);
+  } else {
+    showRelease('', false);
   }
 }
+
+routeFromLocation();
+window.addEventListener('popstate', routeFromLocation);
 
 // ── Keyboard navigation ──
 document.addEventListener('keydown', e => {
