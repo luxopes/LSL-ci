@@ -1,4 +1,4 @@
-# Specifikace Lux Simple Lang 0.7
+# Specifikace Lux Simple Lang 0.5
 
 Tento dokument je jazyková specifikace. Produkční implementace je pure-LSL self-hostovaný native compiler. Soubory používají UTF-8 a příponu `.lsl`.
 
@@ -121,9 +121,9 @@ call motor(10)
 result = motor(10)
 ```
 
-`call` zahodí návratovou hodnotu; běžné volání ji lze použít ve výrazu. Parametry jsou povinné a předávají se pozičně. `return` bez hodnoty vrátí `None`. Funkce čtou globální scope, zápis je lokální pro aktuální volání. Funkce jsou first-class hodnoty: lze je uložit, vrátit a předat jako callback (`type(callback)` je `Function`). Lexikální closures a keyword arguments nejsou součástí syntaxe 0.7.
+`call` zahodí návratovou hodnotu; běžné volání ji lze použít ve výrazu. Parametry jsou povinné a předávají se pozičně. `return` bez hodnoty vrátí `None`. Funkce čtou globální scope, zápis je lokální pro aktuální volání. Funkce jsou first-class hodnoty: lze je uložit, vrátit a předat jako callback (`type(callback)` je `Function`). Lexikální closures a keyword arguments nejsou součástí syntaxe 0.5.
 
-Pořadí vyhodnocení více argumentů není v 0.7 součástí veřejného kontraktu; kód nesmí záviset na pořadí jejich vedlejších efektů. Compiler smí neunikající přímou funkci specializovat podle stabilně odvozených typů argumentů. First-class callback a dynamická introspekční hranice vždy zachovávají obecný tagged ABI.
+Pořadí vyhodnocení více argumentů není v 0.5 součástí veřejného kontraktu; kód nesmí záviset na pořadí jejich vedlejších efektů. Compiler smí neunikající přímou funkci specializovat podle stabilně odvozených typů argumentů. First-class callback a dynamická introspekční hranice vždy zachovávají obecný tagged ABI.
 
 ## Třídy a instance
 

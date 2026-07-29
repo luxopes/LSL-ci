@@ -64,6 +64,33 @@ if len(readbytes("/tmp/lsl-codegen-optimization-test")) > 60000:
     Error(TestFailure: "optimized standalone ELF exceeds 60000 bytes")
 end
 call require_success(run(compiler, ["compiler/pure/cli.lsl", "/tmp/lsl-stdin-cli-test"]), "compile stdin CLI")
+help_output = capture("/tmp/lsl-stdin-cli-test", ["--help"])
+expected_help = "Lux Simple Lang (LSL) 0.5" + chr(10)
+expected_help += chr(10)
+expected_help += "Usage:" + chr(10)
+expected_help += "  lsl [SOURCE [ARG...]]" + chr(10)
+expected_help += "  lsl compile SOURCE OUTPUT" + chr(10)
+expected_help += "  lsl config ENTRY" + chr(10)
+expected_help += "  lsl install NAME" + chr(10)
+expected_help += "  lsl install --config FILE" + chr(10)
+expected_help += "  lsl update NAME" + chr(10)
+expected_help += "  lsl server" + chr(10)
+expected_help += "  lsl version" + chr(10)
+expected_help += chr(10)
+expected_help += "Options:" + chr(10)
+expected_help += "  -h, --help     Show this help" + chr(10)
+expected_help += "  --version      Show version" + chr(10)
+if capture_status() != 0 or help_output != expected_help:
+    Error(TestFailure: "CLI --help output differs")
+end
+version_output = capture("/tmp/lsl-stdin-cli-test", ["version"])
+if capture_status() != 0 or version_output != "0.5" + chr(10):
+    Error(TestFailure: "CLI version output differs")
+end
+version_flag_output = capture("/tmp/lsl-stdin-cli-test", ["--version"])
+if capture_status() != 0 or version_flag_output != "0.5" + chr(10):
+    Error(TestFailure: "CLI --version output differs")
+end
 stdin_source = "value = 6 * 7" + chr(10) + "if value == 42:" + chr(10) + "    print \"stdin\", value" + chr(10) + "end" + chr(10) + "exit" + chr(10)
 stdin_output = capture_input("/tmp/lsl-stdin-cli-test", [], stdin_source)
 if capture_status() != 0 or stdin_output != "stdin 42" + chr(10):

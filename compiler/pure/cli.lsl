@@ -5,6 +5,26 @@ load linker
 load package
 load parser
 
+VERSION = "0.5"
+
+function print_help():
+    print "Lux Simple Lang (LSL) " + VERSION
+    print ""
+    print "Usage:"
+    print "  lsl [SOURCE [ARG...]]"
+    print "  lsl compile SOURCE OUTPUT"
+    print "  lsl config ENTRY"
+    print "  lsl install NAME"
+    print "  lsl install --config FILE"
+    print "  lsl update NAME"
+    print "  lsl server"
+    print "  lsl version"
+    print ""
+    print "Options:"
+    print "  -h, --help     Show this help"
+    print "  --version      Show version"
+end
+
 function compile_source(source_path, source, output_path):
     stdlib_path = resource_path("compiler/pure/dynamic_stdlib.lsl")
     stdlib_source = readfile(stdlib_path)
@@ -102,7 +122,7 @@ function read_stdin_source():
     lines = []
     terminal = __lsl_isatty(0)
     if terminal:
-        print "Lux Simple Lang 0.7 interactive source mode"
+        print "Lux Simple Lang " + VERSION + " interactive source mode"
         print "Enter code; type exit on its own line to compile and run."
     end
     loop:
@@ -139,7 +159,13 @@ if command == None:
     exit(run(scratch, []))
 end
 
-if command == "compile":
+if command == "--help" or command == "-h" or command == "help":
+    call print_help()
+    exit(0)
+elif command == "version" or command == "--version":
+    print VERSION
+    exit(0)
+elif command == "compile":
     source_path = arg(2)
     output_path = arg(3)
     if source_path == None or output_path == None:

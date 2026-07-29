@@ -1,4 +1,4 @@
-# LSL 0.7 completion handoff
+# LSL 0.5 completion handoff
 
 ## Cíl a aktuální stav
 
@@ -22,7 +22,7 @@ N+1 bit po bitu.
 Podrobné historické hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`; veřejný scope
 je v `TODO.md`.
 
-## Ověřeně dokončený scope 0.7 (bez GPU)
+## Ověřeně dokončený scope 0.5 (bez GPU)
 
 - pure-LSL lexer/parser/linker, source spans a strukturovaná diagnostika;
 - přímý x86_64 encoder, assembler model, ELF writer a self-host fixed point;
@@ -80,12 +80,12 @@ neopakuje, protože descriptor už může být recyklovaný.
 
 ## Zbývající neblokující práce
 
-Feature scope 0.7 je uzavřený. Následující body nejsou release blockery:
+Feature scope 0.5 je uzavřený. Následující body nejsou release blockery:
 
 1. syntetická fault injection pro obtížně vyvolatelné fork/wait/read failures;
 2. další benchmark/regression limity a snížení compiler peak RSS;
 3. volitelná native ABI v2 (povolené relocations, Tensor descriptors);
-4. další CPU targety; GPU/device ABI je mimo scope 0.7.
+4. další CPU targety; GPU/device ABI je mimo scope 0.5.
 
 ## Provozní pravidla
 

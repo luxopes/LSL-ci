@@ -24,7 +24,7 @@ soubor, řádek, sloupec, výřez, caret, kód chyby a podle možnosti nápověd
 - [x] Dokončit vertikální řez: literal `print`/`exit` -> samostatný statický syscall-only ELF (`compiler/pure/hello.elf`).
 - [x] Rozšířit bootstrap writer o arbitrary-byte materializer pro plný x86_64 encoder (ověřeny bytes 0, 1, 127, 128, 129, 200, 255).
 - [x] Implementovat samostatný Unicode lexer s token spans a strukturovanými lexical errors (`compiler/pure/lexer.lsl`).
-- [x] Implementovat parser s token spans pro specifikaci 0.7 včetně linked-module source path/line/source anotací.
+- [x] Implementovat parser s token spans pro specifikaci 0.5 včetně linked-module source path/line/source anotací.
 - [x] Implementovat první nativní scalar/control-flow/function codegen: Int/Bool, locals, aritmetika, comparisons, if/while/loop/for-rang, break/continue, SysV calls, recursion.
 - [x] Implementovat recursive compile-time module linker s namespace prefixing a selective imports.
 - [ ] Přenést allocator, String a kolekce z C runtime do LSL/runtime modulů. (Hotovo: `brk` allocator+GC; UTF-8 String; growable List metody; Tuple/RealArray základ; Dictionary metody; boxed Bool/None; boxed IEEE-754 Float literals, arithmetic, comparisons, Int/String konverze, JSON a printing. Zbývá jednotné tagování všech dynamických scalar hran a plné Tuple/RealArray enforcement.)
@@ -300,9 +300,9 @@ Tři pilíeře jazyka (config / AI / běžné programy) ověřeny end-to-end.
 Dodaný `examples/showcase.lsl` se dříve NEpřekládal: používal neuvozený
 víceslovný Unicode text v `Error(Kind: ...)` (lexer padl na `á`), což není
 kanonická forma — stdlib vždy uvozuje. Oprava: zprávy uvozeny. Navíc `load lux`
-odkazoval na neexistující modul; přidán `stdlib/lux.lsl` (`version` = "0.7",
+odkazoval na neexistující modul; přidán `stdlib/lux.lsl` (`version` = "0.5",
 `name`, `identity`/`clamp`/`is_empty`) a zaregistrován v installeru — showcase
-teď běží celý včetně `LSL 0.7`. Config systém je funkční: `lsl config ENTRY`
+teď běží celý včetně `LSL 0.5`. Config systém je funkční: `lsl config ENTRY`
 produkuje výstup bitově shodný s `tests/config_expected.json`; přidán usage guard
 do `configure.lsl` (chybějící argument → usage/exit 2 místo matoucího FileError).
 Compíler fixed point beze změny; toolchain (lsl-configure, lsl-install)
@@ -619,7 +619,7 @@ function/List/Dictionary/GC zůstává type 9 a nikdy se nerovná objektu.
 Object registry i String intern cache se při zaplnění zdvojnásobí a rehashují;
 test je zmenší na 8 slots a vynutí několik růstů.
 
-Feature scope LSL 0.7 bez GPU je tímto uzavřený: omezený foreign CPU ABI,
+Feature scope LSL 0.5 bez GPU je tímto uzavřený: omezený foreign CPU ABI,
 zero-copy CPU Tensor, live process/HTTP chunks, AI SSE/retry/cancellation,
 structured process results a lazy/provenance config jsou implementované.
 
@@ -870,6 +870,16 @@ point je
 `8ec9ff3760004e9ca77e8be21ec8124b5a8ef6a045ea94e82e7fb64707bbe839`,
 CLI hash je
 `f06e37ef0d9a42f5c523a6d7e60e9cfa4544390e6caeae0e954d60b9aa0afb18`.
+
+CLI metadata fixed point přidává `lsl --help`, `lsl version` a
+`lsl --version`; všechny veřejné verze jsou sjednocené na 0.5. Vývojářský
+web chrání inline kód před Markdown emphasis/table parserem, takže se
+operátory `*`, `**` a typy obsahující `|` vykreslují beze ztrát. Tři shodné
+stages, full suite, fixed-point a Chromium DOM kontrola prošly. Compiler
+fixed point je
+`6a2a423a5f89955d260f44388b922876e9be82ad7090855e2918d67867fd414d`,
+CLI hash je
+`30e57d16ac3a938811130f5cd66af982e05ae1bac72ad99497535660ba1e7712`.
 
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,

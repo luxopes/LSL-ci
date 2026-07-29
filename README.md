@@ -1,10 +1,12 @@
 # Lux Simple Lang (LSL)
 
-LSL 0.7 je self-hostovaný jazyk pro běžné programování, deklarativní konfiguraci a AI orchestrace. Produkční implementace je pouze LSL: compiler přímo zapisuje statický Linux x86_64 ELF a runtime používá přímé syscalls. Není zde C/C++, libc, assembler, linker, Python ani shell launcher.
+LSL 0.5 je self-hostovaný jazyk pro běžné programování, deklarativní konfiguraci a AI orchestrace. Produkční implementace je pouze LSL: compiler přímo zapisuje statický Linux x86_64 ELF a runtime používá přímé syscalls. Není zde C/C++, libc, assembler, linker, Python ani shell launcher.
 
 ## Použití
 
 ```text
+./lsl --help
+./lsl version
 ./lsl                              # interaktivní zdroj ze stdin, konec řádkem exit
 ./lsl program.lsl arg1 arg2
 ./lsl compile program.lsl program

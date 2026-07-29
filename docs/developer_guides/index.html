@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LSL — Vývojářské příručky</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+    --accent-dim: #1f6feb;
+    --code-bg: #0d1117;
+    --code-border: #30363d;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    --radius: 6px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── Sidebar ── */
+  nav#sidebar {
+    width: 280px;
+    min-width: 280px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+    overflow-y: auto;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+  }
+  nav#sidebar .logo {
+    padding: 0 24px 20px;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.3px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  nav#sidebar .logo span { color: var(--muted); font-weight: 400; font-size: 0.85rem; }
+  nav#sidebar a {
+    display: block;
+    padding: 7px 24px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.12s;
+    border-left: 2px solid transparent;
+  }
+  nav#sidebar a:hover { color: var(--text); background: rgba(88,166,255,0.05); }
+  nav#sidebar a.active {
+    color: var(--accent);
+    background: rgba(88,166,255,0.08);
+    border-left-color: var(--accent);
+    font-weight: 500;
+  }
+  nav#sidebar .section {
+    padding: 16px 24px 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+  }
+
+  /* ── Mobile toggle ── */
+  #menu-toggle {
+    display: none;
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 20;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 1.4rem;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+
+  /* ── Main content ── */
+  main {
+    flex: 1;
+    max-width: 860px;
+    padding: 40px 48px 120px;
+    overflow-y: auto;
+  }
+  main h1 { font-size: 2rem; font-weight: 700; color: var(--text); margin-bottom: 8px; letter-spacing: -0.5px; }
+  main h2 {
+    font-size: 1.45rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 40px;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  main h3 { font-size: 1.15rem; font-weight: 600; color: var(--text); margin-top: 28px; margin-bottom: 8px; }
+  main h4 { font-size: 1rem; font-weight: 600; color: var(--muted); margin-top: 20px; margin-bottom: 6px; }
+  main p { margin-bottom: 12px; }
+  main a { color: var(--accent); text-decoration: none; }
+  main a:hover { text-decoration: underline; }
+  main ul, main ol { margin: 0 0 16px 20px; }
+  main li { margin-bottom: 4px; }
+  main strong { color: var(--text); font-weight: 600; }
+  main hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+  /* ── Code ── */
+  main code {
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.88em;
+    color: #e6edf3;
+  }
+  main pre {
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    overflow-x: auto;
+    margin: 0 0 16px;
+    line-height: 1.5;
+    font-size: 0.88rem;
+  }
+  main pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: inherit;
+  }
+  main pre .kw { color: #ff7b72; }
+  main pre .str { color: #a5d6ff; }
+  main pre .cmt { color: #8b949e; font-style: italic; }
+  main pre .num { color: #79c0ff; }
+  main pre .fn  { color: #d2a8ff; }
+  main pre .op  { color: #ff7b72; }
+
+  /* ── Tables ── */
+  main table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 0 0 20px;
+    font-size: 0.88rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  main th, main td {
+    padding: 9px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  main th {
+    background: linear-gradient(180deg, #1c2129 0%, #161b22 100%);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+  main td { vertical-align: top; }
+  main td:first-child code {
+    color: #d2a8ff;
+    font-weight: 600;
+    background: rgba(210,168,255,0.08);
+    border-color: rgba(210,168,255,0.2);
+    white-space: nowrap;
+  }
+  main tr:last-child td { border-bottom: none; }
+  main tr:nth-child(even) td { background: rgba(255,255,255,0.015); }
+  main tr:hover td { background: rgba(88,166,255,0.04); }
+
+  /* ── Reference page: colored section headers ── */
+  main h2 { transition: border-color 0.2s; }
+  main h2[id] { scroll-margin-top: 24px; }
+
+  /* ── Blockquotes ── */
+  main blockquote {
+    border-left: 3px solid var(--accent-dim);
+    background: rgba(88,166,255,0.05);
+    padding: 12px 16px;
+    margin: 0 0 16px;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    color: var(--muted);
+  }
+
+  /* ── Reference: color-coded section headings ── */
+  .ref-builtin { border-left: 3px solid #d2a8ff !important; padding-left: 14px !important; }
+  .ref-methods  { border-left: 3px solid #79c0ff !important; padding-left: 14px !important; }
+  .ref-module   { border-left: 3px solid #7ee787 !important; padding-left: 14px !important; }
+  .ref-keywords { border-left: 3px solid #ffa657 !important; padding-left: 14px !important; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-right: 6px;
+    vertical-align: middle;
+    letter-spacing: 0.03em;
+  }
+  .badge-builtin { background: rgba(210,168,255,0.15); color: #d2a8ff; }
+  .badge-methods  { background: rgba(121,192,255,0.15); color: #79c0ff; }
+  .badge-module   { background: rgba(126,231,135,0.15); color: #7ee787; }
+  .badge-kw       { background: rgba(255,166,87,0.15); color: #ffa657; }
+
+  /* ── Welcome screen ── */
+  .welcome-hero {
+    text-align: center;
+    padding: 60px 20px;
+  }
+  .welcome-hero h1 { font-size: 2.6rem; margin-bottom: 16px; }
+  .welcome-hero p { color: var(--muted); font-size: 1.15rem; max-width: 550px; margin: 0 auto 32px; }
+  .welcome-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 32px;
+  }
+  .welcome-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+    color: var(--text);
+  }
+  .welcome-card:hover { border-color: var(--accent-dim); transform: translateY(-1px); box-shadow: var(--shadow); }
+  .welcome-card .num { font-size: 0.75rem; color: var(--accent); font-weight: 600; margin-bottom: 4px; }
+  .welcome-card h3 { font-size: 1rem; margin: 0 0 6px; border: none; padding: 0; }
+  .welcome-card p { font-size: 0.85rem; color: var(--muted); margin: 0; }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    nav#sidebar {
+      position: fixed;
+      left: -280px;
+      transition: left 0.2s;
+      height: 100vh;
+    }
+    nav#sidebar.open { left: 0; }
+    #menu-toggle { display: flex; align-items: center; justify-content: center; }
+    main { padding: 24px 20px 80px; }
+    main h1 { font-size: 1.55rem; }
+    .welcome-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ── Loading ── */
+  #loading { color: var(--muted); text-align: center; padding: 60px 0; font-style: italic; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+</style>
+</head>
+<body>
+
+<button id="menu-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+
+<nav id="sidebar">
+  <div class="logo">LSL <span>0.5</span></div>
+  <a href="#" data-page="README">🏠 Přehled</a>
+  <div class="section">Základy</div>
+  <a href="#" data-page="01-getting-started">1. Začínáme s LSL</a>
+  <a href="#" data-page="02-language-basics">2. Základy jazyka</a>
+  <div class="section">Struktury a chyby</div>
+  <a href="#" data-page="03-functions-and-classes">3. Funkce a třídy</a>
+  <a href="#" data-page="04-collections">4. Kolekce</a>
+  <a href="#" data-page="05-error-handling">5. Zpracování chyb</a>
+  <div class="section">Knihovny a nástroje</div>
+  <a href="#" data-page="06-modules-and-imports">6. Moduly a knihovny</a>
+  <a href="#" data-page="07-files-io-and-processes">7. Soubory, I/O, procesy</a>
+  <div class="section">Pokročilé</div>
+  <a href="#" data-page="08-configuration-system">8. Konfigurační systém</a>
+  <a href="#" data-page="09-gui-programming">9. GUI programování</a>
+  <a href="#" data-page="10-ai-applications">10. AI aplikace</a>
+  <a href="#" data-page="11-performance-and-optimization">11. Výkon a optimalizace</a>
+  <a href="#" data-page="12-compiler-internals">12. Interní architektura</a>
+  <div class="section">Referenční</div>
+  <a href="#" data-page="reference">📋 Kompletní reference funkcí</a>
+</nav>
+
+<main id="content">
+  <div class="welcome-hero">
+    <h1>📘 LSL — Vývojářské příručky</h1>
+    <p>Podrobné průvodce jazykem Lux Simple Lang. Každá kapitola vysvětluje jednu oblast od úplných základů — předpokládáme, že s programováním začínáte.</p>
+    <div class="welcome-grid" id="welcome-grid"></div>
+  </div>
+</main>
+
+<script>
+// ── Simple Markdown → HTML renderer ──
+function renderMarkdown(md) {
+  // Escape HTML in non-code contexts first
+  function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  // Extract code blocks so we don't process their content
+  let codeBlocks = [];
+  md = md.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+    codeBlocks.push({lang, code: esc(code.trimEnd())});
+    return `\x00CODE${codeBlocks.length - 1}\x00`;
+  });
+
+  // Protect inline code from emphasis and table parsing. Turning it into HTML
+  // here would let `*`, `**` and `|` be interpreted a second time below.
+  let inlineCodes = [];
+  md = md.replace(/`([^`]+)`/g, (_, code) => {
+    inlineCodes.push(esc(code));
+    return `\x00INLINE${inlineCodes.length - 1}\x00`;
+  });
+
+  // Bold and italic
+  md = md.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+  md = md.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  md = md.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+  // Images must be handled before links because their syntax contains a link.
+  md = md.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
+
+  // Links: [text](url)
+  md = md.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+
+  // Headers
+  md = md.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
+  md = md.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  md = md.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  md = md.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+
+  // Horizontal rule
+  md = md.replace(/^---$/gm, '<hr>');
+
+  // Blockquotes
+  md = md.replace(/^&gt; (.+)$/gm, '<blockquote><p>$1</p></blockquote>');
+  // Real > (already escaped to &gt; by esc? No—we aren't escaping the whole thing.
+  // Let's handle > lines before any escaping:
+  // Actually, we need to handle blockquotes carefully. Let me process > lines:
+
+  // Tables — approximate it
+  // Skip for simplicity; the important parts are code, headers, lists, paragraphs.
+
+  // Unordered lists
+  md = md.replace(/^[\*-] (.+)$/gm, '<li>$1</li>');
+  // Group consecutive <li> into <ul>
+  md = md.replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>');
+
+  // Ordered lists
+  md = md.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+  // (already grouped by the ul rule above, but we need to distinguish)
+  // For simplicity, wrap all <li> groups in <ul>
+
+  // Paragraphs: lines not starting with <
+  // Split by double newline
+  let lines = md.split('\n');
+  let result = [];
+  let inList = false;
+  let inTable = false;   // track if we're inside a <table>
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+    let trimmed = line.trim();
+
+    if (trimmed === '') {
+      if (inList) { result.push('</ul>'); inList = false; }
+      if (inTable) { result.push('</tbody></table>'); inTable = false; }
+      continue;
+    }
+
+    // Skip already-html lines
+    if (/^<(h[1-4]|ul|ol|li|pre|code|hr|blockquote|table|img|strong|em)/.test(trimmed)) {
+      if (inList && !trimmed.startsWith('<li>')) {
+        result.push('</ul>');
+        inList = false;
+      }
+      if (inTable) { result.push('</tbody></table>'); inTable = false; }
+      result.push(line);
+      continue;
+    }
+
+    // Table rows
+    if (/^\|.*\|$/.test(trimmed)) {
+      if (inList) { result.push('</ul>'); inList = false; }
+
+      if (trimmed.includes('---')) {
+        // Separator line — open table if needed, add thead, start tbody
+        if (!inTable) { result.push('<table>'); inTable = true; }
+        // convert separator to header row from the PREVIOUS line
+        // The previous line was the actual header; we need to back-patch.
+        // Strategy: the previous result entry is a <tr>, convert it to <thead><tr>
+        let last = result.pop();
+        if (last && last.startsWith('<tr>')) {
+          let header = last.replace(/<td>/g, '<th>').replace(/<\/td>/g, '</th>');
+          result.push('<thead>' + header + '</thead><tbody>');
+        }
+      } else {
+        if (!inTable) { result.push('<table>'); inTable = true; }
+        let cells = trimmed.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+        result.push('<tr>' + cells.map(c => '<td>' + c + '</td>').join('') + '</tr>');
+      }
+      continue;
+    }
+
+    // Regular paragraph
+    if (inList) { result.push('</ul>'); inList = false; }
+    if (inTable) { result.push('</tbody></table>'); inTable = false; }
+    result.push('<p>' + line + '</p>');
+  }
+
+  if (inList) result.push('</ul>');
+  if (inTable) result.push('</tbody></table>');
+
+  let html = result.join('\n');
+
+  // Re-insert inline code only after all Markdown parsing is complete.
+  html = html.replace(/\x00INLINE(\d+)\x00/g, (_, idx) =>
+    `<code>${inlineCodes[parseInt(idx)]}</code>`);
+
+  // Re-insert code blocks
+  html = html.replace(/\x00CODE(\d+)\x00/g, (_, idx) => {
+    let cb = codeBlocks[parseInt(idx)];
+    let code = cb.code;
+
+    // Protection strategy: extract strings and comments first,
+    // so later keyword/number regexes don't break inside them.
+    let prot = [];
+    let pi = 0;
+
+    // 1. Protect double-quoted strings (handle \")
+    code = code.replace(/"(?:[^"\\]|\\.)*"/g, m => { prot.push(m); return `\x01P${pi++}\x01`; });
+    // 2. Protect single-quoted strings
+    code = code.replace(/'(?:[^'\\]|\\.)*'/g, m => { prot.push(m); return `\x01P${pi++}\x01`; });
+    // 3. Protect #-comments
+    code = code.replace(/(#.*$)/gm, m => { prot.push(m); return `\x01P${pi++}\x01`; });
+
+    // 4. Keywords (safe: protected content is hidden)
+    code = code.replace(/\b(function|if|elif|else|end|for|while|loop|break|continue|return|class|load|from|as|safe|try|call|del|and|or|not|True|False|None|ctype|Public|Private|in|Error|check|range|rang)\b/g,
+      '<span class="kw">$1</span>');
+
+    // 5. Numbers
+    code = code.replace(/\b(\d+\.?\d*)\b/g, '<span class="num">$1</span>');
+
+    // 6. Restore protected fragments with proper spans
+    code = code.replace(/\x01P(\d+)\x01/g, (_, i) => {
+      let m = prot[parseInt(i)];
+      if (m.startsWith('#')) return '<span class="cmt">' + m + '</span>';
+      return '<span class="str">' + m + '</span>';
+    });
+
+    return `<pre><code>${code}</code></pre>`;
+  });
+
+  return html;
+}
+
+// ── Load & render a page ──
+async function loadPage(name) {
+  let main = document.getElementById('content');
+  main.innerHTML = '<div id="loading">Načítám...</div>';
+
+  try {
+    let resp = await fetch(name + '.md');
+    if (!resp.ok) throw new Error('Nenalezeno');
+    let md = await resp.text();
+    let html = renderMarkdown(md);
+    main.innerHTML = html;
+
+    // Scroll to top
+    main.scrollTop = 0;
+    window.scrollTo(0, 0);
+
+    // Highlight active nav
+    document.querySelectorAll('#sidebar a').forEach(a => {
+      a.classList.toggle('active', a.dataset.page === name);
+    });
+
+    // Close mobile sidebar
+    document.getElementById('sidebar').classList.remove('open');
+
+    // Update URL hash
+    history.pushState(null, '', '#' + name);
+  } catch (e) {
+    main.innerHTML = `<h1>Chyba</h1><p>Nepodařilo se načíst stránku: <code>${name}.md</code></p><p>${esc(e.message)}</p>`;
+  }
+}
+
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── Navigation ──
+document.querySelectorAll('#sidebar a').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    let page = a.dataset.page;
+    if (page) loadPage(page);
+  });
+});
+
+// ── Welcome cards ──
+function buildWelcomeGrid() {
+  let grid = document.getElementById('welcome-grid');
+  if (!grid) return;
+  let chapters = [
+    ['01-getting-started', '1', 'Začínáme s LSL', 'Instalace, první program, terminál, proměnné, vstup, výstup, podmínky a smyčky krok za krokem.'],
+    ['02-language-basics', '2', 'Základy jazyka', 'Typy, proměnné, operátory, print, input, if, for, while — podrobný výklad každého konstruktu.'],
+    ['03-functions-and-classes', '3', 'Funkce a třídy', 'Vlastní funkce, parametry, návratové hodnoty, callbacky, třídy, instance, moduly.'],
+    ['04-collections', '4', 'Kolekce', 'List, Tuple, Dictionary, IntArray, FloatArray, ByteArray — kdy a jak je použít.'],
+    ['05-error-handling', '5', 'Zpracování chyb', 'Safe, try/else, Error, check, last_error — jak psát odolný kód.'],
+    ['06-modules-and-imports', '6', 'Moduly a knihovny', 'Standardní knihovny, instalace balíčků, json, os, time, http, env.'],
+    ['07-files-io-and-processes', '7', 'Soubory a procesy', 'Čtení a zápis souborů, spouštění programů, HTTP, bezpečnost.'],
+    ['09-gui-programming', '9', 'GUI programování', 'Okna, kreslení, widgety, CSS stylování — tvorba grafických aplikací.'],
+    ['10-ai-applications', '10', 'AI aplikace', 'OpenAI API, streaming, function calling, secrets management.'],
+  ];
+  grid.innerHTML = chapters.map(([page, num, title, desc]) =>
+    `<a class="welcome-card" href="#" data-page="${page}" onclick="event.preventDefault();loadPage('${page}')">
+      <div class="num">Kapitola ${num}</div>
+      <h3>${title}</h3>
+      <p>${desc}</p>
+    </a>`
+  ).join('');
+}
+
+buildWelcomeGrid();
+
+// ── Handle initial hash ──
+if (location.hash) {
+  let page = location.hash.slice(1);
+  if (page.endsWith('.md')) page = page.slice(0, -3);
+  if (/^\d\d-/.test(page) || page === 'README') {
+    loadPage(page);
+  }
+}
+
+// ── Keyboard navigation ──
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.getElementById('sidebar').classList.remove('open');
+  }
+});
+</script>
+</body>
+</html>

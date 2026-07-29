@@ -39,7 +39,7 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktu�
 - [x] Doplnit valid-source frontend fuzz, strict JSON malformed/round-trip corpus, generativní config corpus a GC cycle/deep/reuse stress.
 - [x] Změřit a zrychlit compiler bez změny deterministického výstupu; doplnit near-native IntArray/FloatArray kernely a packed ByteArray.
 
-## Feature scope 0.7 bez GPU
+## Feature scope 0.5 bez GPU
 
 Feature scope je implementovaný: self-host compiler/runtime, jazyk a collections, config lazy/default/provenance, AI retry/cancellation/SSE + live transport chunks, process JSON ABI, structured stdout/stderr/status, zero-copy CPU Tensor a omezený in-process CPU ET_DYN ABI v1.
 
@@ -47,7 +47,7 @@ Feature scope je implementovaný: self-host compiler/runtime, jazyk a collection
 
 - další numerické edge cases; Int overflow má definovanou two's-complement modulo `2^64` sémantiku a conformance;
 - případná ABI v2 rozšíření nad hotovým self-contained CPU ET_DYN v1 (relocations/Tensor descriptors); GPU je mimo aktuální scope;
-- rozšířit negative corpus a benchmarky; další targety nejsou blocker 0.7;
+- rozšířit negative corpus a benchmarky; další targety nejsou blocker 0.5;
 - [x] Přesunout veškeré testy/smoke fixtures a runner pod `tests/`; v `compiler/pure/` ponechat jen produkční funkcionalitu.
 - [x] Doplnit kompaktní x86 encoding, constant/control-flow optimalizace, guarded direct-function specialization a code-size quality guard.
 - [x] Dopsat praktický programming guide a interní compiler/release guide.
