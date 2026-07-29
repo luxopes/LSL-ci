@@ -200,6 +200,11 @@ CL_D3 = []
 CL_TITLE = []
 CL_OUT = []
 CL_OUTOFF = []
+# Descriptor markers into CL_OUT: byte offset, fd, and whether the fd
+# survives the send (the shared keymap does, a clipboard pipe does not).
+CL_FDPOS = []
+CL_FDVAL = []
+CL_FDKEEP = []
 CL_MAXID = []
 CL_SEATV = []
 CL_PTRL = []
@@ -229,11 +234,17 @@ function cl_new(handle):
     call CL_TITLE.append("")
     call CL_OUT.append(ByteArray())
     call CL_OUTOFF.append(0)
+    call CL_FDPOS.append([])
+    call CL_FDVAL.append([])
+    call CL_FDKEEP.append([])
     call CL_MAXID.append(2)
     call CL_SEATV.append(1)
     call CL_PTRL.append([])
     call CL_KBDL.append([])
     call CL_OUTID.append(0)
+    call CL_DDEV.append(0)
+    call CL_SRVID.append(0)
+    call CL_OFFER.append(0)
     return len(CL_FD) - 1
 end
 
@@ -285,6 +296,29 @@ function cl_post(ci, oid, opcode, args):
     return None
 end
 
+# The same, carrying one descriptor (keymap, clipboard transfer). The fd
+# must ride with ITS message and no other, so instead of writing to the
+# socket behind the buffer's back — which would splice bytes into a
+# half-sent message and desynchronise the client — the offset is marked
+# and wl_flush sends exactly that message with the descriptor attached.
+# keep = 1 leaves the descriptor open afterwards (one keymap, many
+# clients); keep = 0 closes it once it is on its way.
+function cl_post_fd(ci, oid, opcode, args, handle, keep):
+    c = Int(ci)
+    if Int(CL_ALIVE[c]) == 0:
+        if Int(keep) == 0:
+            call unixsock.close_fd(Int(handle))
+        end
+        return None
+    end
+    out = ByteArray(CL_OUT[c])
+    call CL_FDPOS[c].append(len(out))
+    call CL_FDVAL[c].append(Int(handle))
+    call CL_FDKEEP[c].append(Int(keep))
+    call cl_post(c, oid, opcode, args)
+    return None
+end
+
 # An object destroyed by its client: forget it and let the client reuse the
 # id (wl_display.delete_id) — without this a long-lived client leaks ids
 # until it hits MAX_OBJECTS.
@@ -296,7 +330,9 @@ function wl_destroy_object(ci, oid):
     return None
 end
 
-# Flush as much buffered output as the socket accepts; keep the rest.
+# Flush as much buffered output as the socket accepts; keep the rest. The
+# buffer is sent in segments so a marked message goes out with its
+# descriptor and nothing else rides along with it.
 function wl_flush(index):
     ci = Int(index)
     if Int(CL_ALIVE[ci]) == 0:
@@ -304,34 +340,77 @@ function wl_flush(index):
     end
     out = ByteArray(CL_OUT[ci])
     off = Int(CL_OUTOFF[ci])
-    pending = len(out) - off
-    if pending <= 0:
-        return None
+    pos = CL_FDPOS[ci]
+    stop = 0
+    while stop == 0 and len(out) - off > 0:
+        # Drop markers the stream has already passed (a partial send takes
+        # the descriptor with its first byte).
+        while len(pos) > 0 and Int(pos[0]) < off:
+            call CL_FDPOS[ci].pop(0)
+            if Int(CL_FDKEEP[ci][0]) == 0:
+                call unixsock.close_fd(Int(CL_FDVAL[ci][0]))
+            end
+            call CL_FDVAL[ci].pop(0)
+            call CL_FDKEEP[ci].pop(0)
+        end
+        want = len(out) - off
+        h = 0 - 1
+        if len(pos) > 0:
+            if Int(pos[0]) == off:
+                # Exactly this message, with its descriptor.
+                want = Int(out[off + 6]) + Int(out[off + 7]) * 256
+                h = Int(CL_FDVAL[ci][0])
+            else:
+                want = Int(pos[0]) - off
+            end
+        end
+        if want > len(out) - off:
+            want = len(out) - off
+        end
+        rc = 0 - 11
+        safe:
+            rc = unixsock.send_from_fd(Int(CL_FD[ci]), out, off, want, h)
+        end
+        if rc > 0:
+            off = off + rc
+        elif rc == 0 - 11 or rc == 0 - 4:
+            stop = 1
+        else:
+            call wl_client_drop(ci)
+            return None
+        end
+        if rc < want:
+            stop = 1
+        end
     end
-    rc = 0 - 11
-    safe:
-        rc = unixsock.send_from(Int(CL_FD[ci]), out, off, pending)
+    while len(pos) > 0 and Int(pos[0]) < off:
+        call CL_FDPOS[ci].pop(0)
+        if Int(CL_FDKEEP[ci][0]) == 0:
+            call unixsock.close_fd(Int(CL_FDVAL[ci][0]))
+        end
+        call CL_FDVAL[ci].pop(0)
+        call CL_FDKEEP[ci].pop(0)
     end
-    if rc == pending:
+    if off >= len(out):
         CL_OUT[ci] = ByteArray()
         CL_OUTOFF[ci] = 0
-    elif rc > 0:
-        off = off + rc
+    elif off > 65536 and off * 2 > len(out):
         # Compact once the consumed prefix dominates the buffer.
-        if off > 65536 and off * 2 > len(out):
-            rest = ByteArray()
-            k = off
-            while k < len(out):
-                call rest.append(out[k])
-                k = k + 1
-            end
-            CL_OUT[ci] = rest
-            CL_OUTOFF[ci] = 0
-        else:
-            CL_OUTOFF[ci] = off
+        rest = ByteArray()
+        k = off
+        while k < len(out):
+            call rest.append(out[k])
+            k = k + 1
         end
-    elif rc != 0 - 11 and rc != 0 - 4:
-        call wl_client_drop(ci)
+        CL_OUT[ci] = rest
+        mi = 0
+        while mi < len(CL_FDPOS[ci]):
+            CL_FDPOS[ci][mi] = Int(CL_FDPOS[ci][mi]) - off
+            mi = mi + 1
+        end
+        CL_OUTOFF[ci] = 0
+    else:
+        CL_OUTOFF[ci] = off
     end
     return None
 end
@@ -398,6 +477,14 @@ function wl_client_drop(index):
         end
         h = h + 1
     end
+    while len(CL_FDPOS[ci]) > 0:
+        if Int(CL_FDKEEP[ci][0]) == 0:
+            call unixsock.close_fd(Int(CL_FDVAL[ci][0]))
+        end
+        call CL_FDPOS[ci].pop(0)
+        call CL_FDVAL[ci].pop(0)
+        call CL_FDKEEP[ci].pop(0)
+    end
     CL_OUT[ci] = ByteArray()
     CL_OUTOFF[ci] = 0
     CL_INBUF[ci] = ByteArray()
@@ -412,6 +499,22 @@ function wl_client_drop(index):
     if Int(GRAB_CI[0]) == ci:
         GRAB_CI[0] = 0 - 1
         GRAB_SID[0] = 0 - 1
+    end
+    CL_DDEV[ci] = 0
+    if Int(SEL_OWNER[0]) == ci:
+        # Its selection dies with it; the text we already mirrored stays.
+        SEL_OWNER[0] = 0 - 1
+        SEL_SRC[0] = 0
+    end
+    di = 0
+    while di < len(DS_CI):
+        if Int(DS_CI[di]) == ci:
+            call DS_CI.pop(di)
+            call DS_ID.pop(di)
+            call DS_MIME.pop(di)
+        else:
+            di = di + 1
+        end
     end
     call wl_emit(4, ci, 0, 0, 0, 0, 0, "")
     call wl_log("client " + String(ci) + " dropped")
@@ -696,9 +799,16 @@ function wl_set_keymap(path):
     if m < 0:
         return m
     end
-    wrote = fd.write(m, data, len(data))
-    if wrote < len(data):
+    # fd.write raises on failure and returns nothing, so a short write is
+    # not something to test for here.
+    ok = 1
+    safe:
+        call fd.write(m, data, len(data))
+        ok = 2
+    end
+    if ok != 2:
         call unixsock.close_fd(m)
+        call wl_log("keymap write failed for " + String(path))
         return 0 - 1
     end
     old = Int(WL_KM_FD[0])
@@ -723,32 +833,17 @@ function wl_set_keymap(path):
     return 0
 end
 
-# keymap(format=1 xkb_v1, fd, size). The descriptor must ride with exactly
-# this message, so flush the buffer and sendmsg it inline. At bind time the
-# socket is empty; treat a still-full socket as a dead client.
+# keymap(format=1 xkb_v1, fd, size), queued in stream order like any other
+# event; the flush attaches the descriptor to this message alone.
 function wl_send_keymap(index, kbd):
     ci = Int(index)
     if Int(WL_KM_FD[0]) < 0:
         return None
     end
-    call wl_flush(ci)
-    if len(ByteArray(CL_OUT[ci])) - Int(CL_OUTOFF[ci]) > 0:
-        call wl_client_drop(ci)
-        return None
-    end
-    msg = ByteArray()
-    call w_append32(msg, Int(kbd))
-    call w_append32(msg, 16 * 65536 + 0)
-    call w_append32(msg, 1)
-    call w_append32(msg, Int(WL_KM_SIZE[0]))
-    rc = 0 - 1
-    safe:
-        rc = unixsock.send_fd(Int(CL_FD[ci]), msg, len(msg), Int(WL_KM_FD[0]))
-    end
-    if rc < len(msg):
-        call wl_client_drop(ci)
-        return None
-    end
+    args = ByteArray()
+    call w_append32(args, 1)
+    call w_append32(args, Int(WL_KM_SIZE[0]))
+    call cl_post_fd(ci, Int(kbd), 0, args, Int(WL_KM_FD[0]), 1)
     # repeat_info(rate chars/s, delay ms) — v4+ keyboards.
     if Int(CL_SEATV[ci]) >= 4:
         ri = ByteArray()
@@ -1886,6 +1981,190 @@ function wl_subsurface_request(cli, oid, opcode, body):
     return None
 end
 
+# ---------------------------------------------------------------------------
+# CLIPBOARD (wl_data_device). Without it a toolkit cannot even copy inside
+# itself: in Wayland the compositor owns every selection.
+#
+# Ownership is one of: a client (SEL_OWNER >= 0, with its wl_data_source),
+# or the desktop itself (SEL_OWNER = -2, text in WL_CLIP). Either way every
+# client is told there is a selection through a server-allocated
+# wl_data_offer, and the paste path just forwards the reader's descriptor:
+# a client-owned selection has its source write straight into the pasting
+# client's pipe, so no bytes pass through here at all.
+SERVER_ID_BASE = 4278190080
+SEL_OWNER = [0 - 1]
+SEL_SRC = [0]
+SEL_MIMES = []
+WL_CLIP = [""]
+CL_DDEV = []
+CL_SRVID = []
+CL_OFFER = []
+# Mime types offered per data source: parallel lists (client, source, mime).
+DS_CI = []
+DS_ID = []
+DS_MIME = []
+# In-flight read of a client-owned selection into WL_CLIP.
+CLIP_FD = [0 - 1]
+CLIP_BUF = [""]
+CLIP_NEW = [0]
+
+# Server-allocated ids must start at exactly 0xff000000 and climb by one:
+# the client grows its server-object table by a single entry per id, and
+# a gap makes libwayland reject the message outright (EINVAL, and the
+# connection is gone).
+function wl_next_server_id(ci):
+    c = Int(ci)
+    v = Int(CL_SRVID[c])
+    CL_SRVID[c] = v + 1
+    return SERVER_ID_BASE + v
+end
+
+function wl_clip_text():
+    return String(WL_CLIP[0])
+end
+
+# 1 once a client's selection has been mirrored into WL_CLIP.
+function wl_clip_taken():
+    if Int(CLIP_NEW[0]) == 1:
+        CLIP_NEW[0] = 0
+        return 1
+    end
+    return 0
+end
+
+function wl_send_offer(ci):
+    c = Int(ci)
+    if Int(CL_ALIVE[c]) == 0 or Int(CL_DDEV[c]) <= 0:
+        return None
+    end
+    if len(SEL_MIMES) == 0:
+        return None
+    end
+    off = Int(wl_next_server_id(c))
+    CL_OFFER[c] = off
+    # wl_data_device.data_offer(new_id) then the mime list, then selection.
+    args = ByteArray()
+    call w_append32(args, off)
+    call cl_post(c, Int(CL_DDEV[c]), 0, args)
+    mi = 0
+    while mi < len(SEL_MIMES):
+        m = ByteArray()
+        call w_append_string(m, String(SEL_MIMES[mi]))
+        call cl_post(c, off, 0, m)
+        mi = mi + 1
+    end
+    sel = ByteArray()
+    call w_append32(sel, off)
+    call cl_post(c, Int(CL_DDEV[c]), 5, sel)
+    return None
+end
+
+function wl_broadcast_selection():
+    i = 0
+    while i < len(CL_FD):
+        call wl_send_offer(i)
+        i = i + 1
+    end
+    return None
+end
+
+# The desktop copied something: it becomes the selection owner.
+function wl_set_clipboard(text):
+    if Int(SEL_OWNER[0]) >= 0:
+        # cancelled: the previous owner must drop its source.
+        call cl_post(Int(SEL_OWNER[0]), Int(SEL_SRC[0]), 1, ByteArray())
+    end
+    WL_CLIP[0] = String(text)
+    SEL_OWNER[0] = 0 - 2
+    SEL_SRC[0] = 0
+    while len(SEL_MIMES) > 0:
+        call SEL_MIMES.pop(len(SEL_MIMES) - 1)
+    end
+    call SEL_MIMES.append("text/plain;charset=utf-8")
+    call SEL_MIMES.append("text/plain")
+    call SEL_MIMES.append("UTF8_STRING")
+    call SEL_MIMES.append("STRING")
+    call SEL_MIMES.append("TEXT")
+    call wl_broadcast_selection()
+    return None
+end
+
+# Ask the owning client to write its selection into a pipe we then read
+# across frames, so the desktop's own paste sees what a client copied.
+function wl_clip_pull():
+    if Int(SEL_OWNER[0]) < 0:
+        return None
+    end
+    want = ""
+    mi = 0
+    while mi < len(SEL_MIMES):
+        m = String(SEL_MIMES[mi])
+        if want == "" and (m == "text/plain;charset=utf-8" or m == "UTF8_STRING" or m == "text/plain"):
+            want = m
+        end
+        mi = mi + 1
+    end
+    if want == "":
+        return None
+    end
+    if Int(CLIP_FD[0]) >= 0:
+        call unixsock.close_fd(Int(CLIP_FD[0]))
+        CLIP_FD[0] = 0 - 1
+    end
+    p = unixsock.pipe_nonblock()
+    if len(p) < 2:
+        return None
+    end
+    ci = Int(SEL_OWNER[0])
+    body = ByteArray()
+    call w_append_string(body, want)
+    call cl_post_fd(ci, Int(SEL_SRC[0]), 1, body, Int(p[1]), 0)
+    CLIP_FD[0] = Int(p[0])
+    CLIP_BUF[0] = ""
+    return None
+end
+
+# Drain that pipe a little every frame; EOF publishes the text.
+function wl_clip_tick():
+    h = Int(CLIP_FD[0])
+    if h < 0:
+        return None
+    end
+    chunk = __lsl_byte_zeros(4096)
+    cb = ByteArray(chunk)
+    rounds = 0
+    while rounds < 4:
+        rounds = rounds + 1
+        n = 0 - 1
+        safe:
+            n = fd.read(h, cb, 4096)
+        end
+        if n > 0:
+            out = String(CLIP_BUF[0])
+            i = 0
+            while i < n:
+                out = out + chr(cb[i])
+                i = i + 1
+            end
+            CLIP_BUF[0] = out
+            if len(out) > 262144:
+                n = 0
+            end
+        end
+        if n == 0:
+            WL_CLIP[0] = String(CLIP_BUF[0])
+            CLIP_NEW[0] = 1
+            call unixsock.close_fd(h)
+            CLIP_FD[0] = 0 - 1
+            return None
+        end
+        if n < 0:
+            return None
+        end
+    end
+    return None
+end
+
 function wl_ddm_request(cli, oid, opcode, body):
     ci = Int(cli)
     newid = Int(w_get32(body, 0))
@@ -1893,24 +2172,131 @@ function wl_ddm_request(cli, oid, opcode, body):
         call cl_set_kind(ci, newid, WO_DATA_SOURCE)
     elif opcode == 1:
         call cl_set_kind(ci, newid, WO_DATA_DEVICE)
+        CL_DDEV[ci] = newid
+        # A client that connects after a copy still learns about it.
+        call wl_send_offer(ci)
     end
     return None
 end
 
 function wl_data_device_request(cli, oid, opcode, body):
     ci = Int(cli)
-    if opcode == 2:
+    if opcode == 1:
+        # set_selection(source, serial): this client now owns the clipboard.
+        src = Int(w_get32(body, 0))
+        if Int(SEL_OWNER[0]) >= 0 and (Int(SEL_OWNER[0]) != ci or Int(SEL_SRC[0]) != src):
+            call cl_post(Int(SEL_OWNER[0]), Int(SEL_SRC[0]), 1, ByteArray())
+        end
+        while len(SEL_MIMES) > 0:
+            call SEL_MIMES.pop(len(SEL_MIMES) - 1)
+        end
+        if src == 0:
+            SEL_OWNER[0] = 0 - 1
+            SEL_SRC[0] = 0
+            return None
+        end
+        SEL_OWNER[0] = ci
+        SEL_SRC[0] = src
+        di = 0
+        while di < len(DS_CI):
+            if Int(DS_CI[di]) == ci and Int(DS_ID[di]) == src:
+                call SEL_MIMES.append(String(DS_MIME[di]))
+            end
+            di = di + 1
+        end
+        call wl_broadcast_selection()
+        call wl_clip_pull()
+    elif opcode == 2:
         call wl_destroy_object(ci, Int(oid))
+        if Int(CL_DDEV[ci]) == Int(oid):
+            CL_DDEV[ci] = 0
+        end
     end
-    # start_drag(0), set_selection(1): accepted; nothing is offered back.
+    # start_drag(0): accepted, no drag session on our side.
     return None
 end
 
 function wl_data_source_request(cli, oid, opcode, body):
     ci = Int(cli)
-    if opcode == 1:
+    if opcode == 0:
+        # offer(mime_type)
+        call DS_CI.append(ci)
+        call DS_ID.append(Int(oid))
+        call DS_MIME.append(w_read_string(body, 0))
+    elif opcode == 1:
         call wl_destroy_object(ci, Int(oid))
+        di = 0
+        while di < len(DS_CI):
+            if Int(DS_CI[di]) == ci and Int(DS_ID[di]) == Int(oid):
+                call DS_CI.pop(di)
+                call DS_ID.pop(di)
+                call DS_MIME.pop(di)
+            else:
+                di = di + 1
+            end
+        end
+        if Int(SEL_OWNER[0]) == ci and Int(SEL_SRC[0]) == Int(oid):
+            SEL_OWNER[0] = 0 - 1
+            SEL_SRC[0] = 0
+        end
     end
+    return None
+end
+
+# Requests on a server-allocated wl_data_offer id.
+function wl_data_offer_request(cli, oid, opcode, body, fds):
+    ci = Int(cli)
+    if opcode == 1:
+        # receive(mime_type, fd): the pasting client handed us a pipe.
+        if len(fds) == 0:
+            return None
+        end
+        pfd = Int(fds[0])
+        call fds.pop(0)
+        mime = w_read_string(body, 0)
+        owner = Int(SEL_OWNER[0])
+        if owner == 0 - 2:
+            # The desktop owns it: write the text and close.
+            text = String(WL_CLIP[0])
+            data = ByteArray()
+            i = 0
+            while i < len(text):
+                c = ord(text[i])
+                if c < 256:
+                    call data.append(c)
+                else:
+                    # UTF-8 for the codepoints a terminal can produce.
+                    if c < 2048:
+                        call data.append(192 + c // 64)
+                        call data.append(128 + c % 64)
+                    else:
+                        call data.append(224 + c // 4096)
+                        call data.append(128 + c // 64 % 64)
+                        call data.append(128 + c % 64)
+                    end
+                end
+                i = i + 1
+            end
+            if len(data) > 0:
+                # A pasting client that goes away mid-write only raises here.
+                safe:
+                    call fd.write(pfd, data, len(data))
+                end
+            end
+            call unixsock.close_fd(pfd)
+            return None
+        end
+        if owner < 0 or owner >= len(CL_FD) or Int(CL_ALIVE[owner]) == 0:
+            call unixsock.close_fd(pfd)
+            return None
+        end
+        # A client owns it: hand the descriptor straight to its source, so
+        # the two clients copy between themselves and no bytes pass here.
+        bd = ByteArray()
+        call w_append_string(bd, mime)
+        call cl_post_fd(owner, Int(SEL_SRC[0]), 1, bd, pfd, 0)
+    end
+    # accept(0), destroy(2), finish(3), set_actions(4): nothing to do.
     return None
 end
 
@@ -1936,6 +2322,10 @@ end
 # One request from a client, already framed.
 function wl_dispatch(cli, oid, opcode, body, fds):
     ci = Int(cli)
+    if Int(oid) >= SERVER_ID_BASE:
+        call wl_data_offer_request(cli, oid, opcode, body, fds)
+        return None
+    end
     kind = cl_kind(ci, Int(oid))
     if kind == WO_DISPLAY:
         call wl_display_request(cli, oid, opcode, body)
@@ -2067,6 +2457,9 @@ function wl_poll():
             call wl_read_client(i)
         end
         i = i + 1
+    end
+    safe:
+        call wl_clip_tick()
     end
     return None
 end

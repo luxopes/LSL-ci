@@ -25,6 +25,7 @@ SYS_LISTEN = 50
 SYS_SOCKETPAIR = 53
 SYS_MEMFD_CREATE = 319
 SYS_MUNMAP = 11
+SYS_PIPE2 = 293
 
 AF_UNIX = 1
 SOCK_STREAM = 1
@@ -171,21 +172,48 @@ function send_bytes(handle, payload, count):
     return send_fd(handle, payload, count, 0 - 1)
 end
 
-# Send `count` bytes starting at `offset` inside the payload — what a
-# buffered writer needs after a short send on a nonblocking socket.
-function send_from(handle, payload, offset, count):
+# Send `count` bytes starting at `offset` inside the payload, optionally
+# with ONE descriptor attached (descriptor < 0 = none). This is what a
+# buffered writer needs after a short send on a nonblocking socket, and
+# what keeps an fd-carrying message in its proper place in the stream.
+function send_from_fd(handle, payload, offset, count, descriptor):
     iov = __lsl_byte_zeros(16)
+    ctrl = __lsl_byte_zeros(24)
     msg = __lsl_byte_zeros(56)
     call u_put64(iov, 0, u_address(payload) + Int(offset))
     call u_put64(iov, 8, Int(count))
     call u_put64(msg, 16, u_address(iov))
     call u_put64(msg, 24, 1)
+    if Int(descriptor) >= 0:
+        call u_put64(ctrl, 0, 20)
+        call u_put32(ctrl, 8, SOL_SOCKET)
+        call u_put32(ctrl, 12, SCM_RIGHTS)
+        call u_put32(ctrl, 16, Int(descriptor))
+        call u_put64(msg, 32, u_address(ctrl))
+        call u_put64(msg, 40, 24)
+    end
     return __lsl_syscall(SYS_SENDMSG, Int(handle), u_address(msg), 0, 0)
+end
+
+function send_from(handle, payload, offset, count):
+    return send_from_fd(handle, payload, offset, count, 0 - 1)
 end
 
 # Unmap a shared-memory pool once no buffer references it.
 function munmap(address, size):
     return __lsl_syscall(SYS_MUNMAP, Int(address), Int(size), 0, 0)
+end
+
+# A pipe with a nonblocking read end: [read, write], or [] on failure.
+# This is the transport a clipboard uses — the owner writes the selection
+# into the write end and we read it without ever blocking the frame loop.
+function pipe_nonblock():
+    fds = __lsl_byte_zeros(8)
+    rc = __lsl_syscall(SYS_PIPE2, u_address(fds), O_NONBLOCK, 0, 0)
+    if rc < 0:
+        return []
+    end
+    return [Int(u_get32(fds, 0)), Int(u_get32(fds, 4))]
 end
 
 # Receive up to `count` bytes into `payload`. Any descriptors that arrive
