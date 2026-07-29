@@ -316,6 +316,16 @@
 </main>
 
 <script>
+function guidePageName(href) {
+  let match = href.match(/^([A-Za-z0-9-]+)\.md$/);
+  if (!match) return null;
+  let name = match[1];
+  if (name === 'README' || name === 'reference' || /^\d\d-[a-z0-9-]+$/.test(name)) {
+    return name;
+  }
+  return null;
+}
+
 // ── Simple Markdown → HTML renderer ──
 function renderMarkdown(md) {
   // Escape HTML in non-code contexts first
@@ -344,8 +354,13 @@ function renderMarkdown(md) {
   // Images must be handled before links because their syntax contains a link.
   md = md.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
 
-  // Links: [text](url)
-  md = md.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+  // Links between guide pages stay in the application instead of opening the
+  // raw Markdown file. Other links keep their original destination.
+  md = md.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, href) => {
+    let page = guidePageName(href);
+    if (page) return `<a href="#${page}" data-page="${page}">${label}</a>`;
+    return `<a href="${href}">${label}</a>`;
+  });
 
   // Headers
   md = md.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
@@ -520,6 +535,15 @@ document.querySelectorAll('#sidebar a').forEach(a => {
   });
 });
 
+// Links rendered from Markdown are created after page load, so handle them
+// through the stable content container.
+document.getElementById('content').addEventListener('click', e => {
+  let link = e.target.closest('a[data-page]');
+  if (!link) return;
+  e.preventDefault();
+  loadPage(link.dataset.page);
+});
+
 // ── Welcome cards ──
 function buildWelcomeGrid() {
   let grid = document.getElementById('welcome-grid');
@@ -550,7 +574,7 @@ buildWelcomeGrid();
 if (location.hash) {
   let page = location.hash.slice(1);
   if (page.endsWith('.md')) page = page.slice(0, -3);
-  if (/^\d\d-/.test(page) || page === 'README') {
+  if (/^\d\d-/.test(page) || page === 'README' || page === 'reference') {
     loadPage(page);
   }
 }

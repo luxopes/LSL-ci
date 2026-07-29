@@ -60,13 +60,12 @@ k čemu slouží, jak se zapisují a jak fungují.
   seznam každé built-in funkce, metody a exportu standardních modulů s
   popisem.
 
-## Další dokumentace
+## Doporučené rozcestníky
 
-- [Jazyková specifikace](../language.md) — formální definice jazyka
-- [Praktické programování](../programming.md) — uživatelský průvodce
-- [GUI a 2D grafika](../gui.md) — stručný přehled GUI
-- [Konfigurace](../configuration.md) — konfigurační systém
-- [AI aplikace](../ai.md) — AI orchestrace
-- [Správa systému](../system.md) — LuxOS/Debian správa
-- [Vývoj compileru](../compiler-development.md) — průvodce vývojem compileru
-- [Runtime ABI](../../compiler/runtime-abi.md) — interní ABI specifikace
+- [Kompletní reference](reference.md) — funkce, typy, metody a moduly
+- [Základy jazyka](02-language-basics.md) — syntaxe a řízení programu
+- [Konfigurační systém](08-configuration-system.md) — deklarativní konfigurace
+- [GUI programování](09-gui-programming.md) — okna, grafika a widgety
+- [AI aplikace](10-ai-applications.md) — AI orchestrace
+- [Výkon a optimalizace](11-performance-and-optimization.md) — měření a optimalizace
+- [Interní architektura compileru](12-compiler-internals.md) — compiler, runtime a ABI

@@ -381,6 +381,6 @@ reprodukovatelnou konfiguraci.
 
 ## Kam dál
 
-- [Jazyková specifikace](../language.md) — formální definice jazyka.
-- [Compiler development](../compiler-development.md) — podrobný průvodce vývojem compileru.
-- [Runtime ABI](../../compiler/runtime-abi.md) — interní ABI specifikace.
+- [Kompletní reference](reference.md) — funkce, typy, metody a moduly.
+- [Výkon a optimalizace](11-performance-and-optimization.md) — měření, profily a optimalizační techniky.
+- [Přehled průvodců](README.md) — všechny kapitoly na jednom místě.
