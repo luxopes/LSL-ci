@@ -355,7 +355,7 @@ function collect_module(name, owner_path, cache, output):
             dependency = statement["module"]
             dependency_prefix = collect_module(dependency, path, cache, output)
             if statement["symbol"] == None:
-                namespaces[module_alias(dependency)] = dependency_prefix
+                namespaces[statement["alias"]] = dependency_prefix
             else:
                 imported_names[statement["alias"]] = dependency_prefix + statement["symbol"]
             end
@@ -395,7 +395,7 @@ function link(path, source):
             dependency = statement["module"]
             prefix = collect_module(dependency, path, cache, linked)
             if statement["symbol"] == None:
-                namespaces[module_alias(dependency)] = prefix
+                namespaces[statement["alias"]] = prefix
             else:
                 imported_names[statement["alias"]] = prefix + statement["symbol"]
             end

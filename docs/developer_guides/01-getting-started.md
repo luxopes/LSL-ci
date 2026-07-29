@@ -79,7 +79,7 @@ adresáře:
 lsl version
 ```
 
-Mělo by vypsat číslo verze, např. `0.5`.
+Mělo by vypsat číslo verze, tedy `0.6`.
 
 ## První program
 
@@ -146,7 +146,7 @@ Spusťte LSL bez argumentů:
 Objeví se:
 
 ```text
-Lux Simple Lang 0.5 interactive source mode
+Lux Simple Lang 0.6 interactive source mode
 Enter code; type exit on its own line to compile and run.
 >>>
 ```

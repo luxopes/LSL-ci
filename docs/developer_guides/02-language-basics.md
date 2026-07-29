@@ -282,7 +282,7 @@ Operátor je značka, která říká, co se má s hodnotami udělat. Například
 | `/` | Dělení (Float) | `7 / 2` | `3.5` |
 | `//` | Celočíselné dělení | `7 // 2` | `3` |
 | `%` | Zbytek po dělení | `7 % 2` | `1` |
-| `**` | Mocnina | `2 ** 10` | `1024` |
+| `^` | Mocnina | `2 ^ 10` | `1024` |
 | `-x` | Opačné číslo | `-5` | `-5` |
 
 ### Porovnávací operátory — výsledkem je Bool (True/False)
@@ -331,8 +331,11 @@ závorky — ty mají vždy přednost a zpřehlední kód:
 vysledek = (a + b) * (c - d)   # závorky vyjasní, co se počítá s čím
 ```
 
-Pořadí od nejvyšší priority k nejnižší: `**` → `-x` → `* / // %` →
+Pořadí od nejvyšší priority k nejnižší: `^` → `-x` → `* / // %` →
 `+ -` → porovnávací → `not` → `and` → `or`.
+
+Mocnina je pravostranně asociativní: `2 ^ 3 ^ 2` znamená
+`2 ^ (3 ^ 2)`, tedy `512`. Syntaxe `**` byla ve verzi 0.6 odstraněna.
 
 ## Jak funguje výpis: print a printl
 
@@ -355,28 +358,30 @@ Co `print` automaticky udělá:
 4. ... a tak dále pro všechny argumenty.
 5. Na konci vždy přidá **nový řádek** (jako byste stiskli Enter).
 
-### printl — formátovaný výpis
+### Lux String a printl — formátovaný text
 
-`printl` (print-line-formatted) vezme jeden textový argument a nahradí v
-něm výrazy ve složených závorkách `{...}`:
+Prefix `l` vytvoří normální String a nahradí v něm výrazy ve složených
+závorkách `{...}`. Výsledek lze uložit, vrátit nebo předat dál:
 
 ```lsl
 jmeno = "Karel"
 vek = 30
-printl "Jmenuji se {jmeno} a je mi {vek} let."
+text = l"Jmenuji se {jmeno} a je mi {vek} let."
+print text
 # Vypíše: Jmenuji se Karel a je mi 30 let.
 ```
 
 Uvnitř `{...}` může být jakýkoli výraz:
 
 ```lsl
-printl "Za rok bude {vek + 1}"
-printl "Délka jména: {len(jmeno)}"
+next = l"Za rok bude {vek + 1}"
+detail = l"Délka jména: {len(jmeno)}"
+literal = l"Doslovné závorky: {{jmeno}}"
 ```
 
-`printl` přijímá přesně jeden argument (ten text se závorkami). Pokud
-potřebujete vypsat víc věcí jednoduše, použijte `print`; pokud chcete
-přehledně vložit hodnoty do textu, použijte `printl`.
+Kompatibilní zkratka `printl "Ahoj {jmeno}"` interpoluje a rovnou vypíše
+řádek. Pro nový kód, který potřebuje s textem dál pracovat, používejte
+first-class tvar `l"..."`.
 
 ## Jak funguje vstup: input
 

@@ -1,6 +1,6 @@
 # Pure-LSL native runtime ABI
 
-Stav: interní Linux x86_64 ABI verze 0.5. Není to veřejné plugin ABI.
+Stav: interní Linux x86_64 ABI verze 0.6. Není to veřejné plugin ABI.
 
 ## Strojová hranice
 

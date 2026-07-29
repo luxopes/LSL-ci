@@ -33,6 +33,7 @@ for value in [7.0, 8.0, 9.0, 10.0, 11.0, 12.0]:
 end
 product = tensor.matmul_data(left, right, 2, 3, 2)
 print type(product), String(product), tensor.dot_data(product, product)
+print tensor.sum_data(product)
 x = float_zeros(3)
 y = float_zeros(3)
 call float_fill(x, 2.0)

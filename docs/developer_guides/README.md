@@ -1,9 +1,9 @@
 # LSL — Vývojářské příručky
 
-> **LSL 0.5 — First self-hosted release.**
+> **LSL 0.6 — self-hosted release s Lux Stringy, aliasy modulů a CUDA worker backendem.**
 > [Stáhnout binárky, zdrojový kód nebo offline manuál](index.html#downloads).
 
-Podrobné průvodce jazykem LSL (Lux Simple Lang) 0.5. Každá kapitola
+Podrobné průvodce jazykem LSL (Lux Simple Lang) 0.6. Každá kapitola
 vysvětluje jednu oblast od základů — text předpokládá, že s programováním
 teprve začínáte. Všechny konstrukty jsou popsány srozumitelně: co dělají,
 k čemu slouží, jak se zapisují a jak fungují.

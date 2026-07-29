@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta name="description" content="LSL 0.5 — první self-hosted vydání Lux Simple Lang. Binární balík pro Linux x86_64, zdrojový kód a kompletní manuál.">
-<title>LSL 0.5 — First self-hosted release</title>
+<meta name="description" content="LSL 0.6 — self-hosted Lux Simple Lang s Lux Stringy, aliasy modulů a volitelným CUDA backendem.">
+<title>LSL 0.6 — Self-hosted CUDA-ready release</title>
 <style>
   :root {
     --bg: #0d1117;
@@ -415,8 +415,8 @@
 <button id="menu-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
 
 <nav id="sidebar">
-  <div class="logo">LSL <span>0.5</span></div>
-  <a href="./" data-home="home">🚀 Vydání 0.5</a>
+  <div class="logo">LSL <span>0.6</span></div>
+  <a href="./" data-home="home">🚀 Vydání 0.6</a>
   <a href="./#downloads" data-home="downloads">↓ Ke stažení</a>
   <a href="#" data-page="README">📘 Přehled manuálu</a>
   <div class="section">Základy</div>
@@ -442,35 +442,35 @@
 <main id="content">
   <div class="release-shell">
     <section class="welcome-hero">
-      <div class="release-kicker"><span class="release-version">0.5</span> First self-hosted release</div>
+      <div class="release-kicker"><span class="release-version">0.6</span> Self-hosted CUDA-ready release</div>
       <h1>Lux Simple Lang</h1>
-      <p>První veřejné self-hosted vydání LSL. Compiler je napsaný v LSL, přímo vytváří statické Linux x86_64 ELF soubory a nepotřebuje C, libc, assembler ani linker.</p>
+      <p>Self-hosted LSL s first-class Lux Stringy, aliasy modulů, rychlejším codegenem a volitelnou CUDA akcelerací s bezpečným CPU fallbackem.</p>
       <div class="release-actions">
-        <a class="release-button primary" href="downloads/lsl-0.5-linux-x86_64.tar.gz" download>Stáhnout pro Linux x86_64</a>
+        <a class="release-button primary" href="downloads/lsl-0.6-linux-x86_64.tar.gz" download>Stáhnout pro Linux x86_64</a>
         <a class="release-button" href="#README" data-page="README">Otevřít manuál</a>
       </div>
-      <div class="release-command"><span class="prompt">$</span> tar -xzf lsl-0.5-linux-x86_64.tar.gz
-<span class="prompt">$</span> ./lsl-0.5/bin/lsl version
-0.5</div>
+      <div class="release-command"><span class="prompt">$</span> tar -xzf lsl-0.6-linux-x86_64.tar.gz
+<span class="prompt">$</span> ./lsl-0.6/bin/lsl version
+0.6</div>
     </section>
 
     <section class="release-section" id="downloads">
       <h2>Ke stažení</h2>
       <p class="release-lead">Vydání obsahuje bootstrapping binárky, úplný zdrojový strom a český vývojářský manuál.</p>
       <div class="download-grid">
-        <a class="download-card" href="downloads/lsl-0.5-linux-x86_64.tar.gz" download>
+        <a class="download-card" href="downloads/lsl-0.6-linux-x86_64.tar.gz" download>
           <span class="download-icon">⬡</span>
           <h3>Binární balík</h3>
           <p>Spustitelné <code>lsl</code>, <code>lslc</code>, nástroje a kompletní standardní knihovna.</p>
           <span class="download-meta">Linux · x86_64 · tar.gz ↓</span>
         </a>
-        <a class="download-card" href="downloads/lsl-0.5-source.tar.gz" download>
+        <a class="download-card" href="downloads/lsl-0.6-source.tar.gz" download>
           <span class="download-icon">⌘</span>
           <h3>Repozitář</h3>
           <p>Zdroj compileru, runtime, stdlib, testy, příklady a auditovatelný binary seed.</p>
-          <span class="download-meta">LSL 0.5 · source · tar.gz ↓</span>
+          <span class="download-meta">LSL 0.6 · source · tar.gz ↓</span>
         </a>
-        <a class="download-card" href="downloads/lsl-0.5-manual.zip" download>
+        <a class="download-card" href="downloads/lsl-0.6-manual.zip" download>
           <span class="download-icon">▤</span>
           <h3>Manuál offline</h3>
           <p>Všech 12 kapitol a kompletní reference v samostatném archivu.</p>
@@ -497,7 +497,7 @@
       <div class="welcome-grid" id="welcome-grid"></div>
     </section>
 
-    <footer class="release-footer">LSL 0.5 · First self-hosted release · Linux x86_64 · MIT License</footer>
+    <footer class="release-footer">LSL 0.6 · Self-hosted CUDA-ready release · Linux x86_64 · MIT License</footer>
   </div>
 </main>
 
@@ -511,6 +511,8 @@ function guidePageName(href) {
     '../gui.md': '09-gui-programming',
     '../configuration.md': '08-configuration-system',
     '../ai.md': '10-ai-applications',
+    '../cuda.md': '11-performance-and-optimization',
+    '../release-0.6.md': 'README',
     '../system.md': '08-configuration-system',
     '../compiler-development.md': '12-compiler-internals',
     '../../compiler/runtime-abi.md': '12-compiler-internals'

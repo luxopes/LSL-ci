@@ -16,7 +16,7 @@ který funguje. Teprve potom ho zrychlujte — a po každé změně ověřte,
 
 ## Co compiler optimalizuje automaticky
 
-Codegen LSL 0.5 bezpečně provádí tyto optimalizace (žádná nemění
+Codegen LSL 0.6 bezpečně provádí tyto optimalizace (žádná nemění
 pozorovatelnou sémantiku):
 
 ### 1. Constant folding (skládání konstant)
@@ -93,6 +93,13 @@ Jakmile funkci předáte jako callback, zůstane na obecném tagged ABI.
 
 Compiler používá nejkratší možné x86-64 immediates, stack offsety a memory
 displacements.
+
+### 9. Malé mocniny a konstantní Stringy
+
+`x ^ 0` až `x ^ 4` se emitují inline bez volání obecného power runtime a
+základ se přitom vyhodnotí právě jednou. Strom složený pouze z konstantních
+Stringů se spojí při překladu. Lux String používá vyvážený concat strom, takže
+šablona s mnoha poli nekopíruje rostoucí prefix kvadraticky.
 
 ## Co compiler NEoptimalizuje
 
@@ -450,10 +457,41 @@ Pro přesné výsledky:
   peak RSS, vstupní rozměr a checksum/stdout.
 - Oddělte compile cold start od runtime.
 
-## GPU a další backendy
+## CUDA backend
 
-GPU/device backend, SIMD autovektorizace a širší Tensor operace nejsou
-v LSL 0.5 hotové. Jsou plánované jako budoucí rozšíření.
+LSL 0.6 přidává volitelný modul `cuda` a automaticky přes něj směruje Tensor
+operace `sum`, `dot`, `axpy` a `matmul`. Samotný self-hosted ELF zůstává bez
+závislosti na libc a CUDA knihovnách: NVIDIA CUDA Driver/Runtime vlastní
+samostatný executable worker. Host a worker komunikují přes verzovaný
+`lsl-cuda-v1` JSON protokol.
+
+```text
+LSL_CUDA_WORKER=/opt/lsl-cuda-worker
+LSL_CUDA=auto                 # auto, required, off
+LSL_CUDA_MIN_ELEMENTS=4096    # amortizace startu procesu a serializace
+```
+
+```lsl
+load cuda
+load tensor
+
+print cuda.available(), cuda.devices(), cuda.backend()
+product = tensor.matmul_data(a, b, m, k, n)
+```
+
+- `auto`: při chybě nebo absenci workeru bezpečně použije CPU kernel.
+- `required`: absence nebo chyba CUDA skončí `Cuda*Error`.
+- `off`: CUDA se vůbec nezkouší.
+
+Pro malé vstupy je CPU rychlejší kvůli startu procesu a JSON přenosu; práh
+řídí `LSL_CUDA_MIN_ELEMENTS`. Worker má implementovat operace
+`cuda.devices`, `cuda.sum`, `cuda.dot`, `cuda.axpy` a `cuda.matmul`.
+Conformance používá skutečný testovací worker v samostatném procesu, takže
+GPU dispatch, protokol, validace tvarů i fallback jsou testované i na stroji
+bez NVIDIA GPU.
+
+Přímý in-process CUDA driver ABI, zero-copy device buffers a SIMD
+autovektorizace zatím nejsou součástí 0.6.
 
 ## Kam dál
 

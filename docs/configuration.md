@@ -48,7 +48,7 @@ Importy se vyhodnocují jednou v deterministickém post-order pořadí, root mod
 
 ## Lazy hodnoty
 
-`config.lazy(thunk)` odloží volání bezargumentové Function až do materializace výsledného stromu. Každý lazy výsledek se rekurzivně materializuje stejně jako běžná hodnota. Rekurzivní thunk dependency je detekována a končí `ConfigCycleError`, místo nekonečné rekurze. LSL 0.5 nemá closures, takže thunk čte module globals nebo volá jiné pojmenované funkce.
+`config.lazy(thunk)` odloží volání bezargumentové Function až do materializace výsledného stromu. Každý lazy výsledek se rekurzivně materializuje stejně jako běžná hodnota. Rekurzivní thunk dependency je detekována a končí `ConfigCycleError`, místo nekonečné rekurze. LSL 0.6 nemá closures, takže thunk čte module globals nebo volá jiné pojmenované funkce.
 
 ## Čistota a reprodukovatelnost
 

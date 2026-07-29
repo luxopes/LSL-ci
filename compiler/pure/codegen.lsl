@@ -166,7 +166,7 @@ function infer_expression_type(syntax, types, function_returns):
             elif left == "Any" or right == "Any":
                 return "Any"
             end
-        elif syntax["operator"] == "**":
+        elif syntax["operator"] == "^":
             if left == "Float" or right == "Float":
                 return "Float"
             elif left == "Any" or right == "Any":
@@ -548,8 +548,8 @@ function constant_int_expression(syntax):
         return [True, left[1] // right[1]]
     elif operator == "%" and right[1] != 0:
         return [True, left[1] % right[1]]
-    elif operator == "**" and right[1] >= 0 and right[1] <= 63:
-        return [True, left[1] ** right[1]]
+    elif operator == "^" and right[1] >= 0 and right[1] <= 63:
+        return [True, left[1] ^ right[1]]
     end
     return [False, 0]
 end
@@ -619,6 +619,23 @@ function constant_truth_expression(syntax):
         index += 1
     end
     return [True, True]
+end
+
+function constant_string_expression(syntax):
+    if syntax == None:
+        return [False, ""]
+    end
+    if syntax["kind"] == "literal" and syntax["literal_kind"] == "string":
+        return [True, syntax["value"]]
+    elif syntax["kind"] != "binary" or syntax["operator"] != "+":
+        return [False, ""]
+    end
+    left = constant_string_expression(syntax["left"])
+    right = constant_string_expression(syntax["right"])
+    if left[0] and right[0]:
+        return [True, left[1] + right[1]]
+    end
+    return [False, ""]
 end
 
 function constant_if_body(statement):
@@ -980,6 +997,11 @@ function emit_expression(generator, syntax):
     output = generator["builder"]
     kind = syntax["kind"]
     if kind == "binary" or kind == "unary":
+        constant_string = constant_string_expression(syntax)
+        if constant_string[0]:
+            call emit_string_pointer(generator, constant_string[1])
+            return
+        end
         constant_integer = constant_int_expression(syntax)
         if constant_integer[0]:
             call assembler.emit(output, x86_64.mov_imm64(0, constant_integer[1]))
@@ -1221,10 +1243,10 @@ function emit_expression(generator, syntax):
             return
         end
         if expression_type == "Float":
-            if operator == "**":
+            if operator == "^":
                 exponent_type = infer_expression_type(syntax["right"], generator["types"], generator["function_returns"])
                 if exponent_type != "Int" and exponent_type != "Any":
-                    call unsupported(generator["path"], generator["lines"], syntax, "Float ** requires an Int exponent", "use an Int exponent such as x ** 3")
+                    call unsupported(generator["path"], generator["lines"], syntax, "Float ^ requires an Int exponent", "use an Int exponent such as x ^ 3")
                 end
                 call emit_float_expression(generator, syntax["left"])
                 call assembler.emit(output, x86_64.push(0))
@@ -1301,11 +1323,11 @@ function emit_expression(generator, syntax):
                 call assembler.relative(output, [232], dynamic_numeric_runtime(generator, "runtime_mul_any"))
             end
             return
-        elif operator == "**" and expression_type == "Any":
-            # Dynamic ** : base may be boxed Float or raw Int; Int exponent.
+        elif operator == "^" and expression_type == "Any":
+            # Dynamic ^ : base may be boxed Float or raw Int; Int exponent.
             any_exp_type = infer_expression_type(syntax["right"], generator["types"], generator["function_returns"])
             if any_exp_type != "Int" and any_exp_type != "Any":
-                call unsupported(generator["path"], generator["lines"], syntax, "** requires an Int exponent", "use an Int exponent such as x ** 3")
+                call unsupported(generator["path"], generator["lines"], syntax, "^ requires an Int exponent", "use an Int exponent such as x ^ 3")
             end
             call emit_expression(generator, syntax["left"])
             call emit_dynamic_boundary_box(generator, syntax["left"])
@@ -1379,6 +1401,24 @@ function emit_expression(generator, syntax):
                 end
             end
             return
+        elif operator == "^" and right_constant[0] and right_constant[1] >= 0 and right_constant[1] <= 4:
+            # Small fixed powers are cheaper inline than the generic
+            # exponentiation-by-squaring call. Evaluate the base exactly once.
+            small_power = right_constant[1]
+            call emit_expression(generator, syntax["left"])
+            if small_power == 0:
+                call assembler.emit(output, x86_64.mov_imm64(0, 1))
+            elif small_power == 2:
+                call assembler.emit(output, x86_64.imul_reg_reg(0, 0))
+            elif small_power == 3:
+                call assembler.emit(output, x86_64.move_reg_reg(1, 0))
+                call assembler.emit(output, x86_64.imul_reg_reg(0, 0))
+                call assembler.emit(output, x86_64.imul_reg_reg(0, 1))
+            elif small_power == 4:
+                call assembler.emit(output, x86_64.imul_reg_reg(0, 0))
+                call assembler.emit(output, x86_64.imul_reg_reg(0, 0))
+            end
+            return
         end
         # Avoid the push/pop spill when an operand is a literal or variable leaf.
         if is_int_leaf(generator, syntax["right"]):
@@ -1400,7 +1440,7 @@ function emit_expression(generator, syntax):
             call assembler.emit(output, x86_64.sub_reg_reg(0, 1))
         elif operator == "*":
             call assembler.emit(output, x86_64.imul_reg_reg(0, 1))
-        elif operator == "**":
+        elif operator == "^":
             power_ready = label_name(generator, "power_ready")
             call assembler.emit(output, x86_64.cmp_reg_imm8(1, 0))
             call assembler.relative(output, [15, 141], power_ready)
@@ -2442,7 +2482,7 @@ function emit_expression(generator, syntax):
                 call assembler.label(output, done_label)
                 return
             elif target["name"] == "help":
-                call emit_static_write(generator, "Lux Simple Lang (LSL) 0.5" + chr(10) + "functions: print printl input for loop safe if elif else try class ctype function type del len help" + chr(10) + "types: Bool Int Float String List Tuple RealArray IntArray FloatArray ByteArray Dictionary" + chr(10) + "modules: os time json process config ai tensor native" + chr(10) + "docs: see README.md and docs/" + chr(10))
+                call emit_static_write(generator, "Lux Simple Lang (LSL) 0.6" + chr(10) + "functions: print printl input for loop safe if elif else try class ctype function type del len help" + chr(10) + "types: Bool Int Float String List Tuple RealArray IntArray FloatArray ByteArray Dictionary" + chr(10) + "modules: os time json process config ai tensor cuda native" + chr(10) + "docs: see README.md and docs/" + chr(10))
                 call assembler.emit(output, x86_64.mov_imm64(0, 0))
                 return
             elif target["name"] == "abs":
@@ -3037,35 +3077,6 @@ function emit_print_value(generator, expression):
     end
 end
 
-function emit_formatted_text(generator, text):
-    index = 0
-    literal_start = 0
-    while index < len(text):
-        if text[index] == "{":
-            if index > literal_start:
-                call emit_static_write(generator, text[literal_start:index])
-            end
-            closing = index + 1
-            while closing < len(text) and text[closing] != "}":
-                closing += 1
-            end
-            if closing >= len(text):
-                call unsupported(generator["path"], generator["lines"], {"line": 1, "column": 1, "end_column": 1}, "unclosed printl interpolation", "add a closing brace")
-            end
-            expression_source = "print " + text[index + 1:closing] + chr(10)
-            parsed = parser.parse(generator["path"], expression_source)
-            call emit_print_value(generator, parsed[0]["expressions"][0])
-            index = closing + 1
-            literal_start = index
-        else:
-            index += 1
-        end
-    end
-    if literal_start < len(text):
-        call emit_static_write(generator, text[literal_start:len(text)])
-    end
-end
-
 function emit_statements(generator, statements, break_label, continue_label, return_label):
     for statement in statements:
         kind = statement["kind"]
@@ -3207,17 +3218,13 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             end
         elif kind == "print":
             expressions = statement["expressions"]
-            if statement["formatted"] and len(expressions) == 1 and expressions[0]["kind"] == "literal" and expressions[0]["literal_kind"] == "string":
-                call emit_formatted_text(generator, expressions[0]["value"])
-            else:
-                index = 0
-                while index < len(expressions):
-                    if index > 0:
-                        call emit_static_write(generator, " ")
-                    end
-                    call emit_print_value(generator, expressions[index])
-                    index += 1
+            index = 0
+            while index < len(expressions):
+                if index > 0:
+                    call emit_static_write(generator, " ")
                 end
+                call emit_print_value(generator, expressions[index])
+                index += 1
             end
             call emit_static_write(generator, chr(10))
         elif kind == "expression":

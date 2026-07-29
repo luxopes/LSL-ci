@@ -109,11 +109,102 @@ function parse_arguments(parser):
     return arguments
 end
 
+function interpolation_literal(token, value):
+    result = node("literal", token)
+    result["literal_kind"] = "string"
+    result["value"] = value
+    return result
+end
+
+function interpolation_value(path, value, token):
+    parts = []
+    literal = ""
+    index = 0
+    while index < len(value):
+        character = value[index]
+        if character == "{" and index + 1 < len(value) and value[index + 1] == "{":
+            literal += "{"
+            index += 2
+        elif character == "}" and index + 1 < len(value) and value[index + 1] == "}":
+            literal += "}"
+            index += 2
+        elif character == "{":
+            if len(literal) > 0:
+                parts.append(interpolation_literal(token, literal))
+                literal = ""
+            end
+            closing = index + 1
+            depth = 1
+            quote = ""
+            while closing < len(value) and depth > 0:
+                current_character = value[closing]
+                if quote != "":
+                    if current_character == quote:
+                        quote = ""
+                    end
+                elif current_character == "\"" or current_character == "'":
+                    quote = current_character
+                elif current_character == "{":
+                    depth += 1
+                elif current_character == "}":
+                    depth -= 1
+                end
+                closing += 1
+            end
+            if depth != 0:
+                call diagnostics.fail(path, token["line"], token["column"], max(1, token["end_column"] - token["column"]), value, "E1112", "unclosed Lux String interpolation", "add a closing brace or use {{ for a literal opening brace")
+            end
+            expression_source = value[index + 1:closing - 1]
+            if len(expression_source.strip()) == 0:
+                call diagnostics.fail(path, token["line"], token["column"], max(1, token["end_column"] - token["column"]), value, "E1113", "empty Lux String interpolation", "put an expression between the braces")
+            end
+            expression_parser = state(path, expression_source)
+            expression = parse_expression(expression_parser)
+            if not check_kind(expression_parser, "eof"):
+                call fail_at(expression_parser, current(expression_parser), "E1114", "unexpected token in Lux String interpolation", "use one expression between the braces")
+            end
+            conversion = node("call", token)
+            conversion["target"] = node("name", token)
+            conversion["target"]["name"] = "String"
+            conversion["arguments"] = [expression]
+            parts.append(conversion)
+            index = closing
+        elif character == "}":
+            call diagnostics.fail(path, token["line"], token["column"], max(1, token["end_column"] - token["column"]), value, "E1115", "unexpected closing brace in Lux String", "use }} for a literal closing brace")
+        else:
+            literal += character
+            index += 1
+        end
+    end
+    if len(literal) > 0 or len(parts) == 0:
+        parts.append(interpolation_literal(token, literal))
+    end
+
+    # A balanced concatenation tree avoids quadratic copying for templates with
+    # many fields while keeping the result a normal first-class String.
+    while len(parts) > 1:
+        merged = []
+        part_index = 0
+        while part_index < len(parts):
+            if part_index + 1 < len(parts):
+                merged.append(binary_node("+", parts[part_index], parts[part_index + 1]))
+            else:
+                merged.append(parts[part_index])
+            end
+            part_index += 2
+        end
+        parts = merged
+    end
+    return parts[0]
+end
+
 function parse_primary(parser):
     token = advance(parser)
     kind = token["kind"]
     value = token["value"]
-    if kind == "string" or kind == "number":
+    if kind == "lux_string":
+        result = interpolation_value(parser[2], value, token)
+    elif kind == "string" or kind == "number":
         result = node("literal", token)
         result["literal_kind"] = kind
         result["value"] = value
@@ -295,8 +386,8 @@ end
 
 function parse_power(parser):
     left = parse_unary(parser)
-    if match(parser, "**"):
-        return binary_node("**", left, parse_power(parser))
+    if match(parser, "^"):
+        return binary_node("^", left, parse_power(parser))
     end
     return left
 end
@@ -555,6 +646,10 @@ function parse_statement(parser):
                 end
             end
         end
+        if formatted and len(expressions) == 1 and expressions[0]["kind"] == "literal" and expressions[0]["literal_kind"] == "string":
+            expressions[0] = interpolation_value(parser[2], expressions[0]["value"], expressions[0])
+            formatted = False
+        end
         call consume_line_end(parser)
         result = node("print", opening)
         result["formatted"] = formatted
@@ -578,11 +673,16 @@ function parse_statement(parser):
         while match(parser, "."):
             name += "." + expect_kind(parser, "name", "E1216", "expected module path component")["value"]
         end
+        module_parts = name.split(".")
+        alias = module_parts[len(module_parts) - 1]
+        if match(parser, "as"):
+            alias = expect_kind(parser, "name", "E1232", "expected module alias")["value"]
+        end
         call consume_line_end(parser)
         result = node("load", opening)
         result["module"] = name
         result["symbol"] = None
-        result["alias"] = None
+        result["alias"] = alias
         return result
     elif match(parser, "from"):
         module = expect_kind(parser, "name", "E1217", "expected module name")

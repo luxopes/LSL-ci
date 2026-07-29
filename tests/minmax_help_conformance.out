@@ -5,8 +5,8 @@
 5
 6 3 1
 survived empty min
-Lux Simple Lang (LSL) 0.5
+Lux Simple Lang (LSL) 0.6
 functions: print printl input for loop safe if elif else try class ctype function type del len help
 types: Bool Int Float String List Tuple RealArray IntArray FloatArray ByteArray Dictionary
-modules: os time json process config ai tensor native
+modules: os time json process config ai tensor cuda native
 docs: see README.md and docs/

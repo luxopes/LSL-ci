@@ -1,5 +1,7 @@
-# Pure-LSL dense CPU tensor with zero-copy views over shared RealArray or
-# native-performance FloatArray storage.
+# Pure-LSL dense CPU/CUDA tensor with zero-copy views over shared RealArray or
+# native-performance FloatArray storage and optional CUDA worker dispatch.
+
+load cuda
 
 function element_count(shape):
     count = 1
@@ -102,7 +104,7 @@ class Tensor(True):
 
     function sum(self):
         call self.require_contiguous()
-        return float_sum(FloatArray(self.data))
+        return cuda.sum_data(FloatArray(self.data))
     end
 
     function dot(self, other_data):
@@ -110,12 +112,12 @@ class Tensor(True):
         if self.rank() != 1:
             Error(TensorShapeError: "dot requires a one-dimensional Tensor")
         end
-        return float_dot(FloatArray(self.data), FloatArray(other_data))
+        return cuda.dot_data(FloatArray(self.data), FloatArray(other_data))
     end
 
     function axpy(self, alpha, x_data):
         call self.require_contiguous()
-        call float_axpy(Float(alpha), FloatArray(x_data), FloatArray(self.data))
+        call cuda.axpy_data(Float(alpha), FloatArray(x_data), FloatArray(self.data))
     end
 
     function matmul(self, other_data, other_shape):
@@ -130,7 +132,7 @@ class Tensor(True):
             Error(TensorShapeError: "matmul inner dimensions differ")
         end
         n = Int(shape[1])
-        data = float_matmul(FloatArray(self.data), FloatArray(other_data), m, k, n)
+        data = cuda.matmul_data(FloatArray(self.data), FloatArray(other_data), m, k, n)
         return Tensor(data, [m, n], [n, 1], 0, "Float64")
     end
 end
@@ -153,14 +155,18 @@ end
 
 # Raw contiguous kernels are also exported directly so performance-sensitive
 # code does not pay class/member dispatch and can retain static FloatArray types.
+function sum_data(data):
+    return cuda.sum_data(FloatArray(data))
+end
+
 function dot_data(left, right):
-    return float_dot(FloatArray(left), FloatArray(right))
+    return cuda.dot_data(FloatArray(left), FloatArray(right))
 end
 
 function axpy_data(alpha, x, y):
-    call float_axpy(Float(alpha), FloatArray(x), FloatArray(y))
+    call cuda.axpy_data(Float(alpha), FloatArray(x), FloatArray(y))
 end
 
 function matmul_data(left, right, m, k, n):
-    return float_matmul(FloatArray(left), FloatArray(right), Int(m), Int(k), Int(n))
+    return cuda.matmul_data(FloatArray(left), FloatArray(right), Int(m), Int(k), Int(n))
 end

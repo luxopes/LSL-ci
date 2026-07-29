@@ -51,6 +51,7 @@ load raster_kernel_conformance
 load dictionary_key_conformance
 load native_elf_conformance
 load tensor_conformance
+load cuda_conformance
 load ai_conformance
 load capture_stream_conformance
 load capture_result_conformance
@@ -58,3 +59,4 @@ load capture_input_conformance
 load input_bare_conformance
 load process_status_conformance
 load plugin_process_conformance
+load language_06_conformance

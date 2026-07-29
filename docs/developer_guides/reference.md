@@ -1,6 +1,6 @@
 # 📋 Referenční příručka všech funkcí LSL
 
-Kompletní seznam všech funkcí, metod a built-in příkazů jazyka LSL 0.5.
+Kompletní seznam všech funkcí, metod a built-in příkazů jazyka LSL 0.6.
 Každá položka obsahuje název, signaturu a stručný popis.
 
 ---
@@ -12,7 +12,8 @@ Každá položka obsahuje název, signaturu a stručný popis.
 | Funkce | Popis |
 |---|---|
 | `print(arg1, arg2, ...)` | Vypíše argumenty oddělené mezerou, zakončí novým řádkem. |
-| `printl(text)` | Formátovaný výpis — výrazy v `{...}` se nahradí hodnotami. |
+| `printl(text)` | Kompatibilní formátovaný výpis — výrazy v `{...}` se nahradí hodnotami. |
+| `l"text {expr}"` | First-class interpolovaný String; lze přiřadit, vrátit a předat jako argument. |
 
 ### <span class="badge badge-builtin">VSTUP</span> Vstup
 
@@ -229,8 +230,8 @@ Každá položka obsahuje název, signaturu a stručný popis.
 
 | Export | Popis |
 |---|---|
-| `lux.version` | Verze LSL (String, např. `"0.5"`). |
-| `lux.language` | Název jazyka (String, `"LSL 0.5"`). |
+| `lux.version` | Verze LSL (String, např. `"0.6"`). |
+| `lux.name` | Název jazyka (String, `"Lux Simple Lang"`). |
 | `lux.l(value)` | Alias pro `type(value)`. |
 | `lux.identity(value)` | Vrátí hodnotu beze změny. |
 | `lux.clamp(value, low, high)` | Ořízne hodnotu do rozsahu `<low, high>`. |
@@ -548,12 +549,30 @@ Každá položka obsahuje název, signaturu a stručný popis.
 |---|---|
 | `plugin.request(executable, operation, payload)` | Spustí plugin jako proces, komunikuje přes JSON argv/stdout. |
 
-### <span class="badge badge-module">tensor</span> tensor — CPU tenzory
+### <span class="badge badge-module">cuda</span> cuda — volitelný CUDA backend
+
+| Funkce | Popis |
+|---|---|
+| `cuda.configure(worker, policy, min_elements)` | Nastaví worker a politiku programu (`auto`, `required`, `off`). |
+| `cuda.available()` | Ověří, že worker odpovídá a hlásí alespoň jedno zařízení. |
+| `cuda.devices()` | Vrátí metadata CUDA zařízení; v `auto` režimu při nedostupnosti `[]`. |
+| `cuda.device_count()` | Počet dostupných zařízení. |
+| `cuda.backend()` | Aktuálně dostupný backend: `"cuda"` nebo `"cpu"`. |
+| `cuda.sum_data(data)` | GPU sum nad FloatArray s CPU fallbackem. |
+| `cuda.dot_data(a, b)` | GPU dot nad FloatArray s CPU fallbackem. |
+| `cuda.axpy_data(alpha, x, y)` | GPU AXPY in-place s CPU fallbackem. |
+| `cuda.matmul_data(a, b, m, k, n)` | GPU matmul s CPU fallbackem. |
+
+Konfigurace prostředí: `LSL_CUDA_WORKER`, `LSL_CUDA=auto|required|off` a
+`LSL_CUDA_MIN_ELEMENTS` (výchozí 4096).
+
+### <span class="badge badge-module">tensor</span> tensor — CPU/CUDA tenzory
 
 | Funkce | Popis |
 |---|---|
 | `tensor.from_values(values, shape)` | Vytvoří Tensor z plochého seznamu hodnot. |
 | `tensor.zeros(shape)` | Vytvoří Tensor vyplněný nulami. |
+| `tensor.sum_data(data)` | Součet FloatArray přes CUDA nebo CPU fallback. |
 | `tensor.dot_data(a, b)` | Skalární součin dvou FloatArray (přímý, bez Tensor obalu). |
 | `tensor.axpy_data(alpha, x, y)` | AXPY operace přímo nad FloatArray. |
 | `tensor.matmul_data(a, b, m, k, n)` | Maticové násobení přímo nad FloatArray. |

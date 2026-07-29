@@ -1,4 +1,4 @@
-# Programování v LSL 0.5
+# Programování v LSL 0.6
 
 Toto je praktický průvodce pro autory aplikací. Přesná syntaxe a hraniční
 sémantika jsou v [language.md](language.md); interní compiler je popsaný v
@@ -27,7 +27,7 @@ Bez argumentů se spustí interaktivní zápis jedné společné translation uni
 
 ```text
 $ ./lsl
-Lux Simple Lang 0.5 interactive source mode
+Lux Simple Lang 0.6 interactive source mode
 Enter code; type exit on its own line to compile and run.
 >>> value = 6 * 7
 >>> print value
@@ -169,7 +169,7 @@ použít neboxovaný fast path. Jakmile se funkce předá jako callback nebo pro
 používá explicitní dynamickou introspekci, zůstává na obecném tagged ABI.
 Výsledek je vždy sémanticky stejný; optimalizace není důvod měnit API programu.
 
-Pořadí vedlejších efektů uvnitř více argumentů není v 0.5 veřejný kontrakt.
+Pořadí vedlejších efektů uvnitř více argumentů není v 0.6 veřejný kontrakt.
 Nevkládejte proto několik zápisů nebo závislých I/O operací do jednoho volání;
 nejdřív je přiřaďte do pojmenovaných hodnot.
 
@@ -296,7 +296,7 @@ po `EINTR` pokračuje se zbývající dobou. Celé API a chyby popisuje
 
 ## Co compiler optimalizuje automaticky
 
-Codegen 0.5 bezpečně provádí:
+Codegen 0.6 bezpečně provádí:
 
 - skládání konstantních celočíselných podvýrazů;
 - odstranění konstantně neproveditelných větví a `while False`;

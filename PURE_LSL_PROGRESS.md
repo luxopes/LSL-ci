@@ -881,6 +881,21 @@ fixed point je
 CLI hash je
 `30e57d16ac3a938811130f5cd66af982e05ae1bac72ad99497535660ba1e7712`.
 
+LSL 0.6 mění operátor mocniny z `**` na pravostranně asociativní `^`
+(stará syntaxe má negative test), přidává first-class Lux String
+`l"text {expression}"` s doslovnými `{{`/`}}`, kompatibilní lowering `printl`
+a statický alias celého modulu `load module as alias`. Interpolace se linkuje
+už jako běžný AST, takže uvnitř fungují module namespaces i vlastní funkce.
+Codegen skládá konstantní String concat, malé Int mocniny 0–4 emituje inline
+a Lux String staví vyváženě. Nový `stdlib/cuda.lsl` implementuje testovaný
+process worker profil pro devices/sum/dot/axpy/matmul, politiku
+auto/required/off a CPU fallback; Tensor jej používá automaticky. Full i fast
+suite, fixed-point, installed-prefix fixed-point a audit všech tracked ELF
+(jeden `R E LOAD`, bez INTERP/DYNAMIC/RWE) prošly. Compiler fixed point je
+`86e96b8c67d6dfc4c1972ce3cc845550f5abf88fd73d577a88300519ceb8f42f`,
+CLI hash je
+`86cee21b92956f0adc7f664942902b77b5c23f2fb209cb889fb966a50c9a98a1`.
+
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,
 collections, GC robustnost, syscall I/O, native/tensor ABI, AI vrstva,

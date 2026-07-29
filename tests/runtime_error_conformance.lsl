@@ -15,7 +15,7 @@ else:
     print last_error()
 end
 try:
-    print 2 ** -1
+    print 2 ^ -1
 else:
     print last_error()
 end

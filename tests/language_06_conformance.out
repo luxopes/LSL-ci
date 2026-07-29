@@ -1,0 +1,4 @@
+Jmenuji se Ada, je mi 36.
+alias=42 power=512
+literal braces: {name} dictionary={'x': 7}
+printl remains compatible: module-ok

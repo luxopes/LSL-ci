@@ -14,4 +14,7 @@ HTTP(S) transport používá systémový `/usr/bin/curl` spuštěný přímým `
 
 OpenAI-compatible příklad je v `examples/ai_client.lsl` a čistým compilerem se překládá do samostatného ELF.
 
-Pure-LSL CPU Tensor a omezený self-contained ET_DYN Int64 kernel ABI jsou podporované; obecné libc/shared-object relocations a GPU ABI nikoli. Přesný scope je v `docs/native-plugins.md`.
+Pure-LSL Tensor s volitelným CUDA workerem a omezený self-contained ET_DYN
+Int64 kernel ABI jsou podporované; obecné libc/shared-object relocations a
+přímý in-process GPU driver ABI nikoli. Přesný scope je v
+`docs/native-plugins.md` a `docs/cuda.md`.

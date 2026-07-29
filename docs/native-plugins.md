@@ -34,9 +34,29 @@ Host kontroluje ABI verzi, `ok`, prázdnou odpověď a propaguje `PluginError`. 
 
 Tato hranice je vhodná pro AI model servery, GPU workery a pluginy, kde isolation a jednoduché ownership převažují nad zero-copy.
 
-## Podporovaný pure-LSL CPU Tensor
+## Podporované: CUDA worker backend v 0.6
 
-`stdlib/tensor.lsl` poskytuje dense CPU `Tensor` nad sdíleným `RealArray` nebo raw contiguous `FloatArray`: shape, strides, offset, dtype, bounds-checked get/set, reshape a explicitní zero-copy views. FloatArray cesta přidává syscall-only nativní Float64 kernely `float_sum`, `float_dot`, `float_axpy` a `float_matmul`; modul je exportuje také jako `dot_data`, `axpy_data` a `matmul_data`. Více Tensor objektů může sdílet stejný mutable data owner; změna přes view je okamžitě viditelná ostatním views. Jde o in-process LSL objekt, nikoli ABI pro cizí shared object nebo GPU driver.
+`stdlib/cuda.lsl` staví na process ABI v1 a přidává profil
+`lsl-cuda-v1`. Worker vlastní CUDA kontext, alokace i synchronizaci; LSL host
+mu posílá JSON-compatible Float64 hodnoty. Podporované operace jsou
+`cuda.devices`, `cuda.sum`, `cuda.dot`, `cuda.axpy` a `cuda.matmul`.
+
+```lsl
+load cuda
+
+print cuda.available(), cuda.devices()
+result = cuda.matmul_data(left, right, m, k, n)
+```
+
+Worker se vybírá přes `LSL_CUDA_WORKER`; politika `LSL_CUDA` je `auto`,
+`required` nebo `off`. V `auto` režimu každá výpočetní operace při absenci
+workeru nebo jeho chybě použije existující FloatArray CPU kernel. Výchozí
+práh 4096 prvků lze změnit přes `LSL_CUDA_MIN_ELEMENTS`. Testovací reference
+worker je `tests/cuda_worker.lsl`.
+
+## Podporovaný pure-LSL CPU/CUDA Tensor
+
+`stdlib/tensor.lsl` poskytuje dense `Tensor` nad sdíleným `RealArray` nebo raw contiguous `FloatArray`: shape, strides, offset, dtype, bounds-checked get/set, reshape a explicitní zero-copy views. FloatArray cesta přidává syscall-only nativní Float64 kernely `float_sum`, `float_dot`, `float_axpy` a `float_matmul`; modul je exportuje také jako `dot_data`, `axpy_data` a `matmul_data`. V 0.6 tyto vstupy automaticky procházejí volitelným CUDA dispatcherem a zachovávají CPU fallback. Více Tensor objektů může sdílet stejný mutable data owner; změna přes view je okamžitě viditelná ostatním views.
 
 ## Podporované: omezené in-process CPU ET_DYN ABI v1
 
@@ -52,6 +72,6 @@ call native.close(library)
 
 ABI v1 je záměrně omezené: image musí být position-independent, bez relocations, external symbols, libc a constructors; `st_value` musí odpovídat file mapping offsetu. Vstup i výstup jsou Int64. Loader nepředává pluginu LSL heap pointery. Malformed ELF, chybějící symbol, špatná architektura a příliš široké/non-Int volání jsou odmítnuté. Conformance vyrábí ET_DYN image pouze pomocí LSL `writebytes`, načte jej a in-process zavolá strojový symbol.
 
-Bohatší CPU ABI může v další verzi přidat explicitně povolené `R_X86_64_RELATIVE` relocations a opaque Tensor descriptors. GPU/device ABI není součástí aktuálního scope.
+Bohatší CPU ABI může v další verzi přidat explicitně povolené `R_X86_64_RELATIVE` relocations a opaque Tensor descriptors. Přímý in-process GPU/device ABI není součástí aktuálního scope; podporovaná CUDA hranice je izolovaný worker výše.
 
 Process JSON ABI zůstává doporučená izolovaná hranice pro obecné pluginy; omezený ET_DYN ABI je rychlá in-process CPU hranice pro důvěryhodné self-contained kernels.

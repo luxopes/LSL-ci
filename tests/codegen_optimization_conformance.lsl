@@ -11,6 +11,10 @@ function apply(callback, value):
     return callback(value)
 end
 
+function small_powers(value):
+    return value ^ 0 + value ^ 1 + value ^ 2 + value ^ 3 + value ^ 4
+end
+
 i = 0
 total = 0
 while i != 10000:
@@ -28,3 +32,5 @@ end
 
 print apply(escaped_increment, 9)
 print ((7 + 5) * (9 - 4)) // 3, ((7 + 5) * (9 - 4)) % 7
+print small_powers(3)
+print ("constant " + "String " + "fold")

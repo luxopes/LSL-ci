@@ -28,10 +28,10 @@ for x in [1.0, 2.0, 3.0]:
 end
 print acc
 pows = ![2.0, 3.0]
-print pows[0] ** 3, pows[1] ** 2, pows[0] ** -1
+print pows[0] ^ 3, pows[1] ^ 2, pows[0] ^ -1
 ipows = [2, 3]
-print ipows[0] ** 3, ipows[1] ** 2
+print ipows[0] ^ 3, ipows[1] ^ 2
 function square(v):
-    return v ** 2
+    return v ^ 2
 end
 print square(2.5), square(3)

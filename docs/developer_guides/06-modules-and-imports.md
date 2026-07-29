@@ -27,6 +27,17 @@ Důležité: importy jsou **statické** — vše se vyřeší při překladu.
 Za běhu se žádný modulový loader nespouští, žádné soubory se nenačítají.
 Výsledný ELF už obsahuje všechen potřebný kód.
 
+Celý modul lze pojmenovat kratším aliasem:
+
+```lsl
+load tensor as t
+
+matrix = t.from_values([1, 2, 3, 4], [2, 2])
+```
+
+Alias mění pouze jméno viditelné v importujícím souboru; interní namespace
+modulu zůstává deterministický.
+
 ### Pravidla vyhledávání
 
 Při `load jmeno` se soubor hledá v tomto pořadí:
@@ -53,8 +64,8 @@ instalacemi.
 ```lsl
 load lux
 
-print lux.version    # verze LSL (např. "0.5")
-print lux.language   # "LSL 0.5"
+print lux.version    # verze LSL (např. "0.6")
+print lux.name       # "Lux Simple Lang"
 print lux.l([1, 2])  # "List" — alias pro type()
 ```
 
@@ -253,7 +264,7 @@ odpovídající oprávnění.
 
 Viz [09 — GUI programování](09-gui-programming.md).
 
-### tensor — CPU tenzory
+### tensor a cuda — CPU tenzory s volitelnou CUDA akcelerací
 
 ```lsl
 load tensor
@@ -268,6 +279,22 @@ print t.get([1, 2])  # 6.0
 a = tensor.from_values([1, 2, 3, 4], [2, 2])
 b = tensor.from_values([5, 6, 7, 8], [2, 2])
 c = a.matmul(b.data, [2, 2])
+```
+
+Tensor `sum`, `dot`, `axpy` a `matmul` automaticky použijí CUDA worker,
+pokud je dostupný a vstup překročí `LSL_CUDA_MIN_ELEMENTS` (výchozí 4096).
+Bez workeru běží stejné API přes nativní CPU FloatArray kernely.
+
+```text
+LSL_CUDA_WORKER=/opt/lsl-cuda-worker
+LSL_CUDA=auto                 # auto | required | off
+LSL_CUDA_MIN_ELEMENTS=4096
+```
+
+```lsl
+load cuda as gpu
+
+print gpu.available(), gpu.devices(), gpu.backend()
 ```
 
 ### native — nativní knihovny (omezené ABI)

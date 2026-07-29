@@ -1,6 +1,6 @@
 # Instalace LSL knihoven
 
-LSL 0.5 umí instalovat jednosouborové zdrojové moduly bez sudo:
+LSL 0.6 umí instalovat jednosouborové zdrojové moduly bez sudo:
 
 ```text
 lsl install textkit

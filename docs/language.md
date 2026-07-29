@@ -1,4 +1,4 @@
-# Specifikace Lux Simple Lang 0.5
+# Specifikace Lux Simple Lang 0.6
 
 Tento dokument je jazyková specifikace. Produkční implementace je pure-LSL self-hostovaný native compiler. Soubory používají UTF-8 a příponu `.lsl`.
 
@@ -9,7 +9,7 @@ Tento dokument je jazyková specifikace. Produkční implementace je pure-LSL se
 - Blok začíná hlavičkou a končí samostatným `end`.
 - Odsazení nemá význam, ale doporučují se čtyři mezery.
 - Názvy rozlišují malá a velká písmena a mají tvar `[A-Za-z_][A-Za-z0-9_]*`.
-- Literály a operátory používají čitelnou syntaxi Pythonu: `+ - * / // % **`, porovnání, `and`, `or`, `not`, `in` a závorky.
+- Literály a operátory používají čitelnou syntaxi: `+ - * / // % ^`, porovnání, `and`, `or`, `not`, `in` a závorky. `^` je pravostranně asociativní mocnina; staré `**` není od 0.6 platná syntaxe.
 - Čárka odděluje argumenty. Víceřádkové `[]`, `()`, `{}` je jeden logický příkaz.
 
 ## Proměnné a typy
@@ -51,9 +51,11 @@ Dictionary klíče mohou být immutable scalar hodnoty `String`, `Int`, `Bool`, 
 name = input "Jméno: "
 print "ahoj", name, "je ti", 1 + 10
 printl "ahoj {name}, je ti {1 + 10}"
+text = l"ahoj {name}, je ti {1 + 10}"
+print text
 ```
 
-`print` odděluje hodnoty mezerou a přidá nový řádek. `printl` nejdřív vyhodnotí svůj argument jako řetězec a pak vyhodnotí výrazy v `{...}`. Původní zkrácená syntaxe `input "prompt"` i obecná call syntaxe `input("prompt")` vypíšou prompt bez newline, přečtou jeden celý stdin řádek do dynamicky rostoucího bufferu, odstraní koncové LF/CRLF a vrátí UTF-8 `String`.
+`print` odděluje hodnoty mezerou a přidá nový řádek. Prefix `l` vytváří first-class Lux String: výrazy v `{...}` vyhodnotí hned na místě a výsledek lze přiřadit, vrátit z funkce nebo předat jako argument. `{{` a `}}` zapisují doslovné složené závorky. `printl "..."` zůstává kompatibilní zkratka. Původní zkrácená syntaxe `input "prompt"` i obecná call syntaxe `input("prompt")` vypíšou prompt bez newline, přečtou jeden celý stdin řádek do dynamicky rostoucího bufferu, odstraní koncové LF/CRLF a vrátí UTF-8 `String`.
 
 Veřejné CLI bez argumentů čte jednu translation unit ze stdin. Na TTY zobrazuje banner a `>>>`; samostatný řádek `exit` nebo Ctrl-D vstup ukončí. Pipe končí pouze EOF a heredoc pouze svým shellovým delimiterem — nepřidává se do něj ještě `exit`. Poté se celek jednou přeloží a spustí. V pipe/heredoc režimu se prompty nevypisují. Interaktivní terminátor `exit` není součást jazyka a nesmí se zaměňovat s voláním `exit(status)`.
 
@@ -121,9 +123,9 @@ call motor(10)
 result = motor(10)
 ```
 
-`call` zahodí návratovou hodnotu; běžné volání ji lze použít ve výrazu. Parametry jsou povinné a předávají se pozičně. `return` bez hodnoty vrátí `None`. Funkce čtou globální scope, zápis je lokální pro aktuální volání. Funkce jsou first-class hodnoty: lze je uložit, vrátit a předat jako callback (`type(callback)` je `Function`). Lexikální closures a keyword arguments nejsou součástí syntaxe 0.5.
+`call` zahodí návratovou hodnotu; běžné volání ji lze použít ve výrazu. Parametry jsou povinné a předávají se pozičně. `return` bez hodnoty vrátí `None`. Funkce čtou globální scope, zápis je lokální pro aktuální volání. Funkce jsou first-class hodnoty: lze je uložit, vrátit a předat jako callback (`type(callback)` je `Function`). Lexikální closures a keyword arguments nejsou součástí syntaxe 0.6.
 
-Pořadí vyhodnocení více argumentů není v 0.5 součástí veřejného kontraktu; kód nesmí záviset na pořadí jejich vedlejších efektů. Compiler smí neunikající přímou funkci specializovat podle stabilně odvozených typů argumentů. First-class callback a dynamická introspekční hranice vždy zachovávají obecný tagged ABI.
+Pořadí vyhodnocení více argumentů není v 0.6 součástí veřejného kontraktu; kód nesmí záviset na pořadí jejich vedlejších efektů. Compiler smí neunikající přímou funkci specializovat podle stabilně odvozených typů argumentů. First-class callback a dynamická introspekční hranice vždy zachovávají obecný tagged ABI.
 
 ## Třídy a instance
 
@@ -200,11 +202,12 @@ Mazat lze proměnnou, měnitelný index nebo člen LSL instance/třídy.
 
 ```lsl
 load lux
+load tensor as t
 from lux load l as value_type
 print lux.version, value_type([1, 2])
 ```
 
-`load foo.bar` hledá `foo/bar.lsl` nejprve vedle zdrojového souboru, v compiler interních a built-in/system `lib/lsl/stdlib` cestách a teprve potom pod `~/.local/lib/lsl/stdlib`. Uživatelskou knihovnu lze získat přes `lsl install NAME`; built-in modul proto nelze uživatelskou kopií zastínit. Modulové symbols dostávají deterministický namespace prefix. Třídy označené `ctype Private` nejsou dostupné přes vnější namespace; public classes lze přímo konstruovat. `native` modul podporuje omezené self-contained Linux x86_64 ET_DYN Int64 kernels; obecné relocatable/libc pluginy nejsou součástí ABI v1.
+`load foo.bar` hledá `foo/bar.lsl` nejprve vedle zdrojového souboru, v compiler interních a built-in/system `lib/lsl/stdlib` cestách a teprve potom pod `~/.local/lib/lsl/stdlib`. `load foo.bar as baz` zpřístupní stejný staticky linkovaný modul pod prefixem `baz.`. Uživatelskou knihovnu lze získat přes `lsl install NAME`; built-in modul proto nelze uživatelskou kopií zastínit. Modulové symbols dostávají deterministický namespace prefix. Třídy označené `ctype Private` nejsou dostupné přes vnější namespace; public classes lze přímo konstruovat. `native` modul podporuje omezené self-contained Linux x86_64 ET_DYN Int64 kernels; obecné relocatable/libc pluginy nejsou součástí ABI v1.
 
 Vestavěný modul `lux` exportuje `version`, `language` a `l` (alias `type`). Další standardní moduly jsou `json`, `lconf`, `http`, `env`, `config`, `time`, `os` a `system`; podrobnosti jsou v `configuration.md`, `lconf.md`, `ai.md`, `time.md`, `os.md` a `system.md`.
 

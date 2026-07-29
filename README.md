@@ -1,12 +1,16 @@
 # Lux Simple Lang (LSL)
 
-LSL 0.5 je self-hostovaný jazyk pro běžné programování, deklarativní konfiguraci a AI orchestrace. Produkční implementace je pouze LSL: compiler přímo zapisuje statický Linux x86_64 ELF a runtime používá přímé syscalls. Není zde C/C++, libc, assembler, linker, Python ani shell launcher.
+LSL 0.6 je self-hostovaný jazyk pro běžné programování, deklarativní konfiguraci, AI orchestrace a volitelné CUDA výpočty. Produkční implementace je pouze LSL: compiler přímo zapisuje statický Linux x86_64 ELF a runtime používá přímé syscalls. Není zde C/C++, libc, assembler, linker, Python ani shell launcher.
 
 ## První self-hosted vydání
 
 LSL 0.5 je první veřejné self-hosted vydání. Binární balík pro Linux x86_64,
 zdrojový archiv a kompletní český manuál jsou na
 [lsl25.netlify.app](https://lsl25.netlify.app/).
+
+Lokální větev 0.6 přidává operátor mocniny `^`, first-class Lux String
+`l"Jmenuji se {name}"`, alias celého modulu `load test as t`, další codegen
+optimalizace a modul `cuda` s automatickým CPU fallbackem.
 
 ## Použití
 
@@ -88,8 +92,9 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 - functions, recursion, first-class Function pointers a callbacks;
 - classes/instances, static i bound metody, public/private module class lowering;
 - recursive modules, `safe`, `try/else`, `Error`, `check`, `last_error`;
+- statické aliasy modulů (`load tensor as t`) a first-class interpolované Lux Stringy;
 - conservative stack/global-root mark-sweep GC s reusable free-list;
-- JSON, strict `config.lconf` dependency codec pro zdroje apt/lux/lsl, čistý config evaluator, LuxOS/Debian modul `system` pro balíčky, služby, uživatele, atomické soubory, mounty a generace/rollback, wall/monotonic time a sleep, filesystem, argv, environment, bezpečné `os.run("ls -al")`, process/capture, HTTP(S) přes bezpečné `curl` argv a verzované JSON process plugin ABI bez shellu;
+- JSON, strict `config.lconf` dependency codec pro zdroje apt/lux/lsl, čistý config evaluator, LuxOS/Debian modul `system` pro balíčky, služby, uživatele, atomické soubory, mounty a generace/rollback, wall/monotonic time a sleep, filesystem, argv, environment, bezpečné `os.run("ls -al")`, process/capture, HTTP(S) přes bezpečné `curl` argv, verzované JSON process plugin ABI bez shellu a volitelný CUDA worker pro Tensor kernely;
 - strukturované compile errors: kód, soubor, řádek, sloupec, výřez, caret a help.
 
 `tests/selfhost_conformance.lsl` produkuje přesně `tests/selfhost_conformance.out`. Config příklad produkuje přesně `tests/config_expected.json`.
@@ -108,12 +113,14 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 - [Správa balíčků LuxOS](docs/system.md)
 - [Dependency manifest config.lconf](docs/lconf.md)
 - [Native/plugin ABI](docs/native-plugins.md)
+- [CUDA backend a worker protokol](docs/cuda.md)
+- [Poznámky k lokálnímu vydání 0.6](docs/release-0.6.md)
 - [Linux target](docs/linux.md)
 
 ## Zdroj compileru
 
 Vstupní bod je `compiler/pure/lslc_direct.lsl`. Lexer, parser, linker, x86_64 encoder, ELF writer a runtime jsou moduly v `compiler/pure/`. Standardní moduly jsou v `stdlib/`.
 
-Známé zbývající mezery jsou vedené výhradně v `PURE_LSL_PROGRESS.md`; zejména GPU/device backend, SIMD autovektorizace, širší Tensor operace a obecné foreign shared-object ABI nejsou vydávány za hotové.
+Známé zbývající mezery jsou vedené výhradně v `PURE_LSL_PROGRESS.md`; CUDA v 0.6 používá explicitní externí worker s CPU fallbackem, nikoli přímý in-process CUDA driver ABI. SIMD autovektorizace, širší Tensor operace a obecné foreign shared-object ABI zůstávají otevřené.
 
 Licence: MIT, viz `LICENSE`.

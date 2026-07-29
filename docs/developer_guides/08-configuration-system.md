@@ -189,7 +189,7 @@ config = {
 - Vyhodnotí se až při materializaci výsledného stromu.
 - Rekurzivní thunk dependency → `ConfigCycleError`.
 
-Poznámka: LSL 0.5 nemá closures, takže thunk musí číst buď modulové
+Poznámka: LSL 0.6 nemá closures, takže thunk musí číst buď modulové
 globály, nebo volat jiné pojmenované funkce.
 
 ## Assertions
