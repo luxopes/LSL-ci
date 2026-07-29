@@ -22,13 +22,20 @@ Lokální self-hosted vydání 0.6 navazuje na první veřejnou self-hosted verz
 
 ## CUDA
 
-- Nový modul `cuda` implementuje operace devices, sum, dot, axpy a matmul.
+- Bundlovaný `cuda/lsl-cuda-worker` skutečně používá NVIDIA CUDA Runtime.
+- GPU kernely implementují probe, Float64 sum, dot, AXPY a tiled matmul.
+- `cuda.probe()` vrátí úspěch až po spuštění a ověření kernelu na zařízení.
+- FloatArray data používají binární stdin/stdout transport bez JSON převodu.
 - Tensor tyto operace směruje automaticky přes CUDA nebo CPU fallback.
-- Politiky `auto`, `required`, `off` a velikostní práh lze řídit environmentem.
-- Worker ABI je testované v samostatném procesu i bez NVIDIA GPU.
+- Politiky `auto`, `required`, `off`, zařízení a práh lze řídit environmentem.
+- Přenosný protocol test běží bez GPU; samostatný hardware conformance test
+  byl ověřen na NVIDIA GeForce GTX 1650 (compute capability 7.5).
+- Referenční první end-to-end matmul 1024×1024 na tomto stroji: CPU 11,73 s,
+  CUDA 1,16 s. Malé úlohy zůstávají v `auto` na CPU kvůli startu procesu.
 
 ## Toolchain
 
 - `lsl --version`, `lsl version` a `lsl --help` hlásí 0.6.
 - Compiler zůstává bitově reprodukovatelný ve fixed pointu.
-- Standardní instalace nyní obsahuje také `stdlib/cuda.lsl`.
+- Standardní instalace obsahuje `stdlib/cuda.lsl` i předkompilovaný
+  `bin/lsl-cuda-worker`, je-li v pracovním stromu dostupný.

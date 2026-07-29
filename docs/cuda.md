@@ -1,40 +1,75 @@
 # CUDA v LSL 0.6
 
-LSL 0.6 poskytuje volitelnou GPU akceleraci přes modul `cuda`. Self-hosted
-compiler ani výsledné LSL programy nelinkují libc, `libcuda` nebo CUDA Runtime.
-CUDA kontext vlastní samostatný executable worker; když není dostupný, stejné
-Tensor operace pokračují přes nativní FloatArray CPU kernely.
+LSL 0.6 obsahuje skutečný NVIDIA CUDA Runtime backend. Self-hosted compiler
+ani výsledné LSL programy nelinkují libc, `libcuda` nebo CUDA Runtime; CUDA
+kontext vlastní samostatný `lsl-cuda-worker`. Když worker nebo zařízení není
+dostupné, politika `auto` použije stejné FloatArray operace na CPU.
 
-## Zapnutí
+Bundlovaný worker spouští na GPU tyto Float64 kernely:
+
+- ověřovací device kernel;
+- paralelní víceúrovňový `sum`;
+- paralelní `dot`;
+- `AXPY` (`y = alpha*x + y`);
+- tiled 16×16 row-major `matmul`.
+
+## Požadavky a hledání workeru
+
+Předkompilovaný `cuda/lsl-cuda-worker` je Linux x86_64 binárka pro
+architektury podporované CUDA 13.3. Potřebuje kompatibilní NVIDIA driver,
+glibc a libstdc++. Vlastní build je popsaný v
+[`cuda/README.md`](../cuda/README.md).
+
+Modul hledá worker v tomto pořadí:
+
+1. cesta předaná `cuda.configure`;
+2. `LSL_CUDA_WORKER`;
+3. `cuda/lsl-cuda-worker` v pracovním stromu;
+4. `lsl-cuda-worker` vedle spouštěného ELF;
+5. `/usr/local/bin/lsl-cuda-worker` a `/usr/bin/lsl-cuda-worker`.
+
+Installer jej kopíruje do `<prefix>/bin/lsl-cuda-worker`.
+
+## Konfigurace
 
 ```text
-export LSL_CUDA_WORKER=/opt/lsl-cuda-worker
 export LSL_CUDA=auto
-export LSL_CUDA_MIN_ELEMENTS=4096
+export LSL_CUDA_DEVICE=0
+export LSL_CUDA_MIN_ELEMENTS=400000000
 ```
 
 `LSL_CUDA` přijímá:
 
-- `auto` — CUDA pro dostatečně velké vstupy, při chybě CPU fallback;
-- `required` — CUDA je povinná a chyba se propaguje jako `Cuda*Error`;
-- `off` — worker se nespouští.
+- `auto` — GPU použije pouze nad prahem a při chybě zachová CPU fallback;
+- `required` — skutečné NVIDIA zařízení je povinné a chyba se propaguje jako
+  `Cuda*Error`;
+- `off` — worker se vůbec nespouští.
 
-Program může stejné hodnoty nastavit bez environmentu:
+Prahová hodnota jsou pracovní jednotky: počet prvků pro vektorové operace a
+`m*k*n` pro matmul. Výchozích 400 000 000 je konzervativní hodnota pro
+samostatný proces a běžnou spotřebitelskou GPU. Konkrétní hardware je vhodné
+přeměřit. Hodnota `0` v politice `required` se hodí pro hardwarové testy.
+
+Stejné nastavení lze provést v programu:
 
 ```lsl
 load cuda
 
-call cuda.configure("/opt/lsl-cuda-worker", "auto", 4096)
-print cuda.available()
-print cuda.devices()
-print cuda.backend()
+call cuda.configure("cuda/lsl-cuda-worker", "required", 0)
+probe = cuda.probe()
+print probe["name"], probe["compute_capability"]
+print cuda.devices(), cuda.backend()
 ```
+
+`cuda.probe()` spustí kernel, zkopíruje jeho výsledek z device memory a vrátí
+metadata pouze při správné hodnotě. `cuda.available()` je tedy potvrzení
+funkčního CUDA kernelu, nikoli jen existence souboru nebo driveru.
 
 ## Tensor integrace
 
-`tensor.Tensor.sum`, `dot`, `axpy`, `matmul` a jejich raw varianty
-`sum_data`, `dot_data`, `axpy_data`, `matmul_data` používají CUDA dispatcher
-automaticky. Veřejné typy a výsledky jsou stejné pro CPU i GPU.
+`tensor.Tensor.sum`, `dot`, `axpy`, `matmul` a raw varianty `sum_data`,
+`dot_data`, `axpy_data`, `matmul_data` používají stejný dispatcher. Veřejným
+datovým typem zůstává contiguous `FloatArray`.
 
 ```lsl
 load tensor as t
@@ -45,45 +80,57 @@ c = a.matmul(b.data, b.shape)
 print c.data
 ```
 
-## Worker protokol `lsl-cuda-v1`
+## Rychlý binární protokol
 
-Transport používá `plugin` process ABI v1. Worker dostane jeden JSON argument:
+Výpočetní cesta nepřevádí velká pole do JSON. LSL runtime kopíruje raw
+little-endian IEEE-754 Float64 data do stdin workeru a čte stejné bity ze
+stdout:
 
-```json
-{"abi":1,"operation":"cuda.sum","payload":{"values":[1.0,2.0,3.0]}}
+```text
+lsl-cuda-worker --binary sum COUNT
+lsl-cuda-worker --binary dot COUNT
+lsl-cuda-worker --binary axpy ALPHA COUNT
+lsl-cuda-worker --binary matmul M K N
 ```
 
-Vrací právě jeden JSON objekt na stdout:
+Payloady jsou po řadě `values`, `left+right`, `x+y` a `left+right`; výstup je
+jedno Float64, jedno Float64, nové `y`, nebo row-major matice délky `M*N`.
+Host kontroluje exit status i přesnou délku binárního výstupu.
+
+Metadata a kompatibilní fallback používají JSON process ABI na stdin:
 
 ```json
-{"abi":1,"ok":true,"value":6.0}
+{"abi":1,"operation":"cuda.probe","payload":{}}
 ```
 
-nebo chybu:
+Úspěšný skutečný worker vrátí například:
 
 ```json
-{"abi":1,"ok":false,"error":"CUDA device unavailable"}
+{"abi":1,"ok":true,"value":{"backend":"nvidia-cuda-runtime","verified":true,"device":0,"name":"NVIDIA GeForce GTX 1650","compute_capability":"7.5","runtime_version":13030,"driver_version":13030}}
 ```
 
-Podporované operace a jejich payload:
+JSON operace `cuda.devices`, `cuda.sum`, `cuda.dot`, `cuda.axpy` a
+`cuda.matmul` zůstávají součástí `lsl-cuda-v1`, aby fungoval přenosný
+conformance double [`tests/cuda_worker.lsl`](../tests/cuda_worker.lsl).
 
-| Operace | Payload | `value` |
-|---|---|---|
-| `cuda.devices` | `{}` | List metadata zařízení |
-| `cuda.sum` | `{"values":[...]}` | Float |
-| `cuda.dot` | `{"left":[...],"right":[...]}` | Float |
-| `cuda.axpy` | `{"alpha":a,"x":[...],"y":[...]}` | nový List hodnot `y` |
-| `cuda.matmul` | `{"left":[...],"right":[...],"m":m,"k":k,"n":n}` | row-major List délky `m*n` |
+## Reálné ověření a výkon
 
-Referenční worker pro conformance je
-[`tests/cuda_worker.lsl`](../tests/cuda_worker.lsl). Na produkčním stroji jej
-nahradí executable používající NVIDIA CUDA Driver API, CUDA Runtime nebo
-jinou implementaci stejného protokolu.
+```text
+./compiler/pure/lslc-direct tests/cuda_hardware_conformance.lsl /tmp/cuda-test
+/tmp/cuda-test
 
-## Výkonnostní hranice
+LSL_CUDA_HARDWARE_TEST=1 ./tests/lsl-test fast
 
-JSON a start procesu jsou záměrně bezpečné a přenositelné, ale nejsou
-zero-copy. Proto `auto` používá výchozí práh 4096 prvků. Jeden request může
-uvnitř workeru dávkovat GPU práci, každý současný LSL request je však
-samostatný proces. Přímé sdílené device buffery a in-process CUDA driver ABI
-nejsou v 0.6 veřejným kontraktem.
+./compiler/pure/lslc-direct tests/cuda_hardware_benchmark.lsl /tmp/cuda-bench
+/tmp/cuda-bench 1024
+```
+
+Na místním NVIDIA GeForce GTX 1650 (compute capability 7.5) hardware test
+ověřil sum, dot, AXPY a matmul na CUDA. Referenční end-to-end měření
+1024×1024 bylo přibližně 11,73 s na CPU a 1,16 s přes CUDA. U 128×128 bylo
+naopak CPU 0,003 s a první CUDA dispatch 0,87 s, protože ověření i každý
+výpočet vytváří nový proces a
+CUDA kontext.
+
+Persistentní worker, sdílené device buffery, zero-copy a přímé in-process CUDA
+driver ABI nejsou veřejným kontraktem 0.6.

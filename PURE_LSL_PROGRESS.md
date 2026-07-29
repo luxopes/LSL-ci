@@ -1,9 +1,11 @@
 # Pure-LSL migration
 
 ## Goal
-Produkční LSL musí mít pouze LSL zdroje: žádný C/C++ backend, runtime, libc,
-assembler, linker, Python ani shell launcher. Compiler napsaný v LSL zapisuje
-přímo Linux ELF64 a výsledky používají přímé Linux syscalls. Chyby vždy uvádějí
+Produkční compiler a host runtime musí mít pouze LSL zdroje: žádný C/C++
+backend, runtime, libc, assembler, linker, Python ani shell launcher. Compiler
+napsaný v LSL zapisuje přímo Linux ELF64 a výsledky používají přímé Linux
+syscalls. Volitelný skutečný CUDA backend je izolovaný foreign worker v
+`cuda/`, nikoli součást compileru nebo self-host řetězce. Chyby vždy uvádějí
 soubor, řádek, sloupec, výřez, caret, kód chyby a podle možnosti nápovědu.
 
 ## Target / definition of done
@@ -13,7 +15,8 @@ soubor, řádek, sloupec, výřez, caret, kód chyby a podle možnosti nápověd
 - Compiler přímo zapisuje ELF a nastaví executable mode přes syscall; žádné `cc`,
   libc, assembler ani externí linker.
 - Stage N přeloží `compiler/pure/lslc_direct.lsl` na bitově shodný stage N+1.
-- Po přechodu produkční strom/testy neodkazují na `.c`, Python ani shell.
+- Compiler, host runtime a jejich testy neodkazují na `.c`, Python ani shell;
+  samostatný volitelný CUDA worker používá `.cu`.
 - Conformance a config testy běží pouze přes LSL ELF seed a LSL programy.
 
 ## Plan
@@ -895,6 +898,17 @@ suite, fixed-point, installed-prefix fixed-point a audit všech tracked ELF
 `86e96b8c67d6dfc4c1972ce3cc845550f5abf88fd73d577a88300519ceb8f42f`,
 CLI hash je
 `86cee21b92956f0adc7f664942902b77b5c23f2fb209cb889fb966a50c9a98a1`.
+
+CUDA follow-up nahrazuje pouhý protocol profil bundlovaným skutečným NVIDIA
+CUDA Runtime workerem. Probe i sum/dot/AXPY/tiled-matmul spouštějí device
+kernely; FloatArray přenos používá raw binární stdin/stdout. Hardware
+conformance, Compute Sanitizer memcheck/racecheck, full suite, fixed point a
+instalovaná kopie prošly na GeForce GTX 1650 (CC 7.5). Compiler fixed point je
+`615736f5a850871e397338ae5600fec09fcb702779158adfc7f8363f5c11c3d7`,
+CLI hash je
+`ad9a8d6b0011138f9907129ee155849592922a43e25d3f2d65625c403eacc5c0`
+a stripped CUDA worker hash je
+`bb41ff31291efdf01312067d44d079898ea1b6cd1ce97bf25d8ba0aaf125721b`.
 
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,

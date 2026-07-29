@@ -22,6 +22,9 @@ call copy("compiler/pure/lslc-direct", prefix + "/bin/lslc")
 call copy("compiler/pure/lsl-configure", prefix + "/bin/lsl-configure")
 call copy("tests/lsl-test", prefix + "/bin/lsl-test")
 call copy("compiler/pure/lsl-install", prefix + "/bin/lsl-install")
+if exists("cuda/lsl-cuda-worker"):
+    call copy("cuda/lsl-cuda-worker", prefix + "/bin/lsl-cuda-worker")
+end
 
 sources = [
     "assembler.lsl",

@@ -2,6 +2,8 @@
 # Positive conformance modules are linked into one program so parser/runtime
 # generation is paid once while every original source span remains intact.
 
+load env
+
 function require_success(status, name):
     if status != 0:
         Error(TestFailure: name)
@@ -175,6 +177,11 @@ servers = [
 ]
 for server in servers:
     call require_success(run(compiler, server), "compile process conformance server")
+end
+
+if env.get("LSL_CUDA_HARDWARE_TEST", "0") == "1":
+    call require_success(run(compiler, ["tests/cuda_hardware_conformance.lsl", "/tmp/lsl-cuda-hardware-test"]), "compile CUDA hardware conformance")
+    call require_success(run("/tmp/lsl-cuda-hardware-test", []), "run CUDA hardware conformance")
 end
 
 call require_success(run(compiler, ["tests/full_conformance.lsl", "/tmp/lsl-full-conformance-test"]), "compile aggregated conformance")

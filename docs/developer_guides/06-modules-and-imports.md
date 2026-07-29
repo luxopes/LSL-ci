@@ -282,19 +282,21 @@ c = a.matmul(b.data, [2, 2])
 ```
 
 Tensor `sum`, `dot`, `axpy` a `matmul` automaticky použijí CUDA worker,
-pokud je dostupný a vstup překročí `LSL_CUDA_MIN_ELEMENTS` (výchozí 4096).
+pokud `cuda.probe()` ověří skutečný NVIDIA kernel a práce překročí
+`LSL_CUDA_MIN_ELEMENTS` (výchozí 400 000 000 pracovních jednotek).
 Bez workeru běží stejné API přes nativní CPU FloatArray kernely.
 
 ```text
-LSL_CUDA_WORKER=/opt/lsl-cuda-worker
+LSL_CUDA_WORKER=./cuda/lsl-cuda-worker
 LSL_CUDA=auto                 # auto | required | off
-LSL_CUDA_MIN_ELEMENTS=4096
+LSL_CUDA_DEVICE=0
+LSL_CUDA_MIN_ELEMENTS=400000000
 ```
 
 ```lsl
 load cuda as gpu
 
-print gpu.available(), gpu.devices(), gpu.backend()
+print gpu.probe(), gpu.devices(), gpu.backend()
 ```
 
 ### native — nativní knihovny (omezené ABI)

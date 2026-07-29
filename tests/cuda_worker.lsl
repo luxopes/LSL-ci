@@ -1,12 +1,18 @@
 load json
 
-request = json.decode(arg(1))
+request_text = arg(1)
+if request_text == None:
+    request_text = input("")
+end
+request = json.decode(request_text)
 operation = request.get("operation", "")
 payload = request.get("payload", {})
 value = None
 
-if operation == "cuda.devices":
-    value = [{"index": 0, "name": "LSL CUDA test device", "compute_capability": "9.0", "memory_bytes": 8589934592}]
+if operation == "cuda.probe":
+    value = {"backend": "nvidia-cuda-runtime", "verified": True, "device": 0, "name": "LSL CUDA protocol test double"}
+elif operation == "cuda.devices":
+    value = [{"index": 0, "name": "LSL CUDA protocol test double", "backend": "protocol-test-double", "compute_capability": "0.0", "memory_bytes": 0}]
 elif operation == "cuda.sum":
     total = 0.0
     for item in payload["values"]:

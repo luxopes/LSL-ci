@@ -6,9 +6,11 @@ jazyková specifikace v [language.md](language.md).
 
 ## Neměnné požadavky
 
-Produkční toolchain je pure LSL. Udržovaný strom nesmí získat C/C++, Python,
-shell launcher, externí assembler ani linker. Compiler přímo zapisuje statický
-Linux x86_64 ELF a runtime používá syscalls. Každá změna musí zachovat:
+Produkční compiler, host runtime a build/test toolchain jsou pure LSL a nesmí
+získat C/C++, Python, shell launcher, externí assembler ani linker. Compiler
+přímo zapisuje statický Linux x86_64 ELF a runtime používá syscalls. Volitelný
+izolovaný NVIDIA worker v `cuda/` je výslovná foreign-process hranice a není
+součástí self-host řetězce. Každá změna musí zachovat:
 
 1. funkční 2–3stage self-host;
 2. bitově shodný fixed point;

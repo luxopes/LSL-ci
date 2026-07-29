@@ -12,6 +12,10 @@ zeros = float_zeros(3)
 call float_fill(zeros, 2.0)
 call float_axpy(0.5, zeros, values)
 print String(values), float_sum(values)
+raw_values = __lsl_floatarray_bytes(values)
+roundtrip_values = __lsl_floatarray_from_bytes(raw_values)
+print len(raw_values), __lsl_text_byte_length(raw_values), roundtrip_values == values
+print len("ž"), __lsl_text_byte_length("ž")
 a = FloatArray()
 b = FloatArray()
 for value in [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]:

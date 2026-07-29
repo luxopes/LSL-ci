@@ -24,29 +24,23 @@ function encode(value):
     if value_type == 1:
         return escape_string(value)
     elif value_type == 2 or value_type == 7 or value_type == 8:
-        result = "["
+        pieces = []
         index = 0
         while index < len(value):
-            if index > 0:
-                result += ","
-            end
-            result += encode(value[index])
+            pieces.append(encode(value[index]))
             index += 1
         end
-        return result + "]"
+        return "[" + ",".join(pieces) + "]"
     elif value_type == 3:
-        result = "{"
+        pieces = []
         keys = value.keys()
         index = 0
         while index < len(keys):
-            if index > 0:
-                result += ","
-            end
             key = keys[index]
-            result += escape_string(key) + ":" + encode(value[key])
+            pieces.append(escape_string(key) + ":" + encode(value[key]))
             index += 1
         end
-        return result + "}"
+        return "{" + ",".join(pieces) + "}"
     elif value_type == 4:
         if __lsl_unbox_bool(value):
             return "true"

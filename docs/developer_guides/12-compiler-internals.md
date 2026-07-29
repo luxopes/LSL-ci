@@ -15,8 +15,9 @@ procesem.
 ## Filozofie a neměnné požadavky
 
 Produkční toolchain je **pure LSL** — celý compiler je napsán v LSL a
-překládá se sám sebou. V toolchainu nesmí být C/C++, Python, shell launcher,
-externí assembler ani linker.
+překládá se sám sebou. V compileru a jeho build/test toolchainu nesmí být
+C/C++, Python, shell launcher, externí assembler ani linker. Volitelný CUDA
+worker je oddělená foreign-process hranice mimo self-host řetězec.
 
 Každá změna musí zachovat:
 

@@ -1,3 +1,8 @@
-load abs_conformance
+load os as test
+from os load run
 
-print "Working"
+safe:
+	run("ls -al")
+	test.run("ls -al")
+	print "Working"
+end

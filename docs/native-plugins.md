@@ -8,9 +8,14 @@
 load plugin
 
 value = plugin.request("/opt/my-plugin", "embed", {"text": "hello"})
+# Pro velké JSON dokumenty:
+value = plugin.request_input("/opt/my-plugin", "embed", {"text": "hello"})
 ```
 
-Plugin je executable (může být přímo LSL-generovaný ELF). Host jej spustí přes `fork`/`execve`, předá jeden JSON argv request a zachytí jeden JSON stdout response.
+Plugin je executable (může být přímo LSL-generovaný ELF). Host jej spustí přes
+`fork`/`execve` a zachytí jednu JSON stdout response. `request` předává JSON v
+argv; `request_input` jej streamuje přes stdin a není omezený Linux
+`MAX_ARG_STRLEN`.
 
 Request:
 
@@ -36,10 +41,11 @@ Tato hranice je vhodná pro AI model servery, GPU workery a pluginy, kde isolati
 
 ## Podporované: CUDA worker backend v 0.6
 
-`stdlib/cuda.lsl` staví na process ABI v1 a přidává profil
-`lsl-cuda-v1`. Worker vlastní CUDA kontext, alokace i synchronizaci; LSL host
-mu posílá JSON-compatible Float64 hodnoty. Podporované operace jsou
-`cuda.devices`, `cuda.sum`, `cuda.dot`, `cuda.axpy` a `cuda.matmul`.
+`stdlib/cuda.lsl` přidává profil `lsl-cuda-v1`. Bundlovaný
+`cuda/lsl-cuda-worker` vlastní skutečný NVIDIA CUDA Runtime kontext, device
+alokace, kopie a synchronizaci. Metadata používají process JSON ABI, velké
+FloatArray vstupy používají raw binární stdin/stdout bez JSON serializace.
+GPU kernely implementují probe, sum, dot, AXPY a tiled matmul.
 
 ```lsl
 load cuda
@@ -48,11 +54,13 @@ print cuda.available(), cuda.devices()
 result = cuda.matmul_data(left, right, m, k, n)
 ```
 
-Worker se vybírá přes `LSL_CUDA_WORKER`; politika `LSL_CUDA` je `auto`,
-`required` nebo `off`. V `auto` režimu každá výpočetní operace při absenci
-workeru nebo jeho chybě použije existující FloatArray CPU kernel. Výchozí
-práh 4096 prvků lze změnit přes `LSL_CUDA_MIN_ELEMENTS`. Testovací reference
-worker je `tests/cuda_worker.lsl`.
+Worker se automaticky hledá v repozitáři a vedle LSL ELF, nebo se vybírá přes
+`LSL_CUDA_WORKER`; politika `LSL_CUDA` je `auto`, `required` nebo `off`.
+`cuda.probe()` potvrdí GPU až po správném výsledku device kernelu. V `auto`
+režimu každá operace při absenci workeru nebo jeho chybě použije existující
+FloatArray CPU kernel. Výchozí pracovní práh 400 000 000 lze změnit přes
+`LSL_CUDA_MIN_ELEMENTS`. Portable protocol double je `tests/cuda_worker.lsl`,
+skutečný device test `tests/cuda_hardware_conformance.lsl`.
 
 ## Podporovaný pure-LSL CPU/CUDA Tensor
 

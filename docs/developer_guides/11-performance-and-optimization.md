@@ -462,20 +462,22 @@ Pro přesné výsledky:
 LSL 0.6 přidává volitelný modul `cuda` a automaticky přes něj směruje Tensor
 operace `sum`, `dot`, `axpy` a `matmul`. Samotný self-hosted ELF zůstává bez
 závislosti na libc a CUDA knihovnách: NVIDIA CUDA Driver/Runtime vlastní
-samostatný executable worker. Host a worker komunikují přes verzovaný
-`lsl-cuda-v1` JSON protokol.
+samostatný executable worker. Bundlovaný worker skutečně spouští NVIDIA
+Float64 kernely. Metadata používají `lsl-cuda-v1` JSON přes stdin, výpočetní
+pole rychlý raw Float64 binární transport.
 
 ```text
-LSL_CUDA_WORKER=/opt/lsl-cuda-worker
+LSL_CUDA_WORKER=./cuda/lsl-cuda-worker
 LSL_CUDA=auto                 # auto, required, off
-LSL_CUDA_MIN_ELEMENTS=4096    # amortizace startu procesu a serializace
+LSL_CUDA_DEVICE=0
+LSL_CUDA_MIN_ELEMENTS=400000000
 ```
 
 ```lsl
 load cuda
 load tensor
 
-print cuda.available(), cuda.devices(), cuda.backend()
+print cuda.probe(), cuda.devices(), cuda.backend()
 product = tensor.matmul_data(a, b, m, k, n)
 ```
 
@@ -483,15 +485,18 @@ product = tensor.matmul_data(a, b, m, k, n)
 - `required`: absence nebo chyba CUDA skončí `Cuda*Error`.
 - `off`: CUDA se vůbec nezkouší.
 
-Pro malé vstupy je CPU rychlejší kvůli startu procesu a JSON přenosu; práh
-řídí `LSL_CUDA_MIN_ELEMENTS`. Worker má implementovat operace
-`cuda.devices`, `cuda.sum`, `cuda.dot`, `cuda.axpy` a `cuda.matmul`.
-Conformance používá skutečný testovací worker v samostatném procesu, takže
-GPU dispatch, protokol, validace tvarů i fallback jsou testované i na stroji
-bez NVIDIA GPU.
+Pro malé vstupy je CPU rychlejší kvůli startu procesu a CUDA kontextu; práh
+řídí `LSL_CUDA_MIN_ELEMENTS`. Jde o počet prvků pro vektorové operace a
+`m*k*n` pro matmul. `cuda.probe()` nejprve spustí device kernel a ověří jeho
+výsledek. Portable conformance double testuje dispatch a fallback bez GPU,
+`tests/cuda_hardware_conformance.lsl` testuje skutečné zařízení.
 
-Přímý in-process CUDA driver ABI, zero-copy device buffers a SIMD
-autovektorizace zatím nejsou součástí 0.6.
+Na GeForce GTX 1650 bylo první end-to-end matmul 1024×1024 přibližně 11,73 s
+na CPU a 1,16 s přes CUDA. Pro 128×128 bylo CPU přibližně 0,003 s a první
+CUDA dispatch 0,87 s; proto je výchozí automatický práh konzervativní.
+
+Persistentní CUDA proces, přímý in-process CUDA driver ABI, zero-copy device
+buffery a SIMD autovektorizace zatím nejsou součástí 0.6.
 
 ## Kam dál
 

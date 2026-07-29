@@ -1,6 +1,6 @@
-# Optional CUDA process backend. A worker owns the CUDA Driver/Runtime API and
-# speaks the documented lsl-cuda-v1 JSON protocol; every operation has a native
-# FloatArray CPU fallback, so CUDA is never a mandatory runtime dependency.
+# Optional CUDA process backend. The bundled worker owns the NVIDIA CUDA
+# Runtime; metadata uses lsl-cuda-v1 JSON and FloatArray kernels use raw binary
+# stdin/stdout. Every operation retains a native FloatArray CPU fallback.
 
 load env
 load plugin
@@ -11,6 +11,8 @@ class Settings(True):
         self.worker = None
         self.policy = None
         self.min_elements = None
+        self.probe_worker = None
+        self.probe_value = None
     end
 end
 
@@ -20,6 +22,25 @@ function configure(worker, policy, min_elements):
     settings.worker = worker
     settings.policy = policy
     settings.min_elements = Int(min_elements)
+    settings.probe_worker = None
+    settings.probe_value = None
+end
+
+function dirname(path):
+    slash = -1
+    index = 0
+    while index < len(path):
+        if path[index] == "/":
+            slash = index
+        end
+        index += 1
+    end
+    if slash < 0:
+        return "."
+    elif slash == 0:
+        return "/"
+    end
+    return path[0:slash]
 end
 
 function worker_path():
@@ -32,6 +53,14 @@ function worker_path():
     worker = env.get("LSL_CUDA_WORKER", "")
     if worker != "":
         return worker
+    elif exists("cuda/lsl-cuda-worker"):
+        return "cuda/lsl-cuda-worker"
+    end
+    executable_directory = dirname(executable_path())
+    if exists(executable_directory + "/lsl-cuda-worker"):
+        return executable_directory + "/lsl-cuda-worker"
+    elif exists(executable_directory + "/cuda/lsl-cuda-worker"):
+        return executable_directory + "/cuda/lsl-cuda-worker"
     elif exists("/usr/local/bin/lsl-cuda-worker"):
         return "/usr/local/bin/lsl-cuda-worker"
     elif exists("/usr/bin/lsl-cuda-worker"):
@@ -56,8 +85,11 @@ function minimum_elements():
     if settings.min_elements != None:
         return Int(settings.min_elements)
     end
-    text = env.get("LSL_CUDA_MIN_ELEMENTS", "4096")
-    value = 4096
+    # The worker creates a fresh CUDA context for each operation. Treat this
+    # value as work units (elements for vector kernels, m*k*n for matmul) so
+    # auto mode only dispatches work large enough to amortize process startup.
+    text = env.get("LSL_CUDA_MIN_ELEMENTS", "400000000")
+    value = 400000000
     try:
         value = Int(text)
     else:
@@ -69,19 +101,30 @@ function minimum_elements():
     return value
 end
 
-function available():
+function probe():
     worker = worker_path()
     if policy() == "off" or worker == None or not exists(worker):
-        return False
+        return None
     end
-    result = False
+    if settings.probe_worker != None and String(settings.probe_worker) == worker:
+        return settings.probe_value
+    end
+    result = None
     try:
-        devices = plugin.request(worker, "cuda.devices", {})
-        result = len(devices) > 0
+        value = plugin.request_input(worker, "cuda.probe", {})
+        if value.get("verified", False) and value.get("backend", "") == "nvidia-cuda-runtime":
+            result = value
+        end
     else:
-        result = False
+        result = None
     end
+    settings.probe_worker = worker
+    settings.probe_value = result
     return result
+end
+
+function available():
+    return probe() != None
 end
 
 function devices():
@@ -91,7 +134,7 @@ function devices():
     end
     result = []
     try:
-        result = plugin.request(worker, "cuda.devices", {})
+        result = plugin.request_input(worker, "cuda.devices", {})
     else:
         if policy() == "required":
             Error(CudaUnavailableError: last_error())
@@ -105,7 +148,7 @@ function device_count():
 end
 
 function backend():
-    if available():
+    if probe() != None:
         return "cuda"
     end
     return "cpu"
@@ -141,14 +184,20 @@ function accelerated(size):
         end
         return False
     end
-    return policy() == "required" or size >= minimum_elements()
+    if policy() == "required":
+        if probe() == None:
+            Error(CudaUnavailableError: "CUDA worker did not verify an NVIDIA device")
+        end
+        return True
+    end
+    return size >= minimum_elements() and probe() != None
 end
 
 function request(operation, payload):
     result = None
     caught = ""
     try:
-        result = plugin.request(worker_path(), operation, payload)
+        result = plugin.request_input(worker_path(), operation, payload)
     else:
         caught = last_error()
     end
@@ -158,9 +207,22 @@ function request(operation, payload):
     return result
 end
 
+function binary_request(arguments, payload):
+    output = capture_input(worker_path(), arguments, payload)
+    if capture_status() == 0:
+        return output
+    end
+    return None
+end
+
 function sum_data(data):
     source = FloatArray(data)
     if accelerated(len(source)):
+        output = binary_request(["--binary", "sum", String(len(source))], __lsl_floatarray_bytes(source))
+        if output != None and __lsl_text_byte_length(output) == 8:
+            values = __lsl_floatarray_from_bytes(output)
+            return values[0]
+        end
         value = request("cuda.sum", {"values": to_values(source)})
         if value != None:
             return Float(value)
@@ -176,6 +238,12 @@ function dot_data(left, right):
         Error(CudaShapeError: "dot arrays have different lengths")
     end
     if accelerated(len(left_data)):
+        payload = __lsl_floatarray_bytes(left_data) + __lsl_floatarray_bytes(right_data)
+        output = binary_request(["--binary", "dot", String(len(left_data))], payload)
+        if output != None and __lsl_text_byte_length(output) == 8:
+            values = __lsl_floatarray_from_bytes(output)
+            return values[0]
+        end
         value = request("cuda.dot", {"left": to_values(left_data), "right": to_values(right_data)})
         if value != None:
             return Float(value)
@@ -191,6 +259,17 @@ function axpy_data(alpha, x, y):
         Error(CudaShapeError: "axpy arrays have different lengths")
     end
     if accelerated(len(x_data)):
+        payload = __lsl_floatarray_bytes(x_data) + __lsl_floatarray_bytes(y_data)
+        output = binary_request(["--binary", "axpy", String(alpha), String(len(x_data))], payload)
+        if output != None and __lsl_text_byte_length(output) == len(y_data) * 8:
+            binary_values = __lsl_floatarray_from_bytes(output)
+            index = 0
+            while index < len(y_data):
+                y_data[index] = binary_values[index]
+                index += 1
+            end
+            return
+        end
         values = request("cuda.axpy", {"alpha": Float(alpha), "x": to_values(x_data), "y": to_values(y_data)})
         if values != None:
             if len(values) != len(y_data):
@@ -217,6 +296,13 @@ function matmul_data(left, right, m, k, n):
         Error(CudaShapeError: "matmul array lengths do not match dimensions")
     end
     if accelerated(rows * inner * columns):
+        payload = __lsl_floatarray_bytes(left_data) + __lsl_floatarray_bytes(right_data)
+        arguments = ["--binary", "matmul", String(rows), String(inner), String(columns)]
+        output = binary_request(arguments, payload)
+        if output != None and __lsl_text_byte_length(output) == rows * columns * 8:
+            binary_values = __lsl_floatarray_from_bytes(output)
+            return binary_values
+        end
         values = request("cuda.matmul", {"left": to_values(left_data), "right": to_values(right_data), "m": rows, "k": inner, "n": columns})
         if values != None:
             if len(values) != rows * columns:

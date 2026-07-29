@@ -548,13 +548,15 @@ Každá položka obsahuje název, signaturu a stručný popis.
 | Funkce | Popis |
 |---|---|
 | `plugin.request(executable, operation, payload)` | Spustí plugin jako proces, komunikuje přes JSON argv/stdout. |
+| `plugin.request_input(executable, operation, payload)` | Jako `request`, ale JSON posílá přes stdin i nad limitem jednoho argv. |
 
 ### <span class="badge badge-module">cuda</span> cuda — volitelný CUDA backend
 
 | Funkce | Popis |
 |---|---|
 | `cuda.configure(worker, policy, min_elements)` | Nastaví worker a politiku programu (`auto`, `required`, `off`). |
-| `cuda.available()` | Ověří, že worker odpovídá a hlásí alespoň jedno zařízení. |
+| `cuda.probe()` | Spustí ověřovací CUDA kernel a vrátí metadata zařízení, nebo `None`. |
+| `cuda.available()` | Vrátí True pouze po úspěšném ověřovacím device kernelu. |
 | `cuda.devices()` | Vrátí metadata CUDA zařízení; v `auto` režimu při nedostupnosti `[]`. |
 | `cuda.device_count()` | Počet dostupných zařízení. |
 | `cuda.backend()` | Aktuálně dostupný backend: `"cuda"` nebo `"cpu"`. |
@@ -564,7 +566,8 @@ Každá položka obsahuje název, signaturu a stručný popis.
 | `cuda.matmul_data(a, b, m, k, n)` | GPU matmul s CPU fallbackem. |
 
 Konfigurace prostředí: `LSL_CUDA_WORKER`, `LSL_CUDA=auto|required|off` a
-`LSL_CUDA_MIN_ELEMENTS` (výchozí 4096).
+`LSL_CUDA_DEVICE`; `LSL_CUDA_MIN_ELEMENTS` má výchozí hodnotu 400 000 000
+pracovních jednotek.
 
 ### <span class="badge badge-module">tensor</span> tensor — CPU/CUDA tenzory
 
