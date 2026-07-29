@@ -834,6 +834,27 @@ function emit_gpu(output):
     call assembler.emit(output, x86_64.xor_reg_reg(0, 0))
     call assembler.emit(output, x86_64.ret())
 
+    # __lsl_text_byte: rdi String, rsi index -> rax byte value, or -1 when
+    # out of range. The allocation-free character probe string scanning
+    # needs: indexing a String otherwise materialises a one-character
+    # String per position.
+    call assembler.label(output, "runtime_text_byte")
+    call assembler.emit(output, x86_64.load_memory(0, 7, 0))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 1))
+    call assembler.relative(output, [15, 133], "text_byte_bad")
+    call assembler.emit(output, x86_64.load_memory(9, 7, 8))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(6, 0))
+    call assembler.relative(output, [15, 140], "text_byte_bad")
+    call assembler.emit(output, x86_64.cmp_reg_reg(6, 9))
+    call assembler.relative(output, [15, 141], "text_byte_bad")
+    call assembler.emit(output, x86_64.lea_base(10, 7, 16))
+    call assembler.emit(output, x86_64.load_byte_indexed(0, 10, 6))
+    call assembler.emit(output, x86_64.ret())
+    call assembler.label(output, "text_byte_bad")
+    call assembler.emit(output, x86_64.xor_reg_reg(0, 0))
+    call assembler.emit(output, x86_64.add_reg_imm8(0, 0 - 1))
+    call assembler.emit(output, x86_64.ret())
+
     # __lsl_byte_copy: rdi ByteArray dst, rsi ByteArray src, rdx dst_off,
     # rcx src_off, r8 count (bytes). Forward native copy with the same
     # clamp discipline as raster_copy; both ends are tag-checked. The

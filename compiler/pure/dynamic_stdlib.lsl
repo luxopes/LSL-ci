@@ -204,36 +204,43 @@ function __lsl_string_index(text, needle):
 end
 
 function __lsl_split(text, separator):
-    chars = __lsl_string_chars(text)
-    seps = __lsl_string_chars(separator)
-    count = len(chars)
-    sep_len = len(seps)
+    # Byte probes plus native slices: the char-list walk with `current +=`
+    # was quadratic per piece and allocated a String per character.
+    s = "" + text
+    sep = "" + separator
+    n = len(s)
+    m = len(sep)
     result = []
-    current = ""
+    if m == 0 or m > n:
+        call result.append(s)
+        return result
+    end
+    first = __lsl_text_byte(sep, 0)
+    start = 0
     index = 0
-    while index < count:
-        matches = False
-        if sep_len > 0 and index + sep_len <= count:
+    while index + m <= n:
+        if __lsl_text_byte(s, index) == first:
             matches = True
-            offset = 0
-            while offset < sep_len:
-                if chars[index + offset] != seps[offset]:
+            offset = 1
+            while offset < m:
+                if __lsl_text_byte(s, index + offset) != __lsl_text_byte(sep, offset):
                     matches = False
                     break
                 end
                 offset += 1
             end
-        end
-        if matches:
-            call result.append(current)
-            current = ""
-            index += sep_len
+            if matches:
+                call result.append(s[start:index])
+                index += m
+                start = index
+            else:
+                index += 1
+            end
         else:
-            current += chars[index]
             index += 1
         end
     end
-    call result.append(current)
+    call result.append(s[start:n])
     return result
 end
 
