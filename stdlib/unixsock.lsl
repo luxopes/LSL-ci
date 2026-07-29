@@ -143,13 +143,17 @@ end
 
 # Send bytes, optionally with ONE descriptor attached (fd < 0 = none).
 function send_fd(handle, payload, count, descriptor):
+    # Allocate every structure FIRST, then write the addresses, then call:
+    # the LSL heap moves objects when it grows, so an address recorded
+    # before another allocation can be stale by the time the kernel reads
+    # it (the same trap that made DIRTYFB miss its damage rectangle).
     iov = __lsl_byte_zeros(16)
+    ctrl = __lsl_byte_zeros(24)
+    msg = __lsl_byte_zeros(56)
     call u_put64(iov, 0, u_address(payload))
     call u_put64(iov, 8, Int(count))
-    msg = __lsl_byte_zeros(56)
     call u_put64(msg, 16, u_address(iov))
     call u_put64(msg, 24, 1)
-    ctrl = __lsl_byte_zeros(24)
     if Int(descriptor) >= 0:
         # cmsghdr: len 20 (header 16 + one int), SOL_SOCKET/SCM_RIGHTS.
         call u_put64(ctrl, 0, 20)
@@ -170,11 +174,12 @@ end
 # are appended to the `fds` list. Returns the byte count, or a negative
 # errno (-11 EAGAIN when nothing is pending).
 function recv_fds(handle, payload, count, fds):
+    # Same allocation-before-addresses rule as send_fd.
     iov = __lsl_byte_zeros(16)
-    call u_put64(iov, 0, u_address(payload))
-    call u_put64(iov, 8, Int(count))
     ctrl = __lsl_byte_zeros(256)
     msg = __lsl_byte_zeros(56)
+    call u_put64(iov, 0, u_address(payload))
+    call u_put64(iov, 8, Int(count))
     call u_put64(msg, 16, u_address(iov))
     call u_put64(msg, 24, 1)
     call u_put64(msg, 32, u_address(ctrl))

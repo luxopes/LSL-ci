@@ -1211,7 +1211,21 @@ function emit_list_append(output):
     call assembler.relative(output, [15, 132], "list_append_unbox_int")
     call assembler.emit(output, x86_64.cmp_reg_imm8(1, 14))
     call assembler.relative(output, [15, 132], "list_append_unbox_float")
+    # A ByteArray reached through a dynamically typed name (a parameter, a
+    # list element) lands here too: byte storage holds raw bytes, so the
+    # value must be unboxed and stored by the byte append path. Without
+    # this the boxed pointer was written into the bytes themselves, which
+    # silently corrupted every buffer built through a helper function.
+    call assembler.emit(output, x86_64.cmp_reg_imm8(1, 15))
+    call assembler.relative(output, [15, 132], "list_append_bytes")
     call assembler.relative(output, [233], "list_append_value_ready")
+    call assembler.label(output, "list_append_bytes")
+    call assembler.emit(output, x86_64.load_stack(7, -16))
+    call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+    call assembler.emit(output, x86_64.move_reg_reg(6, 0))
+    call assembler.emit(output, x86_64.load_stack(7, -8))
+    call assembler.relative(output, [232], "runtime_byte_array_append")
+    call assembler.emit(output, x86_64.function_epilogue())
     call assembler.label(output, "list_append_unbox_int")
     call assembler.emit(output, x86_64.move_reg_reg(7, 6))
     call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
