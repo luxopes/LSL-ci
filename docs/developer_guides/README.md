@@ -1,6 +1,8 @@
 # LSL — Vývojářské příručky
 
 > **LSL 0.6 — self-hosted release s Lux Stringy, aliasy modulů a skutečným NVIDIA CUDA Runtime backendem.**
+> [Historie verzí](/releases/) · [Manuál 0.5](/releases/0.5/) ·
+> [Manuál 0.6](/releases/0.6/) · [Changelog](CHANGELOG.md)
 > [Stáhnout binárky, zdrojový kód nebo offline manuál](index.html#downloads).
 
 Podrobné průvodce jazykem LSL (Lux Simple Lang) 0.6. Každá kapitola

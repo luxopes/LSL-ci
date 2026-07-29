@@ -1,7 +1,10 @@
 # LSL 0.6
 
-Lokální self-hosted vydání 0.6 navazuje na první veřejnou self-hosted verzi
-0.5. V této fázi není nasazené na Netlify.
+Self-hosted vydání 0.6 navazuje na první veřejnou self-hosted verzi 0.5.
+Aktuální web, soubory ke stažení a český manuál jsou na
+[lsl25.netlify.app](https://lsl25.netlify.app/). Stabilní archiv obou manuálů
+je v [historii vydání](https://lsl25.netlify.app/releases/) a datované změny
+v [changelogu](https://lsl25.netlify.app/#CHANGELOG).
 
 ## Jazyk
 

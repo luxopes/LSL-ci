@@ -418,6 +418,8 @@
   <div class="logo">LSL <span>0.6</span></div>
   <a href="./" data-home="home">🚀 Vydání 0.6</a>
   <a href="./#downloads" data-home="downloads">↓ Ke stažení</a>
+  <a href="/releases/">◷ Historie vydání</a>
+  <a href="#" data-page="CHANGELOG">✦ Changelog</a>
   <a href="#" data-page="README">📘 Přehled manuálu</a>
   <div class="section">Základy</div>
   <a href="#" data-page="01-getting-started">1. Začínáme s LSL</a>
@@ -448,6 +450,8 @@
       <div class="release-actions">
         <a class="release-button primary" href="downloads/lsl-0.6-linux-x86_64.tar.gz" download>Stáhnout pro Linux x86_64</a>
         <a class="release-button" href="#README" data-page="README">Otevřít manuál</a>
+        <a class="release-button" href="/releases/">Historie verzí</a>
+        <a class="release-button" href="#CHANGELOG" data-page="CHANGELOG">Co se změnilo</a>
       </div>
       <div class="release-command"><span class="prompt">$</span> tar -xzf lsl-0.6-linux-x86_64.tar.gz
 <span class="prompt">$</span> ./lsl-0.6/bin/lsl version
@@ -522,7 +526,7 @@ function guidePageName(href) {
   let match = href.match(/^([A-Za-z0-9-]+)\.md$/);
   if (!match) return null;
   let name = match[1];
-  if (name === 'README' || name === 'reference' || /^\d\d-[a-z0-9-]+$/.test(name)) {
+  if (name === 'README' || name === 'CHANGELOG' || name === 'reference' || /^\d\d-[a-z0-9-]+$/.test(name)) {
     return name;
   }
   return null;
@@ -813,7 +817,7 @@ function showRelease(section = '', updateHistory = true) {
 function routeFromLocation() {
   let page = location.hash.slice(1);
   if (page.endsWith('.md')) page = page.slice(0, -3);
-  if (/^\d\d-/.test(page) || page === 'README' || page === 'reference') {
+  if (/^\d\d-/.test(page) || page === 'README' || page === 'CHANGELOG' || page === 'reference') {
     loadPage(page, false);
   } else if (page === 'downloads' || page === 'manual') {
     showRelease(page, false);

@@ -8,15 +8,20 @@ launcheru. Skutečný NVIDIA backend je záměrně oddělený proces
 `cuda/lsl-cuda-worker`, napsaný v CUDA C++; bez něj zůstává celé LSL jádro
 pure-LSL a Tensor používá CPU fallback.
 
-## První self-hosted vydání
+## Self-hosted vydání
 
-LSL 0.5 je první veřejné self-hosted vydání. Binární balík pro Linux x86_64,
-zdrojový archiv a kompletní český manuál jsou na
-[lsl25.netlify.app](https://lsl25.netlify.app/).
+LSL 0.6 je nejnovější vydání. Binární balík pro Linux x86_64, zdrojový archiv
+a kompletní český manuál jsou na
+[lsl25.netlify.app](https://lsl25.netlify.app/). Stabilní manuály obou verzí
+jsou v [historii vydání](https://lsl25.netlify.app/releases/):
 
-Lokální větev 0.6 přidává operátor mocniny `^`, first-class Lux String
-`l"Jmenuji se {name}"`, alias celého modulu `load test as t`, další codegen
-optimalizace a skutečné CUDA Runtime kernely s automatickým CPU fallbackem.
+- [LSL 0.6](https://lsl25.netlify.app/releases/0.6/) — Lux Stringy, aliasy
+  modulů, další optimalizace a skutečné CUDA Runtime kernely;
+- [LSL 0.5](https://lsl25.netlify.app/releases/0.5/) — první veřejné
+  self-hosted vydání.
+
+Datovaný přehled změn je v
+[changelogu](https://lsl25.netlify.app/#CHANGELOG).
 
 ## Použití
 
@@ -121,6 +126,8 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 - [Native/plugin ABI](docs/native-plugins.md)
 - [CUDA backend a worker protokol](docs/cuda.md)
 - [Poznámky k lokálnímu vydání 0.6](docs/release-0.6.md)
+- [Datovaný changelog 0.5 a 0.6](docs/developer_guides/CHANGELOG.md)
+- [Webová historie stabilních manuálů](docs/developer_guides/releases/index.html)
 - [Linux target](docs/linux.md)
 
 ## Zdroj compileru

@@ -6,3 +6,10 @@
 /system.md                       /#08-configuration-system         301
 /compiler-development.md         /#12-compiler-internals           301
 /compiler/runtime-abi.md         /#12-compiler-internals           301
+/versions                        /releases/                        301
+/history                         /releases/                        301
+/manual/0.5                      /releases/0.5/                    301
+/manual/0.5/*                    /releases/0.5/:splat              301
+/manual/0.6                      /releases/0.6/                    301
+/manual/0.6/*                    /releases/0.6/:splat              301
+/changelog                       /#CHANGELOG                       301
