@@ -238,16 +238,37 @@ function __lsl_split(text, separator):
 end
 
 function __lsl_join(separator, values):
-    result = ""
+    # Pairwise balanced merge: repeated `result += piece` is quadratic in
+    # the total length, which made joining a few thousand one-character
+    # strings (fd.read_text on /proc) cost hundreds of milliseconds.
+    count = len(values)
+    if count == 0:
+        return ""
+    end
+    work = []
     index = 0
-    while index < len(values):
+    while index < count:
+        piece = "" + values[index]
         if index > 0:
-            result += separator
+            piece = separator + piece
         end
-        result += values[index]
+        work.append(piece)
         index += 1
     end
-    return result
+    while len(work) > 1:
+        merged = []
+        index = 0
+        while index < len(work):
+            if index + 1 < len(work):
+                merged.append(work[index] + work[index + 1])
+            else:
+                merged.append(work[index])
+            end
+            index += 2
+        end
+        work = merged
+    end
+    return work[0]
 end
 
 function __lsl_extend(target, values):

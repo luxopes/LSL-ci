@@ -105,13 +105,9 @@ end
 # also works for procfs/sysfs and device nodes whose stat size is zero.
 function read_all(path):
     handle = open(path, read_only)
-    chunk = ByteArray()
-    index = 0
-    while index < 4096:
-        chunk.append(0)
-        index += 1
-    end
-    collected = ByteArray()
+    chunk = __lsl_byte_zeros(4096)
+    collected = __lsl_byte_zeros(0)
+    total = 0
     loop:
         count = read(handle, chunk, 4096)
         if count == again:
@@ -120,24 +116,21 @@ function read_all(path):
         if count == 0:
             break
         end
-        index = 0
-        while index < count:
-            collected.append(chunk[index])
-            index += 1
-        end
+        # Grow-by-copy through the native kernel: appending byte by byte
+        # cost ~700 ns per byte, which dominated every /proc sample.
+        grown = __lsl_byte_zeros(total + count)
+        call __lsl_byte_copy(grown, collected, 0, 0, total)
+        call __lsl_byte_copy(grown, chunk, total, 0, count)
+        collected = grown
+        total = total + count
     end
     call close(handle)
     return collected
 end
 
 function read_text(path):
+    # One native copy instead of a string per byte: with chr()+join this
+    # cost hundreds of milliseconds per second of Monitor sampling.
     data = read_all(path)
-    parts = []
-    index = 0
-    total = len(data)
-    while index < total:
-        parts.append(chr(data[index]))
-        index += 1
-    end
-    return "".join(parts)
+    return __lsl_text_from_bytes(data, 0, len(data))
 end
