@@ -783,6 +783,20 @@ function emit_gpu(output):
     call assembler.emit(output, x86_64.syscall())
     call assembler.emit(output, x86_64.ret())
 
+    # __lsl_syscall: rdi nr, rsi a, rdx b, rcx c, r8 d -> raw syscall
+    # result (negative errno on failure). The one general kernel door the
+    # Wayland server needs: sockets with SCM_RIGHTS fd passing, memfd,
+    # ftruncate - msghdr/iovec structures are built in LSL ByteArrays and
+    # passed by data address.
+    call assembler.label(output, "runtime_syscall")
+    call assembler.emit(output, x86_64.move_reg_reg(0, 7))
+    call assembler.emit(output, x86_64.move_reg_reg(7, 6))
+    call assembler.emit(output, x86_64.move_reg_reg(6, 2))
+    call assembler.emit(output, x86_64.move_reg_reg(2, 1))
+    call assembler.emit(output, x86_64.move_reg_reg(10, 8))
+    call assembler.emit(output, x86_64.syscall())
+    call assembler.emit(output, x86_64.ret())
+
     # __lsl_mem_pack: rdi raw destination address, rsi IntArray src,
     # rdx src_off (pixels), rcx dst_byte_off, r8 count (pixels). Same
     # 0xRRGGBB -> BGRX dword stores as raster_pack, but the destination is
