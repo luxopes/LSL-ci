@@ -431,6 +431,12 @@ function store_dword_indexed(base_register, index_register, scale, source_regist
     return [rex(False, source_register >= 8, index_register >= 8, base_register >= 8), 137, modrm(0, source_register, 4), sib(scale, index_register, base_register)]
 end
 
+function load_dword_indexed(destination, base_register, index_register, scale):
+    # 32-bit load, zero-extended into the full register:
+    # mov r32, [base + index*2^scale].
+    return [rex(False, destination >= 8, index_register >= 8, base_register >= 8), 139, modrm(0, destination, 4), sib(scale, index_register, base_register)]
+end
+
 function lea_indexed(destination, base_register, index_register, scale):
     return [rex(True, destination >= 8, index_register >= 8, base_register >= 8), 141, modrm(0, destination, 4), sib(scale, index_register, base_register)]
 end

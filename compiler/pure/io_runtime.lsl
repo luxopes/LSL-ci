@@ -797,6 +797,43 @@ function emit_gpu(output):
     call assembler.emit(output, x86_64.syscall())
     call assembler.emit(output, x86_64.ret())
 
+    # __lsl_mem_unpack: rdi IntArray dst, rsi dst_off (elements),
+    # rdx raw source address, rcx count. Reads BGRX dwords out of mapped
+    # memory (a client's shared buffer) into pixel words, the exact
+    # inverse of mem_pack. Bounds-checks the destination array.
+    call assembler.label(output, "runtime_mem_unpack")
+    call assembler.emit(output, x86_64.load_memory(0, 7, 0))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 13))
+    call assembler.relative(output, [15, 133], "mem_unpack_done")
+    call assembler.emit(output, x86_64.load_memory(9, 7, 8))
+    call assembler.emit(output, x86_64.load_memory(10, 7, 24))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(6, 0))
+    call assembler.relative(output, [15, 140], "mem_unpack_done")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(1, 0))
+    call assembler.relative(output, [15, 142], "mem_unpack_done")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(2, 0))
+    call assembler.relative(output, [15, 132], "mem_unpack_done")
+    call assembler.emit(output, x86_64.move_reg_reg(0, 9))
+    call assembler.emit(output, x86_64.sub_reg_reg(0, 6))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+    call assembler.relative(output, [15, 142], "mem_unpack_done")
+    call assembler.emit(output, x86_64.cmp_reg_reg(1, 0))
+    call assembler.relative(output, [15, 142], "mem_unpack_count_ok")
+    call assembler.emit(output, x86_64.move_reg_reg(1, 0))
+    call assembler.label(output, "mem_unpack_count_ok")
+    call assembler.emit(output, x86_64.lea_indexed(10, 10, 6, 3))
+    call assembler.emit(output, x86_64.xor_reg_reg(9, 9))
+    call assembler.label(output, "mem_unpack_loop")
+    call assembler.emit(output, x86_64.cmp_reg_reg(9, 1))
+    call assembler.relative(output, [15, 141], "mem_unpack_done")
+    call assembler.emit(output, x86_64.load_dword_indexed(0, 2, 9, 2))
+    call assembler.emit(output, x86_64.store_indexed(10, 9, 3, 0))
+    call assembler.emit(output, x86_64.increment(9))
+    call assembler.relative(output, [233], "mem_unpack_loop")
+    call assembler.label(output, "mem_unpack_done")
+    call assembler.emit(output, x86_64.xor_reg_reg(0, 0))
+    call assembler.emit(output, x86_64.ret())
+
     # __lsl_mem_pack: rdi raw destination address, rsi IntArray src,
     # rdx src_off (pixels), rcx dst_byte_off, r8 count (pixels). Same
     # 0xRRGGBB -> BGRX dword stores as raster_pack, but the destination is
