@@ -2431,24 +2431,48 @@ end
 # Drain one client's socket and run the complete messages in it, bounded
 # so one busy client cannot own the frame: up to 4 reads of 64K and 512
 # dispatches per tick; the rest stays buffered for the next frame.
-# Parse complete messages out of data[0..limit): id(4) + size/opcode(4) +
-# body. Bodies are copied out per message (handlers keep no reference).
-# Returns the byte count consumed; an incomplete trailing message stays.
-function wl_parse_stream(index, data, limit):
+function wl_read_client(index):
     ci = Int(index)
-    buf = ByteArray(data)
-    lim = Int(limit)
+    if Int(CL_ALIVE[ci]) == 0:
+        return None
+    end
+    chunk = WL_RXBUF[0]
+    buf = ByteArray(CL_INBUF[ci])
+    reads = 0
+    more = 1
+    while more == 1 and reads < 4:
+        reads = reads + 1
+        n = unixsock.recv_fds(Int(CL_FD[ci]), chunk, 65536, CL_FDS[ci])
+        if n == 0:
+            call wl_client_drop(ci)
+            return None
+        end
+        if n < 0:
+            more = 0
+        else:
+            data = ByteArray(chunk)
+            i = 0
+            while i < n:
+                call buf.append(data[i])
+                i = i + 1
+            end
+            if n < 65536:
+                more = 0
+            end
+        end
+    end
+    # Frame: id(4) + size/opcode(4) + body.
     pos = 0
     msgs = 0
     run = 1
-    while run == 1 and lim - pos >= 8 and msgs < 512:
+    while run == 1 and len(buf) - pos >= 8 and msgs < 512:
         # Read the header from the typed local: a dynamically typed list
         # element does not survive the ByteArray() cast inside a helper.
         oid = Int(buf[pos]) + Int(buf[pos + 1]) * 256 + Int(buf[pos + 2]) * 65536 + Int(buf[pos + 3]) * 16777216
         head = Int(buf[pos + 4]) + Int(buf[pos + 5]) * 256 + Int(buf[pos + 6]) * 65536 + Int(buf[pos + 7]) * 16777216
         size = head // 65536
         opcode = head % 65536
-        if size < 8 or lim - pos < size:
+        if size < 8 or len(buf) - pos < size:
             run = 0
         else:
             body = __lsl_byte_zeros(size - 8)
@@ -2463,62 +2487,16 @@ function wl_parse_stream(index, data, limit):
             msgs = msgs + 1
         end
     end
-    return pos
-end
-
-function wl_read_client(index):
-    ci = Int(index)
-    if Int(CL_ALIVE[ci]) == 0:
-        return None
-    end
-    chunk = WL_RXBUF[0]
-    reads = 0
-    more = 1
-    while more == 1 and reads < 4:
-        reads = reads + 1
-        n = unixsock.recv_fds(Int(CL_FD[ci]), chunk, 65536, CL_FDS[ci])
-        if n == 0:
-            call wl_client_drop(ci)
-            return None
+    if pos > 0:
+        rest = ByteArray()
+        k = pos
+        while k < len(buf):
+            call rest.append(buf[k])
+            k = k + 1
         end
-        if n < 0:
-            more = 0
-        else:
-            pend = ByteArray(CL_INBUF[ci])
-            data = ByteArray(chunk)
-            if len(pend) == 0:
-                # Hot path: parse straight out of the receive buffer and
-                # stage only the incomplete tail. The old byte-by-byte
-                # copy of every chunk into the pending buffer (and of the
-                # leftover back out) dominated the read side for a busy
-                # client.
-                used = Int(wl_parse_stream(ci, chunk, n))
-                k = used
-                while k < n:
-                    call pend.append(data[k])
-                    k = k + 1
-                end
-            else:
-                i = 0
-                while i < n:
-                    call pend.append(data[i])
-                    i = i + 1
-                end
-                used = Int(wl_parse_stream(ci, pend, len(pend)))
-                if used > 0:
-                    rest = ByteArray()
-                    k = used
-                    while k < len(pend):
-                        call rest.append(pend[k])
-                        k = k + 1
-                    end
-                    CL_INBUF[ci] = rest
-                end
-            end
-            if n < 65536:
-                more = 0
-            end
-        end
+        CL_INBUF[ci] = rest
+    else:
+        CL_INBUF[ci] = buf
     end
     return None
 end

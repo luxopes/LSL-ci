@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <title>LSL — Vývojářské příručky</title>
 <style>
   :root {
@@ -317,6 +318,18 @@
 
 <script>
 function guidePageName(href) {
+  let legacyPages = {
+    '../language.md': 'reference',
+    '../programming.md': '02-language-basics',
+    '../gui.md': '09-gui-programming',
+    '../configuration.md': '08-configuration-system',
+    '../ai.md': '10-ai-applications',
+    '../system.md': '08-configuration-system',
+    '../compiler-development.md': '12-compiler-internals',
+    '../../compiler/runtime-abi.md': '12-compiler-internals'
+  };
+  if (legacyPages[href]) return legacyPages[href];
+
   let match = href.match(/^([A-Za-z0-9-]+)\.md$/);
   if (!match) return null;
   let name = match[1];
@@ -499,7 +512,7 @@ async function loadPage(name) {
   main.innerHTML = '<div id="loading">Načítám...</div>';
 
   try {
-    let resp = await fetch(name + '.md');
+    let resp = await fetch(name + '.md', {cache: 'no-store'});
     if (!resp.ok) throw new Error('Nenalezeno');
     let md = await resp.text();
     let html = renderMarkdown(md);
