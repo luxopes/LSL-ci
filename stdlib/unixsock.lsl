@@ -24,6 +24,7 @@ SYS_BIND = 49
 SYS_LISTEN = 50
 SYS_SOCKETPAIR = 53
 SYS_MEMFD_CREATE = 319
+SYS_MUNMAP = 11
 
 AF_UNIX = 1
 SOCK_STREAM = 1
@@ -168,6 +169,23 @@ end
 
 function send_bytes(handle, payload, count):
     return send_fd(handle, payload, count, 0 - 1)
+end
+
+# Send `count` bytes starting at `offset` inside the payload — what a
+# buffered writer needs after a short send on a nonblocking socket.
+function send_from(handle, payload, offset, count):
+    iov = __lsl_byte_zeros(16)
+    msg = __lsl_byte_zeros(56)
+    call u_put64(iov, 0, u_address(payload) + Int(offset))
+    call u_put64(iov, 8, Int(count))
+    call u_put64(msg, 16, u_address(iov))
+    call u_put64(msg, 24, 1)
+    return __lsl_syscall(SYS_SENDMSG, Int(handle), u_address(msg), 0, 0)
+end
+
+# Unmap a shared-memory pool once no buffer references it.
+function munmap(address, size):
+    return __lsl_syscall(SYS_MUNMAP, Int(address), Int(size), 0, 0)
 end
 
 # Receive up to `count` bytes into `payload`. Any descriptors that arrive
