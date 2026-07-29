@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>LSL — Vývojářské příručky</title>
+<meta name="description" content="LSL 0.5 — první self-hosted vydání Lux Simple Lang. Binární balík pro Linux x86_64, zdrojový kód a kompletní manuál.">
+<title>LSL 0.5 — First self-hosted release</title>
 <style>
   :root {
     --bg: #0d1117;
@@ -100,7 +101,7 @@
   /* ── Main content ── */
   main {
     flex: 1;
-    max-width: 860px;
+    max-width: 1040px;
     padding: 40px 48px 120px;
     overflow-y: auto;
   }
@@ -228,13 +229,137 @@
   .badge-module   { background: rgba(126,231,135,0.15); color: #7ee787; }
   .badge-kw       { background: rgba(255,166,87,0.15); color: #ffa657; }
 
-  /* ── Welcome screen ── */
+  /* ── Release / welcome screen ── */
+  .release-shell { max-width: 920px; margin: 0 auto; }
   .welcome-hero {
-    text-align: center;
-    padding: 60px 20px;
+    padding: 54px 0 44px;
   }
-  .welcome-hero h1 { font-size: 2.6rem; margin-bottom: 16px; }
-  .welcome-hero p { color: var(--muted); font-size: 1.15rem; max-width: 550px; margin: 0 auto 32px; }
+  .welcome-hero h1 {
+    font-size: clamp(2.8rem, 7vw, 5rem);
+    line-height: 0.98;
+    margin: 18px 0 20px;
+    letter-spacing: -0.055em;
+    background: linear-gradient(120deg, #f0f6fc 10%, #79c0ff 54%, #d2a8ff 90%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .welcome-hero > p {
+    color: var(--muted);
+    font-size: 1.15rem;
+    max-width: 690px;
+    margin: 0 0 28px;
+  }
+  .release-kicker {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .release-version {
+    border: 1px solid rgba(126,231,135,0.35);
+    background: rgba(126,231,135,0.09);
+    color: #7ee787;
+    padding: 4px 9px;
+    border-radius: 999px;
+    letter-spacing: 0.04em;
+  }
+  .release-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 26px 0 30px; }
+  .release-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 17px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+  .release-button:hover { border-color: var(--accent); transform: translateY(-1px); text-decoration: none; }
+  .release-button.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #08111d;
+  }
+  .release-button.primary:hover { background: #79c0ff; border-color: #79c0ff; }
+  .release-command {
+    max-width: 720px;
+    padding: 16px 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: #090d12;
+    color: #e6edf3;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.86rem;
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .release-command .prompt { color: #7ee787; }
+  .release-section { padding: 42px 0 8px; }
+  .release-section h2 {
+    margin: 0 0 8px;
+    border: none;
+    padding: 0;
+    font-size: 1.6rem;
+  }
+  .release-lead { color: var(--muted); max-width: 680px; margin-bottom: 20px; }
+  .download-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .download-card {
+    display: flex;
+    min-height: 190px;
+    flex-direction: column;
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: linear-gradient(145deg, rgba(22,27,34,0.96), rgba(13,17,23,0.96));
+    color: var(--text);
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+  .download-card:hover {
+    border-color: var(--accent-dim);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 34px rgba(0,0,0,0.24);
+    text-decoration: none;
+  }
+  .download-icon { font-size: 1.35rem; margin-bottom: 18px; }
+  .download-card h3 { margin: 0 0 6px; color: var(--text); }
+  .download-card p { margin: 0 0 20px; color: var(--muted); font-size: 0.86rem; }
+  .download-meta { margin-top: auto; color: var(--accent); font-size: 0.78rem; font-weight: 600; }
+  .release-facts {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    overflow: hidden;
+    margin: 38px 0 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--border);
+  }
+  .release-fact { padding: 19px; background: var(--surface); }
+  .release-fact strong { display: block; margin-bottom: 3px; font-size: 0.9rem; }
+  .release-fact span { color: var(--muted); font-size: 0.8rem; }
+  .checksum-link { display: inline-block; margin-top: 13px; font-size: 0.83rem; }
+  .manual-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; }
+  .release-footer {
+    margin-top: 54px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
   .welcome-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -268,6 +393,10 @@
     #menu-toggle { display: flex; align-items: center; justify-content: center; }
     main { padding: 24px 20px 80px; }
     main h1 { font-size: 1.55rem; }
+    .welcome-hero { padding-top: 48px; }
+    .welcome-hero h1 { font-size: 3rem; }
+    .download-grid, .release-facts { grid-template-columns: 1fr; }
+    .manual-heading { display: block; }
     .welcome-grid { grid-template-columns: 1fr; }
   }
 
@@ -287,7 +416,9 @@
 
 <nav id="sidebar">
   <div class="logo">LSL <span>0.5</span></div>
-  <a href="#" data-page="README">🏠 Přehled</a>
+  <a href="./">🚀 Vydání 0.5</a>
+  <a href="./#downloads">↓ Ke stažení</a>
+  <a href="#" data-page="README">📘 Přehled manuálu</a>
   <div class="section">Základy</div>
   <a href="#" data-page="01-getting-started">1. Začínáme s LSL</a>
   <a href="#" data-page="02-language-basics">2. Základy jazyka</a>
@@ -309,10 +440,64 @@
 </nav>
 
 <main id="content">
-  <div class="welcome-hero">
-    <h1>📘 LSL — Vývojářské příručky</h1>
-    <p>Podrobné průvodce jazykem Lux Simple Lang. Každá kapitola vysvětluje jednu oblast od úplných základů — předpokládáme, že s programováním začínáte.</p>
-    <div class="welcome-grid" id="welcome-grid"></div>
+  <div class="release-shell">
+    <section class="welcome-hero">
+      <div class="release-kicker"><span class="release-version">0.5</span> First self-hosted release</div>
+      <h1>Lux Simple Lang</h1>
+      <p>První veřejné self-hosted vydání LSL. Compiler je napsaný v LSL, přímo vytváří statické Linux x86_64 ELF soubory a nepotřebuje C, libc, assembler ani linker.</p>
+      <div class="release-actions">
+        <a class="release-button primary" href="downloads/lsl-0.5-linux-x86_64.tar.gz" download>Stáhnout pro Linux x86_64</a>
+        <a class="release-button" href="#README" data-page="README">Otevřít manuál</a>
+      </div>
+      <div class="release-command"><span class="prompt">$</span> tar -xzf lsl-0.5-linux-x86_64.tar.gz
+<span class="prompt">$</span> ./lsl-0.5/bin/lsl version
+0.5</div>
+    </section>
+
+    <section class="release-section" id="downloads">
+      <h2>Ke stažení</h2>
+      <p class="release-lead">Vydání obsahuje bootstrapping binárky, úplný zdrojový strom a český vývojářský manuál.</p>
+      <div class="download-grid">
+        <a class="download-card" href="downloads/lsl-0.5-linux-x86_64.tar.gz" download>
+          <span class="download-icon">⬡</span>
+          <h3>Binární balík</h3>
+          <p>Spustitelné <code>lsl</code>, <code>lslc</code>, nástroje a kompletní standardní knihovna.</p>
+          <span class="download-meta">Linux · x86_64 · tar.gz ↓</span>
+        </a>
+        <a class="download-card" href="downloads/lsl-0.5-source.tar.gz" download>
+          <span class="download-icon">⌘</span>
+          <h3>Repozitář</h3>
+          <p>Zdroj compileru, runtime, stdlib, testy, příklady a auditovatelný binary seed.</p>
+          <span class="download-meta">LSL 0.5 · source · tar.gz ↓</span>
+        </a>
+        <a class="download-card" href="downloads/lsl-0.5-manual.zip" download>
+          <span class="download-icon">▤</span>
+          <h3>Manuál offline</h3>
+          <p>Všech 12 kapitol a kompletní reference v samostatném archivu.</p>
+          <span class="download-meta">Čeština · Markdown + HTML · zip ↓</span>
+        </a>
+      </div>
+      <a class="checksum-link" href="downloads/SHA256SUMS">Ověřit SHA-256 kontrolní součty →</a>
+    </section>
+
+    <div class="release-facts">
+      <div class="release-fact"><strong>Self-hosted</strong><span>Compiler překládá sám sebe bitově shodně.</span></div>
+      <div class="release-fact"><strong>Statický ELF</strong><span>Výsledné programy nemají dynamic interpreter.</span></div>
+      <div class="release-fact"><strong>Syscall-only</strong><span>Runtime komunikuje přímo s Linux kernelem.</span></div>
+    </div>
+
+    <section class="release-section" id="manual">
+      <div class="manual-heading">
+        <div>
+          <h2>Vývojářský manuál</h2>
+          <p class="release-lead">Od prvního programu po compiler internals.</p>
+        </div>
+        <a class="release-button" href="#reference" data-page="reference">Kompletní reference</a>
+      </div>
+      <div class="welcome-grid" id="welcome-grid"></div>
+    </section>
+
+    <footer class="release-footer">LSL 0.5 · First self-hosted release · Linux x86_64 · MIT License</footer>
   </div>
 </main>
 
@@ -569,8 +754,11 @@ function buildWelcomeGrid() {
     ['05-error-handling', '5', 'Zpracování chyb', 'Safe, try/else, Error, check, last_error — jak psát odolný kód.'],
     ['06-modules-and-imports', '6', 'Moduly a knihovny', 'Standardní knihovny, instalace balíčků, json, os, time, http, env.'],
     ['07-files-io-and-processes', '7', 'Soubory a procesy', 'Čtení a zápis souborů, spouštění programů, HTTP, bezpečnost.'],
+    ['08-configuration-system', '8', 'Konfigurační systém', 'Deklarativní konfigurace, options, assertions, lazy hodnoty a reprodukovatelnost.'],
     ['09-gui-programming', '9', 'GUI programování', 'Okna, kreslení, widgety, CSS stylování — tvorba grafických aplikací.'],
     ['10-ai-applications', '10', 'AI aplikace', 'OpenAI API, streaming, function calling, secrets management.'],
+    ['11-performance-and-optimization', '11', 'Výkon a optimalizace', 'Typovaná pole, nativní kernely, benchmarking a optimalizace compileru.'],
+    ['12-compiler-internals', '12', 'Interní architektura', 'Self-host, fixed point, parser, codegen, runtime, ABI a garbage collector.'],
   ];
   grid.innerHTML = chapters.map(([page, num, title, desc]) =>
     `<a class="welcome-card" href="#" data-page="${page}" onclick="event.preventDefault();loadPage('${page}')">

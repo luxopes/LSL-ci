@@ -1,5 +1,8 @@
 # LSL — Vývojářské příručky
 
+> **LSL 0.5 — First self-hosted release.**
+> [Stáhnout binárky, zdrojový kód nebo offline manuál](index.html#downloads).
+
 Podrobné průvodce jazykem LSL (Lux Simple Lang) 0.5. Každá kapitola
 vysvětluje jednu oblast od základů — text předpokládá, že s programováním
 teprve začínáte. Všechny konstrukty jsou popsány srozumitelně: co dělají,

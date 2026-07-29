@@ -2,6 +2,12 @@
 
 LSL 0.5 je self-hostovaný jazyk pro běžné programování, deklarativní konfiguraci a AI orchestrace. Produkční implementace je pouze LSL: compiler přímo zapisuje statický Linux x86_64 ELF a runtime používá přímé syscalls. Není zde C/C++, libc, assembler, linker, Python ani shell launcher.
 
+## První self-hosted vydání
+
+LSL 0.5 je první veřejné self-hosted vydání. Binární balík pro Linux x86_64,
+zdrojový archiv a kompletní český manuál jsou na
+[lsl25.netlify.app](https://lsl25.netlify.app/).
+
 ## Použití
 
 ```text
