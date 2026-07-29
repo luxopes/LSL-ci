@@ -88,7 +88,7 @@ GLOBAL_VERSIONS = [4, 1, 2, 5, 3, 1, 3]
 WL_SHM_FORMAT_ARGB8888 = 0
 WL_SHM_FORMAT_XRGB8888 = 1
 
-MAX_CLIENTS = 8
+MAX_CLIENTS = 32
 MAX_OBJECTS = 4096
 OUT_LIMIT = 4194304
 
@@ -211,7 +211,49 @@ CL_PTRL = []
 CL_KBDL = []
 CL_OUTID = []
 
+# A client slot, reusing the first dead one: without this the server stops
+# accepting after MAX_CLIENTS launches, however many have since quit.
 function cl_new(handle):
+    i = 0
+    while i < len(CL_FD):
+        if Int(CL_ALIVE[i]) == 0:
+            CL_FD[i] = Int(handle)
+            CL_ALIVE[i] = 1
+            CL_INBUF[i] = ByteArray()
+            CL_FDS[i] = []
+            kinds = __lsl_int_zeros(MAX_OBJECTS)
+            IntArray(kinds)[1] = WO_DISPLAY
+            CL_KIND[i] = kinds
+            CL_A[i] = __lsl_int_zeros(MAX_OBJECTS)
+            CL_B[i] = __lsl_int_zeros(MAX_OBJECTS)
+            CL_C[i] = __lsl_int_zeros(MAX_OBJECTS)
+            CL_D[i] = __lsl_int_zeros(MAX_OBJECTS)
+            CL_E[i] = __lsl_int_zeros(MAX_OBJECTS)
+            CL_F[i] = __lsl_int_zeros(MAX_OBJECTS)
+            CL_G[i] = __lsl_int_zeros(MAX_OBJECTS)
+            CL_H[i] = __lsl_int_zeros(MAX_OBJECTS)
+            CL_D0[i] = __lsl_int_zeros(MAX_OBJECTS)
+            CL_D1[i] = __lsl_int_zeros(MAX_OBJECTS)
+            CL_D2[i] = __lsl_int_zeros(MAX_OBJECTS)
+            CL_D3[i] = __lsl_int_zeros(MAX_OBJECTS)
+            CL_TITLE[i] = ""
+            CL_OUT[i] = ByteArray()
+            CL_OUTOFF[i] = 0
+            CL_FDPOS[i] = []
+            CL_FDVAL[i] = []
+            CL_FDKEEP[i] = []
+            CL_MAXID[i] = 2
+            CL_SEATV[i] = 1
+            CL_PTRL[i] = []
+            CL_KBDL[i] = []
+            CL_OUTID[i] = 0
+            CL_DDEV[i] = 0
+            CL_SRVID[i] = 0
+            CL_OFFER[i] = 0
+            return i
+        end
+        i = i + 1
+    end
     call CL_FD.append(Int(handle))
     call CL_ALIVE.append(1)
     call CL_INBUF.append(ByteArray())
@@ -748,7 +790,15 @@ function wl_accept():
     if Int(WL_SERVER[0]) < 0:
         return None
     end
-    if len(CL_FD) >= MAX_CLIENTS:
+    live = 0
+    i = 0
+    while i < len(CL_FD):
+        if Int(CL_ALIVE[i]) == 1:
+            live = live + 1
+        end
+        i = i + 1
+    end
+    if live >= MAX_CLIENTS:
         return None
     end
     c = unixsock.accept_unix(Int(WL_SERVER[0]))
