@@ -26,6 +26,7 @@ SYS_SOCKETPAIR = 53
 SYS_MEMFD_CREATE = 319
 SYS_MUNMAP = 11
 SYS_PIPE2 = 293
+SYS_CHMOD = 90
 
 AF_UNIX = 1
 SOCK_STREAM = 1
@@ -101,6 +102,21 @@ function listen_unix(path, backlog):
     end
     call set_nonblocking(s)
     return s
+end
+
+# Mode bits on a path. A socket created under the default umask is
+# srwxr-xr-x, and connect(2) needs WRITE permission — so every other user
+# on the machine is locked out until this widens it.
+function chmod_path(path, mode):
+    p = String(path)
+    buf = ByteArray()
+    i = 0
+    while i < len(p):
+        call buf.append(ord(p[i]))
+        i = i + 1
+    end
+    call buf.append(0)
+    return __lsl_syscall(SYS_CHMOD, u_address(buf), Int(mode), 0, 0)
 end
 
 function set_nonblocking(handle):

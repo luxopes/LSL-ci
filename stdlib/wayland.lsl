@@ -770,6 +770,9 @@ function wl_start():
     end
     WL_SERVER[0] = s
     WL_SOCKET_PATH[0] = path
+    # The compositor runs as root, its clients as the session user, and
+    # connecting to a socket needs write permission on it.
+    call unixsock.chmod_path(path, 511)
     call wl_log("listening on " + path)
     return s
 end
