@@ -27,6 +27,7 @@ load atomic_conformance
 load thread_conformance
 load parameter_inference_conformance
 load bit_builtins_conformance
+load register_locals_conformance
 load float_floordiv_conformance
 load recursive_return_conformance
 load wide_class_abi_conformance

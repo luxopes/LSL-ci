@@ -985,6 +985,137 @@ function repeated_fast_intarray(generator, syntax):
     return selected
 end
 
+function local_register(generator, name):
+    # Register-resident locals map to callee-saved r13/r14/r15; -1 otherwise.
+    registers = generator.get("register_locals", {})
+    if name in registers:
+        return registers[name]
+    end
+    return -1
+end
+
+function emit_load_local(generator, register, name):
+    home = local_register(generator, name)
+    if home >= 0:
+        if home != register:
+            call assembler.emit(generator["builder"], x86_64.move_reg_reg(register, home))
+        end
+    else:
+        call assembler.emit(generator["builder"], x86_64.load_stack(register, generator["variables"][name]))
+    end
+end
+
+function emit_store_local(generator, name, register):
+    home = local_register(generator, name)
+    if home >= 0:
+        if home != register:
+            call assembler.emit(generator["builder"], x86_64.move_reg_reg(home, register))
+        end
+    else:
+        call assembler.emit(generator["builder"], x86_64.store_stack(generator["variables"][name], register))
+    end
+end
+
+function scan_local_uses(node, counts, excluded, weight):
+    # Weighted name use counts plus the names codegen addresses by stack slot
+    # directly (for-loop variables, class slots, deleted names). Child fields
+    # are enumerated explicitly; an unknown field only undercounts.
+    if node == None:
+        return
+    end
+    if type(node) == "List":
+        for item in node:
+            call scan_local_uses(item, counts, excluded, weight)
+        end
+        return
+    end
+    if type(node) != "Dictionary":
+        return
+    end
+    kind = node.get("kind", "")
+    if kind == "name":
+        name = node["name"]
+        counts[name] = counts.get(name, 0) + weight
+        return
+    end
+    if kind == "literal":
+        return
+    end
+    body_weight = weight
+    if kind == "while" or kind == "loop" or kind == "for":
+        body_weight = weight * 4
+        if kind == "for":
+            excluded[node["name"]] = True
+            excluded[node["iterator_name"]] = True
+            excluded[node["index_name"]] = True
+        end
+    elif kind == "class":
+        excluded[node["name"]] = True
+    elif kind == "delete":
+        if node["target"]["kind"] == "name":
+            excluded[node["target"]["name"]] = True
+        end
+    end
+    for field in ["target", "value", "condition", "expression", "iterable", "left", "right", "operand", "index", "start", "stop", "step", "message", "parent"]:
+        if field in node:
+            call scan_local_uses(node[field], counts, excluded, weight)
+        end
+    end
+    for field in ["arguments", "items", "operands", "expressions", "entries", "otherwise"]:
+        if field in node:
+            call scan_local_uses(node[field], counts, excluded, weight)
+        end
+    end
+    if "body" in node:
+        call scan_local_uses(node["body"], counts, excluded, body_weight)
+    end
+    if "branches" in node:
+        for branch in node["branches"]:
+            call scan_local_uses(branch[0], counts, excluded, weight)
+            call scan_local_uses(branch[1], counts, excluded, weight)
+        end
+    end
+end
+
+function choose_register_locals(declaration, variables, types):
+    # Up to three statically Int/Bool locals (parameters included) with the
+    # highest weighted use counts live in r13/r14/r15 for the whole function.
+    counts = {}
+    excluded = {}
+    call scan_local_uses(declaration["body"], counts, excluded, 1)
+    candidates = []
+    for name in variables.keys():
+        if name in excluded or name not in counts or name not in types:
+            continue
+        end
+        if types[name] != "Int" and types[name] != "Bool":
+            continue
+        end
+        # Below this weight the save/restore in the prologue costs more than
+        # the register saves; loop-carried locals score 4+ per use.
+        if counts[name] < 8:
+            continue
+        end
+        candidates.append([counts[name], name])
+    end
+    chosen = {}
+    available = [13, 14, 15]
+    while len(candidates) > 0 and len(available) > 0:
+        best = 0
+        index = 1
+        while index < len(candidates):
+            if candidates[index][0] > candidates[best][0]:
+                best = index
+            end
+            index += 1
+        end
+        chosen[candidates[best][1]] = available[0]
+        available = available[1:len(available)]
+        call candidates.pop(best)
+    end
+    return chosen
+end
+
 function emit_int_leaf(generator, syntax, register):
     output = generator["builder"]
     if syntax["kind"] == "literal":
@@ -992,7 +1123,7 @@ function emit_int_leaf(generator, syntax, register):
     else:
         name = syntax["name"]
         if name in generator["variables"]:
-            call assembler.emit(output, x86_64.load_stack(register, generator["variables"][name]))
+            call emit_load_local(generator, register, name)
         else:
             call assembler.emit(output, x86_64.load_memory(register, 12, generator["global_variables"][name]))
         end
@@ -1301,7 +1432,7 @@ function emit_expression(generator, syntax):
             # Hoist one repeated IntArray data-pointer load for this pure
             # scalar expression. The restricted tree does not clobber r8.
             if repeated_array in generator["variables"]:
-                call assembler.emit(output, x86_64.load_stack(0, generator["variables"][repeated_array]))
+                call emit_load_local(generator, 0, repeated_array)
             else:
                 call assembler.emit(output, x86_64.load_memory(0, 12, generator["global_variables"][repeated_array]))
             end
@@ -1333,7 +1464,7 @@ function emit_expression(generator, syntax):
     elif kind == "name":
         name = syntax["name"]
         if name in generator["variables"]:
-            call assembler.emit(output, x86_64.load_stack(0, generator["variables"][name]))
+            call emit_load_local(generator, 0, name)
         elif name in generator["global_variables"]:
             call assembler.emit(output, x86_64.load_memory(0, 12, generator["global_variables"][name]))
         elif name in generator["functions"]:
@@ -2384,10 +2515,11 @@ function emit_expression(generator, syntax):
                     call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
                 end
                 call assembler.emit(output, x86_64.move_reg_reg(6, 0))
-                call assembler.emit(output, x86_64.load_memory(1, 15, 0))
+                call assembler.emit(output, x86_64.load_memory(11, 3, 120))
+                call assembler.emit(output, x86_64.load_memory(1, 11, 0))
                 call assembler.emit(output, x86_64.cmp_reg_reg(6, 1))
                 call assembler.relative(output, [15, 141], argument_missing)
-                call assembler.emit(output, x86_64.lea_base(7, 15, 8))
+                call assembler.emit(output, x86_64.lea_base(7, 11, 8))
                 call assembler.emit(output, x86_64.load_indexed(7, 7, 6, 3))
                 call assembler.relative(output, [232], "runtime_from_cstring")
                 call assembler.relative(output, [233], argument_done)
@@ -2396,7 +2528,8 @@ function emit_expression(generator, syntax):
                 call assembler.label(output, argument_done)
                 return
             elif target["name"] == "arg_count":
-                call assembler.emit(output, x86_64.load_memory(0, 15, 0))
+                call assembler.emit(output, x86_64.load_memory(0, 3, 120))
+                call assembler.emit(output, x86_64.load_memory(0, 0, 0))
                 return
             elif target["name"] == "gc":
                 call assembler.relative(output, [232], "runtime_gc")
@@ -3279,7 +3412,7 @@ function emit_expression(generator, syntax):
         end
         if indirect_call:
             if target["name"] in generator["variables"]:
-                call assembler.emit(output, x86_64.load_stack(0, generator["variables"][target["name"]]))
+                call emit_load_local(generator, 0, target["name"])
             else:
                 call assembler.emit(output, x86_64.load_memory(0, 12, generator["global_variables"][target["name"]]))
             end
@@ -3318,7 +3451,7 @@ function emit_expression(generator, syntax):
         if indirect_call and generator["path"].find("compiler/pure/") < 0:
             call assembler.emit(output, x86_64.push(0))
             if target["name"] in generator["variables"]:
-                call assembler.emit(output, x86_64.load_stack(7, generator["variables"][target["name"]]))
+                call emit_load_local(generator, 7, target["name"])
             else:
                 call assembler.emit(output, x86_64.load_memory(7, 12, generator["global_variables"][target["name"]]))
             end
@@ -3600,7 +3733,7 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                     combined = {"kind": "binary", "line": statement["line"], "column": statement["column"], "end_column": statement["end_column"], "operator": operator, "left": target, "right": statement["value"]}
                     call emit_expression(generator, combined)
                 end
-                call assembler.emit(generator["builder"], x86_64.store_stack(generator["variables"][target["name"]], 0))
+                call emit_store_local(generator, target["name"], 0)
             elif target["kind"] == "index":
                 target_type = infer_expression_type(target["target"], generator["types"], generator["function_returns"])
                 fast_value = statement["value"]
@@ -4073,7 +4206,7 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             elif target["kind"] == "name":
                 call assembler.emit(generator["builder"], x86_64.mov_imm64(0, 0))
                 if target["name"] in generator["variables"]:
-                    call assembler.emit(generator["builder"], x86_64.store_stack(generator["variables"][target["name"]], 0))
+                    call emit_store_local(generator, target["name"], 0)
                 elif target["name"] in generator["global_variables"]:
                     call assembler.emit(generator["builder"], x86_64.store_memory(12, generator["global_variables"][target["name"]], 0))
                 else:
@@ -4860,6 +4993,15 @@ function emit_function(generator, declaration):
         end
     end
     call collect_types(declaration["body"], types, generator["function_returns"])
+    register_locals = choose_register_locals(declaration, variables, types)
+    save_slots = {}
+    for local_name in register_locals.keys():
+        save_name = "__save_r" + String(register_locals[local_name])
+        variables[save_name] = -(len(variables) + 1) * 8
+        save_slots[register_locals[local_name]] = variables[save_name]
+    end
+    old_register_locals = generator.get("register_locals", {})
+    generator["register_locals"] = register_locals
     old_variables = generator["variables"]
     old_types = generator["types"]
     old_error_label = generator["error_label"]
@@ -4879,15 +5021,20 @@ function emit_function(generator, declaration):
     end
     call assembler.label(generator["builder"], "function_" + name)
     call assembler.emit(generator["builder"], x86_64.function_prologue(aligned_frame(variables)))
+    # Callee-saved registers that hold locals are preserved in frame slots and
+    # restored at the single return label.
+    for saved_register in save_slots.keys():
+        call assembler.emit(generator["builder"], x86_64.store_stack(save_slots[saved_register], saved_register))
+    end
     argument_registers = [7, 6, 2, 1, 8, 9]
     index = 0
     while index < len(declaration["parameters"]):
         parameter = declaration["parameters"][index]
         if index < len(argument_registers):
-            call assembler.emit(generator["builder"], x86_64.store_stack(__lsl_typed_int(variables[parameter]), __lsl_typed_int(argument_registers[index])))
+            call emit_store_local(generator, parameter, __lsl_typed_int(argument_registers[index]))
         else:
             call assembler.emit(generator["builder"], x86_64.load_stack(0, 16 + (index - len(argument_registers)) * 8))
-            call assembler.emit(generator["builder"], x86_64.store_stack(variables[parameter], 0))
+            call emit_store_local(generator, parameter, 0)
         end
         index += 1
     end
@@ -4896,7 +5043,11 @@ function emit_function(generator, declaration):
     call emit_statements(generator, declaration["body"], "", "", return_label)
     call assembler.emit(generator["builder"], x86_64.mov_imm64(0, 0))
     call assembler.label(generator["builder"], return_label)
+    for saved_register in save_slots.keys():
+        call assembler.emit(generator["builder"], x86_64.load_stack(saved_register, save_slots[saved_register]))
+    end
     call assembler.emit(generator["builder"], x86_64.function_epilogue())
+    generator["register_locals"] = old_register_locals
     generator["variables"] = old_variables
     generator["types"] = old_types
     generator["error_label"] = old_error_label

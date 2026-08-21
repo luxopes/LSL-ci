@@ -7,6 +7,12 @@ manuály a soubory ke stažení zůstávají dostupné v
 ## Nevydáno
 
 - `cpu_count()`: počet CPU v affinity masce procesu (`sched_getaffinity`), pro dimenzování worker poolů.
+- Alokace registrů pro lokály: až tři staticky `Int`/`Bool` lokály (včetně
+  parametrů) s nejvyšším váženým počtem použití (smyčky 4× za úroveň) žijí ve
+  funkci v r13/r14/r15; ukládají se v prologu do rámce a obnovují na jediném
+  návratovém labelu, takže chybové cesty i rekurze zůstávají korektní.
+  Smyčkový microbenchmark ~19 % rychleji, Lumen perft ~5 %; compile time
+  beze změny. Test `tests/register_locals_conformance.lsl`.
 - Stav výjimek a vrchol zásobníku vlákna se přesunuly z registrů r13/r14/r15
   do thread-local bloku adresovaného přes `fs` (`arch_prctl(ARCH_SET_FS)`,
   u workerů `CLONE_SETTLS`; hlavní vlákno state+160, workery druhá polovina
