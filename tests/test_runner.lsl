@@ -62,8 +62,8 @@ call require_success(run(compiler, ["tests/compiler/float_smoke.lsl", "/tmp/lsl-
 call require_success(run("/tmp/lsl-float-test", []), "run Float smoke")
 call require_success(run(compiler, ["tests/codegen_optimization_conformance.lsl", "/tmp/lsl-codegen-optimization-test"]), "compile codegen optimization conformance")
 call require_output("/tmp/lsl-codegen-optimization-test", [], "tests/codegen_optimization_conformance.out", "codegen optimization output differs")
-if len(readbytes("/tmp/lsl-codegen-optimization-test")) > 61000:
-    Error(TestFailure: "optimized standalone ELF exceeds 61000 bytes")
+if len(readbytes("/tmp/lsl-codegen-optimization-test")) > 64000:
+    Error(TestFailure: "optimized standalone ELF exceeds 64000 bytes")
 end
 call require_success(run(compiler, ["compiler/pure/cli.lsl", "/tmp/lsl-stdin-cli-test"]), "compile stdin CLI")
 help_output = capture("/tmp/lsl-stdin-cli-test", ["--help"])

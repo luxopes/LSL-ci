@@ -441,7 +441,7 @@ result = compute(x, y)
 `thread_spawn(function)` spustí funkci bez parametrů jako worker se sdílenou
 pamětí a vrátí Int tid (`-1` při vyčerpání 127 slotů nebo selhání mmap 8 MiB
 zásobníku); `thread_join(tid)` počká na jeho konec (vrací `0`, `126` pro
-neznámý tid). Sdílená data předávejte přes globální proměnné a synchronizujte
+neznámý tid). Počet workerů dimenzujte podle `cpu_count()` (počet CPU v affinity masce procesu). Sdílená data předávejte přes globální proměnné a synchronizujte
 je `atomic_add`/`atomic_xchg`/`atomic_cas` nad `IntArray` sloty a
 `atomic_pause()` ve spin smyčkách.
 
@@ -479,6 +479,57 @@ call thread_join(a)
 call thread_join(b)
 print partial[0] + partial[1]
 ```
+
+Pro využití všech jader spusťte `cpu_count()` workerů a nechte je brát kusy
+práce z atomického čítače:
+
+```lsl
+# lsl: unchecked-intarray
+chunks = 64
+next_chunk = IntArray()
+next_chunk.append(0)
+partial = IntArray()
+i = 0
+while i < chunks:
+    partial.append(0)
+    i += 1
+end
+
+function worker():
+    while True:
+        c = atomic_add(next_chunk, 0, 1)
+        if c >= chunks:
+            return None
+        end
+        acc = 0
+        j = c * 2000000
+        stop = j + 2000000
+        while j < stop:
+            acc += (j * 7) % 13
+            j += 1
+        end
+        partial[c] = acc
+    end
+    return None
+end
+
+n = cpu_count()
+tids = IntArray()
+k = 0
+while k < n:
+    tids.append(thread_spawn(worker))
+    k += 1
+end
+k = 0
+while k < n:
+    call thread_join(tids[k])
+    k += 1
+end
+```
+
+Na 12jádrovém stroji běží tento pool na ~1000 % CPU (`time`: 0,33 s user,
+0,033 s real); pod `taskset -c 0-3` `cpu_count()` vrátí 4 a pool se
+automaticky zmenší.
 
 Allokátor je serializovaný futex mutexem aktivovaným prvním `thread_spawn`
 (jednovláknové programy neplatí nic), takže alokačně těžké workery se o zámek

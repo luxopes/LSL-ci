@@ -25,6 +25,7 @@ function allocate_worker():
     return None
 end
 
+print cpu_count() >= 1, type(cpu_count())
 t1 = thread_spawn(bump)
 t2 = thread_spawn(bump)
 t3 = thread_spawn(bump)
