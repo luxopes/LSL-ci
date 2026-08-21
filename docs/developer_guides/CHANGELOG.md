@@ -7,6 +7,9 @@ manuály a soubory ke stažení zůstávají dostupné v
 ## Nevydáno
 
 - `cpu_count()`: počet CPU v affinity masce procesu (`sched_getaffinity`), pro dimenzování worker poolů.
+- Globální proměnné programu leží ve state bloku za runtime hlavičkou a
+  adresují se přes `rbx` místo rámce `main` v r12; r12 je tím volný jako
+  čtvrtý registr pro lokály. Lumen perft 0,43 → 0,37 s (−13 %).
 - Registrové lokály sdílejí registr podle živých intervalů (statement clock,
   smyčky rozšířené na celý rozsah), takže se do r13–r15 vejde víc lokálů s
   disjunktní životností; smyčkový microbenchmark dalších ~11 %.

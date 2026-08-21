@@ -253,7 +253,7 @@ end
 
 function emit_entry(output):
     # Child start: rsp = stack top - 16 with [rsp] = entry, [rsp+8] = tagged
-    # Function. rbx and r12 are inherited from the spawning thread; fs points
+    # Function. rbx (state block) is inherited from the spawning thread; fs points
     # at the entry's thread-local block.
     call assembler.label(output, "runtime_thread_entry")
     call assembler.emit(output, x86_64.load_memory(7, 4, 8))

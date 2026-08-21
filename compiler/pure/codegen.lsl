@@ -995,13 +995,17 @@ function local_register(generator, name):
 end
 
 function emit_load_local(generator, register, name):
+    # Named variable read: register home, stack slot, or a global in the
+    # state block (rbx-relative; globals no longer pin r12).
     home = local_register(generator, name)
     if home >= 0:
         if home != register:
             call assembler.emit(generator["builder"], x86_64.move_reg_reg(register, home))
         end
-    else:
+    elif name in generator["variables"]:
         call assembler.emit(generator["builder"], x86_64.load_stack(register, generator["variables"][name]))
+    else:
+        call assembler.emit(generator["builder"], x86_64.load_memory(register, 3, generator["global_variables"][name]))
     end
 end
 
@@ -1011,8 +1015,10 @@ function emit_store_local(generator, name, register):
         if home != register:
             call assembler.emit(generator["builder"], x86_64.move_reg_reg(home, register))
         end
-    else:
+    elif name in generator["variables"]:
         call assembler.emit(generator["builder"], x86_64.store_stack(generator["variables"][name], register))
+    else:
+        call assembler.emit(generator["builder"], x86_64.store_memory(3, generator["global_variables"][name], register))
     end
 end
 
@@ -1138,7 +1144,7 @@ function choose_register_locals(declaration, variables, types):
     end
     chosen = {}
     occupancy = {}
-    for register in [13, 14, 15]:
+    for register in [12, 13, 14, 15]:
         occupancy[register] = []
     end
     while len(candidates) > 0:
@@ -1153,7 +1159,7 @@ function choose_register_locals(declaration, variables, types):
         name = candidates[best][1]
         call candidates.pop(best)
         interval = ranges[name]
-        for register in [13, 14, 15]:
+        for register in [12, 13, 14, 15]:
             if name in chosen:
                 break
             end
@@ -1446,11 +1452,7 @@ function emit_int_leaf(generator, syntax, register):
         call assembler.emit(output, x86_64.mov_imm64(register, integer_literal(syntax)))
     else:
         name = syntax["name"]
-        if name in generator["variables"]:
-            call emit_load_local(generator, register, name)
-        else:
-            call assembler.emit(output, x86_64.load_memory(register, 12, generator["global_variables"][name]))
-        end
+        call emit_load_local(generator, register, name)
     end
 end
 
@@ -1762,11 +1764,7 @@ function emit_expression(generator, syntax):
         if repeated_array != "":
             # Hoist one repeated IntArray data-pointer load for this pure
             # scalar expression. The restricted tree does not clobber r8.
-            if repeated_array in generator["variables"]:
-                call emit_load_local(generator, 0, repeated_array)
-            else:
-                call assembler.emit(output, x86_64.load_memory(0, 12, generator["global_variables"][repeated_array]))
-            end
+            call emit_load_local(generator, 0, repeated_array)
             call assembler.emit(output, x86_64.load_memory(8, 0, 24))
             generator["fast_intarray_name"] = repeated_array
             call emit_expression(generator, syntax)
@@ -1794,10 +1792,8 @@ function emit_expression(generator, syntax):
         end
     elif kind == "name":
         name = syntax["name"]
-        if name in generator["variables"]:
+        if name in generator["variables"] or name in generator["global_variables"]:
             call emit_load_local(generator, 0, name)
-        elif name in generator["global_variables"]:
-            call assembler.emit(output, x86_64.load_memory(0, 12, generator["global_variables"][name]))
         elif name in generator["functions"]:
             call assembler.relative(output, x86_64.lea_rip_prefix(0), "function_" + name)
         else:
@@ -3742,11 +3738,7 @@ function emit_expression(generator, syntax):
             index += 1
         end
         if indirect_call:
-            if target["name"] in generator["variables"]:
-                call emit_load_local(generator, 0, target["name"])
-            else:
-                call assembler.emit(output, x86_64.load_memory(0, 12, generator["global_variables"][target["name"]]))
-            end
+            call emit_load_local(generator, 0, target["name"])
             # Callable classification uses rdi and may clobber caller-saved
             # registers, so preserve the already loaded user arguments.
             index = 0
@@ -3781,11 +3773,7 @@ function emit_expression(generator, syntax):
         end
         if indirect_call and generator["path"].find("compiler/pure/") < 0:
             call assembler.emit(output, x86_64.push(0))
-            if target["name"] in generator["variables"]:
-                call emit_load_local(generator, 7, target["name"])
-            else:
-                call assembler.emit(output, x86_64.load_memory(7, 12, generator["global_variables"][target["name"]]))
-            end
+            call emit_load_local(generator, 7, target["name"])
             call assembler.relative(output, [232], "runtime_function_return_tag")
             call assembler.emit(output, x86_64.move_reg_reg(10, 0))
             call assembler.emit(output, x86_64.pop(0))
@@ -4334,9 +4322,9 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 end
             end
             if not is_range_loop:
-                iterator_slot = generator["variables"][statement["iterator_name"]]
-                index_slot = generator["variables"][statement["index_name"]]
-                value_slot = generator["variables"][statement["name"]]
+                iterator_name = statement["iterator_name"]
+                index_name = statement["index_name"]
+                value_name = statement["name"]
                 call emit_expression(generator, iterable)
                 iterable_type = infer_expression_type(iterable, generator["types"], generator["function_returns"])
                 if iterable_type == "Dictionary":
@@ -4357,21 +4345,21 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                     call assembler.emit(generator["builder"], x86_64.pop(0))
                     call assembler.label(generator["builder"], iterator_ready)
                 end
-                call assembler.emit(generator["builder"], x86_64.store_stack(iterator_slot, 0))
+                call emit_store_local(generator, iterator_name, 0)
                 call assembler.emit(generator["builder"], x86_64.mov_imm64(0, 0))
-                call assembler.emit(generator["builder"], x86_64.store_stack(index_slot, 0))
+                call emit_store_local(generator, index_name, 0)
                 start_label = label_name(generator, "iter_start")
                 continue_target = label_name(generator, "iter_continue")
                 end_label = label_name(generator, "iter_end")
                 call assembler.label(generator["builder"], start_label)
-                call assembler.emit(generator["builder"], x86_64.load_stack(7, iterator_slot))
+                call emit_load_local(generator, 7, iterator_name)
                 call assembler.relative(generator["builder"], [232], "runtime_length")
                 call assembler.emit(generator["builder"], x86_64.move_reg_reg(1, 0))
-                call assembler.emit(generator["builder"], x86_64.load_stack(0, index_slot))
+                call emit_load_local(generator, 0, index_name)
                 call assembler.emit(generator["builder"], x86_64.cmp_reg_reg(0, 1))
                 call assembler.relative(generator["builder"], [15, 141], end_label)
-                call assembler.emit(generator["builder"], x86_64.load_stack(7, iterator_slot))
-                call assembler.emit(generator["builder"], x86_64.load_stack(6, index_slot))
+                call emit_load_local(generator, 7, iterator_name)
+                call emit_load_local(generator, 6, index_name)
                 if iterable_type == "ByteArray":
                     call assembler.relative(generator["builder"], [232], "runtime_byte_array_get")
                 elif iterable_type == "IntArray":
@@ -4386,12 +4374,12 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 else:
                     call assembler.relative(generator["builder"], [232], "runtime_get")
                 end
-                call assembler.emit(generator["builder"], x86_64.store_stack(value_slot, 0))
+                call emit_store_local(generator, value_name, 0)
                 call emit_statements(generator, statement["body"], end_label, continue_target, return_label)
                 call assembler.label(generator["builder"], continue_target)
-                call assembler.emit(generator["builder"], x86_64.load_stack(0, index_slot))
+                call emit_load_local(generator, 0, index_name)
                 call assembler.emit(generator["builder"], x86_64.increment(0))
-                call assembler.emit(generator["builder"], x86_64.store_stack(index_slot, 0))
+                call emit_store_local(generator, index_name, 0)
                 call assembler.relative(generator["builder"], [233], start_label)
                 call assembler.label(generator["builder"], end_label)
                 continue
@@ -4407,21 +4395,21 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 start_expression = arguments[0]
                 stop_expression = arguments[1]
             end
-            slot = generator["variables"][statement["name"]]
-            stop_slot = generator["variables"][statement["iterator_name"]]
-            step_slot = generator["variables"][statement["index_name"]]
+            loop_name = statement["name"]
+            stop_name = statement["iterator_name"]
+            step_name = statement["index_name"]
             call emit_expression(generator, start_expression)
             if infer_expression_type(start_expression, generator["types"], generator["function_returns"]) == "Any":
                 call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
                 call assembler.relative(generator["builder"], [232], "runtime_unbox_dynamic_int")
             end
-            call assembler.emit(generator["builder"], x86_64.store_stack(slot, 0))
+            call emit_store_local(generator, loop_name, 0)
             call emit_expression(generator, stop_expression)
             if infer_expression_type(stop_expression, generator["types"], generator["function_returns"]) == "Any":
                 call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
                 call assembler.relative(generator["builder"], [232], "runtime_unbox_dynamic_int")
             end
-            call assembler.emit(generator["builder"], x86_64.store_stack(stop_slot, 0))
+            call emit_store_local(generator, stop_name, 0)
             if len(arguments) == 3:
                 step_syntax = arguments[2]
                 step_type = infer_expression_type(step_syntax, generator["types"], generator["function_returns"])
@@ -4434,13 +4422,13 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                     call assembler.relative(generator["builder"], [232], "function___lsl_require_rang_step")
                     call emit_pending_error(generator)
                 end
-                call assembler.emit(generator["builder"], x86_64.store_stack(step_slot, 0))
+                call emit_store_local(generator, step_name, 0)
             else:
                 call assembler.emit(generator["builder"], x86_64.mov_imm64(0, 1))
-                call assembler.emit(generator["builder"], x86_64.store_stack(step_slot, 0))
+                call emit_store_local(generator, step_name, 0)
             end
             rang_step_ready = label_name(generator, "rang_step_ready")
-            call assembler.emit(generator["builder"], x86_64.load_stack(0, step_slot))
+            call emit_load_local(generator, 0, step_name)
             call assembler.emit(generator["builder"], x86_64.cmp_reg_imm8(0, 0))
             call assembler.relative(generator["builder"], [15, 133], rang_step_ready)
             rang_source_path = statement.get("path", generator["path"])
@@ -4452,9 +4440,9 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             continue_target = label_name(generator, "for_continue")
             end_label = label_name(generator, "for_end")
             call assembler.label(generator["builder"], start_label)
-            call assembler.emit(generator["builder"], x86_64.load_stack(0, slot))
-            call assembler.emit(generator["builder"], x86_64.load_stack(1, stop_slot))
-            call assembler.emit(generator["builder"], x86_64.load_stack(2, step_slot))
+            call emit_load_local(generator, 0, loop_name)
+            call emit_load_local(generator, 1, stop_name)
+            call emit_load_local(generator, 2, step_name)
             call assembler.emit(generator["builder"], x86_64.cmp_reg_imm8(2, 0))
             call assembler.relative(generator["builder"], [15, 143], positive_check)
             call assembler.emit(generator["builder"], x86_64.cmp_reg_reg(0, 1))
@@ -4466,10 +4454,10 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             call assembler.label(generator["builder"], body_label)
             call emit_statements(generator, statement["body"], end_label, continue_target, return_label)
             call assembler.label(generator["builder"], continue_target)
-            call assembler.emit(generator["builder"], x86_64.load_stack(0, slot))
-            call assembler.emit(generator["builder"], x86_64.load_stack(1, step_slot))
+            call emit_load_local(generator, 0, loop_name)
+            call emit_load_local(generator, 1, step_name)
             call assembler.emit(generator["builder"], x86_64.add_reg_reg(0, 1))
-            call assembler.emit(generator["builder"], x86_64.store_stack(slot, 0))
+            call emit_store_local(generator, loop_name, 0)
             call assembler.relative(generator["builder"], [233], start_label)
             call assembler.label(generator["builder"], end_label)
         elif kind == "break":
@@ -4559,10 +4547,8 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 end
             elif target["kind"] == "name":
                 call assembler.emit(generator["builder"], x86_64.mov_imm64(0, 0))
-                if target["name"] in generator["variables"]:
+                if target["name"] in generator["variables"] or target["name"] in generator["global_variables"]:
                     call emit_store_local(generator, target["name"], 0)
-                elif target["name"] in generator["global_variables"]:
-                    call assembler.emit(generator["builder"], x86_64.store_memory(12, generator["global_variables"][target["name"]], 0))
                 else:
                     call unsupported(generator["path"], generator["lines"], statement, "cannot delete unknown name " + target["name"], "assign the name before deleting it")
                 end
@@ -4581,9 +4567,9 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 call unsupported(generator["path"], generator["lines"], statement, "unsupported del target", "delete a name, mutable index, Dictionary key, or instance field")
             end
         elif kind == "class":
-            class_slot = generator["variables"][statement["name"]]
+            class_name_slot = statement["name"]
             call assembler.relative(generator["builder"], [232], "runtime_dict_new")
-            call assembler.emit(generator["builder"], x86_64.store_stack(class_slot, 0))
+            call emit_store_local(generator, class_name_slot, 0)
             class_end = label_name(generator, "class_end")
             if statement["condition"] != None:
                 call emit_expression(generator, statement["condition"])
@@ -4596,7 +4582,7 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                     if member["target"]["kind"] != "name" or member["operator"] != "=":
                         call unsupported(generator["path"], generator["lines"], member, "class fields require simple assignment", "use name = value in the class body")
                     end
-                    call assembler.emit(generator["builder"], x86_64.load_stack(0, class_slot))
+                    call emit_load_local(generator, 0, class_name_slot)
                     call assembler.emit(generator["builder"], x86_64.push(0))
                     call emit_string_pointer(generator, member["target"]["name"])
                     call assembler.emit(generator["builder"], x86_64.push(0))
@@ -5439,7 +5425,14 @@ function generate(path, source, program):
     end
     output = assembler.builder()
     unchecked_intarray = source.find("# lsl: unchecked-intarray") >= 0
-    generator = {"path": path, "internal_abi": internal_abi, "unchecked_intarray": unchecked_intarray, "lines": lines, "variables": {}, "types": {}, "global_variables": main_variables, "global_types": main_types, "functions": functions, "classes": classes, "function_returns": function_returns, "function_parameters": parameter_types, "builder": output, "data": [], "string_offsets": {}, "relocations": [], "counter": 0, "error_label": "", "current_class_name": ""}
+    # Globals live in the state block right after the 192-byte runtime
+    # header (rbx-relative), so no register has to point at the main frame.
+    global_offsets = {}
+    for global_name in main_variables.keys():
+        global_offsets[global_name] = 192 + len(global_offsets) * 8
+    end
+    globals_bytes = aligned_frame(main_variables)
+    generator = {"path": path, "internal_abi": internal_abi, "unchecked_intarray": unchecked_intarray, "lines": lines, "variables": {}, "types": {}, "global_variables": global_offsets, "global_types": main_types, "functions": functions, "classes": classes, "function_returns": function_returns, "function_parameters": parameter_types, "builder": output, "data": [], "string_offsets": {}, "relocations": [], "counter": 0, "error_label": "", "current_class_name": ""}
     registry_bytes = 524288
     registry_mask = 65535
     if generator["internal_abi"]:
@@ -5463,14 +5456,14 @@ function generate(path, source, program):
         end
     end
 
-    generator["variables"] = main_variables
+    generator["variables"] = {}
     generator["types"] = main_types
     call assembler.label(output, "main")
     main_offset = assembler.position(output)
     # r15 carries the initial stack top only until the thread-local block
     # exists; afterwards it is an ordinary callee-saved register.
     call assembler.emit(output, x86_64.move_reg_reg(15, 4))
-    call assembler.emit(output, x86_64.function_prologue(aligned_frame(main_variables)))
+    call assembler.emit(output, x86_64.function_prologue(16))
     call assembler.emit(output, x86_64.mov_imm64(0, 12))
     call assembler.emit(output, x86_64.mov_imm64(7, 0))
     call assembler.emit(output, x86_64.syscall())
@@ -5478,9 +5471,10 @@ function generate(path, source, program):
     # State uses bytes 0..191: 0..95 runtime, 96/104 futex mutexes, 112 thread
     # table, 120 main stack top, 128 gc gate, 136 threads flag, 160..183 the
     # main thread's thread-local block (fs base: pending error, error flag,
-    # stack top). Keep only the 1 MiB String-intern table on brk; the object
-    # registry starts small in mmap.
-    call assembler.emit(output, x86_64.lea_base(9, 3, 192))
+    # stack top); then the program globals (globals_bytes) and the 1 MiB
+    # String-intern table, all on brk; the object registry starts small in
+    # mmap.
+    call assembler.emit(output, x86_64.lea_base(9, 3, 192 + globals_bytes))
     call assembler.emit(output, x86_64.move_reg_reg(7, 9))
     call assembler.emit(output, x86_64.add_reg_imm32(7, 1048576))
     call assembler.emit(output, x86_64.mov_imm64(0, 12))
@@ -5500,7 +5494,7 @@ function generate(path, source, program):
     call assembler.emit(output, x86_64.store_memory(3, 32, 0))
     call assembler.emit(output, x86_64.mov_imm64(10, registry_mask))
     call assembler.emit(output, x86_64.store_memory(3, 40, 10))
-    call assembler.emit(output, x86_64.lea_base(9, 3, 192))
+    call assembler.emit(output, x86_64.lea_base(9, 3, 192 + globals_bytes))
     call assembler.emit(output, x86_64.store_memory(3, 48, 9))
     call assembler.emit(output, x86_64.mov_imm64(10, 65535))
     call assembler.emit(output, x86_64.store_memory(3, 56, 10))
@@ -5543,9 +5537,8 @@ function generate(path, source, program):
     call assembler.emit(output, x86_64.mov_imm64(10, 8))
     call assembler.emit(output, x86_64.syscall())
     call assembler.emit(output, x86_64.add_reg_imm8(4, 32))
-    call assembler.emit(output, x86_64.move_reg_reg(12, 5))
-    call assembler.emit(output, x86_64.move_reg_reg(7, 4))
-    call assembler.emit(output, x86_64.move_reg_reg(6, 5))
+    call assembler.emit(output, x86_64.lea_base(7, 3, 192))
+    call assembler.emit(output, x86_64.lea_base(6, 3, 192 + globals_bytes))
     call assembler.relative(output, [232], "runtime_set_global_roots")
     call emit_statements(generator, program, "", "", "")
     call assembler.emit(output, x86_64.mov_imm64(0, 231))
