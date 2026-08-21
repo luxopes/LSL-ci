@@ -1,6 +1,6 @@
 # Lux Simple Lang (LSL)
 
-LSL 0.6.3 je self-hostovaný jazyk pro běžné programování, deklarativní
+LSL 0.6.4 je self-hostovaný jazyk pro běžné programování, deklarativní
 konfiguraci, AI orchestrace a volitelné CUDA výpočty. Compiler i host runtime
 jsou pouze LSL: compiler přímo zapisuje statický Linux x86_64 ELF a runtime
 používá přímé syscalls, bez libc, assembleru, linkeru, Pythonu nebo shell
@@ -10,7 +10,7 @@ pure-LSL a Tensor používá CPU fallback.
 
 ## Self-hosted vydání
 
-LSL 0.6.3 je nejnovější vydání. Binární balík pro Linux x86_64, zdrojový archiv
+LSL 0.6.4 je nejnovější vydání. Binární balík pro Linux x86_64, zdrojový archiv
 a kompletní český manuál jsou na
 [lsl25.netlify.app](https://lsl25.netlify.app/). Stabilní manuály obou verzí
 jsou v [historii vydání](https://lsl25.netlify.app/releases/):
@@ -19,7 +19,8 @@ jsou v [historii vydání](https://lsl25.netlify.app/releases/):
   modulů, další optimalizace a skutečné CUDA Runtime kernely; údržbové
   vydání 0.6.1 k nim přidává bitové operátory a literály `0x`/`0o`/`0b` a
   0.6.2 zrychluje typované `IntArray` hot pathy a rekurzivní specializaci a
-  0.6.3 přidává přímé Boolean větvení, levnější volání a RMW optimalizace;
+  0.6.3 přidává přímé Boolean větvení, levnější volání a RMW optimalizace a
+  0.6.4 sdílená vlákna `thread_spawn`/`thread_join` a SSE2 FloatArray kernely;
 - [LSL 0.5](https://lsl25.netlify.app/releases/0.5/) — první veřejné
   self-hosted vydání.
 
@@ -131,6 +132,7 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 - [Dependency manifest config.lconf](docs/lconf.md)
 - [Native/plugin ABI](docs/native-plugins.md)
 - [CUDA backend a worker protokol](docs/cuda.md)
+- [Poznámky k lokálnímu vydání 0.6.4](docs/release-0.6.4.md)
 - [Poznámky k lokálnímu vydání 0.6.3](docs/release-0.6.3.md)
 - [Poznámky k lokálnímu vydání 0.6.2](docs/release-0.6.2.md)
 - [Poznámky k lokálnímu vydání 0.6.1](docs/release-0.6.1.md)

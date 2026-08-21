@@ -4,7 +4,9 @@ Na této stránce jsou uživatelsky významné změny vydaných verzí. Stabiln�
 manuály a soubory ke stažení zůstávají dostupné v
 [historii vydání](/releases/).
 
-## Nevydáno
+## 0.6.4 — 21. 8. 2026
+
+Vydání se sdílenými vlákny a SSE2 FloatArray kernely.
 
 ### Jazyk a runtime
 

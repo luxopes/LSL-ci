@@ -928,8 +928,11 @@ allokátoru je guardovaný příznakem prvního spawnu (bez vláken jen načten�
 příznaku, self-host compile přibližně o 2 % pomalejší).
 `tests/thread_conformance.lsl` je ve full suite. Full suite, fixed point,
 config, instalovaná kopie a ELF audit prošly; compiler fixed point je
-`4f1db957d5942d736d98700239665bd401829071185b465d25737fecafecfa95` a CLI hash
-je `c0aca66fe530e85bb2adfdbfe1fdda9321aa3353cce8887fe05dd822cb0223ed`.
+`4f1db957d5942d736d98700239665bd401829071185b465d25737fecafecfa95`.
+Vydání 0.6.4 (verze v CLI, `help()`, `lux.version`, release note) má finální
+compiler fixed point
+`f57a02a58a7fba00a78f8dbfe8e2384f1acc1cf4491455524551eb35a8e03e57` a CLI hash
+`e8ef227843a680123b969b363c7407bcddf5824fa63fae4e5d18472e424c14c4`.
 
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,
