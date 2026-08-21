@@ -22,14 +22,17 @@ load string_conversion_conformance
 load abs_conformance
 load numeric_builtins_conformance
 load integer_wrap_conformance
+load bitwise_conformance
 load float_floordiv_conformance
 load recursive_return_conformance
 load wide_class_abi_conformance
+load inheritance_conformance
 load float_exponent_conformance
 load float_special_conformance
 load float_format_conformance
 load float_power_conformance
 load float_conversion_conformance
+load sqrt_conformance
 load minmax_help_conformance
 load truthiness_conformance
 load del_conformance
@@ -51,6 +54,8 @@ load raster_kernel_conformance
 load dictionary_key_conformance
 load native_elf_conformance
 load tensor_conformance
+load bigint_conformance
+load math_conformance
 load cuda_conformance
 load ai_conformance
 load capture_stream_conformance

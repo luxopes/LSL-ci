@@ -16,6 +16,42 @@ function is_alpha(character):
     return (code >= 97 and code <= 122) or (code >= 65 and code <= 90) or code == 95
 end
 
+function digit_value(character):
+    code = ord(character)
+    if code >= 48 and code <= 57:
+        return code - 48
+    elif code >= 97 and code <= 102:
+        return code - 87
+    elif code >= 65 and code <= 70:
+        return code - 55
+    end
+    return -1
+end
+
+function decimal_scale_add(digits, base, addend):
+    # Big-endian decimal String multiplied by base plus one digit. Converting a
+    # based literal in decimal rather than in an Int keeps the whole Int64
+    # pattern range spellable: the token stays an ordinary decimal literal and
+    # wraps in exactly the same place a decimal literal would.
+    result = ""
+    carry = addend
+    index = len(digits) - 1
+    while index >= 0:
+        product = (ord(digits[index]) - 48) * base + carry
+        result = chr(48 + product % 10) + result
+        carry = product // 10
+        index -= 1
+    end
+    while carry > 0:
+        result = chr(48 + carry % 10) + result
+        carry = carry // 10
+    end
+    if len(result) == 0:
+        return "0"
+    end
+    return result
+end
+
 function source_line(source, line_number):
     lines = source.split(chr(10))
     if line_number < 1 or line_number > len(lines):
@@ -131,6 +167,32 @@ function tokenize(path, source):
                 kind = "lux_string"
             end
             result.append(token(kind, value, start_line, start_column, column))
+        elif is_digit(character) and character == "0" and index + 1 < count and (chars[index + 1] == "x" or chars[index + 1] == "X" or chars[index + 1] == "b" or chars[index + 1] == "B" or chars[index + 1] == "o" or chars[index + 1] == "O"):
+            start_column = column
+            marker = chars[index + 1]
+            base = 16
+            if marker == "b" or marker == "B":
+                base = 2
+            elif marker == "o" or marker == "O":
+                base = 8
+            end
+            index += 2
+            column += 2
+            digits_start = index
+            value = "0"
+            while index < count and (is_alpha(chars[index]) or is_digit(chars[index])):
+                digit = digit_value(chars[index])
+                if digit < 0 or digit >= base:
+                    call diagnostics.fail(path, line, column, 1, source_line(lines, line), "E0008", "digit is out of range for the literal base", "use only digits the 0b, 0o, or 0x prefix allows")
+                end
+                value = decimal_scale_add(value, base, digit)
+                index += 1
+                column += 1
+            end
+            if index == digits_start:
+                call diagnostics.fail(path, line, start_column, max(1, column - start_column), source_line(lines, line), "E0009", "base prefix without digits", "add at least one digit after 0b, 0o, or 0x")
+            end
+            result.append(token("number", value, line, start_column, column))
         elif is_digit(character):
             start = index
             start_column = column
@@ -174,13 +236,22 @@ function tokenize(path, source):
         else:
             start_column = column
             value = character
-            if index + 1 < count:
+            if index + 2 < count:
+                triple = character + chars[index + 1] + chars[index + 2]
+                if triple == "<<=" or triple == ">>=":
+                    value = triple
+                end
+            end
+            if len(value) == 1 and index + 1 < count:
                 pair = character + chars[index + 1]
-                if pair == "==" or pair == "!=" or pair == "<=" or pair == ">=" or pair == "//" or pair == "+=" or pair == "-=" or pair == "*=" or pair == "/=" or pair == "%=":
+                if pair == "==" or pair == "!=" or pair == "<=" or pair == ">=" or pair == "//" or pair == "+=" or pair == "-=" or pair == "*=" or pair == "/=" or pair == "%=" or pair == "<<" or pair == ">>" or pair == "&=" or pair == "|=" or pair == "~=":
                     value = pair
                 end
             end
-            if len(value) == 2:
+            if len(value) == 3:
+                index += 3
+                column += 3
+            elif len(value) == 2:
                 index += 2
                 column += 2
             else:
@@ -194,7 +265,7 @@ function tokenize(path, source):
                 if depth < 0:
                     call diagnostics.fail(path, line, start_column, len(value), source_line(lines, line), "E0005", "unexpected closing delimiter", "remove it or add the matching opening delimiter")
                 end
-            elif value != "+" and value != "-" and value != "*" and value != "/" and value != "%" and value != "^" and value != "=" and value != "<" and value != ">" and value != "!" and value != ":" and value != "," and value != "." and value != "==" and value != "!=" and value != "<=" and value != ">=" and value != "//" and value != "+=" and value != "-=" and value != "*=" and value != "/=" and value != "%=":
+            elif value != "+" and value != "-" and value != "*" and value != "/" and value != "%" and value != "^" and value != "=" and value != "<" and value != ">" and value != "!" and value != ":" and value != "," and value != "." and value != "&" and value != "|" and value != "~" and value != "==" and value != "!=" and value != "<=" and value != ">=" and value != "//" and value != "+=" and value != "-=" and value != "*=" and value != "/=" and value != "%=" and value != "<<" and value != ">>" and value != "&=" and value != "|=" and value != "~=" and value != "<<=" and value != ">>=":
                 call diagnostics.fail(path, line, start_column, len(value), source_line(lines, line), "E0006", "unexpected character", "remove the character or put it inside a String")
             end
             result.append(token("symbol", value, line, start_column, column))

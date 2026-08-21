@@ -1,6 +1,6 @@
 # Lux Simple Lang (LSL)
 
-LSL 0.6 je self-hostovaný jazyk pro běžné programování, deklarativní
+LSL 0.6.1 je self-hostovaný jazyk pro běžné programování, deklarativní
 konfiguraci, AI orchestrace a volitelné CUDA výpočty. Compiler i host runtime
 jsou pouze LSL: compiler přímo zapisuje statický Linux x86_64 ELF a runtime
 používá přímé syscalls, bez libc, assembleru, linkeru, Pythonu nebo shell
@@ -10,13 +10,14 @@ pure-LSL a Tensor používá CPU fallback.
 
 ## Self-hosted vydání
 
-LSL 0.6 je nejnovější vydání. Binární balík pro Linux x86_64, zdrojový archiv
+LSL 0.6.1 je nejnovější vydání. Binární balík pro Linux x86_64, zdrojový archiv
 a kompletní český manuál jsou na
 [lsl25.netlify.app](https://lsl25.netlify.app/). Stabilní manuály obou verzí
 jsou v [historii vydání](https://lsl25.netlify.app/releases/):
 
 - [LSL 0.6](https://lsl25.netlify.app/releases/0.6/) — Lux Stringy, aliasy
-  modulů, další optimalizace a skutečné CUDA Runtime kernely;
+  modulů, další optimalizace a skutečné CUDA Runtime kernely; údržbové
+  vydání 0.6.1 k nim přidává bitové operátory a literály `0x`/`0o`/`0b`;
 - [LSL 0.5](https://lsl25.netlify.app/releases/0.5/) — první veřejné
   self-hosted vydání.
 
@@ -101,9 +102,11 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 - UTF-8 String s code-point `len`, indexací, slicingem, `chr` a `ord`;
 - List, Tuple, RealArray, Dictionary a neboxované `IntArray`/`FloatArray`/packed `ByteArray`;
 - functions, recursion, first-class Function pointers a callbacks;
-- classes/instances, static i bound metody, public/private module class lowering;
+- classes/instances, jednoduchá dědičnost `class Child(Parent)`, přepisování
+  metod, `origin.method()` a public/private module class lowering;
 - recursive modules, `safe`, `try/else`, `Error`, `check`, `last_error`;
-- statické aliasy modulů (`load tensor as t`) a first-class interpolované Lux Stringy;
+- statické aliasy modulů (`load tensor as t`), first-class interpolované Lux
+  Stringy, knihovní `BigInt`, rozšířený modul `math` a vestavěné `sqrt`;
 - conservative stack/global-root mark-sweep GC s reusable free-list;
 - JSON, strict `config.lconf` dependency codec pro zdroje apt/lux/lsl, čistý config evaluator, LuxOS/Debian modul `system` pro balíčky, služby, uživatele, atomické soubory, mounty a generace/rollback, wall/monotonic time a sleep, filesystem, argv, environment, bezpečné `os.run("ls -al")`, process/capture, HTTP(S) přes bezpečné `curl` argv, verzované JSON process plugin ABI bez shellu a skutečný NVIDIA CUDA worker se sum/dot/AXPY/matmul kernely a binárním Float64 transportem;
 - strukturované compile errors: kód, soubor, řádek, sloupec, výřez, caret a help.
@@ -118,6 +121,7 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 - [Vývoj compileru a release workflow](docs/compiler-development.md)
 - [Deklarativní konfigurace](docs/configuration.md)
 - [AI aplikace](docs/ai.md)
+- [Matematika a BigInt](docs/math.md)
 - [Čas a měření](docs/time.md)
 - [Linux příkazy přes modul os](docs/os.md)
 - [Instalace LSL knihoven](docs/packages.md)
@@ -125,8 +129,9 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 - [Dependency manifest config.lconf](docs/lconf.md)
 - [Native/plugin ABI](docs/native-plugins.md)
 - [CUDA backend a worker protokol](docs/cuda.md)
+- [Poznámky k lokálnímu vydání 0.6.1](docs/release-0.6.1.md)
 - [Poznámky k lokálnímu vydání 0.6](docs/release-0.6.md)
-- [Datovaný changelog 0.5 a 0.6](docs/developer_guides/CHANGELOG.md)
+- [Datovaný changelog 0.5, 0.6 a 0.6.1](docs/developer_guides/CHANGELOG.md)
 - [Webová historie stabilních manuálů](docs/developer_guides/releases/index.html)
 - [Linux target](docs/linux.md)
 

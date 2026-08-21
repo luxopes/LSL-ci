@@ -67,7 +67,7 @@ if len(readbytes("/tmp/lsl-codegen-optimization-test")) > 60000:
 end
 call require_success(run(compiler, ["compiler/pure/cli.lsl", "/tmp/lsl-stdin-cli-test"]), "compile stdin CLI")
 help_output = capture("/tmp/lsl-stdin-cli-test", ["--help"])
-expected_help = "Lux Simple Lang (LSL) 0.6" + chr(10)
+expected_help = "Lux Simple Lang (LSL) 0.6.1" + chr(10)
 expected_help += chr(10)
 expected_help += "Usage:" + chr(10)
 expected_help += "  lsl [SOURCE [ARG...]]" + chr(10)
@@ -86,11 +86,11 @@ if capture_status() != 0 or help_output != expected_help:
     Error(TestFailure: "CLI --help output differs")
 end
 version_output = capture("/tmp/lsl-stdin-cli-test", ["version"])
-if capture_status() != 0 or version_output != "0.6" + chr(10):
+if capture_status() != 0 or version_output != "0.6.1" + chr(10):
     Error(TestFailure: "CLI version output differs")
 end
 version_flag_output = capture("/tmp/lsl-stdin-cli-test", ["--version"])
-if capture_status() != 0 or version_flag_output != "0.6" + chr(10):
+if capture_status() != 0 or version_flag_output != "0.6.1" + chr(10):
     Error(TestFailure: "CLI --version output differs")
 end
 stdin_source = "value = 6 * 7" + chr(10) + "if value == 42:" + chr(10) + "    print \"stdin\", value" + chr(10) + "end" + chr(10) + "exit" + chr(10)
@@ -208,6 +208,8 @@ call require_output("/tmp/lsl-process-fault-test", ["2"], "tests/process_fault_m
 # Compile-time diagnostics must remain failures and retain original source spans.
 call require_failure(run(compiler, ["tests/builtin_arity_negative.lsl", "/tmp/lsl-arity-negative"]), "builtin arity mismatch unexpectedly compiled")
 call require_failure(run(compiler, ["tests/method_arity_negative.lsl", "/tmp/lsl-method-negative"]), "method arity mismatch unexpectedly compiled")
+call require_failure(run(compiler, ["tests/inheritance_cycle_negative.lsl", "/tmp/lsl-inheritance-cycle-negative"]), "cyclic inheritance unexpectedly compiled")
+call require_failure(run(compiler, ["tests/origin_without_parent_negative.lsl", "/tmp/lsl-origin-negative"]), "origin without parent unexpectedly compiled")
 call require_failure(run(compiler, ["tests/fixed_collection_negative.lsl", "/tmp/lsl-fixed-negative"]), "fixed collection mutation unexpectedly compiled")
 call require_failure(run(compiler, ["tests/private_class_negative.lsl", "/tmp/lsl-private-negative"]), "private module class unexpectedly compiled")
 call require_failure(run(compiler, ["tests/dictionary_key_negative.lsl", "/tmp/lsl-dictionary-key-negative"]), "collection Dictionary key unexpectedly compiled")
@@ -215,6 +217,11 @@ call require_failure(run(compiler, ["tests/intarray_type_negative.lsl", "/tmp/ls
 call require_failure(run(compiler, ["tests/floatarray_type_negative.lsl", "/tmp/lsl-floatarray-type-negative"]), "non-Float FloatArray append unexpectedly compiled")
 call require_failure(run(compiler, ["tests/bytearray_type_negative.lsl", "/tmp/lsl-bytearray-type-negative"]), "non-Int ByteArray append unexpectedly compiled")
 call require_failure(run(compiler, ["tests/legacy_power_negative.lsl", "/tmp/lsl-legacy-power-negative"]), "legacy ** power syntax unexpectedly compiled")
+call require_failure(run(compiler, ["tests/bitwise_float_negative.lsl", "/tmp/lsl-bitwise-float-negative"]), "Float bitwise operand unexpectedly compiled")
+call require_failure(run(compiler, ["tests/bitwise_shift_negative.lsl", "/tmp/lsl-bitwise-shift-negative"]), "constant negative shift unexpectedly compiled")
+call require_failure(run(compiler, ["tests/base_literal_negative.lsl", "/tmp/lsl-base-literal-negative"]), "base prefix without digits unexpectedly compiled")
+call require_success(run(compiler, ["tests/bitwise_dynamic_negative.lsl", "/tmp/lsl-bitwise-dynamic-negative"]), "compile dynamic bitwise negative test")
+call require_failure(run("/tmp/lsl-bitwise-dynamic-negative", []), "dynamic Float bitwise operand unexpectedly succeeded")
 
 configure = "/tmp/lsl-configure-test"
 call require_success(run(compiler, ["stdlib/configure.lsl", configure]), "compile config generator")

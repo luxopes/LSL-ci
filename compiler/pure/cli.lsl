@@ -5,7 +5,7 @@ load linker
 load package
 load parser
 
-VERSION = "0.6"
+VERSION = "0.6.1"
 
 function print_help():
     print "Lux Simple Lang (LSL) " + VERSION

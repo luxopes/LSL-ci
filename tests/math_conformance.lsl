@@ -1,0 +1,17 @@
+load math
+
+print math.pi(0)
+print math.pi(10)
+print math.pi(50)
+print math.factorial(10)
+print math.factorial_big(30).text()
+print math.gcd(84, 30), math.lcm(21, 6)
+print math.sigmoid(0.0), math.sigmoid(100.0), math.sigmoid(-100.0)
+print math.relu(-3), math.relu(4), math.swish(0.0)
+print math.hypot(3, 4)
+print math.mean([1, 2, 3, 4]), math.variance([1, 2, 3, 4])
+print math.standard_deviation([1, 2, 3, 4]), math.median([4, 1, 3, 2])
+print math.is_close(math.exp(1.0), math.E, 1e-14, 1e-14)
+print math.is_close(math.log(math.E), 1.0, 1e-14, 1e-14)
+print math.is_close(math.sin(math.PI / 2.0), 1.0, 1e-14, 1e-14)
+print math.is_close(math.cos(math.PI), -1.0, 1e-14, 1e-14)

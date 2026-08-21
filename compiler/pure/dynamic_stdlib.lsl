@@ -742,6 +742,27 @@ function __lsl_int_to_string(number):
     return digits
 end
 
+function __lsl_bit_operand(value):
+    # Bitwise operators are Int-only. A raw Int passes straight through, a boxed
+    # Int is unboxed and a Bool counts as 0/1 like Python. Anything else is a
+    # typed failure, because reinterpreting a live pointer as Int bits would
+    # silently corrupt the value instead of reporting the mistake.
+    code = __lsl_type_code(value)
+    if code == 9:
+        return __lsl_unbox_int(value)
+    end
+    if code == 4:
+        if __lsl_unbox_bool(value):
+            return 1
+        end
+        return 0
+    end
+    if __lsl_is_heap(value):
+        Error(TypeError: "bitwise operators require Int operands")
+    end
+    return __lsl_raw_int(value)
+end
+
 function __lsl_require_rang_step(value):
     if __lsl_type_code(value) == 9:
         return __lsl_unbox_int(value)

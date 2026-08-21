@@ -195,6 +195,7 @@ function annotate_statements(statements, path):
             call annotate_statements(statement["otherwise"], path)
         elif kind == "class":
             call annotate_expression(statement["condition"], path)
+            call annotate_expression(statement.get("parent", None), path)
             call annotate_statements(statement["body"], path)
         elif kind == "assign":
             call annotate_expression(statement["target"], path)
@@ -228,7 +229,11 @@ function transform_expression(expression, own_functions, imported_names, namespa
     kind = expression["kind"]
     if kind == "name":
         name = expression["name"]
-        if name in imported_names:
+        # `origin` is the reserved immediate-parent receiver inside inherited
+        # methods. It must survive module namespace rewriting unchanged.
+        if name == "origin":
+            return None
+        elif name in imported_names:
             expression["name"] = imported_names[name]
         elif name in own_functions:
             expression["name"] = own_functions[name]
@@ -324,6 +329,7 @@ function transform_statements(statements, own_functions, imported_names, namespa
         elif kind == "class":
             statement["name"] = own_functions[statement["name"]]
             call transform_expression(statement["condition"], own_functions, imported_names, namespaces)
+            call transform_expression(statement.get("parent", None), own_functions, imported_names, namespaces)
             for member in statement["body"]:
                 if member["kind"] == "function":
                     local_names = scoped_names(own_functions, member["parameters"], member["body"])

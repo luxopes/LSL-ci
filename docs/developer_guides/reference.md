@@ -50,7 +50,23 @@ Každá položka obsahuje název, signaturu a stručný popis.
 | `max(a, b, ...)` | Vrátí největší z argumentů. |
 | `sum(collection)` | Vrátí součet prvků kolekce. |
 | `abs(x)` | Vrátí absolutní hodnotu čísla. |
+| `sqrt(x)` | Vrátí druhou odmocninu jako Float; pro záporné číslo vyvolá `ValueError`. |
 | `round(x)` | Zaokrouhlí Float na nejbližší celé číslo. |
+
+### <span class="badge badge-builtin">BITY</span> Bitové operátory
+
+| Operátor | Popis |
+|---|---|
+| `a & b` | Bitový AND dvou `Int`. |
+| `a \| b` | Bitový OR dvou `Int`. |
+| `a ~ b` | Bitový XOR dvou `Int` (`^` je mocnina). |
+| `~a` | Bitový NOT, tedy jedničkový doplněk. |
+| `a << b` | Posun vlevo; `b >= 64` dává `0`, záporné `b` vyvolá `ValueError`. |
+| `a >> b` | Aritmetický posun vpravo, tedy `a // 2^b`; `b >= 64` dává `0` nebo `-1` podle znaménka. |
+
+Operandy musí být `Int` nebo `Bool`, výsledek je vždy `Int`. Literály lze psát
+s prefixem `0x`, `0o` nebo `0b`. Složená přiřazení `&=`, `|=`, `~=`, `<<=`
+a `>>=` fungují stejně jako `+=`.
 
 ### <span class="badge badge-builtin">ZNAKY</span> Znaky
 
@@ -236,6 +252,33 @@ Každá položka obsahuje název, signaturu a stručný popis.
 | `lux.identity(value)` | Vrátí hodnotu beze změny. |
 | `lux.clamp(value, low, high)` | Ořízne hodnotu do rozsahu `<low, high>`. |
 | `lux.is_empty(collection)` | Vrátí `True`, pokud je kolekce prázdná. |
+
+### <span class="badge badge-module">math</span> math — matematika a statistika
+
+| Export | Popis |
+|---|---|
+| `math.PI`, `math.TAU`, `math.E` | Běžné Float64 matematické konstanty. |
+| `math.pi(decimal_places)` | Vygeneruje pí jako desetinný String s požadovaným počtem míst. |
+| `math.exp(x)`, `math.log(x)` | Exponenciála a přirozený logaritmus. |
+| `math.sin(x)`, `math.cos(x)`, `math.tan(x)` | Goniometrické funkce v radiánech. |
+| `math.sigmoid(x)`, `math.tanh(x)` | Stabilní aktivační funkce. |
+| `math.relu(x)`, `math.softplus(x)`, `math.swish(x)` | Další běžné aktivační funkce. |
+| `math.mean(values)`, `math.median(values)` | Střední hodnota a medián. |
+| `math.variance(values)`, `math.standard_deviation(values)` | Populační rozptyl a směrodatná odchylka. |
+| `math.factorial(n)` | Faktoriál v běžném Int64. |
+| `math.factorial_big(n)` | Faktoriál jako `bigint.BigInt`. |
+
+### <span class="badge badge-module">bigint</span> bigint — celá čísla libovolné velikosti
+
+```lsl
+load bigint
+number = bigint.BigInt("123456789012345678901234567890")
+print number.power(2).text()
+```
+
+`BigInt` a kompatibilní `SuperInt` poskytují metody `text`, `add`,
+`subtract`, `multiply`, `floor_divide`, `divide`, `modulo`, `power`,
+`compare`, `equals`, `negate`, `absolute`, `is_zero` a `to_int`.
 
 ### <span class="badge badge-module">json</span> json — JSON codec
 

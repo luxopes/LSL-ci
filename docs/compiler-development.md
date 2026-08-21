@@ -79,6 +79,7 @@ druhý neauditovatelný IR. Aktuální vrstvy:
 - immediate `+`, `-`, `*`, compare a přímý flag branch;
 - přímá equality pouze pro shodné statické `Int`/`Bool`/`None` typy;
 - power-of-two a magic-number signed floor division;
+- konstantní posuny složené při překladu, jinak immediate `shl`/`sar`;
 - deduplikované immutable String templates, ale nový runtime String clone;
 - typová specializace přímých funkcí pouze pokud funkce neuniká jako callback a
   program nepoužívá dynamickou introspekční hranici;

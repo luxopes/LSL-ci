@@ -4,6 +4,33 @@ Na této stránce jsou uživatelsky významné změny vydaných verzí. Stabiln�
 manuály a soubory ke stažení zůstávají dostupné v
 [historii vydání](/releases/).
 
+## 0.6.1 — 21. 8. 2026
+
+Údržbové vydání, které doplňuje práci s bity.
+
+### Jazyk
+
+- Bitové operátory `&`, `|`, `~` (XOR), `~x` (NOT), `<<` a `>>`. XOR je `~`,
+  protože `^` už znamená mocninu — stejné rozdělení má Lua.
+- Složená přiřazení `&=`, `|=`, `~=`, `<<=` a `>>=`.
+- Celočíselné literály s prefixem `0x`, `0o` a `0b`. Redukují se modulo
+  `2^64` jako desítkové, takže `0xFFFFFFFFFFFFFFFF` je `-1`.
+- Priorita odpovídá Pythonu: `<<`/`>>` jsou volnější než `+`, ale těsnější
+  než porovnání, takže `x & 1 == 1` znamená `(x & 1) == 1`.
+- Posuny jsou definované v celém rozsahu: záporný počet je `ValueError`,
+  posun o 64 a více bitů dává `0`, u `>>` pro záporné číslo `-1`.
+- Operand jiného typu než `Int`/`Bool` je chyba překladu; dynamická hodnota
+  skončí `TypeError` místo čtení bitů živého pointeru.
+
+### Compiler
+
+- Konstantní posuny se skládají už při překladu a jinak se emitují jako
+  immediate `shl`/`sar`; proměnný posun používá `CL` s explicitní kontrolou
+  rozsahu, ne maskování procesorem.
+- `lsl-install` nově kopíruje i moduly `math` a `bigint`, které `help` už
+  uváděl.
+- Self-hostovaný compiler zůstává bitově reprodukovatelný ve fixed pointu.
+
 ## 0.6 — 29. 7. 2026
 
 Druhé archivované self-hosted vydání LSL.

@@ -107,6 +107,19 @@ modul neexportuje. Cyklické importy jsou chyba.
 - `FloatArray` ukládá souvislé IEEE-754 Float64.
 - `ByteArray` ukládá přesně jeden byte na prvek.
 
+Bity uvnitř `Int` se skládají a čtou bitovými operátory `&`, `|`, `~`, `<<`
+a `>>`; masky a příznaky se zapisují literály `0x`, `0o` nebo `0b`. Pro
+binární data proudící ze souboru nebo socketu kombinujte `ByteArray`
+s posuny — indexace `ByteArray` má statický typ `Int`, takže operace zůstávají
+na nativní cestě bez boxingu:
+
+```lsl
+payload = readbytes("frame.bin")
+width = (payload[0] << 8) | payload[1]
+flags = payload[2]
+print width, flags & 0x0F, flags >> 4
+```
+
 Pro větší numerická nebo binární data nepoužívejte `List`, pokud nepotřebujete
 heterogenní prvky:
 
@@ -176,7 +189,7 @@ nejdřív je přiřaďte do pojmenovaných hodnot.
 ## Třídy
 
 ```lsl
-class Counter(True):
+class Counter:
     ctype Public
     value = 0
 
@@ -197,6 +210,27 @@ print counter.increment()
 Instance a třídy jsou dynamické Dictionary objekty. Pro jednoduchá datová
 potrubí bývá obyčejný `Dictionary` levnější a průhlednější; třídu použijte tam,
 kde dává smysl společné chování a stav.
+
+Jednoduchý potomek uvádí jednu rodičovskou třídu v závorkách. Přepsaná metoda
+může zavolat bezprostředního rodiče přes rezervované `origin`:
+
+```lsl
+class LimitedCounter(Counter):
+    function init(self, start, limit):
+        call origin.init(start)
+        self.limit = limit
+    end
+
+    function increment(self):
+        if self.value >= self.limit:
+            return self.value
+        end
+        return origin.increment()
+    end
+end
+```
+
+Pokud potomek `init` nedefinuje, zdědí rodičovský konstruktor.
 
 ## Chyby a cleanup
 
@@ -305,6 +339,7 @@ Codegen 0.6 bezpečně provádí:
 - deduplikaci stejných String templates;
 - konzervativní specializaci neunikajících přímých helper funkcí;
 - sílu dělení/módula konstantní mocninou dvou a magic division;
+- konstantní posuny jako přímé `shl`/`sar` immediate instrukce;
 - kompaktní x86-64 immediates, stack offsets a memory displacements.
 
 Proto například následující zápis negeneruje násobení a sčítání konstant při

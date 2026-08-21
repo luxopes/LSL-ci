@@ -159,6 +159,10 @@ function div_double(destination, source):
     return scalar_double(94, destination, source)
 end
 
+function sqrt_double(destination, source):
+    return scalar_double(81, destination, source)
+end
+
 function compare_double(left, right):
     return [102, rex(False, left >= 8, False, right >= 8), 15, 46, modrm(3, left, right)]
 end
@@ -329,6 +333,22 @@ end
 
 function shift_right_arithmetic_imm(register, amount):
     return [rex(True, False, False, register >= 8), 193, modrm(3, 7, register), amount]
+end
+
+function not_reg(register):
+    # NOT r/m64: one's complement in place.
+    return [rex(True, False, False, register >= 8), 247, modrm(3, 2, register)]
+end
+
+function shift_left_cl(register):
+    # SHL r/m64, CL. The CPU masks CL to 6 bits, so a count outside 0..63 must
+    # already have been handled by the caller.
+    return [rex(True, False, False, register >= 8), 211, modrm(3, 4, register)]
+end
+
+function shift_right_arithmetic_cl(register):
+    # SAR r/m64, CL. Same 6-bit masking caveat as shift_left_cl.
+    return [rex(True, False, False, register >= 8), 211, modrm(3, 7, register)]
 end
 
 function memory_tail(base_register, mode, reg_field):

@@ -224,7 +224,7 @@ hodnoty hezky zformátuje?
 ## Jak napsat třídu
 
 ```lsl
-class Osoba(True):
+class Osoba:
     ctype Public
 
     function init(self, jmeno, vek):
@@ -240,8 +240,8 @@ end
 
 Části definice třídy:
 
-- **`class Osoba(True):`** — definuje třídu jménem `Osoba`. `(True)`
-  znamená, že třída je aktivní. `(False)` by ji vypnulo.
+- **`class Osoba:`** — definuje třídu jménem `Osoba`. Starší zápis
+  `class Osoba(True):` zůstává kompatibilní.
 - **`ctype Public`** — třída je viditelná i mimo svůj modul. `Private`
   by ji skryla.
 - **`function init(self, jmeno, vek):`** — speciální metoda, která se
@@ -272,6 +272,28 @@ Jak to funguje:
 5. `karel.jmeno` přistupuje k datům instance.
 6. `karel.pozdrav()` volá metodu. LSL automaticky dosadí instanci
    jako `self` — nemusíte ho psát.
+
+### Dědičnost a origin
+
+Potomek uvede jednu rodičovskou třídu v závorkách:
+
+```lsl
+class Zamestnanec(Osoba):
+    function init(self, jmeno, vek, role):
+        call origin.init(jmeno, vek)
+        self.role = role
+    end
+
+    function pozdrav(self):
+        return origin.pozdrav() + " Pracuji jako " + self.role + "."
+    end
+end
+```
+
+`Zamestnanec` dědí všechny metody `Osoba`. Stejnojmenná metoda ji přepíše a
+`origin.metoda()` explicitně zavolá nejbližší rodičovskou implementaci se
+stejným `self`. Pokud potomek nemá vlastní `init`, použije se zděděný
+konstruktor. Vícenásobná ani cyklická dědičnost není povolena.
 
 ### Statické atributy třídy
 
@@ -497,7 +519,9 @@ end
 | Parametr | Uvnitř definice: `(a, b)` | Vstupní hodnoty pro funkci |
 | Návratová hodnota | `return hodnota` | Co funkce vrací volajícímu |
 | Funkce jako hodnota | `f = moje_funkce` | Uložení/předání funkce |
-| Třída | `class Jmeno(True): ... end` | Šablona spojující data a chování |
+| Třída | `class Jmeno: ... end` | Šablona spojující data a chování |
+| Dědičnost | `class Potomek(Rodic):` | Jednoduché zdědění a přepsání metod |
+| Rodičovská metoda | `origin.metoda()` | Volání nejbližšího rodiče |
 | Konstruktor | `function init(self, ...):` | Inicializace nové instance |
 | Metoda | `function metoda(self, ...):` | Funkce patřící třídě |
 | Atribut instance | `self.jmeno` | Data patřící konkrétní instanci |

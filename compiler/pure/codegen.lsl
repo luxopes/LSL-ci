@@ -137,6 +137,8 @@ function infer_expression_type(syntax, types, function_returns):
     elif kind == "unary":
         if syntax["operator"] == "not":
             return "Bool"
+        elif syntax["operator"] == "~":
+            return "Int"
         end
         return infer_expression_type(syntax["operand"], types, function_returns)
     elif kind == "binary":
@@ -218,7 +220,7 @@ function infer_expression_type(syntax, types, function_returns):
             end
             if name == "len" or name == "Int" or name == "ord" or name == "arg_count" or name == "run" or name == "__lsl_run" or name == "capture_status" or name == "native_u64" or name == "native_size" or name == "native_call" or name == "native_close" or name == "__lsl_type_code" or name == "__lsl_raw_equal" or name == "__lsl_float_bits" or name == "__lsl_float_to_int" or name == "__lsl_unbox_int" or name == "__lsl_raw_int" or name == "__lsl_typed_int" or name == "__lsl_parse_literal_int" or name == "__lsl_test_fd_fault" or name == "__lsl_address" or name == "__lsl_object_table_mask" or name == "__lsl_intern_table_mask" or name == "__lsl_fd_open" or name == "__lsl_fd_read" or name == "__lsl_fd_write" or name == "__lsl_fd_seek" or name == "__lsl_fd_close" or name == "__lsl_fd_socket" or name == "__lsl_fd_connect" or name == "__lsl_raster_pack" or name == "__lsl_raster_copy" or name == "__lsl_raster_fill" or name == "__lsl_fd_ioctl" or name == "__lsl_fd_mmap" or name == "__lsl_mem_pack" or name == "__lsl_data_address" or name == "__lsl_syscall" or name == "__lsl_mem_unpack" or name == "__lsl_byte_copy" or name == "__lsl_text_byte" or name == "__lsl_text_byte_length":
                 return "Int"
-            elif name == "Float" or name == "__lsl_float_from_bits" or name == "float_sum" or name == "float_dot" or name == "__lsl_wall_time":
+            elif name == "Float" or name == "sqrt" or name == "__lsl_float_from_bits" or name == "float_sum" or name == "float_dot" or name == "__lsl_wall_time":
                 return "Float"
             elif name == "Bool" or name == "__lsl_isatty" or name == "__lsl_stdin_eof":
                 return "Bool"
@@ -550,6 +552,13 @@ function constant_int_expression(syntax):
         return [True, left[1] % right[1]]
     elif operator == "^" and right[1] >= 0 and right[1] <= 63:
         return [True, left[1] ^ right[1]]
+    elif operator == "<<" and right[1] >= 0 and right[1] <= 63:
+        # a << k is a * 2^k under the same Int64 wrap the multiply already has.
+        return [True, left[1] * (2 ^ right[1])]
+    elif operator == ">>" and right[1] >= 0 and right[1] <= 62:
+        # Arithmetic shift right is floor division by 2^k. Stop at 62 so the
+        # divisor stays positive; 63 keeps the immediate SAR path instead.
+        return [True, left[1] // (2 ^ right[1])]
     end
     return [False, 0]
 end
@@ -993,6 +1002,114 @@ function emit_float_expression(generator, syntax):
     end
 end
 
+function bit_operand_node(generator, syntax):
+    # Bitwise lowering works on raw Int bits. Statically known Int/Bool operands
+    # already are raw; an Any operand is routed through the dynamic helper so a
+    # boxed Float or a live pointer raises TypeError instead of being read as
+    # bits. Anything else is a compile-time mistake.
+    operand_type = infer_expression_type(syntax, generator["types"], generator["function_returns"])
+    if operand_type == "Int" or operand_type == "Bool":
+        return syntax
+    end
+    if operand_type != "Any":
+        call unsupported(generator["path"], generator["lines"], syntax, "bitwise operators require Int operands, got " + operand_type, "convert the value with Int(...) first")
+    end
+    coerce = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]}
+    coerce["target"] = {"kind": "name", "name": "__lsl_bit_operand"}
+    coerce["arguments"] = [syntax]
+    return coerce
+end
+
+function emit_shift(generator, syntax, left, right):
+    output = generator["builder"]
+    operator = syntax["operator"]
+    count = constant_int_expression(right)
+    if count[0] and count[1] < 0:
+        call unsupported(generator["path"], generator["lines"], syntax, "negative shift count", "use a shift count of 0 or more")
+    end
+    if count[0] and count[1] >= 0 and count[1] <= 63:
+        call emit_expression(generator, left)
+        if operator == "<<":
+            call assembler.emit(output, x86_64.shift_left_imm(0, count[1]))
+        else:
+            call assembler.emit(output, x86_64.shift_right_arithmetic_imm(0, count[1]))
+        end
+        return
+    end
+    if is_int_leaf(generator, right):
+        call emit_expression(generator, left)
+        call emit_int_leaf(generator, right, 1)
+    else:
+        call emit_expression(generator, left)
+        call assembler.emit(output, x86_64.push(0))
+        call emit_expression(generator, right)
+        call assembler.emit(output, x86_64.move_reg_reg(1, 0))
+        call assembler.emit(output, x86_64.pop(0))
+    end
+    # reg0 = value, reg1 = count. SHL/SAR mask the count to 6 bits, so both the
+    # negative and the >= 64 case are decided here rather than by the CPU.
+    shift_ready = label_name(generator, "shift_ready")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(1, 0))
+    call assembler.relative(output, [15, 141], shift_ready)
+    shift_source_path = syntax.get("path", generator["path"])
+    shift_message = "ValueError: negative shift count at " + shift_source_path + ":" + String(syntax["line"])
+    call emit_runtime_raise(generator, shift_message)
+    call assembler.label(output, shift_ready)
+    if operator == ">>":
+        # Saturating the count at 63 gives Python's answer for wide shifts:
+        # 0 for a non-negative value and -1 for a negative one.
+        shift_clamped = label_name(generator, "shift_clamped")
+        call assembler.emit(output, x86_64.cmp_reg_imm8(1, 63))
+        call assembler.relative(output, [15, 142], shift_clamped)
+        call assembler.emit(output, x86_64.mov_imm64(1, 63))
+        call assembler.label(output, shift_clamped)
+        call assembler.emit(output, x86_64.shift_right_arithmetic_cl(0))
+        return
+    end
+    shift_wide = label_name(generator, "shift_wide")
+    shift_done = label_name(generator, "shift_done")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(1, 64))
+    call assembler.relative(output, [15, 141], shift_wide)
+    call assembler.emit(output, x86_64.shift_left_cl(0))
+    call assembler.relative(output, [233], shift_done)
+    call assembler.label(output, shift_wide)
+    call assembler.emit(output, x86_64.mov_imm64(0, 0))
+    call assembler.label(output, shift_done)
+end
+
+function emit_bitwise(generator, syntax):
+    output = generator["builder"]
+    operator = syntax["operator"]
+    left = bit_operand_node(generator, syntax["left"])
+    right = bit_operand_node(generator, syntax["right"])
+    if operator == "<<" or operator == ">>":
+        call emit_shift(generator, syntax, left, right)
+        return
+    end
+    # &, | and ~ are commutative, so either leaf ordering keeps the operands'
+    # single evaluation and avoids the stack spill.
+    if is_int_leaf(generator, right):
+        call emit_expression(generator, left)
+        call emit_int_leaf(generator, right, 1)
+    elif is_int_leaf(generator, left):
+        call emit_expression(generator, right)
+        call emit_int_leaf(generator, left, 1)
+    else:
+        call emit_expression(generator, left)
+        call assembler.emit(output, x86_64.push(0))
+        call emit_expression(generator, right)
+        call assembler.emit(output, x86_64.move_reg_reg(1, 0))
+        call assembler.emit(output, x86_64.pop(0))
+    end
+    if operator == "&":
+        call assembler.emit(output, x86_64.and_reg_reg(0, 1))
+    elif operator == "|":
+        call assembler.emit(output, x86_64.or_reg_reg(0, 1))
+    else:
+        call assembler.emit(output, x86_64.xor_reg_reg(0, 1))
+    end
+end
+
 function emit_expression(generator, syntax):
     output = generator["builder"]
     kind = syntax["kind"]
@@ -1201,6 +1318,11 @@ function emit_expression(generator, syntax):
         end
         call emit_pending_error(generator)
     elif kind == "unary":
+        if syntax["operator"] == "~":
+            call emit_expression(generator, bit_operand_node(generator, syntax["operand"]))
+            call assembler.emit(output, x86_64.not_reg(0))
+            return
+        end
         call emit_expression(generator, syntax["operand"])
         if syntax["operator"] == "-":
             operand_type = infer_expression_type(syntax["operand"], generator["types"], generator["function_returns"])
@@ -1337,6 +1459,9 @@ function emit_expression(generator, syntax):
             call assembler.emit(output, x86_64.move_reg_reg(6, 0))
             call assembler.emit(output, x86_64.pop(7))
             call assembler.relative(output, [232], dynamic_numeric_runtime(generator, "runtime_pow_any"))
+            return
+        elif operator == "&" or operator == "|" or operator == "~" or operator == "<<" or operator == ">>":
+            call emit_bitwise(generator, syntax)
             return
         elif operator == "and" or operator == "or":
             short_label = label_name(generator, "bool_short")
@@ -1548,12 +1673,12 @@ function emit_expression(generator, syntax):
                 call assembler.emit(output, x86_64.or_reg_reg(0, 1))
             end
         else:
-            call unsupported(generator["path"], generator["lines"], syntax, "operator " + operator + " is not in the native scalar slice", "supported now: +, -, *, //, %, comparisons, and/or")
+            call unsupported(generator["path"], generator["lines"], syntax, "operator " + operator + " is not in the native scalar slice", "supported now: +, -, *, //, %, &, |, ~, <<, >>, comparisons, and/or")
         end
     elif kind == "call":
         target = syntax["target"]
         if target["kind"] == "name":
-            builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "Dictionary": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sum": 1, "float_zeros": 1, "float_fill": 2, "float_sum": 1, "float_dot": 2, "float_axpy": 3, "float_matmul": 5, "type": 1, "exit": 1, "input": 1, "readfile": 1, "readbytes": 1, "__lsl_getenv": 1, "mkdir": 1, "unlink": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "help": 0, "run": 2, "capture": 2, "capture_stream": 3, "capture_input": 3, "capture_status": 0, "capture_stderr": 0, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2, "native_open": 1, "native_size": 1, "native_u64": 2, "native_name_equal": 3, "native_function": 2, "native_call": 2, "native_close": 1, "__lsl_test_small_tables": 0, "__lsl_test_fd_fault": 1, "__lsl_object_table_mask": 0, "__lsl_intern_table_mask": 0, "__lsl_wall_time": 0, "__lsl_sleep": 1, "__lsl_isatty": 1, "__lsl_stdin_eof": 0, "__lsl_run": 2, "__lsl_capture": 2, "__lsl_fd_open": 2, "__lsl_fd_read": 3, "__lsl_fd_write": 3, "__lsl_fd_seek": 2, "__lsl_fd_close": 1, "__lsl_fd_socket": 2, "__lsl_fd_connect": 3, "__lsl_int_zeros": 1, "__lsl_byte_zeros": 1, "__lsl_raster_pack": 5, "__lsl_raster_copy": 5, "__lsl_raster_fill": 4, "__lsl_fd_ioctl": 3, "__lsl_fd_mmap": 3, "__lsl_mem_pack": 5, "__lsl_data_address": 1, "__lsl_syscall": 5, "__lsl_mem_unpack": 4, "__lsl_text_from_bytes": 3, "__lsl_byte_copy": 5, "__lsl_text_byte": 2, "__lsl_text_byte_length": 1, "__lsl_floatarray_bytes": 1, "__lsl_floatarray_from_bytes": 1}
+            builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "Dictionary": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sqrt": 1, "sum": 1, "float_zeros": 1, "float_fill": 2, "float_sum": 1, "float_dot": 2, "float_axpy": 3, "float_matmul": 5, "type": 1, "exit": 1, "input": 1, "readfile": 1, "readbytes": 1, "__lsl_getenv": 1, "mkdir": 1, "unlink": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "help": 0, "run": 2, "capture": 2, "capture_stream": 3, "capture_input": 3, "capture_status": 0, "capture_stderr": 0, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2, "native_open": 1, "native_size": 1, "native_u64": 2, "native_name_equal": 3, "native_function": 2, "native_call": 2, "native_close": 1, "__lsl_test_small_tables": 0, "__lsl_test_fd_fault": 1, "__lsl_object_table_mask": 0, "__lsl_intern_table_mask": 0, "__lsl_wall_time": 0, "__lsl_sleep": 1, "__lsl_isatty": 1, "__lsl_stdin_eof": 0, "__lsl_run": 2, "__lsl_capture": 2, "__lsl_fd_open": 2, "__lsl_fd_read": 3, "__lsl_fd_write": 3, "__lsl_fd_seek": 2, "__lsl_fd_close": 1, "__lsl_fd_socket": 2, "__lsl_fd_connect": 3, "__lsl_int_zeros": 1, "__lsl_byte_zeros": 1, "__lsl_raster_pack": 5, "__lsl_raster_copy": 5, "__lsl_raster_fill": 4, "__lsl_fd_ioctl": 3, "__lsl_fd_mmap": 3, "__lsl_mem_pack": 5, "__lsl_data_address": 1, "__lsl_syscall": 5, "__lsl_mem_unpack": 4, "__lsl_text_from_bytes": 3, "__lsl_byte_copy": 5, "__lsl_text_byte": 2, "__lsl_text_byte_length": 1, "__lsl_floatarray_bytes": 1, "__lsl_floatarray_from_bytes": 1}
             if target["name"] in builtin_arity:
                 expected_builtin = builtin_arity[target["name"]]
                 if len(syntax["arguments"]) != expected_builtin:
@@ -2505,7 +2630,7 @@ function emit_expression(generator, syntax):
                 call assembler.label(output, done_label)
                 return
             elif target["name"] == "help":
-                call emit_static_write(generator, "Lux Simple Lang (LSL) 0.6" + chr(10) + "functions: print printl input for loop safe if elif else try class ctype function type del len help" + chr(10) + "types: Bool Int Float String List Tuple RealArray IntArray FloatArray ByteArray Dictionary" + chr(10) + "modules: os time json process config ai tensor cuda native" + chr(10) + "docs: see README.md and docs/" + chr(10))
+                call emit_static_write(generator, "Lux Simple Lang (LSL) 0.6.1" + chr(10) + "functions: print printl input for loop safe if elif else try class ctype function type del len abs sqrt help" + chr(10) + "types: Bool Int Float String List Tuple RealArray IntArray FloatArray ByteArray Dictionary" + chr(10) + "modules: os time json process config ai tensor cuda native math bigint" + chr(10) + "docs: see README.md and docs/" + chr(10))
                 call assembler.emit(output, x86_64.mov_imm64(0, 0))
                 return
             elif target["name"] == "abs":
@@ -2528,6 +2653,27 @@ function emit_expression(generator, syntax):
                     call assembler.label(output, done_label)
                 end
                 return
+            elif target["name"] == "sqrt":
+                call emit_float_expression(generator, syntax["arguments"][0])
+                # Float objects store the raw IEEE-754 bits at offset 8.
+                call assembler.emit(output, x86_64.load_memory(7, 0, 8))
+                call assembler.emit(output, x86_64.move_reg_reg(0, 7))
+                call assembler.emit(output, x86_64.mov_imm64(1, 9223372036854775807))
+                call assembler.emit(output, x86_64.and_reg_reg(0, 1))
+                sqrt_ready = label_name(generator, "sqrt_ready")
+                # Both +0.0 and -0.0 are valid. Every other negative input is a
+                # domain error instead of silently producing a NaN.
+                call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+                call assembler.relative(output, [15, 132], sqrt_ready)
+                call assembler.emit(output, x86_64.cmp_reg_imm8(7, 0))
+                call assembler.relative(output, [15, 141], sqrt_ready)
+                call emit_runtime_raise(generator, "ValueError: sqrt domain error")
+                call assembler.label(output, sqrt_ready)
+                call assembler.emit(output, x86_64.movq_xmm_from_reg(0, 7))
+                call assembler.emit(output, x86_64.sqrt_double(0, 0))
+                call assembler.emit(output, x86_64.movq_reg_from_xmm(7, 0))
+                call assembler.relative(output, [232], "runtime_float_new")
+                return
             elif target["name"] == "exit":
                 call emit_expression(generator, syntax["arguments"][0])
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
@@ -2536,6 +2682,27 @@ function emit_expression(generator, syntax):
                 return
             end
         elif target["kind"] == "member":
+            origin_call = target["target"]["kind"] == "name" and target["target"]["name"] == "origin"
+            if origin_call:
+                current_class = generator.get("current_class_name", "")
+                if current_class == "":
+                    call unsupported(generator["path"], generator["lines"], syntax, "origin can only be used inside a class method", "call origin.method() from a subclass method")
+                end
+                parent_class = class_parent_name(generator["classes"], current_class)
+                if parent_class == "":
+                    call unsupported(generator["path"], generator["lines"], syntax, "class " + current_class + " has no parent", "remove origin or inherit from a parent class")
+                end
+                origin_method_name = resolve_method_name(generator["classes"], generator["functions"], parent_class, target["name"])
+                if origin_method_name == "":
+                    call unsupported(generator["path"], generator["lines"], syntax, "unknown parent method: " + target["name"], "declare the method in an ancestor of " + current_class)
+                end
+                origin_arguments = [{"kind": "name", "name": "self", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]}]
+                origin_arguments.extend(syntax["arguments"])
+                origin_target = {"kind": "name", "name": origin_method_name, "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]}
+                origin_expression = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": origin_target, "arguments": origin_arguments}
+                call emit_expression(generator, origin_expression)
+                return
+            end
             receiver_type = infer_expression_type(target["target"], generator["types"], generator["function_returns"])
             method_arity = {"strip": 0, "lstrip": 0, "rstrip": 0, "lower": 0, "upper": 0, "title": 0, "capitalize": 0, "sort": 0, "reverse": 0, "copy": 0, "keys": 0, "values": 0, "items": 0, "clear": 0, "append": 1, "startswith": 1, "endswith": 1, "find": 1, "count": 1, "split": 1, "join": 1, "extend": 1, "remove": 1, "index": 1, "update": 1, "replace": 2, "insert": 2}
             if target["name"] in method_arity and not receiver_type.startswith("Class:") and not receiver_type.startswith("Instance:"):
@@ -2560,8 +2727,8 @@ function emit_expression(generator, syntax):
                 else:
                     class_name = receiver_type[9:len(receiver_type)]
                 end
-                native_method_name = class_name + "__" + target["name"]
-                if native_method_name not in generator["functions"]:
+                native_method_name = resolve_method_name(generator["classes"], generator["functions"], class_name, target["name"])
+                if native_method_name == "":
                     call unsupported(generator["path"], generator["lines"], syntax, "unknown class method: " + target["name"], "declare the method inside class " + class_name)
                 end
                 declaration = generator["functions"][native_method_name]
@@ -2717,8 +2884,8 @@ function emit_expression(generator, syntax):
             arguments = syntax["arguments"]
             call assembler.relative(output, [232], "runtime_dict_new")
             call assembler.emit(output, x86_64.push(0))
-            initializer_name = class_name + "__init"
-            if initializer_name in generator["functions"]:
+            initializer_name = resolve_method_name(generator["classes"], generator["functions"], class_name, "init")
+            if initializer_name != "":
                 initializer = generator["functions"][initializer_name]
                 if len(arguments) + 1 != len(initializer["parameters"]):
                     call unsupported(generator["path"], generator["lines"], syntax, "initializer argument count mismatch", "pass exactly " + String(len(initializer["parameters"]) - 1) + " arguments")
@@ -3638,6 +3805,86 @@ function class_table(program):
     return result
 end
 
+function class_parent_name(classes, class_name):
+    if class_name not in classes:
+        return ""
+    end
+    parent = classes[class_name].get("parent", None)
+    if parent == None:
+        return ""
+    end
+    if parent["kind"] != "name":
+        return ""
+    end
+    return parent["name"]
+end
+
+function validate_class_hierarchy(path, lines, classes):
+    for class_name in classes.keys():
+        seen = {}
+        current = class_name
+        depth = 0
+        while current != "":
+            if current in seen:
+                call unsupported(path, lines, classes[class_name], "inheritance cycle involving class " + current, "make the class hierarchy acyclic")
+            end
+            seen[current] = True
+            parent = class_parent_name(classes, current)
+            if parent != "" and parent not in classes:
+                call unsupported(path, lines, classes[current], "unknown parent class: " + parent, "declare or import the parent class before inheriting from it")
+            end
+            current = parent
+            depth += 1
+            if depth > len(classes):
+                call unsupported(path, lines, classes[class_name], "inheritance hierarchy is cyclic", "make the class hierarchy acyclic")
+            end
+        end
+    end
+end
+
+function resolve_method_name(classes, functions, class_name, method_name):
+    current = class_name
+    depth = 0
+    while current != "":
+        candidate = current + "__" + method_name
+        if candidate in functions:
+            return candidate
+        end
+        current = class_parent_name(classes, current)
+        depth += 1
+        if depth > len(classes):
+            break
+        end
+    end
+    return ""
+end
+
+function populate_inherited_returns(classes, functions, result):
+    for class_name in classes.keys():
+        filled = {}
+        ancestor = class_parent_name(classes, class_name)
+        depth = 0
+        while ancestor != "":
+            prefix = ancestor + "__"
+            for function_name in functions.keys():
+                if function_name.startswith(prefix):
+                    method_name = function_name[len(prefix):len(function_name)]
+                    alias = class_name + "__" + method_name
+                    if alias not in functions and alias not in filled:
+                        result[alias] = result.get(function_name, "Any")
+                        filled[alias] = True
+                    end
+                end
+            end
+            ancestor = class_parent_name(classes, ancestor)
+            depth += 1
+            if depth > len(classes):
+                break
+            end
+        end
+    end
+end
+
 function function_table(path, lines, program):
     functions = {}
     for statement in program:
@@ -3890,6 +4137,7 @@ function observe_statement_types(statements, types, function_returns, functions,
             call observe_expression_types(statement["target"], types, function_returns, functions, observations, escaped)
         elif kind == "class":
             call observe_expression_types(statement["condition"], types, function_returns, functions, observations, escaped)
+            call observe_expression_types(statement.get("parent", None), types, function_returns, functions, observations, escaped)
             types[statement["name"]] = "Class:" + statement["name"]
             for member in statement["body"]:
                 if member["kind"] == "assign":
@@ -4004,7 +4252,7 @@ function statements_block_specialization(statements):
                 return True
             end
         elif kind == "class":
-            if expression_blocks_specialization(statement["condition"]):
+            if expression_blocks_specialization(statement["condition"]) or expression_blocks_specialization(statement.get("parent", None)):
                 return True
             end
             for member in statement["body"]:
@@ -4122,6 +4370,7 @@ function infer_function_returns(functions, classes, parameter_types):
     for name in names:
         result[name] = "None"
     end
+    call populate_inherited_returns(classes, functions, result)
     max_iterations = len(names) * 2 + 4
     iteration = 0
     changed = True
@@ -4142,6 +4391,7 @@ function infer_function_returns(functions, classes, parameter_types):
                 changed = True
             end
         end
+        call populate_inherited_returns(classes, functions, result)
         iteration += 1
     end
     return result
@@ -4176,6 +4426,10 @@ function emit_function(generator, declaration):
                 types["self"] = "Instance:" + declaration["class_name"]
             end
         end
+        parent_name = class_parent_name(generator["classes"], declaration["class_name"])
+        if parent_name != "":
+            types["origin"] = "Class:" + parent_name
+        end
     end
     call collect_types(declaration["body"], types, generator["function_returns"])
     old_variables = generator["variables"]
@@ -4183,10 +4437,12 @@ function emit_function(generator, declaration):
     old_error_label = generator["error_label"]
     old_current_return_type = generator.get("current_return_type", "Any")
     old_internal_function = generator.get("current_internal_function", False)
+    old_current_class_name = generator.get("current_class_name", "")
     generator["variables"] = variables
     generator["types"] = types
     generator["current_return_type"] = generator["function_returns"].get(name, "Any")
     generator["current_internal_function"] = declaration.get("path", generator["path"]).find("compiler/pure/") >= 0
+    generator["current_class_name"] = declaration.get("class_name", "")
     call assembler.label(generator["builder"], "function_" + name)
     call assembler.emit(generator["builder"], x86_64.function_prologue(aligned_frame(variables)))
     argument_registers = [7, 6, 2, 1, 8, 9]
@@ -4212,11 +4468,13 @@ function emit_function(generator, declaration):
     generator["error_label"] = old_error_label
     generator["current_return_type"] = old_current_return_type
     generator["current_internal_function"] = old_internal_function
+    generator["current_class_name"] = old_current_class_name
 end
 
 function generate(path, source, program):
     lines = source
     classes = class_table(program)
+    call validate_class_hierarchy(path, lines, classes)
     functions = function_table(path, lines, program)
     parameter_types = dynamic_parameter_types(functions)
     function_returns = infer_function_returns(functions, classes, parameter_types)
@@ -4234,7 +4492,7 @@ function generate(path, source, program):
         call collect_types(program, main_types, function_returns)
     end
     output = assembler.builder()
-    generator = {"path": path, "internal_abi": internal_abi, "lines": lines, "variables": {}, "types": {}, "global_variables": main_variables, "global_types": main_types, "functions": functions, "classes": classes, "function_returns": function_returns, "function_parameters": parameter_types, "builder": output, "data": [], "string_offsets": {}, "relocations": [], "counter": 0, "error_label": ""}
+    generator = {"path": path, "internal_abi": internal_abi, "lines": lines, "variables": {}, "types": {}, "global_variables": main_variables, "global_types": main_types, "functions": functions, "classes": classes, "function_returns": function_returns, "function_parameters": parameter_types, "builder": output, "data": [], "string_offsets": {}, "relocations": [], "counter": 0, "error_label": "", "current_class_name": ""}
     registry_bytes = 524288
     registry_mask = 65535
     if generator["internal_abi"]:

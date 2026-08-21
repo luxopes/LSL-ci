@@ -39,9 +39,67 @@ Vestavěné typy a návratové hodnoty `type(value)`:
 | `ByteArray()` | `ByteArray` |
 | `None` | `None` |
 
-`Bool(value)`, `Int(value)`, `Float(value)`, `String(value)`, `List(value)`, `Tuple(value)` a `Dictionary(value)` převádějí hodnoty. `IntArray()`, `FloatArray()` a `ByteArray()` vytvářejí prázdná měnitelná typed pole; volání s jedním argumentem je checked cast existujícího pole stejného typu. Přiřazení podporuje také `+=`, `-=`, `*=`, `/=` a `%=`.
+`Bool(value)`, `Int(value)`, `Float(value)`, `String(value)`, `List(value)`, `Tuple(value)` a `Dictionary(value)` převádějí hodnoty. `IntArray()`, `FloatArray()` a `ByteArray()` vytvářejí prázdná měnitelná typed pole; volání s jedním argumentem je checked cast existujícího pole stejného typu. Přiřazení podporuje také `+=`, `-=`, `*=`, `/=`, `%=`, `&=`, `|=`, `~=`, `<<=` a `>>=`.
 
 `Int` je signed 64-bit two's-complement hodnota. Aritmetika, mocnina, negace a převod z desetinného Stringu se definovaně redukují modulo `2^64`; nepoužívají `OverflowError`. `INT64_MIN // -1` proto vrací `INT64_MIN` a zbytek `0` bez CPU trapu.
+
+Celočíselný literál lze zapsat i s prefixem `0x` (šestnáctkově), `0o` (osmičkově)
+nebo `0b` (dvojkově); velikost písmen v prefixu i v číslicích nerozhoduje.
+Literál se redukuje modulo `2^64` stejně jako desítkový, takže
+`0xFFFFFFFFFFFFFFFF` je `-1` a `0x8000000000000000` je `INT64_MIN`.
+
+### Bitové operátory
+
+| Operátor | Význam |
+|---|---|
+| `a & b` | bitový AND |
+| `a \| b` | bitový OR |
+| `a ~ b` | bitový XOR |
+| `~a` | bitový NOT (jedničkový doplněk) |
+| `a << b` | posun vlevo |
+| `a >> b` | aritmetický posun vpravo |
+
+`~` je binárně XOR a unárně NOT, protože `^` je v LSL mocnina. Stejnou dvojroli
+má `~` v Lua, odkud LSL přebírá i `^` a `//`.
+
+Priorita zdola nahoru je `or`, `and`, porovnání, `|`, `~`, `&`, `<<` a `>>`,
+`+` a `-`, `*` `/` `//` `%`, unární operátory, `^`. Platí tedy
+`1 << 2 + 1 == 8` a `5 & 3 | 8 == 9`.
+
+Operandy musí být `Int` nebo `Bool`; `Bool` se počítá jako `0`/`1` a výsledek je
+vždy `Int`. Statický `Float` nebo kolekce jsou chyba překladu, dynamická hodnota
+jiného typu skončí za běhu `TypeError` — nikdy se nečtou bity živého pointeru.
+
+Posun je definovaný i mimo rozsah slova: záporný počet je `ValueError`,
+`a << b` pro `b >= 64` je `0` a `a >> b` pro `b >= 64` je `0` pro nezáporné `a`
+a `-1` pro záporné. `a >> b` je tedy přesně `a // 2^b` a `a << b` je
+`a * 2^b` v Int64 wrapu.
+
+```lsl
+packed = 0
+for byte in [1, 2, 3, 4]:
+    packed = (packed << 8) | byte
+end
+print packed                  # 16909060
+print (packed >> 16) & 0xFF   # 2
+```
+
+Pozor: `not` je unární operátor, takže váže silněji než porovnání i než bitové
+operátory. `not 0 & 1` je `(not 0) & 1`, ne `not (0 & 1)`.
+
+Pro celá čísla libovolné velikosti slouží standardní modul `bigint`:
+
+```lsl
+load bigint
+
+huge = bigint.BigInt("1000000000000000000000000000000")
+print huge.multiply(huge).text()
+```
+
+`BigInt` podporuje `add`, `subtract`, `multiply`, `floor_divide`, `modulo`,
+`power`, `compare`, `equals`, `negate`, `absolute`, `text` a kontrolovaný
+`to_int`. `SuperInt` je kompatibilní alias. BigInt je oddělený typ úmyslně,
+aby běžný `Int64` neztratil nativní výkon.
 
 Dictionary klíče mohou být immutable scalar hodnoty `String`, `Int`, `Bool`, `None`, `Float` nebo `Function`. Collection, Dictionary, Class a Instance klíče compiler odmítá; tím hash index nezávisí na pozdější mutable změně klíče.
 
@@ -130,7 +188,7 @@ Pořadí vyhodnocení více argumentů není v 0.6 součástí veřejného kontr
 ## Třídy a instance
 
 ```lsl
-class Auto(True):
+class Auto:
     ctype Public
     wheels = 4
 
@@ -147,7 +205,30 @@ car = Auto("Lux")
 print car.wheels, car.motor(10)
 ```
 
-Podmínka `class Name(condition)` určuje, zda se tělo třídy vykoná. Při `False` vznikne vypnutá definice bez členů. `ctype Public` je výchozí; `ctype Private` zabrání exportu třídy z modulu. Funkce s prvním parametrem přesně `self` se při přístupu přes instanci váže jako metoda. `init(self, ...)` je volitelný konstruktor.
+`ctype Public` je výchozí; `ctype Private` zabrání exportu třídy z modulu.
+Funkce s prvním parametrem přesně `self` se při přístupu přes instanci váže
+jako metoda. `init(self, ...)` je volitelný konstruktor. Historický zápis
+`class Name(True)` zůstává kompatibilní.
+
+Jednoduchá dědičnost používá rodiče v závorkách. Potomek dědí konstruktor i
+ostatní metody, vlastní metoda je přepíše a `origin` volá implementaci
+bezprostředního rodiče:
+
+```lsl
+class ElectricCar(Auto):
+    function init(self, brand, capacity):
+        call origin.init(brand)
+        self.capacity = capacity
+    end
+
+    function motor(self, power):
+        return origin.motor(power) + " electric"
+    end
+end
+```
+
+LSL podporuje jednu rodičovskou třídu a cyklickou dědičnost odmítá při
+překladu.
 
 ## Kolekce
 
@@ -209,11 +290,12 @@ print lux.version, value_type([1, 2])
 
 `load foo.bar` hledá `foo/bar.lsl` nejprve vedle zdrojového souboru, v compiler interních a built-in/system `lib/lsl/stdlib` cestách a teprve potom pod `~/.local/lib/lsl/stdlib`. `load foo.bar as baz` zpřístupní stejný staticky linkovaný modul pod prefixem `baz.`. Uživatelskou knihovnu lze získat přes `lsl install NAME`; built-in modul proto nelze uživatelskou kopií zastínit. Modulové symbols dostávají deterministický namespace prefix. Třídy označené `ctype Private` nejsou dostupné přes vnější namespace; public classes lze přímo konstruovat. `native` modul podporuje omezené self-contained Linux x86_64 ET_DYN Int64 kernels; obecné relocatable/libc pluginy nejsou součástí ABI v1.
 
-Vestavěný modul `lux` exportuje `version`, `language` a `l` (alias `type`). Další standardní moduly jsou `json`, `lconf`, `http`, `env`, `config`, `time`, `os` a `system`; podrobnosti jsou v `configuration.md`, `lconf.md`, `ai.md`, `time.md`, `os.md` a `system.md`.
+Vestavěný modul `lux` exportuje `version`, `language` a `l` (alias `type`). Další standardní moduly jsou `json`, `lconf`, `http`, `env`, `config`, `time`, `os`, `system`, `math` a `bigint`; podrobnosti jsou v `configuration.md`, `lconf.md`, `ai.md`, `time.md`, `os.md` a `system.md`.
 
 ## Standardní funkce
 
-- matematika: `min`, `max`, `sum`, `abs`, `round`
+- matematika: `min`, `max`, `sum`, `abs`, `sqrt`; modul `math` přidává
+  exponenciálu, logaritmy, goniometrii, Sigmoid a statistiku
 - znaky: `chr`, `ord`
 - čas: `clock()` — monotónní čas v sekundách; aplikační modul `time` přidává wall clock, pojmenovaný monotonic/perf counter a `sleep`
 - soubory UTF-8: `readfile(path)`, `writefile(path, value)`, `appendfile(path, value)`, `exists(path)`

@@ -352,7 +352,7 @@ end
 
 function parse_unary(parser):
     token = current(parser)
-    if match(parser, "not") or match(parser, "-") or match(parser, "+"):
+    if match(parser, "not") or match(parser, "-") or match(parser, "+") or match(parser, "~"):
         result = node("unary", token)
         result["operator"] = token["value"]
         result["operand"] = parse_unary(parser)
@@ -418,8 +418,45 @@ function parse_term(parser):
     return left
 end
 
+function parse_shift(parser):
+    left = parse_term(parser)
+    loop:
+        operator = current(parser)["value"]
+        if operator != "<<" and operator != ">>":
+            break
+        end
+        call advance(parser)
+        left = binary_node(operator, left, parse_term(parser))
+    end
+    return left
+end
+
+function parse_bitand(parser):
+    left = parse_shift(parser)
+    while match(parser, "&"):
+        left = binary_node("&", left, parse_shift(parser))
+    end
+    return left
+end
+
+function parse_bitxor(parser):
+    left = parse_bitand(parser)
+    while match(parser, "~"):
+        left = binary_node("~", left, parse_bitand(parser))
+    end
+    return left
+end
+
+function parse_bitor(parser):
+    left = parse_bitxor(parser)
+    while match(parser, "|"):
+        left = binary_node("|", left, parse_bitxor(parser))
+    end
+    return left
+end
+
 function parse_compare(parser):
-    operands = [parse_term(parser)]
+    operands = [parse_bitor(parser)]
     operators = []
     loop:
         operator = current(parser)["value"]
@@ -434,7 +471,7 @@ function parse_compare(parser):
             operator = "is not"
         end
         operators.append(operator)
-        operands.append(parse_term(parser))
+        operands.append(parse_bitor(parser))
     end
     if len(operators) == 0:
         return operands[0]
@@ -600,9 +637,18 @@ end
 function parse_class(parser, opening):
     name = expect_kind(parser, "name", "E1212", "expected class name")
     condition = None
+    parent = None
     if match(parser, "("):
-        condition = parse_expression(parser)
+        class_argument = parse_expression(parser)
         call expect(parser, ")", "E1213", "unclosed class condition")
+        # `class Child(Parent)` is single inheritance. Keep the historical
+        # `class Name(True)` conditional spelling working while existing source
+        # migrates to the simpler `class Name:` form.
+        if class_argument["kind"] == "literal" and class_argument["literal_kind"] == "name":
+            condition = class_argument
+        else:
+            parent = class_argument
+        end
     end
     call consume_colon_line(parser)
     body = block(parser, ["end"])
@@ -611,6 +657,7 @@ function parse_class(parser, opening):
     result = node("class", opening)
     result["name"] = name["value"]
     result["condition"] = condition
+    result["parent"] = parent
     result["body"] = body
     return finish_node(result, parser)
 end
@@ -726,7 +773,7 @@ function parse_statement(parser):
     call_prefix = match(parser, "call")
     left = parse_expression(parser)
     operator = current(parser)["value"]
-    if operator == "=" or operator == "+=" or operator == "-=" or operator == "*=" or operator == "/=" or operator == "%=":
+    if operator == "=" or operator == "+=" or operator == "-=" or operator == "*=" or operator == "/=" or operator == "%=" or operator == "&=" or operator == "|=" or operator == "~=" or operator == "<<=" or operator == ">>=":
         call advance(parser)
         value = parse_expression(parser)
         call consume_line_end(parser)

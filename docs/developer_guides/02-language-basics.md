@@ -67,6 +67,12 @@ x -= 3       # x = x - 3     (x bude 7)
 x *= 2       # x = x * 2     (x bude 20)
 x /= 4       # x = x / 4     (dělení, výsledek je Float)
 x %= 3       # x = x % 3     (zbytek po dělení)
+
+x &= 6       # x = x & 6     (bitový AND)
+x |= 1       # x = x | 1     (bitový OR)
+x ~= 3       # x = x ~ 3     (bitový XOR)
+x <<= 2      # x = x << 2    (posun vlevo)
+x >>= 1      # x = x >> 1    (posun vpravo)
 ```
 
 ### Mazání proměnné
@@ -128,6 +134,19 @@ Tomu se říká **wrap** — počítač nezahlásí chybu, jen pokračuje od
 druhého konce rozsahu. Pro běžné počty to není problém; extrémní hodnoty
 nastanou zřídka.
 
+Pro čísla větší než Int64 použijte knihovní typ `BigInt`:
+
+```lsl
+load bigint
+
+velke = bigint.BigInt("1000000000000000000000000000000")
+print velke.power(2).text()
+```
+
+`BigInt` má libovolný počet číslic. Používá metody `add`, `subtract`,
+`multiply`, `floor_divide`, `modulo` a `power`; běžný `Int` zůstává
+rychlejší pro hodnoty, které se do 64 bitů vejdou.
+
 ### Float — desetinné číslo
 
 `Float` ukládá desetinná čísla podle standardu IEEE-754 (stejný formát,
@@ -138,6 +157,7 @@ pi = 3.14159
 polovina = 0.5
 teplota = -15.7
 vedecky = 1.5e6     # 1.5 × 10⁶ = 1500000.0
+odmocnina = sqrt(81) # 9.0
 ```
 
 **Důležité**: LSL ukládá každou Float hodnotu jako samostatný objekt v
@@ -285,6 +305,60 @@ Operátor je značka, která říká, co se má s hodnotami udělat. Například
 | `^` | Mocnina | `2 ^ 10` | `1024` |
 | `-x` | Opačné číslo | `-5` | `-5` |
 
+### Bitové operátory — práce s jednotlivými bity
+
+Celé číslo je v paměti řada 64 bitů (nul a jedniček). Bitové operátory
+pracují přímo s nimi. Hodí se na příznaky, masky, barvy a čtení binárních
+formátů.
+
+| Operátor | Co dělá | Příklad | Výsledek |
+|---|---|---|---|
+| `&` | AND — bit je 1, když je 1 v obou | `12 & 10` | `8` |
+| `\|` | OR — bit je 1, když je 1 aspoň v jednom | `12 \| 10` | `14` |
+| `~` | XOR — bit je 1, když se čísla liší | `12 ~ 10` | `6` |
+| `~x` | NOT — obrátí všechny bity | `~12` | `-13` |
+| `<<` | Posun vlevo (násobení dvěma) | `12 << 3` | `96` |
+| `>>` | Posun vpravo (celočíselné dělení dvěma) | `12 >> 2` | `3` |
+
+`~` je tedy dvakrát: mezi dvěma čísly je to XOR, před jedním číslem NOT.
+Znak `^` se pro XOR použít nedá, protože v LSL už znamená mocninu.
+
+Čísla se dají zapisovat i po bitech nebo šestnáctkově, což bývá čitelnější
+než desítkově:
+
+```lsl
+print 0b1010     # dvojkově -> 10
+print 0o755      # osmičkově -> 493
+print 0xFF       # šestnáctkově -> 255
+```
+
+Typický příklad — sbalit čtyři bajty do jednoho čísla a zase je vytáhnout:
+
+```lsl
+packed = 0
+for byte in [1, 2, 3, 4]:
+    packed = (packed << 8) | byte
+end
+print packed                  # 16909060
+print (packed >> 16) & 0xFF   # 2
+```
+
+A příznaky v jedné proměnné:
+
+```lsl
+CTENI = 1
+ZAPIS = 2
+SPUSTENI = 4
+
+prava = CTENI | ZAPIS
+print prava & ZAPIS != 0      # True  — zápis je povolený
+print prava & SPUSTENI != 0   # False — spouštění není
+```
+
+Operandy musí být `Int` nebo `Bool` (`True` se počítá jako `1`), výsledek je
+vždy `Int`. Posun o záporný počet bitů skončí chybou `ValueError`; posun
+o 64 a více bitů je definovaný a vrací `0` (u `>>` pro záporné číslo `-1`).
+
 ### Porovnávací operátory — výsledkem je Bool (True/False)
 
 | Operátor | Co znamená | Příklad | Výsledek |
@@ -331,8 +405,14 @@ závorky — ty mají vždy přednost a zpřehlední kód:
 vysledek = (a + b) * (c - d)   # závorky vyjasní, co se počítá s čím
 ```
 
-Pořadí od nejvyšší priority k nejnižší: `^` → `-x` → `* / // %` →
-`+ -` → porovnávací → `not` → `and` → `or`.
+Pořadí od nejvyšší priority k nejnižší: `^` → unární `-x`, `not x`, `~x` →
+`* / // %` → `+ -` → `<< >>` → `&` → `~` (XOR) → `|` → porovnávací →
+`and` → `or`.
+
+Bitové operátory jsou tedy volnější než sčítání: `1 << 2 + 1` je `1 << 3`,
+tedy `8`. Naopak vážou silněji než porovnání, takže `prava & ZAPIS != 0`
+znamená `(prava & ZAPIS) != 0` — přesně jak to vypadá. (V jazycích jako C to
+tak není a je to tam častý zdroj chyb; LSL to má jako Python.)
 
 Mocnina je pravostranně asociativní: `2 ^ 3 ^ 2` znamená
 `2 ^ (3 ^ 2)`, tedy `512`. Syntaxe `**` byla ve verzi 0.6 odstraněna.
