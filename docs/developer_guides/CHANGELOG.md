@@ -7,6 +7,10 @@ manuály a soubory ke stažení zůstávají dostupné v
 ## Nevydáno
 
 - `cpu_count()`: počet CPU v affinity masce procesu (`sched_getaffinity`), pro dimenzování worker poolů.
+- Posuny s proměnným počtem (`x << n`, `x >> n`) jsou součástí registrového
+  emitoru: jedna bezznaménková kontrola `n > 63` na horké cestě, záporný
+  počet dál vyhodí ValueError, široký posun dává 0 / saturuje na 63. Lumen
+  perft dalších −4 %.
 - Unchecked `IntArray` složené přiřazení s čistou pravou stranou používá ALU
   operaci s paměťovým cílem (`add/sub/and/or/xor [r10+r11*8], rcx`) a fast
   path ukládání/RMW přijímá libovolný čistý Int index i hodnotu. Lumen perft

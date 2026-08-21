@@ -1238,14 +1238,27 @@ function pure_int_need(generator, syntax):
             return -1
         end
         if operator == "<<" or operator == ">>":
-            if not pure_int_literal(right):
+            if pure_int_literal(right):
+                count = integer_literal(right)
+                if count < 0 or count > 63:
+                    return -1
+                end
+                return left_need
+            end
+            # Variable count: the count needs rcx on top of the value. A
+            # constant negative count (unary minus on a literal) stays on the
+            # generic path so it is still rejected at compile time.
+            if right["kind"] == "unary" and pure_int_literal(right["operand"]):
                 return -1
             end
-            count = integer_literal(right)
-            if count < 0 or count > 63:
+            right_need = pure_int_need(generator, right)
+            if right_need < 0:
                 return -1
             end
-            return left_need
+            if left_need > right_need + 1:
+                return left_need
+            end
+            return right_need + 1
         end
         if pure_int_immediate(right):
             return left_need
@@ -1357,7 +1370,16 @@ function emit_pure_int(generator, syntax, target, pool):
         operator = syntax["operator"]
         left = syntax["left"]
         right = syntax["right"]
-        if pure_int_immediate(right) or operator == "<<" or operator == ">>":
+        if operator == "<<" or operator == ">>":
+            if pure_int_literal(right):
+                call emit_pure_int(generator, left, target, pool)
+                call emit_pure_int_immediate(generator, operator, target, integer_literal(right))
+            else:
+                call emit_pure_int_shift(generator, syntax, target, pool)
+            end
+            return
+        end
+        if pure_int_immediate(right):
             call emit_pure_int(generator, left, target, pool)
             call emit_pure_int_immediate(generator, operator, target, integer_literal(right))
             return
@@ -1424,6 +1446,61 @@ function emit_pure_int_expression(generator, syntax, target, pool):
     else:
         call emit_pure_int(generator, syntax, target, pool)
     end
+end
+
+function emit_pure_int_shift(generator, syntax, target, pool):
+    # value << count / value >> count with a variable count: count in rcx,
+    # one unsigned range check (count > 63 covers negatives) on the hot
+    # path; negatives raise ValueError, wide left shifts give 0 and wide
+    # right shifts saturate at 63 like the generic emitter.
+    output = generator["builder"]
+    operator = syntax["operator"]
+    rest = []
+    for register in pool:
+        if register != 1:
+            rest.append(register)
+        end
+    end
+    if target == 1:
+        # rcx is the shift count register; build the value elsewhere first.
+        other = rest[0]
+        call emit_pure_int_shift(generator, syntax, other, rest)
+        call assembler.emit(output, x86_64.move_reg_reg(1, other))
+        return
+    end
+    call emit_pure_int(generator, syntax["left"], target, rest)
+    call emit_pure_int(generator, syntax["right"], 1, rest)
+    shift_fast = label_name(generator, "pshift_fast")
+    shift_done = label_name(generator, "pshift_done")
+    shift_slow = label_name(generator, "pshift_slow")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(1, 63))
+    call assembler.relative(output, [15, 135], shift_slow)
+    call assembler.label(output, shift_fast)
+    if operator == "<<":
+        call assembler.emit(output, x86_64.shift_left_cl(target))
+    else:
+        call assembler.emit(output, x86_64.shift_right_arithmetic_cl(target))
+    end
+    call assembler.label(output, shift_done)
+    # Cold path placed after the function's normal flow would be nicer, but
+    # the emitter is single-pass; a forward jump over it keeps the hot path
+    # straight.
+    shift_after = label_name(generator, "pshift_after")
+    call assembler.relative(output, [233], shift_after)
+    call assembler.label(output, shift_slow)
+    shift_wide = label_name(generator, "pshift_wide")
+    call assembler.emit(output, x86_64.test_reg_reg(1, 1))
+    call assembler.relative(output, [15, 137], shift_wide)
+    shift_source_path = syntax.get("path", generator["path"])
+    call emit_runtime_raise(generator, "ValueError: negative shift count at " + shift_source_path + ":" + String(syntax["line"]))
+    call assembler.label(output, shift_wide)
+    if operator == "<<":
+        call assembler.emit(output, x86_64.xor_reg_reg(target, target))
+    else:
+        call assembler.emit(output, x86_64.mov_imm64(1, 63))
+        call assembler.emit(output, x86_64.shift_right_arithmetic_cl(target))
+    end
+    call assembler.label(output, shift_after)
 end
 
 function pure_int_pool():
