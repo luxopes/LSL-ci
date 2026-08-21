@@ -1206,6 +1206,18 @@ function pure_int_need(generator, syntax):
     return -1
 end
 
+function power_of_two_shift(value):
+    # log2(value) for positive powers of two, else -1.
+    if value <= 0 or (value & (value - 1)) != 0:
+        return -1
+    end
+    shift = 0
+    while (1 << shift) != value:
+        shift += 1
+    end
+    return shift
+end
+
 function emit_pure_int_immediate(generator, operator, target, value):
     output = generator["builder"]
     if operator == "+":
@@ -1213,7 +1225,12 @@ function emit_pure_int_immediate(generator, operator, target, value):
     elif operator == "-":
         call assembler.emit(output, x86_64.sub_reg_imm(target, value))
     elif operator == "*":
-        call assembler.emit(output, x86_64.imul_reg_imm(target, target, value))
+        shift = power_of_two_shift(value)
+        if shift >= 0:
+            call assembler.emit(output, x86_64.shift_left_imm(target, shift))
+        else:
+            call assembler.emit(output, x86_64.imul_reg_imm(target, target, value))
+        end
     elif operator == "&":
         call assembler.emit(output, x86_64.logic_reg_imm(4, target, value))
     elif operator == "|":
