@@ -7,6 +7,11 @@ manuály a soubory ke stažení zůstávají dostupné v
 ## Nevydáno
 
 - `cpu_count()`: počet CPU v affinity masce procesu (`sched_getaffinity`), pro dimenzování worker poolů.
+- `popcount(x)` a `trailing_zeros(x)` builtiny (POPCNT/TZCNT nad raw Int;
+  `trailing_zeros(0)` je 64). Test `tests/bit_builtins_conformance.lsl`.
+- Peephole v assembleru: `cmp r64, 0` → `test r64, r64`. Eliminace
+  store→load a skoků na další instrukci byly změřeny jako o 8–10 % pomalejší
+  (perft i self-host) a záměrně nejsou zapnuté.
 - Inference parametrů běží ve dvou fázích: rekurzivní volání `f(ply + 1)`
   uvnitř `f` už neoznačí parametr jako `Any` dřív, než compiler uvidí vnější
   volající; teprve nerozřešené parametry se rozšíří na `Any` a všechna volání

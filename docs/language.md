@@ -298,7 +298,7 @@ u = thread_spawn(bump)
 print thread_join(t), thread_join(u), counter[0]   # 0 0 2000
 ```
 
-`cpu_count()` vrátí počet CPU dostupných procesu (affinity maska, respektuje `taskset`/cgroup; při chybě `1`) — podle něj dimenzujte počet workerů; paralelismus je vždy explicitní, kernel pak vlákna rozloží na jádra sám. Worker funkce nemá parametry: index práce si worker vezme z globálního `IntArray` čítače přes `atomic_add`.
+`popcount(x)` a `trailing_zeros(x)` jsou bitové builtiny nad `Int` (instrukce POPCNT/TZCNT; `trailing_zeros(0)` vrací 64). `cpu_count()` vrátí počet CPU dostupných procesu (affinity maska, respektuje `taskset`/cgroup; při chybě `1`) — podle něj dimenzujte počet workerů; paralelismus je vždy explicitní, kernel pak vlákna rozloží na jádra sám. Worker funkce nemá parametry: index práce si worker vezme z globálního `IntArray` čítače přes `atomic_add`.
 
 Data si vlákna předávají přes globální proměnné. Běžné zápisy do sdílených
 kolekcí nejsou synchronizované; pro sdílené čítače a zámky slouží lock-free

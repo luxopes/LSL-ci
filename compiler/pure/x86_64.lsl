@@ -550,6 +550,16 @@ function lock_cmpxchg_memory(base_register, displacement, source_register):
     return result
 end
 
+function popcount_reg(destination, source):
+    # popcnt r64, r64 (F3 REX.W 0F B8 /r).
+    return [243, rex(True, destination >= 8, False, source >= 8), 15, 184, modrm(3, destination, source)]
+end
+
+function trailing_zeros_reg(destination, source):
+    # tzcnt r64, r64 (F3 REX.W 0F BC /r); 64 for a zero source.
+    return [243, rex(True, destination >= 8, False, source >= 8), 15, 188, modrm(3, destination, source)]
+end
+
 function pause():
     # PAUSE hint for spin-wait loops.
     return [243, 144]
