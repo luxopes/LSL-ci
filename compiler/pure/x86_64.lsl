@@ -311,6 +311,16 @@ function cmp_reg_imm32(register, value):
     return result
 end
 
+function logic_reg_imm(operation, register, value):
+    # and/or/xor r64, imm (operation: 4 = and, 1 = or, 6 = xor).
+    if fits_signed8(value):
+        return [rex(True, False, False, register >= 8), 131, modrm(3, operation, register), value % 256]
+    end
+    result = [rex(True, False, False, register >= 8), 129, modrm(3, operation, register)]
+    call bytes.append_little(result, value, 4)
+    return result
+end
+
 function neg_reg(register):
     return [rex(True, False, False, register >= 8), 247, modrm(3, 3, register)]
 end

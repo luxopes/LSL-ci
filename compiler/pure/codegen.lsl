@@ -1116,6 +1116,257 @@ function choose_register_locals(declaration, variables, types):
     return chosen
 end
 
+function pure_int_literal(syntax):
+    return syntax["kind"] == "literal" and syntax["literal_kind"] == "number" and syntax["value"].find(".") < 0 and syntax["value"].find("e") < 0 and syntax["value"].find("E") < 0
+end
+
+function pure_int_immediate(syntax):
+    # Literal usable as an imm32 operand (and/or/xor/add/sub/imul forms).
+    return pure_int_literal(syntax) and x86_64.fits_signed32(integer_literal(syntax))
+end
+
+function pure_int_need(generator, syntax):
+    # Register need of a pure Int expression tree (Sethi-Ullman), or -1 when
+    # the tree is not pure: literals, Int names, unchecked IntArray reads and
+    # + - * & | ~ << >> plus unary -/~, all without calls or dynamic values.
+    kind = syntax["kind"]
+    if kind == "literal":
+        if pure_int_literal(syntax):
+            return 1
+        end
+        return -1
+    elif kind == "name":
+        if is_int_leaf(generator, syntax) and infer_expression_type(syntax, generator["types"], generator["function_returns"]) == "Int":
+            return 1
+        end
+        return -1
+    elif kind == "index":
+        if not generator.get("unchecked_intarray", False):
+            return -1
+        end
+        target = syntax["target"]
+        if target["kind"] != "name" or not is_int_leaf(generator, target):
+            return -1
+        end
+        if infer_expression_type(target, generator["types"], generator["function_returns"]) != "IntArray":
+            return -1
+        end
+        index_need = pure_int_need(generator, syntax["index"])
+        if index_need < 0:
+            return -1
+        end
+        if pure_int_literal(syntax["index"]) and x86_64.fits_signed32(integer_literal(syntax["index"]) * 8):
+            return 1
+        end
+        return index_need + 1
+    elif kind == "unary":
+        if syntax["operator"] != "-" and syntax["operator"] != "~":
+            return -1
+        end
+        return pure_int_need(generator, syntax["operand"])
+    elif kind == "binary":
+        operator = syntax["operator"]
+        if operator != "+" and operator != "-" and operator != "*" and operator != "&" and operator != "|" and operator != "~" and operator != "<<" and operator != ">>":
+            return -1
+        end
+        left = syntax["left"]
+        right = syntax["right"]
+        left_need = pure_int_need(generator, left)
+        if left_need < 0:
+            return -1
+        end
+        if operator == "<<" or operator == ">>":
+            if not pure_int_literal(right):
+                return -1
+            end
+            count = integer_literal(right)
+            if count < 0 or count > 63:
+                return -1
+            end
+            return left_need
+        end
+        if pure_int_immediate(right):
+            return left_need
+        end
+        right_need = pure_int_need(generator, right)
+        if right_need < 0:
+            return -1
+        end
+        if pure_int_immediate(left) and operator != "-":
+            return right_need
+        end
+        if left_need == right_need:
+            return left_need + 1
+        end
+        if left_need > right_need:
+            return left_need
+        end
+        return right_need
+    end
+    return -1
+end
+
+function emit_pure_int_immediate(generator, operator, target, value):
+    output = generator["builder"]
+    if operator == "+":
+        call assembler.emit(output, x86_64.add_reg_imm32(target, value))
+    elif operator == "-":
+        call assembler.emit(output, x86_64.sub_reg_imm(target, value))
+    elif operator == "*":
+        call assembler.emit(output, x86_64.imul_reg_imm(target, target, value))
+    elif operator == "&":
+        call assembler.emit(output, x86_64.logic_reg_imm(4, target, value))
+    elif operator == "|":
+        call assembler.emit(output, x86_64.logic_reg_imm(1, target, value))
+    elif operator == "~":
+        call assembler.emit(output, x86_64.logic_reg_imm(6, target, value))
+    elif operator == "<<":
+        call assembler.emit(output, x86_64.shift_left_imm(target, value))
+    else:
+        call assembler.emit(output, x86_64.shift_right_arithmetic_imm(target, value))
+    end
+end
+
+function emit_pure_int_operation(generator, operator, target, source):
+    output = generator["builder"]
+    if operator == "+":
+        call assembler.emit(output, x86_64.add_reg_reg(target, source))
+    elif operator == "-":
+        call assembler.emit(output, x86_64.sub_reg_reg(target, source))
+    elif operator == "*":
+        call assembler.emit(output, x86_64.imul_reg_reg(target, source))
+    elif operator == "&":
+        call assembler.emit(output, x86_64.and_reg_reg(target, source))
+    elif operator == "|":
+        call assembler.emit(output, x86_64.or_reg_reg(target, source))
+    else:
+        call assembler.emit(output, x86_64.xor_reg_reg(target, source))
+    end
+end
+
+function emit_pure_int(generator, syntax, target, pool):
+    # Emit a pure Int tree into register target using the scratch registers
+    # in pool (never rax unless it is the target); no push/pop, no runtime.
+    output = generator["builder"]
+    kind = syntax["kind"]
+    if kind == "literal":
+        call assembler.emit(output, x86_64.mov_imm64(target, integer_literal(syntax)))
+    elif kind == "name":
+        call emit_int_leaf(generator, syntax, target)
+    elif kind == "index":
+        if generator.get("pure_hoist_name", "") == syntax["target"]["name"]:
+            pointer = generator["pure_hoist_register"]
+        else:
+            pointer = pool[0]
+            call emit_int_leaf(generator, syntax["target"], pointer)
+            call assembler.emit(output, x86_64.load_memory(pointer, pointer, 24))
+        end
+        if pure_int_literal(syntax["index"]) and x86_64.fits_signed32(integer_literal(syntax["index"]) * 8):
+            call assembler.emit(output, x86_64.load_memory(target, pointer, integer_literal(syntax["index"]) * 8))
+        else:
+            call emit_pure_int(generator, syntax["index"], target, pool[1:len(pool)])
+            call assembler.emit(output, x86_64.load_indexed(target, pointer, target, 3))
+        end
+    elif kind == "unary":
+        call emit_pure_int(generator, syntax["operand"], target, pool)
+        if syntax["operator"] == "-":
+            call assembler.emit(output, x86_64.neg_reg(target))
+        else:
+            call assembler.emit(output, x86_64.not_reg(target))
+        end
+    else:
+        operator = syntax["operator"]
+        left = syntax["left"]
+        right = syntax["right"]
+        if pure_int_immediate(right) or operator == "<<" or operator == ">>":
+            call emit_pure_int(generator, left, target, pool)
+            call emit_pure_int_immediate(generator, operator, target, integer_literal(right))
+            return
+        end
+        if pure_int_immediate(left) and operator != "-":
+            call emit_pure_int(generator, right, target, pool)
+            call emit_pure_int_immediate(generator, operator, target, integer_literal(left))
+            return
+        end
+        scratch = pool[0]
+        rest = pool[1:len(pool)]
+        if pure_int_need(generator, right) > pure_int_need(generator, left):
+            call emit_pure_int(generator, right, target, pool)
+            call emit_pure_int(generator, left, scratch, rest)
+            if operator == "-":
+                call assembler.emit(output, x86_64.sub_reg_reg(scratch, target))
+                call assembler.emit(output, x86_64.move_reg_reg(target, scratch))
+            else:
+                call emit_pure_int_operation(generator, operator, target, scratch)
+            end
+        else:
+            call emit_pure_int(generator, left, target, pool)
+            call emit_pure_int(generator, right, scratch, rest)
+            call emit_pure_int_operation(generator, operator, target, scratch)
+        end
+    end
+end
+
+function count_pure_index_targets(syntax, counts):
+    kind = syntax["kind"]
+    if kind == "index":
+        name = syntax["target"]["name"]
+        counts[name] = counts.get(name, 0) + 1
+        call count_pure_index_targets(syntax["index"], counts)
+    elif kind == "unary":
+        call count_pure_index_targets(syntax["operand"], counts)
+    elif kind == "binary":
+        call count_pure_index_targets(syntax["left"], counts)
+        call count_pure_index_targets(syntax["right"], counts)
+    end
+end
+
+function emit_pure_int_expression(generator, syntax, target, pool):
+    # Emit a pure Int tree into target; when one IntArray is indexed more than
+    # once, its data pointer is hoisted into the last pool register first.
+    counts = {}
+    call count_pure_index_targets(syntax, counts)
+    hoisted = ""
+    hoisted_count = 1
+    for name in counts.keys():
+        if counts[name] > hoisted_count:
+            hoisted = name
+            hoisted_count = counts[name]
+        end
+    end
+    if hoisted != "" and len(pool) >= 2:
+        pointer = pool[len(pool) - 1]
+        call emit_int_leaf(generator, {"kind": "name", "name": hoisted}, pointer)
+        call assembler.emit(generator["builder"], x86_64.load_memory(pointer, pointer, 24))
+        generator["pure_hoist_name"] = hoisted
+        generator["pure_hoist_register"] = pointer
+        call emit_pure_int(generator, syntax, target, pool[0:len(pool) - 1])
+        generator["pure_hoist_name"] = ""
+    else:
+        call emit_pure_int(generator, syntax, target, pool)
+    end
+end
+
+function pure_int_pool():
+    # r10/r11 stay out: the unchecked IntArray store and atomic builtins keep
+    # the array/index pair there while the value expression is emitted.
+    return [1, 2, 6, 7, 8, 9]
+end
+
+function pure_tree_reads_name(syntax, name):
+    kind = syntax["kind"]
+    if kind == "name":
+        return syntax["name"] == name
+    elif kind == "index":
+        return pure_tree_reads_name(syntax["target"], name) or pure_tree_reads_name(syntax["index"], name)
+    elif kind == "unary":
+        return pure_tree_reads_name(syntax["operand"], name)
+    elif kind == "binary":
+        return pure_tree_reads_name(syntax["left"], name) or pure_tree_reads_name(syntax["right"], name)
+    end
+    return False
+end
+
 function emit_int_leaf(generator, syntax, register):
     output = generator["builder"]
     if syntax["kind"] == "literal":
@@ -1423,6 +1674,13 @@ function emit_expression(generator, syntax):
                 truth_value = 1
             end
             call assembler.emit(output, x86_64.mov_imm64(0, truth_value))
+            return
+        end
+    end
+    if (kind == "binary" or kind == "index" or kind == "unary") and generator.get("fast_intarray_name", "") == "":
+        need = pure_int_need(generator, syntax)
+        if need >= 1 and need <= 6:
+            call emit_pure_int_expression(generator, syntax, 0, pure_int_pool())
             return
         end
     end
@@ -3723,15 +3981,38 @@ function emit_statements(generator, statements, break_label, continue_label, ret
         if kind == "assign":
             target = statement["target"]
             if target["kind"] == "name":
+                home = local_register(generator, target["name"])
+                if statement["operator"] == "=":
+                    value_syntax = statement["value"]
+                else:
+                    operator = statement["operator"][0:len(statement["operator"]) - 1]
+                    value_syntax = {"kind": "binary", "line": statement["line"], "column": statement["column"], "end_column": statement["end_column"], "operator": operator, "left": target, "right": statement["value"]}
+                end
+                if home >= 0 and generator.get("fast_intarray_name", "") == "" and value_syntax["kind"] != "literal" and value_syntax["kind"] != "name":
+                    need = pure_int_need(generator, value_syntax)
+                    if need >= 1 and need <= 6:
+                        # Pure Int value straight into the register-resident
+                        # local; rax is just another scratch register here.
+                        # When the tree reads the local itself, build in rax
+                        # first so the home is not clobbered mid-expression.
+                        if pure_tree_reads_name(value_syntax, target["name"]):
+                            call emit_pure_int_expression(generator, value_syntax, 0, pure_int_pool())
+                            call assembler.emit(generator["builder"], x86_64.move_reg_reg(home, 0))
+                        else:
+                            pool = [0]
+                            pool.extend(pure_int_pool())
+                            call emit_pure_int_expression(generator, value_syntax, home, pool)
+                        end
+                        continue
+                    end
+                end
                 if statement["operator"] == "=":
                     call emit_expression(generator, statement["value"])
                     if infer_expression_type(statement["value"], generator["types"], generator["function_returns"]) == "Function":
                         call emit_collection_box(generator, statement["value"])
                     end
                 else:
-                    operator = statement["operator"][0:len(statement["operator"]) - 1]
-                    combined = {"kind": "binary", "line": statement["line"], "column": statement["column"], "end_column": statement["end_column"], "operator": operator, "left": target, "right": statement["value"]}
-                    call emit_expression(generator, combined)
+                    call emit_expression(generator, value_syntax)
                 end
                 call emit_store_local(generator, target["name"], 0)
             elif target["kind"] == "index":

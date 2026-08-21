@@ -7,6 +7,12 @@ manuály a soubory ke stažení zůstávají dostupné v
 ## Nevydáno
 
 - `cpu_count()`: počet CPU v affinity masce procesu (`sched_getaffinity`), pro dimenzování worker poolů.
+- Registrový emitor čistých `Int` výrazů: stromy z literálů, `Int` jmen,
+  unchecked `IntArray` čtení a `+ - * & | ~ << >>` / unárního `-`/`~` se
+  překládají Sethi–Ullmanovým přidělením registrů rax/rcx/rdx/rsi/rdi/r8/r9
+  bez `push`/`pop`, s imm32 formami a s hoistingem datového ukazatele
+  nejčastěji indexovaného pole; přiřazení do registrového lokálu jde přímo do
+  jeho registru. Smyčkový microbenchmark dalších ~18 %.
 - Alokace registrů pro lokály: až tři staticky `Int`/`Bool` lokály (včetně
   parametrů) s nejvyšším váženým počtem použití (smyčky 4× za úroveň) žijí ve
   funkci v r13/r14/r15; ukládají se v prologu do rámce a obnovují na jediném
