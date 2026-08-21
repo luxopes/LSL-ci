@@ -460,3 +460,36 @@ end
 function lea_indexed(destination, base_register, index_register, scale):
     return [rex(True, destination >= 8, index_register >= 8, base_register >= 8), 141, modrm(0, destination, 4), sib(scale, index_register, base_register)]
 end
+
+function lock_xadd_indexed(base_register, index_register, scale, source_register):
+    # lock xadd [base + index*2^scale], r64. Atomically adds the register to
+    # the memory slot; the previous slot value ends up in the register.
+    return [240, rex(True, source_register >= 8, index_register >= 8, base_register >= 8), 15, 193, modrm(0, source_register, 4), sib(scale, index_register, base_register)]
+end
+
+function lock_xchg_indexed(base_register, index_register, scale, source_register):
+    # lock xchg [base + index*2^scale], r64. Atomically exchanges the register
+    # with the memory slot; the previous slot value ends up in the register.
+    return [240, rex(True, source_register >= 8, index_register >= 8, base_register >= 8), 135, modrm(0, source_register, 4), sib(scale, index_register, base_register)]
+end
+
+function lock_cmpxchg_indexed(base_register, index_register, scale, source_register):
+    # lock cmpxchg [base + index*2^scale], r64. Atomically compares RAX with
+    # the slot: on match it stores the register and sets ZF, otherwise it
+    # loads the slot into RAX and clears ZF.
+    return [240, rex(True, source_register >= 8, index_register >= 8, base_register >= 8), 15, 177, modrm(0, source_register, 4), sib(scale, index_register, base_register)]
+end
+
+function lock_xadd_memory(base_register, displacement, source_register):
+    # lock xadd [base + displacement], r64 for fixed state words.
+    mode = memory_mode(base_register, displacement)
+    result = [240, rex(True, source_register >= 8, False, base_register >= 8), 15, 193]
+    result.extend(memory_tail(base_register, mode, source_register))
+    call append_displacement(result, mode, displacement)
+    return result
+end
+
+function pause():
+    # PAUSE hint for spin-wait loops.
+    return [243, 144]
+end

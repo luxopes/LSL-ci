@@ -23,6 +23,7 @@ load abs_conformance
 load numeric_builtins_conformance
 load integer_wrap_conformance
 load bitwise_conformance
+load atomic_conformance
 load float_floordiv_conformance
 load recursive_return_conformance
 load wide_class_abi_conformance

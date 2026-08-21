@@ -218,7 +218,7 @@ function infer_expression_type(syntax, types, function_returns):
             if name == "sum":
                 return "Any"
             end
-            if name == "len" or name == "Int" or name == "ord" or name == "arg_count" or name == "run" or name == "__lsl_run" or name == "capture_status" or name == "native_u64" or name == "native_size" or name == "native_call" or name == "native_close" or name == "__lsl_type_code" or name == "__lsl_raw_equal" or name == "__lsl_float_bits" or name == "__lsl_float_to_int" or name == "__lsl_unbox_int" or name == "__lsl_raw_int" or name == "__lsl_typed_int" or name == "__lsl_parse_literal_int" or name == "__lsl_test_fd_fault" or name == "__lsl_address" or name == "__lsl_object_table_mask" or name == "__lsl_intern_table_mask" or name == "__lsl_fd_open" or name == "__lsl_fd_read" or name == "__lsl_fd_write" or name == "__lsl_fd_seek" or name == "__lsl_fd_close" or name == "__lsl_fd_socket" or name == "__lsl_fd_connect" or name == "__lsl_raster_pack" or name == "__lsl_raster_copy" or name == "__lsl_raster_fill" or name == "__lsl_fd_ioctl" or name == "__lsl_fd_mmap" or name == "__lsl_mem_pack" or name == "__lsl_data_address" or name == "__lsl_syscall" or name == "__lsl_mem_unpack" or name == "__lsl_byte_copy" or name == "__lsl_text_byte" or name == "__lsl_text_byte_length":
+            if name == "len" or name == "Int" or name == "ord" or name == "arg_count" or name == "run" or name == "__lsl_run" or name == "capture_status" or name == "native_u64" or name == "native_size" or name == "native_call" or name == "native_close" or name == "__lsl_type_code" or name == "__lsl_raw_equal" or name == "__lsl_float_bits" or name == "__lsl_float_to_int" or name == "__lsl_unbox_int" or name == "__lsl_raw_int" or name == "__lsl_typed_int" or name == "__lsl_parse_literal_int" or name == "__lsl_test_fd_fault" or name == "__lsl_address" or name == "__lsl_object_table_mask" or name == "__lsl_intern_table_mask" or name == "__lsl_fd_open" or name == "__lsl_fd_read" or name == "__lsl_fd_write" or name == "__lsl_fd_seek" or name == "__lsl_fd_close" or name == "__lsl_fd_socket" or name == "__lsl_fd_connect" or name == "__lsl_raster_pack" or name == "__lsl_raster_copy" or name == "__lsl_raster_fill" or name == "__lsl_fd_ioctl" or name == "__lsl_fd_mmap" or name == "__lsl_mem_pack" or name == "__lsl_data_address" or name == "__lsl_syscall" or name == "__lsl_mem_unpack" or name == "__lsl_byte_copy" or name == "__lsl_text_byte" or name == "__lsl_text_byte_length" or name == "atomic_add" or name == "atomic_xchg" or name == "atomic_cas":
                 return "Int"
             elif name == "Float" or name == "sqrt" or name == "__lsl_float_from_bits" or name == "float_sum" or name == "float_dot" or name == "__lsl_wall_time":
                 return "Float"
@@ -230,7 +230,7 @@ function infer_expression_type(syntax, types, function_returns):
                 return "Float"
             elif name == "exists" or name == "native_name_equal":
                 return "Bool"
-            elif name == "__lsl_sleep":
+            elif name == "__lsl_sleep" or name == "atomic_pause":
                 return "None"
             elif name == "List":
                 return "List"
@@ -1882,7 +1882,7 @@ function emit_expression(generator, syntax):
     elif kind == "call":
         target = syntax["target"]
         if target["kind"] == "name":
-            builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "Dictionary": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sqrt": 1, "sum": 1, "float_zeros": 1, "float_fill": 2, "float_sum": 1, "float_dot": 2, "float_axpy": 3, "float_matmul": 5, "type": 1, "exit": 1, "input": 1, "readfile": 1, "readbytes": 1, "__lsl_getenv": 1, "mkdir": 1, "unlink": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "help": 0, "run": 2, "capture": 2, "capture_stream": 3, "capture_input": 3, "capture_status": 0, "capture_stderr": 0, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2, "native_open": 1, "native_size": 1, "native_u64": 2, "native_name_equal": 3, "native_function": 2, "native_call": 2, "native_close": 1, "__lsl_test_small_tables": 0, "__lsl_test_fd_fault": 1, "__lsl_object_table_mask": 0, "__lsl_intern_table_mask": 0, "__lsl_wall_time": 0, "__lsl_sleep": 1, "__lsl_isatty": 1, "__lsl_stdin_eof": 0, "__lsl_run": 2, "__lsl_capture": 2, "__lsl_fd_open": 2, "__lsl_fd_read": 3, "__lsl_fd_write": 3, "__lsl_fd_seek": 2, "__lsl_fd_close": 1, "__lsl_fd_socket": 2, "__lsl_fd_connect": 3, "__lsl_int_zeros": 1, "__lsl_byte_zeros": 1, "__lsl_raster_pack": 5, "__lsl_raster_copy": 5, "__lsl_raster_fill": 4, "__lsl_fd_ioctl": 3, "__lsl_fd_mmap": 3, "__lsl_mem_pack": 5, "__lsl_data_address": 1, "__lsl_syscall": 5, "__lsl_mem_unpack": 4, "__lsl_text_from_bytes": 3, "__lsl_byte_copy": 5, "__lsl_text_byte": 2, "__lsl_text_byte_length": 1, "__lsl_floatarray_bytes": 1, "__lsl_floatarray_from_bytes": 1}
+            builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "Dictionary": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sqrt": 1, "sum": 1, "float_zeros": 1, "float_fill": 2, "float_sum": 1, "float_dot": 2, "float_axpy": 3, "float_matmul": 5, "type": 1, "exit": 1, "input": 1, "readfile": 1, "readbytes": 1, "__lsl_getenv": 1, "mkdir": 1, "unlink": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "help": 0, "run": 2, "capture": 2, "capture_stream": 3, "capture_input": 3, "capture_status": 0, "capture_stderr": 0, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2, "native_open": 1, "native_size": 1, "native_u64": 2, "native_name_equal": 3, "native_function": 2, "native_call": 2, "native_close": 1, "__lsl_test_small_tables": 0, "__lsl_test_fd_fault": 1, "__lsl_object_table_mask": 0, "__lsl_intern_table_mask": 0, "__lsl_wall_time": 0, "__lsl_sleep": 1, "__lsl_isatty": 1, "__lsl_stdin_eof": 0, "__lsl_run": 2, "__lsl_capture": 2, "__lsl_fd_open": 2, "__lsl_fd_read": 3, "__lsl_fd_write": 3, "__lsl_fd_seek": 2, "__lsl_fd_close": 1, "__lsl_fd_socket": 2, "__lsl_fd_connect": 3, "__lsl_int_zeros": 1, "__lsl_byte_zeros": 1, "__lsl_raster_pack": 5, "__lsl_raster_copy": 5, "__lsl_raster_fill": 4, "__lsl_fd_ioctl": 3, "__lsl_fd_mmap": 3, "__lsl_mem_pack": 5, "__lsl_data_address": 1, "__lsl_syscall": 5, "__lsl_mem_unpack": 4, "__lsl_text_from_bytes": 3, "__lsl_byte_copy": 5, "__lsl_text_byte": 2, "__lsl_text_byte_length": 1, "__lsl_floatarray_bytes": 1, "__lsl_floatarray_from_bytes": 1, "atomic_add": 3, "atomic_xchg": 3, "atomic_cas": 4, "atomic_pause": 0}
             if target["name"] in builtin_arity:
                 expected_builtin = builtin_arity[target["name"]]
                 if len(syntax["arguments"]) != expected_builtin:
@@ -2398,6 +2398,77 @@ function emit_expression(generator, syntax):
                 return
             elif target["name"] == "gc":
                 call assembler.relative(output, [232], "runtime_gc")
+                return
+            elif target["name"] == "atomic_add" or target["name"] == "atomic_xchg":
+                # Lock-free RMW over an IntArray slot; the result is the
+                # previous slot value. These low-level builtins do not check
+                # bounds, so a bad index corrupts memory like unchecked access.
+                if infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"]) != "IntArray":
+                    call unsupported(generator["path"], generator["lines"], syntax["arguments"][0], "atomic RMW requires an IntArray target", "pass an IntArray as the first argument")
+                end
+                if infer_expression_type(syntax["arguments"][1], generator["types"], generator["function_returns"]) != "Int":
+                    call unsupported(generator["path"], generator["lines"], syntax["arguments"][1], "atomic RMW index requires an Int", "convert the index with Int(...) first")
+                end
+                if infer_expression_type(syntax["arguments"][2], generator["types"], generator["function_returns"]) != "Int":
+                    call unsupported(generator["path"], generator["lines"], syntax["arguments"][2], "atomic RMW value requires an Int", "convert the value with Int(...) first")
+                end
+                call emit_expression(generator, syntax["arguments"][0])
+                call assembler.emit(output, x86_64.load_memory(10, 0, 24))
+                if is_int_leaf(generator, syntax["arguments"][1]):
+                    call emit_int_leaf(generator, syntax["arguments"][1], 11)
+                else:
+                    call emit_expression(generator, syntax["arguments"][1])
+                    call assembler.emit(output, x86_64.move_reg_reg(11, 0))
+                end
+                if is_int_leaf(generator, syntax["arguments"][2]):
+                    call emit_int_leaf(generator, syntax["arguments"][2], 0)
+                else:
+                    call emit_expression(generator, syntax["arguments"][2])
+                end
+                if target["name"] == "atomic_add":
+                    call assembler.emit(output, x86_64.lock_xadd_indexed(10, 11, 3, 0))
+                else:
+                    call assembler.emit(output, x86_64.lock_xchg_indexed(10, 11, 3, 0))
+                end
+                return
+            elif target["name"] == "atomic_cas":
+                # Compare-exchange: RAX holds the expected value and RCX the
+                # desired one. The slot's previous value always ends up in RAX,
+                # so the caller compares it with the expected value.
+                if infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"]) != "IntArray":
+                    call unsupported(generator["path"], generator["lines"], syntax["arguments"][0], "atomic_cas requires an IntArray target", "pass an IntArray as the first argument")
+                end
+                if infer_expression_type(syntax["arguments"][1], generator["types"], generator["function_returns"]) != "Int":
+                    call unsupported(generator["path"], generator["lines"], syntax["arguments"][1], "atomic_cas index requires an Int", "convert the index with Int(...) first")
+                end
+                if infer_expression_type(syntax["arguments"][2], generator["types"], generator["function_returns"]) != "Int":
+                    call unsupported(generator["path"], generator["lines"], syntax["arguments"][2], "atomic_cas expected value requires an Int", "convert the value with Int(...) first")
+                end
+                if infer_expression_type(syntax["arguments"][3], generator["types"], generator["function_returns"]) != "Int":
+                    call unsupported(generator["path"], generator["lines"], syntax["arguments"][3], "atomic_cas desired value requires an Int", "convert the value with Int(...) first")
+                end
+                call emit_expression(generator, syntax["arguments"][0])
+                call assembler.emit(output, x86_64.load_memory(10, 0, 24))
+                if is_int_leaf(generator, syntax["arguments"][1]):
+                    call emit_int_leaf(generator, syntax["arguments"][1], 11)
+                else:
+                    call emit_expression(generator, syntax["arguments"][1])
+                    call assembler.emit(output, x86_64.move_reg_reg(11, 0))
+                end
+                call emit_expression(generator, syntax["arguments"][2])
+                if is_int_leaf(generator, syntax["arguments"][3]):
+                    call emit_int_leaf(generator, syntax["arguments"][3], 1)
+                else:
+                    call assembler.emit(output, x86_64.push(0))
+                    call emit_expression(generator, syntax["arguments"][3])
+                    call assembler.emit(output, x86_64.move_reg_reg(1, 0))
+                    call assembler.emit(output, x86_64.pop(0))
+                end
+                call assembler.emit(output, x86_64.lock_cmpxchg_indexed(10, 11, 3, 1))
+                return
+            elif target["name"] == "atomic_pause":
+                call assembler.emit(output, x86_64.pause())
+                call assembler.emit(output, x86_64.xor_reg_reg(0, 0))
                 return
             elif target["name"] == "executable_path":
                 call assembler.relative(output, [232], "runtime_executable_path")
