@@ -12,6 +12,9 @@
 # Thread table: [+0 reserved], then 32-byte entries:
 #   [+0 kernel tid, +8 stack base (top of the 8 MiB mapping),
 #    +16 status, +24 saved rsp of a suspended worker]
+# The top bit of the tid word marks a slot whose exited thread has already
+# been joined. Only such a slot (or one that never held a thread) is reused,
+# so an exited but unjoined thread keeps its record and join still finds it.
 # status: 0 = free/exited (cleared by the kernel via CLONE_CHILD_CLEARTID),
 # 1 = running, 2 = suspended in the gc handler, 3 = slot reserved by a spawn
 # in progress, 4 = signalled by gc() but not yet suspended.
@@ -86,7 +89,12 @@ end
 
 function emit_entry_lookup(output, found_label, missing_label):
     # rax = kernel tid -> r9 = entry with that tid, else jump to missing_label.
+    # The reaped bit is masked off, so a joined slot is still found by tid.
+    # Tid 0 belongs to no thread; free and reserved slots hold it.
+    call assembler.emit(output, x86_64.test_reg_reg(0, 0))
+    call assembler.relative(output, [15, 132], missing_label)
     call assembler.emit(output, x86_64.load_memory(8, 3, 112))
+    call assembler.emit(output, x86_64.mov_imm64(11, 9223372036854775807))
     call assembler.emit(output, x86_64.xor_reg_reg(1, 1))
     call assembler.label(output, found_label + "_scan")
     call assembler.emit(output, x86_64.cmp_reg_imm32(1, 127))
@@ -96,11 +104,20 @@ function emit_entry_lookup(output, found_label, missing_label):
     call assembler.emit(output, x86_64.lea_indexed(9, 8, 10, 0))
     call assembler.emit(output, x86_64.add_reg_imm8(9, 8))
     call assembler.emit(output, x86_64.load_memory(2, 9, 0))
+    call assembler.emit(output, x86_64.and_reg_reg(2, 11))
     call assembler.emit(output, x86_64.cmp_reg_reg(2, 0))
     call assembler.relative(output, [15, 132], found_label)
     call assembler.emit(output, x86_64.increment(1))
     call assembler.relative(output, [233], found_label + "_scan")
     call assembler.label(output, found_label)
+end
+
+function emit_slot_address(output):
+    # rcx = slot index, r8 = table -> r9 = that entry.
+    call assembler.emit(output, x86_64.move_reg_reg(10, 1))
+    call assembler.emit(output, x86_64.shift_left_imm(10, 5))
+    call assembler.emit(output, x86_64.lea_indexed(9, 8, 10, 0))
+    call assembler.emit(output, x86_64.add_reg_imm8(9, 8))
 end
 
 function emit_spawn(output):
@@ -116,18 +133,38 @@ function emit_spawn(output):
     call assembler.relative(output, [232], "runtime_table_lock")
     call assembler.emit(output, x86_64.load_memory(8, 3, 112))
     call assembler.emit(output, x86_64.xor_reg_reg(1, 1))
+    # First pass: a slot that never held a thread, or one whose thread exited
+    # and was already joined. Records of unjoined threads stay untouched.
     call assembler.label(output, "spawn_find_slot")
     call assembler.emit(output, x86_64.cmp_reg_imm32(1, 127))
+    call assembler.relative(output, [15, 141], "spawn_find_unjoined")
+    call emit_slot_address(output)
+    call assembler.emit(output, x86_64.load_memory(2, 9, 16))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(2, 0))
+    call assembler.relative(output, [15, 133], "spawn_next_slot")
+    call assembler.emit(output, x86_64.load_memory(2, 9, 0))
+    call assembler.emit(output, x86_64.test_reg_reg(2, 2))
+    call assembler.relative(output, [15, 132], "spawn_slot_ready")
+    call assembler.emit(output, x86_64.mov_imm64(11, -9223372036854775808))
+    call assembler.emit(output, x86_64.and_reg_reg(2, 11))
+    call assembler.emit(output, x86_64.test_reg_reg(2, 2))
+    call assembler.relative(output, [15, 133], "spawn_slot_ready")
+    call assembler.label(output, "spawn_next_slot")
+    call assembler.emit(output, x86_64.increment(1))
+    call assembler.relative(output, [233], "spawn_find_slot")
+    # Second pass: the table is otherwise full, so recycle any exited slot.
+    # A join for that forgotten tid reports 126 exactly as it did before.
+    call assembler.label(output, "spawn_find_unjoined")
+    call assembler.emit(output, x86_64.xor_reg_reg(1, 1))
+    call assembler.label(output, "spawn_find_unjoined_scan")
+    call assembler.emit(output, x86_64.cmp_reg_imm32(1, 127))
     call assembler.relative(output, [15, 141], "spawn_no_slot")
-    call assembler.emit(output, x86_64.move_reg_reg(10, 1))
-    call assembler.emit(output, x86_64.shift_left_imm(10, 5))
-    call assembler.emit(output, x86_64.lea_indexed(9, 8, 10, 0))
-    call assembler.emit(output, x86_64.add_reg_imm8(9, 8))
+    call emit_slot_address(output)
     call assembler.emit(output, x86_64.load_memory(2, 9, 16))
     call assembler.emit(output, x86_64.cmp_reg_imm8(2, 0))
     call assembler.relative(output, [15, 132], "spawn_slot_ready")
     call assembler.emit(output, x86_64.increment(1))
-    call assembler.relative(output, [233], "spawn_find_slot")
+    call assembler.relative(output, [233], "spawn_find_unjoined_scan")
     call assembler.label(output, "spawn_slot_ready")
     # r9 = entry. Claim it (status 3 = reserved: never signalled or scanned)
     # and reuse the previous occupant's stack when the slot has one; the
@@ -260,13 +297,21 @@ end
 
 function emit_join(output):
     # runtime_thread_join: rdi = kernel tid -> 0 once the worker exited, 126
-    # if no table entry carries that tid (never spawned, or already reused).
-    # Futex-waits on the entry status word with whatever value it holds.
+    # if no table entry carries that tid (never spawned, or its record was
+    # recycled by a spawn on a full table). Futex-waits on the entry status
+    # word with whatever value it holds, then marks the slot reaped so a
+    # later spawn may reuse it. Both lookups run under the table mutex, so a
+    # slot is never claimed between finding it and waiting on it.
     call assembler.label(output, "runtime_thread_join")
     call assembler.emit(output, x86_64.function_prologue(48))
-    call assembler.emit(output, x86_64.move_reg_reg(0, 7))
+    call assembler.emit(output, x86_64.store_stack(-8, 7))
+    call assembler.relative(output, [232], "runtime_table_lock")
+    call assembler.emit(output, x86_64.load_stack(0, -8))
     call emit_entry_lookup(output, "join_found", "join_missing")
+    call assembler.emit(output, x86_64.store_stack(-16, 9))
+    call assembler.relative(output, [232], "runtime_table_unlock")
     call assembler.label(output, "join_wait")
+    call assembler.emit(output, x86_64.load_stack(9, -16))
     call assembler.emit(output, x86_64.load_memory(2, 9, 16))
     call assembler.emit(output, x86_64.cmp_reg_imm8(2, 0))
     call assembler.relative(output, [15, 132], "join_done")
@@ -278,9 +323,19 @@ function emit_join(output):
     call assembler.emit(output, x86_64.syscall())
     call assembler.relative(output, [233], "join_wait")
     call assembler.label(output, "join_done")
+    call assembler.relative(output, [232], "runtime_table_lock")
+    call assembler.emit(output, x86_64.load_stack(0, -8))
+    call emit_entry_lookup(output, "join_reap", "join_reap_done")
+    call assembler.emit(output, x86_64.load_memory(0, 9, 0))
+    call assembler.emit(output, x86_64.mov_imm64(11, -9223372036854775808))
+    call assembler.emit(output, x86_64.or_reg_reg(0, 11))
+    call assembler.emit(output, x86_64.store_memory(9, 0, 0))
+    call assembler.label(output, "join_reap_done")
+    call assembler.relative(output, [232], "runtime_table_unlock")
     call assembler.emit(output, x86_64.xor_reg_reg(0, 0))
     call assembler.emit(output, x86_64.function_epilogue())
     call assembler.label(output, "join_missing")
+    call assembler.relative(output, [232], "runtime_table_unlock")
     call assembler.emit(output, x86_64.mov_imm64(0, 126))
     call assembler.emit(output, x86_64.function_epilogue())
 end

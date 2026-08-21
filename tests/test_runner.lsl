@@ -184,6 +184,8 @@ if env.get("LSL_CUDA_HARDWARE_TEST", "0") == "1":
     call require_success(run("/tmp/lsl-cuda-hardware-test", []), "run CUDA hardware conformance")
 end
 
+call require_success(run(compiler, ["tests/thread_reuse_conformance.lsl", "/tmp/lsl-thread-reuse-test"]), "compile thread slot reuse conformance")
+call require_output("/tmp/lsl-thread-reuse-test", [], "tests/thread_reuse_conformance.out", "thread slot reuse output differs")
 call require_success(run(compiler, ["tests/full_conformance.lsl", "/tmp/lsl-full-conformance-test"]), "compile aggregated conformance")
 aggregate_output = capture("/tmp/lsl-full-conformance-test", [])
 if aggregate_output != aggregate_expected():
