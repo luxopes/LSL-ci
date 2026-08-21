@@ -7,6 +7,9 @@ manuály a soubory ke stažení zůstávají dostupné v
 ## Nevydáno
 
 - `cpu_count()`: počet CPU v affinity masce procesu (`sched_getaffinity`), pro dimenzování worker poolů.
+- Registrové lokály sdílejí registr podle živých intervalů (statement clock,
+  smyčky rozšířené na celý rozsah), takže se do r13–r15 vejde víc lokálů s
+  disjunktní životností; smyčkový microbenchmark dalších ~11 %.
 - Registrový emitor čistých `Int` výrazů: stromy z literálů, `Int` jmen,
   unchecked `IntArray` čtení a `+ - * & | ~ << >>` / unárního `-`/`~` se
   překládají Sethi–Ullmanovým přidělením registrů rax/rcx/rdx/rsi/rdi/r8/r9

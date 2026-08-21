@@ -1016,16 +1016,18 @@ function emit_store_local(generator, name, register):
     end
 end
 
-function scan_local_uses(node, counts, excluded, weight):
-    # Weighted name use counts plus the names codegen addresses by stack slot
-    # directly (for-loop variables, class slots, deleted names). Child fields
-    # are enumerated explicitly; an unknown field only undercounts.
+function scan_local_uses(node, counts, excluded, weight, ranges, clock):
+    # Weighted name use counts, the names codegen addresses by stack slot
+    # directly (for-loop variables, class slots, deleted names), and live
+    # intervals ranges[name] = [first, last] over a statement clock (clock[0]
+    # advances per statement; names used inside a loop are widened to the
+    # whole loop so a register can only be shared by disjoint lifetimes).
     if node == None:
         return
     end
     if type(node) == "List":
         for item in node:
-            call scan_local_uses(item, counts, excluded, weight)
+            call scan_local_uses(item, counts, excluded, weight, ranges, clock)
         end
         return
     end
@@ -1036,11 +1038,24 @@ function scan_local_uses(node, counts, excluded, weight):
     if kind == "name":
         name = node["name"]
         counts[name] = counts.get(name, 0) + weight
+        now = clock[0]
+        if name in ranges:
+            if now > ranges[name][1]:
+                ranges[name][1] = now
+            end
+        else:
+            ranges[name] = [now, now]
+        end
         return
     end
     if kind == "literal":
         return
     end
+    is_statement = kind == "assign" or kind == "expression" or kind == "return" or kind == "if" or kind == "while" or kind == "loop" or kind == "for" or kind == "try" or kind == "safe" or kind == "error" or kind == "delete" or kind == "print" or kind == "class" or kind == "break" or kind == "continue"
+    if is_statement:
+        clock[0] = clock[0] + 1
+    end
+    loop_start = clock[0]
     body_weight = weight
     if kind == "while" or kind == "loop" or kind == "for":
         body_weight = weight * 4
@@ -1058,34 +1073,57 @@ function scan_local_uses(node, counts, excluded, weight):
     end
     for field in ["target", "value", "condition", "expression", "iterable", "left", "right", "operand", "index", "start", "stop", "step", "message", "parent"]:
         if field in node:
-            call scan_local_uses(node[field], counts, excluded, weight)
+            call scan_local_uses(node[field], counts, excluded, weight, ranges, clock)
         end
     end
     for field in ["arguments", "items", "operands", "expressions", "entries", "otherwise"]:
         if field in node:
-            call scan_local_uses(node[field], counts, excluded, weight)
+            call scan_local_uses(node[field], counts, excluded, weight, ranges, clock)
         end
     end
     if "body" in node:
-        call scan_local_uses(node["body"], counts, excluded, body_weight)
+        call scan_local_uses(node["body"], counts, excluded, body_weight, ranges, clock)
     end
     if "branches" in node:
         for branch in node["branches"]:
-            call scan_local_uses(branch[0], counts, excluded, weight)
-            call scan_local_uses(branch[1], counts, excluded, weight)
+            call scan_local_uses(branch[0], counts, excluded, weight, ranges, clock)
+            call scan_local_uses(branch[1], counts, excluded, weight, ranges, clock)
+        end
+    end
+    if kind == "while" or kind == "loop" or kind == "for":
+        # Widen every name touched inside the loop to the loop's full span.
+        clock[0] = clock[0] + 1
+        loop_end = clock[0]
+        for name in ranges.keys():
+            interval = ranges[name]
+            if interval[1] >= loop_start and interval[0] <= loop_end:
+                if interval[0] > loop_start:
+                    interval[0] = loop_start
+                end
+                if interval[1] < loop_end:
+                    interval[1] = loop_end
+                end
+            end
         end
     end
 end
 
 function choose_register_locals(declaration, variables, types):
-    # Up to three statically Int/Bool locals (parameters included) with the
-    # highest weighted use counts live in r13/r14/r15 for the whole function.
+    # Statically Int/Bool locals (parameters included) with weighted use count
+    # >= 8 get r13/r14/r15; a register is shared by locals whose live
+    # intervals (statement clock, loops widened) do not overlap, hottest
+    # first.
     counts = {}
     excluded = {}
-    call scan_local_uses(declaration["body"], counts, excluded, 1)
+    ranges = {}
+    clock = [0]
+    for parameter in declaration["parameters"]:
+        ranges[parameter] = [0, 0]
+    end
+    call scan_local_uses(declaration["body"], counts, excluded, 1, ranges, clock)
     candidates = []
     for name in variables.keys():
-        if name in excluded or name not in counts or name not in types:
+        if name in excluded or name not in counts or name not in types or name not in ranges:
             continue
         end
         if types[name] != "Int" and types[name] != "Bool":
@@ -1099,8 +1137,11 @@ function choose_register_locals(declaration, variables, types):
         candidates.append([counts[name], name])
     end
     chosen = {}
-    available = [13, 14, 15]
-    while len(candidates) > 0 and len(available) > 0:
+    occupancy = {}
+    for register in [13, 14, 15]:
+        occupancy[register] = []
+    end
+    while len(candidates) > 0:
         best = 0
         index = 1
         while index < len(candidates):
@@ -1109,9 +1150,24 @@ function choose_register_locals(declaration, variables, types):
             end
             index += 1
         end
-        chosen[candidates[best][1]] = available[0]
-        available = available[1:len(available)]
+        name = candidates[best][1]
         call candidates.pop(best)
+        interval = ranges[name]
+        for register in [13, 14, 15]:
+            if name in chosen:
+                break
+            end
+            free = True
+            for other in occupancy[register]:
+                if interval[0] <= other[1] and other[0] <= interval[1]:
+                    free = False
+                end
+            end
+            if free:
+                chosen[name] = register
+                occupancy[register].append([interval[0], interval[1]])
+            end
+        end
     end
     return chosen
 end
@@ -5295,7 +5351,9 @@ function emit_function(generator, declaration):
     save_slots = {}
     for local_name in register_locals.keys():
         save_name = "__save_r" + String(register_locals[local_name])
-        variables[save_name] = -(len(variables) + 1) * 8
+        if save_name not in variables:
+            variables[save_name] = -(len(variables) + 1) * 8
+        end
         save_slots[register_locals[local_name]] = variables[save_name]
     end
     old_register_locals = generator.get("register_locals", {})
