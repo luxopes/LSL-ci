@@ -498,7 +498,14 @@ function emit_condition(generator, syntax):
     # already yields a 0/1 Bool.
     call emit_expression(generator, syntax)
     if not condition_is_bool(syntax):
-        call emit_truth(generator)
+        if infer_expression_type(syntax, generator["types"], generator["function_returns"]) == "Bool":
+            # Preserve the following basic-block addresses while replacing the
+            # old mov+runtime_truth call. On Zen, shifting densely generated
+            # branch targets proved more expensive than one architectural NOP.
+            call assembler.emit(generator["builder"], [15, 31, 132, 0, 0, 0, 0, 0])
+        else:
+            call emit_truth(generator)
+        end
     end
 end
 
@@ -757,14 +764,31 @@ function inverted_branch(operator):
     return []
 end
 
+function direct_branch(operator):
+    # jcc bytes that jump when the comparison is TRUE.
+    if operator == "==" or operator == "is":
+        return [15, 132]
+    elif operator == "!=" or operator == "is not":
+        return [15, 133]
+    elif operator == "<":
+        return [15, 140]
+    elif operator == "<=":
+        return [15, 142]
+    elif operator == ">":
+        return [15, 143]
+    elif operator == ">=":
+        return [15, 141]
+    end
+    return []
+end
+
 function direct_scalar_equality(left_type, right_type):
     return left_type == right_type and (left_type == "Int" or left_type == "Bool" or left_type == "None")
 end
 
-function emit_branch_if_false(generator, syntax, target_label):
-    # Static scalar comparisons branch directly on flags (cmp + inverted jcc),
-    # skipping setcc/movzx/cmp-0 and dynamic equality dispatch. Returns True if
-    # it handled the branch.
+function emit_compare_branch(generator, syntax, target_label, branch_when_true):
+    # Static scalar comparisons branch directly on flags, skipping the
+    # setcc/movzx/cmp-0 materialization of an intermediate Bool.
     if syntax["kind"] != "compare":
         return False
     end
@@ -793,7 +817,11 @@ function emit_branch_if_false(generator, syntax, target_label):
     if right_constant[0] and x86_64.fits_signed32(right_constant[1]):
         call emit_expression(generator, left)
         call assembler.emit(output, x86_64.cmp_reg_imm32(0, right_constant[1]))
-        call assembler.relative(output, inverted_branch(operator), target_label)
+        if branch_when_true:
+            call assembler.relative(output, direct_branch(operator), target_label)
+        else:
+            call assembler.relative(output, inverted_branch(operator), target_label)
+        end
         return True
     elif is_int_leaf(generator, right):
         call emit_expression(generator, left)
@@ -810,7 +838,67 @@ function emit_branch_if_false(generator, syntax, target_label):
         call assembler.emit(output, x86_64.pop(0))
     end
     call assembler.emit(output, x86_64.cmp_reg_reg(0, 6))
-    call assembler.relative(output, inverted_branch(operator), target_label)
+    if branch_when_true:
+        call assembler.relative(output, direct_branch(operator), target_label)
+    else:
+        call assembler.relative(output, inverted_branch(operator), target_label)
+    end
+    return True
+end
+
+function emit_branch_when(generator, syntax, target_label, branch_when_true):
+    # Lower short-circuit Boolean trees as control flow. Previously an `and`
+    # or `or` in an if/while materialized one or more temporary 0/1 values with
+    # setcc and then compared the final value with zero. Move generators and
+    # parsers spend much of their time in exactly these compound conditions.
+    constant = constant_truth_expression(syntax)
+    if constant[0]:
+        if constant[1] == branch_when_true:
+            call assembler.relative(generator["builder"], [233], target_label)
+        end
+        return
+    end
+    kind = syntax["kind"]
+    if kind == "unary" and syntax["operator"] == "not":
+        call emit_branch_when(generator, syntax["operand"], target_label, not branch_when_true)
+        return
+    elif kind == "binary" and syntax["operator"] == "and":
+        if branch_when_true:
+            skip_label = label_name(generator, "and_branch_skip")
+            call emit_branch_when(generator, syntax["left"], skip_label, False)
+            call emit_branch_when(generator, syntax["right"], target_label, True)
+            call assembler.label(generator["builder"], skip_label)
+        else:
+            call emit_branch_when(generator, syntax["left"], target_label, False)
+            call emit_branch_when(generator, syntax["right"], target_label, False)
+        end
+        return
+    elif kind == "binary" and syntax["operator"] == "or":
+        if branch_when_true:
+            call emit_branch_when(generator, syntax["left"], target_label, True)
+            call emit_branch_when(generator, syntax["right"], target_label, True)
+        else:
+            skip_label = label_name(generator, "or_branch_skip")
+            call emit_branch_when(generator, syntax["left"], skip_label, True)
+            call emit_branch_when(generator, syntax["right"], target_label, False)
+            call assembler.label(generator["builder"], skip_label)
+        end
+        return
+    end
+    if emit_compare_branch(generator, syntax, target_label, branch_when_true):
+        return
+    end
+    call emit_condition(generator, syntax)
+    call assembler.emit(generator["builder"], x86_64.cmp_reg_imm8(0, 0))
+    if branch_when_true:
+        call assembler.relative(generator["builder"], [15, 133], target_label)
+    else:
+        call assembler.relative(generator["builder"], [15, 132], target_label)
+    end
+end
+
+function emit_branch_if_false(generator, syntax, target_label):
+    call emit_branch_when(generator, syntax, target_label, False)
     return True
 end
 
@@ -827,6 +915,73 @@ function is_int_leaf(generator, syntax):
         return name in generator["variables"] or name in generator["global_variables"]
     end
     return False
+end
+
+function is_fast_int_index(generator, syntax):
+    if infer_expression_type(syntax, generator["types"], generator["function_returns"]) != "Int":
+        return False
+    end
+    if is_int_leaf(generator, syntax):
+        return True
+    end
+    if syntax["kind"] == "binary":
+        operator = syntax["operator"]
+        if operator == "+" or operator == "-" or operator == "*":
+            return is_fast_int_index(generator, syntax["left"]) and is_fast_int_index(generator, syntax["right"])
+        end
+    end
+    return False
+end
+
+function is_fast_int_value(generator, syntax):
+    if is_int_leaf(generator, syntax):
+        return True
+    end
+    if syntax["kind"] == "index":
+        target_type = infer_expression_type(syntax["target"], generator["types"], generator["function_returns"])
+        return target_type == "IntArray" and is_fast_int_index(generator, syntax["index"])
+    elif syntax["kind"] == "binary":
+        operator = syntax["operator"]
+        if operator == "+" or operator == "-" or operator == "*" or operator == "&" or operator == "|" or operator == "~":
+            return is_fast_int_value(generator, syntax["left"]) and is_fast_int_value(generator, syntax["right"])
+        end
+    elif syntax["kind"] == "unary" and syntax["operator"] == "~":
+        return is_fast_int_value(generator, syntax["operand"])
+    end
+    return False
+end
+
+function count_fast_intarray_targets(generator, syntax, counts):
+    if syntax == None:
+        return
+    end
+    kind = syntax["kind"]
+    if kind == "index":
+        target = syntax["target"]
+        if target["kind"] == "name" and infer_expression_type(target, generator["types"], generator["function_returns"]) == "IntArray" and is_fast_int_index(generator, syntax["index"]):
+            name = target["name"]
+            counts[name] = counts.get(name, 0) + 1
+        end
+    elif kind == "binary":
+        call count_fast_intarray_targets(generator, syntax["left"], counts)
+        call count_fast_intarray_targets(generator, syntax["right"], counts)
+    elif kind == "unary":
+        call count_fast_intarray_targets(generator, syntax["operand"], counts)
+    end
+end
+
+function repeated_fast_intarray(generator, syntax):
+    counts = {}
+    call count_fast_intarray_targets(generator, syntax, counts)
+    selected = ""
+    selected_count = 1
+    for name in counts.keys():
+        if counts[name] > selected_count:
+            selected = name
+            selected_count = counts[name]
+        end
+    end
+    return selected
 end
 
 function emit_int_leaf(generator, syntax, register):
@@ -962,6 +1117,9 @@ function emit_runtime_raise(generator, message):
 end
 
 function emit_bounds_check(generator, syntax, target_type):
+    if target_type == "IntArray" and generator.get("unchecked_intarray", False):
+        return
+    end
     source_path = syntax.get("path", generator["path"])
     bounds_nonnegative = label_name(generator, "bounds_nonnegative")
     bounds_ok = label_name(generator, "bounds_ok")
@@ -1135,6 +1293,23 @@ function emit_expression(generator, syntax):
             return
         end
     end
+    if kind == "binary" and generator.get("unchecked_intarray", False) and generator.get("fast_intarray_name", "") == "" and is_fast_int_value(generator, syntax):
+        repeated_array = repeated_fast_intarray(generator, syntax)
+        if repeated_array != "":
+            # Hoist one repeated IntArray data-pointer load for this pure
+            # scalar expression. The restricted tree does not clobber r8.
+            if repeated_array in generator["variables"]:
+                call assembler.emit(output, x86_64.load_stack(0, generator["variables"][repeated_array]))
+            else:
+                call assembler.emit(output, x86_64.load_memory(0, 12, generator["global_variables"][repeated_array]))
+            end
+            call assembler.emit(output, x86_64.load_memory(8, 0, 24))
+            generator["fast_intarray_name"] = repeated_array
+            call emit_expression(generator, syntax)
+            generator["fast_intarray_name"] = ""
+            return
+        end
+    end
     if kind == "literal":
         value = syntax["value"]
         if syntax["literal_kind"] == "string":
@@ -1287,6 +1462,29 @@ function emit_expression(generator, syntax):
         end
     elif kind == "index":
         target_type = infer_expression_type(syntax["target"], generator["types"], generator["function_returns"])
+        if target_type == "IntArray" and generator.get("unchecked_intarray", False) and is_fast_int_index(generator, syntax["index"]):
+            # The unchecked numeric hot path can keep both operands in their
+            # final ABI registers. A leaf index cannot call or clobber rdi, so
+            # avoid the generic target push/pop sequence entirely.
+            cached_array = syntax["target"]["kind"] == "name" and syntax["target"]["name"] == generator.get("fast_intarray_name", "")
+            if not cached_array:
+                call emit_expression(generator, syntax["target"])
+                call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+            end
+            if is_int_leaf(generator, syntax["index"]):
+                call emit_int_leaf(generator, syntax["index"], 6)
+            else:
+                call emit_expression(generator, syntax["index"])
+                call assembler.emit(output, x86_64.move_reg_reg(6, 0))
+            end
+            if cached_array:
+                call assembler.emit(output, x86_64.load_indexed(0, 8, 6, 3))
+            else:
+                call assembler.emit(output, x86_64.load_memory(0, 7, 24))
+                call assembler.emit(output, x86_64.load_indexed(0, 0, 6, 3))
+            end
+            return
+        end
         call emit_expression(generator, syntax["target"])
         call assembler.emit(output, x86_64.push(0))
         call emit_expression(generator, syntax["index"])
@@ -1306,7 +1504,13 @@ function emit_expression(generator, syntax):
             end
             if target_type == "ByteArray":
                 call assembler.relative(output, [232], "runtime_byte_array_get")
-            elif target_type == "List" or target_type == "Tuple" or target_type == "RealArray" or target_type == "IntArray" or target_type == "FloatArray":
+            elif target_type == "IntArray":
+                # Bounds normalization leaves the collection in rdi and the
+                # normalized index in rsi. IntArray stores raw Int64 slots, so
+                # avoid a runtime helper call on this numeric hot path.
+                call assembler.emit(output, x86_64.load_memory(0, 7, 24))
+                call assembler.emit(output, x86_64.load_indexed(0, 0, 6, 3))
+            elif target_type == "List" or target_type == "Tuple" or target_type == "RealArray" or target_type == "FloatArray":
                 call assembler.relative(output, [232], "runtime_list_get")
                 if target_type == "FloatArray":
                     call assembler.emit(output, x86_64.move_reg_reg(7, 0))
@@ -2630,7 +2834,7 @@ function emit_expression(generator, syntax):
                 call assembler.label(output, done_label)
                 return
             elif target["name"] == "help":
-                call emit_static_write(generator, "Lux Simple Lang (LSL) 0.6.1" + chr(10) + "functions: print printl input for loop safe if elif else try class ctype function type del len abs sqrt help" + chr(10) + "types: Bool Int Float String List Tuple RealArray IntArray FloatArray ByteArray Dictionary" + chr(10) + "modules: os time json process config ai tensor cuda native math bigint" + chr(10) + "docs: see README.md and docs/" + chr(10))
+                call emit_static_write(generator, "Lux Simple Lang (LSL) 0.6.3" + chr(10) + "functions: print printl input for loop safe if elif else try class ctype function type del len abs sqrt help" + chr(10) + "types: Bool Int Float String List Tuple RealArray IntArray FloatArray ByteArray Dictionary" + chr(10) + "modules: os time json process config ai tensor cuda native math bigint" + chr(10) + "docs: see README.md and docs/" + chr(10))
                 call assembler.emit(output, x86_64.mov_imm64(0, 0))
                 return
             elif target["name"] == "abs":
@@ -2950,12 +3154,20 @@ function emit_expression(generator, syntax):
             if expected_parameter_type == "Any":
                 call emit_collection_box(generator, arguments[index])
             end
-            call assembler.emit(output, x86_64.push(0))
+            # Arguments are evaluated from right to left. The first argument is
+            # therefore evaluated last and can move straight from rax to rdi;
+            # spilling and immediately restoring it cost two instructions at
+            # every one-argument call in tight numeric loops.
+            if index == 0:
+                call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+            else:
+                call assembler.emit(output, x86_64.push(0))
+            end
             index -= 1
         end
         argument_registers = [7, 6, 2, 1, 8, 9]
         register_count = min(len(arguments), len(argument_registers))
-        index = 0
+        index = 1
         while index < register_count:
             call assembler.emit(output, x86_64.pop(__lsl_typed_int(argument_registers[index])))
             index += 1
@@ -3286,6 +3498,57 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 call assembler.emit(generator["builder"], x86_64.store_stack(generator["variables"][target["name"]], 0))
             elif target["kind"] == "index":
                 target_type = infer_expression_type(target["target"], generator["types"], generator["function_returns"])
+                fast_value = statement["value"]
+                if statement["operator"] != "=":
+                    fast_operator = statement["operator"][0:len(statement["operator"]) - 1]
+                    fast_value = {"kind": "binary", "line": statement["line"], "column": statement["column"], "end_column": statement["end_column"], "operator": fast_operator, "left": target, "right": statement["value"]}
+                end
+                if target_type == "IntArray" and generator.get("unchecked_intarray", False) and is_fast_int_index(generator, target["index"]) and is_fast_int_value(generator, fast_value):
+                    if infer_expression_type(fast_value, generator["types"], generator["function_returns"]) != "Int":
+                        call unsupported(generator["path"], generator["lines"], statement["value"], "IntArray assignment requires an Int result", "use integer arithmetic for the assigned value")
+                    end
+                    call emit_expression(generator, target["target"])
+                    call assembler.emit(generator["builder"], x86_64.load_memory(10, 0, 24))
+                    if is_int_leaf(generator, target["index"]):
+                        call emit_int_leaf(generator, target["index"], 11)
+                    else:
+                        call emit_expression(generator, target["index"])
+                        call assembler.emit(generator["builder"], x86_64.move_reg_reg(11, 0))
+                    end
+                    if statement["operator"] == "=":
+                        call emit_expression(generator, fast_value)
+                    else:
+                        # The old augmented path expanded a[i] += value into a
+                        # complete second a[i] load, including reloading both
+                        # the array object and its data pointer. Reuse the
+                        # address already held in r10/r11 and combine in place.
+                        fast_operator = statement["operator"][0:len(statement["operator"]) - 1]
+                        call assembler.emit(generator["builder"], x86_64.load_indexed(0, 10, 11, 3))
+                        if is_int_leaf(generator, statement["value"]):
+                            call emit_int_leaf(generator, statement["value"], 1)
+                        else:
+                            call assembler.emit(generator["builder"], x86_64.push(0))
+                            call emit_expression(generator, statement["value"])
+                            call assembler.emit(generator["builder"], x86_64.move_reg_reg(1, 0))
+                            call assembler.emit(generator["builder"], x86_64.pop(0))
+                        end
+                        if fast_operator == "+":
+                            call assembler.emit(generator["builder"], x86_64.add_reg_reg(0, 1))
+                        elif fast_operator == "-":
+                            call assembler.emit(generator["builder"], x86_64.sub_reg_reg(0, 1))
+                        elif fast_operator == "*":
+                            call assembler.emit(generator["builder"], x86_64.imul_reg_reg(0, 1))
+                        elif fast_operator == "&":
+                            call assembler.emit(generator["builder"], x86_64.and_reg_reg(0, 1))
+                        elif fast_operator == "|":
+                            call assembler.emit(generator["builder"], x86_64.or_reg_reg(0, 1))
+                        else:
+                            call assembler.emit(generator["builder"], x86_64.xor_reg_reg(0, 1))
+                        end
+                    end
+                    call assembler.emit(generator["builder"], x86_64.store_indexed(10, 11, 3, 0))
+                    continue
+                end
                 call emit_expression(generator, target["target"])
                 call assembler.emit(generator["builder"], x86_64.push(0))
                 call emit_expression(generator, target["index"])
@@ -3374,6 +3637,11 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                     call assembler.emit(generator["builder"], x86_64.pop(2))
                     if target_type == "ByteArray":
                         call assembler.relative(generator["builder"], [232], "runtime_byte_array_set")
+                    elif target_type == "IntArray":
+                        # rdi = array, rsi = normalized index, rdx = raw Int.
+                        call assembler.emit(generator["builder"], x86_64.load_memory(0, 7, 24))
+                        call assembler.emit(generator["builder"], x86_64.store_indexed(0, 6, 3, 2))
+                        call assembler.emit(generator["builder"], x86_64.mov_imm64(0, 0))
                     else:
                         call assembler.relative(generator["builder"], [232], "runtime_list_set")
                     end
@@ -3514,7 +3782,10 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 call assembler.emit(generator["builder"], x86_64.load_stack(6, index_slot))
                 if iterable_type == "ByteArray":
                     call assembler.relative(generator["builder"], [232], "runtime_byte_array_get")
-                elif iterable_type == "List" or iterable_type == "Tuple" or iterable_type == "RealArray" or iterable_type == "IntArray" or iterable_type == "FloatArray":
+                elif iterable_type == "IntArray":
+                    call assembler.emit(generator["builder"], x86_64.load_memory(0, 7, 24))
+                    call assembler.emit(generator["builder"], x86_64.load_indexed(0, 0, 6, 3))
+                elif iterable_type == "List" or iterable_type == "Tuple" or iterable_type == "RealArray" or iterable_type == "FloatArray":
                     call assembler.relative(generator["builder"], [232], "runtime_list_get")
                     if iterable_type == "FloatArray":
                         call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
@@ -4315,6 +4586,12 @@ function infer_function_parameters(program, functions, function_returns, global_
                 index = 0
                 while index < len(functions[name]["parameters"]):
                     parameter_type = result[name][index]
+                    # Seed recursion from observations already made at known
+                    # callers. An unresolved Any here used to poison f(n - 1)
+                    # even when every external call supplied an Int.
+                    if parameter_type == "":
+                        parameter_type = observations[name][index]
+                    end
                     if parameter_type == "":
                         parameter_type = "Any"
                     end
@@ -4443,6 +4720,12 @@ function emit_function(generator, declaration):
     generator["current_return_type"] = generator["function_returns"].get(name, "Any")
     generator["current_internal_function"] = declaration.get("path", generator["path"]).find("compiler/pure/") >= 0
     generator["current_class_name"] = declaration.get("class_name", "")
+    # Keep hot loop/function entries off cross-cache-line boundaries. The
+    # direct ELF backend has no external linker to provide normal text
+    # alignment for us.
+    while assembler.position(generator["builder"]) % 32 != 0:
+        call assembler.emit(generator["builder"], [144])
+    end
     call assembler.label(generator["builder"], "function_" + name)
     call assembler.emit(generator["builder"], x86_64.function_prologue(aligned_frame(variables)))
     argument_registers = [7, 6, 2, 1, 8, 9]
@@ -4492,7 +4775,8 @@ function generate(path, source, program):
         call collect_types(program, main_types, function_returns)
     end
     output = assembler.builder()
-    generator = {"path": path, "internal_abi": internal_abi, "lines": lines, "variables": {}, "types": {}, "global_variables": main_variables, "global_types": main_types, "functions": functions, "classes": classes, "function_returns": function_returns, "function_parameters": parameter_types, "builder": output, "data": [], "string_offsets": {}, "relocations": [], "counter": 0, "error_label": "", "current_class_name": ""}
+    unchecked_intarray = source.find("# lsl: unchecked-intarray") >= 0
+    generator = {"path": path, "internal_abi": internal_abi, "unchecked_intarray": unchecked_intarray, "lines": lines, "variables": {}, "types": {}, "global_variables": main_variables, "global_types": main_types, "functions": functions, "classes": classes, "function_returns": function_returns, "function_parameters": parameter_types, "builder": output, "data": [], "string_offsets": {}, "relocations": [], "counter": 0, "error_label": "", "current_class_name": ""}
     registry_bytes = 524288
     registry_mask = 65535
     if generator["internal_abi"]:

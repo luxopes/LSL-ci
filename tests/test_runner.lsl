@@ -62,12 +62,12 @@ call require_success(run(compiler, ["tests/compiler/float_smoke.lsl", "/tmp/lsl-
 call require_success(run("/tmp/lsl-float-test", []), "run Float smoke")
 call require_success(run(compiler, ["tests/codegen_optimization_conformance.lsl", "/tmp/lsl-codegen-optimization-test"]), "compile codegen optimization conformance")
 call require_output("/tmp/lsl-codegen-optimization-test", [], "tests/codegen_optimization_conformance.out", "codegen optimization output differs")
-if len(readbytes("/tmp/lsl-codegen-optimization-test")) > 60000:
-    Error(TestFailure: "optimized standalone ELF exceeds 60000 bytes")
+if len(readbytes("/tmp/lsl-codegen-optimization-test")) > 61000:
+    Error(TestFailure: "optimized standalone ELF exceeds 61000 bytes")
 end
 call require_success(run(compiler, ["compiler/pure/cli.lsl", "/tmp/lsl-stdin-cli-test"]), "compile stdin CLI")
 help_output = capture("/tmp/lsl-stdin-cli-test", ["--help"])
-expected_help = "Lux Simple Lang (LSL) 0.6.1" + chr(10)
+expected_help = "Lux Simple Lang (LSL) 0.6.3" + chr(10)
 expected_help += chr(10)
 expected_help += "Usage:" + chr(10)
 expected_help += "  lsl [SOURCE [ARG...]]" + chr(10)
@@ -86,11 +86,11 @@ if capture_status() != 0 or help_output != expected_help:
     Error(TestFailure: "CLI --help output differs")
 end
 version_output = capture("/tmp/lsl-stdin-cli-test", ["version"])
-if capture_status() != 0 or version_output != "0.6.1" + chr(10):
+if capture_status() != 0 or version_output != "0.6.3" + chr(10):
     Error(TestFailure: "CLI version output differs")
 end
 version_flag_output = capture("/tmp/lsl-stdin-cli-test", ["--version"])
-if capture_status() != 0 or version_flag_output != "0.6.1" + chr(10):
+if capture_status() != 0 or version_flag_output != "0.6.3" + chr(10):
     Error(TestFailure: "CLI --version output differs")
 end
 stdin_source = "value = 6 * 7" + chr(10) + "if value == 42:" + chr(10) + "    print \"stdin\", value" + chr(10) + "end" + chr(10) + "exit" + chr(10)

@@ -2,4 +2,7 @@
 10
 20 4
 121
+18 IntArray([3, 6, 9])
+IntArray([11, 6, 8])
+typed Bool branch
 constant String fold

@@ -78,6 +78,11 @@ druhý neauditovatelný IR. Aktuální vrstvy:
 - ukončení emission/variable/type/return scan za terminátorem;
 - immediate `+`, `-`, `*`, compare a přímý flag branch;
 - přímá equality pouze pro shodné statické `Int`/`Bool`/`None` typy;
+- přímé flag větvení celých short-circuit stromů `and`/`or`/`not` bez
+  materializace dočasných Bool hodnot;
+- přímé předání prvního argumentu a 32bytové zarovnání vstupů funkcí;
+- lokální hoisting datového ukazatele opakovaného `IntArray` v čistém výrazu;
+- přímý read-modify-write pro unchecked složené přiřazení `IntArray`;
 - power-of-two a magic-number signed floor division;
 - konstantní posuny složené při překladu, jinak immediate `shl`/`sar`;
 - deduplikované immutable String templates, ale nový runtime String clone;
@@ -89,6 +94,9 @@ druhý neauditovatelný IR. Aktuální vrstvy:
 
 - Nikdy nezdvojujte ani nepřehazujte výraz, který může volat funkci, alokovat,
   provést I/O nebo vyvolat chybu.
+- `# lsl: unchecked-intarray` je explicitní unsafe opt-in pro celý root source.
+  Bez něj musí každý typovaný `IntArray` přístup zachovat normalizaci záporného
+  indexu a `IndexError`; s ním smí validitu indexů předpokládat pouze program.
 - `x * 0` smí odstranit násobení, ale `x` se musí stále jednou vyhodnotit.
 - `//` a `%` musí zachovat floor sémantiku pro záporné hodnoty a zvláštní
   `INT64_MIN // -1` wrap případ.

@@ -4,6 +4,43 @@ Na této stránce jsou uživatelsky významné změny vydaných verzí. Stabiln�
 manuály a soubory ke stažení zůstávají dostupné v
 [historii vydání](/releases/).
 
+## 0.6.3 — 21. 8. 2026
+
+Výkonnostní vydání zaměřené na řízení toku a celočíselné hot pathy.
+
+### Compiler a výkon
+
+- Složené Boolean podmínky `and`/`or`/`not` se větví přímo z CPU flags a
+  zachovávají short-circuit sémantiku bez mezilehlých `setcc` hodnot.
+- Volání nepřelévá první argument zbytečně přes zásobník; vstupy funkcí jsou
+  zarovnané na 32 bytů.
+- Staticky známý návratový `Bool` nepoužívá obecný runtime truthiness helper;
+  stabilní velikost bloku zachovává jeden vícebytový NOP.
+- Unchecked `IntArray` složená přiřazení používají přímý read-modify-write a
+  čisté výrazy se dvěma či více přístupy do stejného pole načtou jeho datový
+  ukazatel pouze jednou.
+- Lumen `perft 5` je proti 0.6.2 přibližně 1,5× rychlejší při totožném počtu
+  4 865 609 uzlů; přesné měření je v reportu enginu.
+- Self-hostovaný compiler zůstává bitově reprodukovatelný ve fixed pointu.
+
+## 0.6.2 — 21. 8. 2026
+
+Výkonnostní vydání pro numerické a vyhledávací programy.
+
+### Compiler a výkon
+
+- Typované čtení, zápis a iterace přes `IntArray` po zachování kontroly mezí
+  přistupují přímo k raw Int64 bufferu bez runtime helper `call`/`ret`.
+- Inference parametrů používá známé typy volajících jako počáteční bod pro
+  rekurzivní funkce; známý `Int` nebo `IntArray` už rekurzivní volání nerozšíří
+  na dynamické `Any`.
+- Opt-in direktiva `# lsl: unchecked-intarray` dovoluje ověřeným numerickým hot
+  pathům vypnout kontroly mezí typovaných `IntArray`; výchozí režim je nadále
+  bezpečný a zachovává `IndexError`.
+- Unchecked `IntArray` přístup s jednoduchým celočíselným indexovým výrazem
+  neprovádí obecný zásobníkový spill cílové kolekce.
+- Self-hostovaný compiler zůstává bitově reprodukovatelný ve fixed pointu.
+
 ## 0.6.1 — 21. 8. 2026
 
 Údržbové vydání, které doplňuje práci s bity.

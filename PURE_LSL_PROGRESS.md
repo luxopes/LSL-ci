@@ -910,6 +910,15 @@ CLI hash je
 a stripped CUDA worker hash je
 `bb41ff31291efdf01312067d44d079898ea1b6cd1ce97bf25d8ba0aaf125721b`.
 
+LSL 0.6.3 přidává přímé short-circuit Boolean větvení, statický Bool hot path,
+levnější první argument, 32bytové zarovnání funkcí a přímé/hoistované
+`IntArray` operace. Lumen perft-5 je proti 0.6.2 přibližně 1,59× rychlejší.
+Full suite, fixed point, config, instalovaná kopie a ELF audit prošly. Finální
+compiler fixed point je
+`f852f3d7b6b1d131ec45f7af2799664e961016d236e7944bd271ef17438c46e1` a
+CLI hash je
+`c8cbfee17d838c3150f96bab1220eb178791af6985d025a09747335d42414c61`.
+
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,
 collections, GC robustnost, syscall I/O, native/tensor ABI, AI vrstva,
