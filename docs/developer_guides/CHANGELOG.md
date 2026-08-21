@@ -7,6 +7,12 @@ manuály a soubory ke stažení zůstávají dostupné v
 ## Nevydáno
 
 - `cpu_count()`: počet CPU v affinity masce procesu (`sched_getaffinity`), pro dimenzování worker poolů.
+- Inference parametrů běží ve dvou fázích: rekurzivní volání `f(ply + 1)`
+  uvnitř `f` už neoznačí parametr jako `Any` dřív, než compiler uvidí vnější
+  volající; teprve nerozřešené parametry se rozšíří na `Any` a všechna volání
+  se pozorují znovu. Inference návratových typů vidí typy globálů, takže
+  funkce vracející hodnotu z globálního `IntArray` vrací staticky `Int`.
+  Test `tests/parameter_inference_conformance.lsl`.
 
 ## 0.6.4 — 21. 8. 2026
 

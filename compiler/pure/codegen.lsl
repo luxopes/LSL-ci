@@ -4361,6 +4361,14 @@ function observe_parameter(observations, name, index, value_type):
     if not specializable_parameter_type(value_type):
         value_type = "Any"
     end
+    # Phase 1 of parameter inference ignores dynamic arguments passed from a
+    # body whose own parameters are still unresolved: a recursive call such as
+    # f(ply + 1) inside f must not poison the parameter before the external
+    # callers were seen. Unresolved parameters later widen to Any and phase 2
+    # observes every call site again, so genuinely dynamic calls still count.
+    if value_type == "Any" and "__ignore_unresolved__" in observations and "__caller_unresolved__" in observations:
+        return
+    end
     current = observations[name][index]
     if current == "":
         observations[name][index] = value_type
@@ -4664,8 +4672,12 @@ function infer_function_parameters(program, functions, function_returns, global_
         blocked[name] = name.startswith("__lsl_") or statements_block_specialization(functions[name]["body"])
     end
     iteration = 0
-    while iteration < len(functions) + 2:
+    phase = 0
+    while iteration < len(functions) * 2 + 4:
         observations = empty_parameter_types(functions)
+        if phase == 0:
+            observations["__ignore_unresolved__"] = []
+        end
         escaped = {}
         main_types = {}
         call observe_statement_types(program, main_types, function_returns, functions, observations, escaped)
@@ -4675,6 +4687,7 @@ function infer_function_parameters(program, functions, function_returns, global_
                 for global_name in global_types.keys():
                     types[global_name] = global_types[global_name]
                 end
+                unresolved = False
                 index = 0
                 while index < len(functions[name]["parameters"]):
                     parameter_type = result[name][index]
@@ -4686,9 +4699,15 @@ function infer_function_parameters(program, functions, function_returns, global_
                     end
                     if parameter_type == "":
                         parameter_type = "Any"
+                        unresolved = True
                     end
                     types[functions[name]["parameters"][index]] = parameter_type
                     index += 1
+                end
+                if unresolved:
+                    observations["__caller_unresolved__"] = []
+                elif "__caller_unresolved__" in observations:
+                    del(observations["__caller_unresolved__"])
                 end
                 call observe_statement_types(functions[name]["body"], types, function_returns, functions, observations, escaped)
             end
@@ -4709,7 +4728,21 @@ function infer_function_parameters(program, functions, function_returns, global_
             end
         end
         if not changed:
-            break
+            if phase == 1:
+                break
+            end
+            # Phase 1 converged: widen the still-unresolved parameters to Any
+            # and re-observe every call site without the recursion filter.
+            phase = 1
+            for name in functions.keys():
+                index = 0
+                while index < len(result[name]):
+                    if result[name][index] == "":
+                        result[name][index] = "Any"
+                    end
+                    index += 1
+                end
+            end
         end
         iteration += 1
     end
@@ -4725,12 +4758,15 @@ function infer_function_parameters(program, functions, function_returns, global_
     return result
 end
 
-function infer_function_returns(functions, classes, parameter_types):
+function infer_function_returns(functions, classes, parameter_types, global_types):
     # Least-fixed-point over the 3-level lattice None < concrete < Any. Start at
     # bottom (None) so a not-yet-resolved recursive call is the merge identity
     # rather than Any; otherwise merge(Bool, Any) = Any poisoned recursive
     # Bool/Float returns (e.g. is_even printed 1 instead of True). Iterate until
     # stable; monotonic widening bounds it by 2*len(names).
+    # Bodies see the same global types as emit_function (minus locals and
+    # parameters that shadow them), so a function returning a value read from
+    # a global IntArray or constant infers Int instead of Any.
     result = {}
     for class_name in classes.keys():
         result["__class__" + class_name] = "Instance:" + class_name
@@ -4748,6 +4784,16 @@ function infer_function_returns(functions, classes, parameter_types):
         for name in names:
             declaration = functions[name]
             types = {}
+            for global_name in global_types.keys():
+                types[global_name] = global_types[global_name]
+            end
+            locals = {}
+            call collect_variables(declaration["body"], locals)
+            for local_name in locals.keys():
+                if local_name in types:
+                    del(types[local_name])
+                end
+            end
             parameter_index = 0
             for parameter in declaration["parameters"]:
                 types[parameter] = parameter_types[name][parameter_index]
@@ -4852,9 +4898,14 @@ function generate(path, source, program):
     call validate_class_hierarchy(path, lines, classes)
     functions = function_table(path, lines, program)
     parameter_types = dynamic_parameter_types(functions)
-    function_returns = infer_function_returns(functions, classes, parameter_types)
+    function_returns = infer_function_returns(functions, classes, parameter_types, {})
     main_variables = {}
     call collect_variables(program, main_variables)
+    main_types = {}
+    call collect_types(program, main_types, function_returns)
+    # Global types and return types depend on each other; one more round with
+    # the globals visible resolves returns that read global state.
+    function_returns = infer_function_returns(functions, classes, parameter_types, main_types)
     main_types = {}
     call collect_types(program, main_types, function_returns)
     internal_abi = path.find("compiler/pure/") >= 0
@@ -4862,7 +4913,7 @@ function generate(path, source, program):
         # Direct-call observations propagate parameter types through helper
         # chains. Escaping callbacks retain their dynamic ABI.
         parameter_types = infer_function_parameters(program, functions, function_returns, main_types)
-        function_returns = infer_function_returns(functions, classes, parameter_types)
+        function_returns = infer_function_returns(functions, classes, parameter_types, main_types)
         main_types = {}
         call collect_types(program, main_types, function_returns)
     end
