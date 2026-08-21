@@ -4083,7 +4083,7 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                     fast_operator = statement["operator"][0:len(statement["operator"]) - 1]
                     fast_value = {"kind": "binary", "line": statement["line"], "column": statement["column"], "end_column": statement["end_column"], "operator": fast_operator, "left": target, "right": statement["value"]}
                 end
-                if target_type == "IntArray" and generator.get("unchecked_intarray", False) and is_fast_int_index(generator, target["index"]) and is_fast_int_value(generator, fast_value):
+                if target_type == "IntArray" and generator.get("unchecked_intarray", False) and (is_fast_int_index(generator, target["index"]) or pure_int_need(generator, target["index"]) >= 1) and (is_fast_int_value(generator, fast_value) or pure_int_need(generator, fast_value) >= 1):
                     if infer_expression_type(fast_value, generator["types"], generator["function_returns"]) != "Int":
                         call unsupported(generator["path"], generator["lines"], statement["value"], "IntArray assignment requires an Int result", "use integer arithmetic for the assigned value")
                     end
@@ -4103,6 +4103,25 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                         # the array object and its data pointer. Reuse the
                         # address already held in r10/r11 and combine in place.
                         fast_operator = statement["operator"][0:len(statement["operator"]) - 1]
+                        value_need = pure_int_need(generator, statement["value"])
+                        if value_need >= 1 and value_need <= 5 and fast_operator != "*":
+                            # Pure right-hand side: build it in rcx and combine
+                            # with a memory-destination ALU op; no reload of
+                            # the element into rax.
+                            call emit_pure_int_expression(generator, statement["value"], 1, [2, 6, 7, 8, 9])
+                            if fast_operator == "+":
+                                call assembler.emit(generator["builder"], x86_64.alu_mem_indexed(1, 10, 11, 3, 1))
+                            elif fast_operator == "-":
+                                call assembler.emit(generator["builder"], x86_64.alu_mem_indexed(41, 10, 11, 3, 1))
+                            elif fast_operator == "&":
+                                call assembler.emit(generator["builder"], x86_64.alu_mem_indexed(33, 10, 11, 3, 1))
+                            elif fast_operator == "|":
+                                call assembler.emit(generator["builder"], x86_64.alu_mem_indexed(9, 10, 11, 3, 1))
+                            else:
+                                call assembler.emit(generator["builder"], x86_64.alu_mem_indexed(49, 10, 11, 3, 1))
+                            end
+                            continue
+                        end
                         call assembler.emit(generator["builder"], x86_64.load_indexed(0, 10, 11, 3))
                         if is_int_leaf(generator, statement["value"]):
                             call emit_int_leaf(generator, statement["value"], 1)

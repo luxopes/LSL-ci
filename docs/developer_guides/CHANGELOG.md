@@ -7,6 +7,10 @@ manuály a soubory ke stažení zůstávají dostupné v
 ## Nevydáno
 
 - `cpu_count()`: počet CPU v affinity masce procesu (`sched_getaffinity`), pro dimenzování worker poolů.
+- Unchecked `IntArray` složené přiřazení s čistou pravou stranou používá ALU
+  operaci s paměťovým cílem (`add/sub/and/or/xor [r10+r11*8], rcx`) a fast
+  path ukládání/RMW přijímá libovolný čistý Int index i hodnotu. Lumen perft
+  dalších −4 %.
 - Globální proměnné programu leží ve state bloku za runtime hlavičkou a
   adresují se přes `rbx` místo rámce `main` v r12; r12 je tím volný jako
   čtvrtý registr pro lokály. Lumen perft 0,43 → 0,37 s (−13 %).

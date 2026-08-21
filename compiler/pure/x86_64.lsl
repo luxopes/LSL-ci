@@ -511,6 +511,12 @@ function lea_indexed(destination, base_register, index_register, scale):
     return [rex(True, destination >= 8, index_register >= 8, base_register >= 8), 141, modrm(0, destination, 4), sib(scale, index_register, base_register)]
 end
 
+function alu_mem_indexed(opcode, base_register, index_register, scale, source_register):
+    # op [base + index*2^scale], r64 with a memory destination (opcode 1 add,
+    # 41 sub, 33 and, 9 or, 49 xor).
+    return [rex(True, source_register >= 8, index_register >= 8, base_register >= 8), opcode, modrm(0, source_register, 4), sib(scale, index_register, base_register)]
+end
+
 function lock_xadd_indexed(base_register, index_register, scale, source_register):
     # lock xadd [base + index*2^scale], r64. Atomically adds the register to
     # the memory slot; the previous slot value ends up in the register.
