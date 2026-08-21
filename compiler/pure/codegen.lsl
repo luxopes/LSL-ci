@@ -1080,8 +1080,9 @@ end
 
 function emit_uncaught_runtime_error(generator):
     call emit_static_write_fd(generator, "LSL runtime error: ", 2)
-    call assembler.emit(generator["builder"], x86_64.load_memory(2, 13, 8))
-    call assembler.emit(generator["builder"], x86_64.lea_base(6, 13, 16))
+    call assembler.emit(generator["builder"], x86_64.load_fs(6, 0))
+    call assembler.emit(generator["builder"], x86_64.load_memory(2, 6, 8))
+    call assembler.emit(generator["builder"], x86_64.lea_base(6, 6, 16))
     call assembler.emit(generator["builder"], x86_64.mov_imm64(7, 2))
     call assembler.emit(generator["builder"], x86_64.mov_imm64(0, 1))
     call assembler.emit(generator["builder"], x86_64.syscall())
@@ -1092,7 +1093,7 @@ function emit_uncaught_runtime_error(generator):
 end
 
 function emit_pending_error(generator):
-    call assembler.emit(generator["builder"], x86_64.cmp_reg_imm8(14, 0))
+    call assembler.emit(generator["builder"], x86_64.cmp_fs_imm8(8, 0))
     if generator["error_label"] != "":
         call assembler.relative(generator["builder"], [15, 133], generator["error_label"])
     else:
@@ -1105,8 +1106,8 @@ end
 
 function emit_runtime_raise(generator, message):
     call emit_string_pointer(generator, message)
-    call assembler.emit(generator["builder"], x86_64.move_reg_reg(13, 0))
-    call assembler.emit(generator["builder"], x86_64.mov_imm64(14, 1))
+    call assembler.emit(generator["builder"], x86_64.store_fs(0, 0))
+    call assembler.emit(generator["builder"], x86_64.store_fs_imm32(8, 1))
     if generator["error_label"] != "":
         call assembler.relative(generator["builder"], [233], generator["error_label"])
     else:
@@ -2142,8 +2143,8 @@ function emit_expression(generator, syntax):
                 call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
                 call assembler.relative(output, [15, 133], check_ok)
                 call emit_expression(generator, syntax["arguments"][1])
-                call assembler.emit(output, x86_64.move_reg_reg(13, 0))
-                call assembler.emit(output, x86_64.mov_imm64(14, 1))
+                call assembler.emit(output, x86_64.store_fs(0, 0))
+                call assembler.emit(output, x86_64.store_fs_imm32(8, 1))
                 if generator["error_label"] != "":
                     call assembler.relative(output, [233], generator["error_label"])
                 else:
@@ -2814,7 +2815,7 @@ function emit_expression(generator, syntax):
                 else:
                     call assembler.relative(output, [232], "runtime_readfile")
                 end
-                call assembler.emit(output, x86_64.cmp_reg_imm8(14, 0))
+                call assembler.emit(output, x86_64.cmp_fs_imm8(8, 0))
                 if generator["error_label"] != "":
                     call assembler.relative(output, [15, 133], generator["error_label"])
                 else:
@@ -2837,7 +2838,7 @@ function emit_expression(generator, syntax):
                 else:
                     call assembler.relative(output, [232], "runtime_writefile")
                 end
-                call assembler.emit(output, x86_64.cmp_reg_imm8(14, 0))
+                call assembler.emit(output, x86_64.cmp_fs_imm8(8, 0))
                 if generator["error_label"] != "":
                     call assembler.relative(output, [15, 133], generator["error_label"])
                 else:
@@ -2848,7 +2849,7 @@ function emit_expression(generator, syntax):
                 end
                 return
             elif target["name"] == "last_error":
-                call assembler.emit(output, x86_64.move_reg_reg(0, 13))
+                call assembler.emit(output, x86_64.load_fs(0, 0))
                 return
             elif target["name"] == "type":
                 value_type = infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"])
@@ -3220,7 +3221,7 @@ function emit_expression(generator, syntax):
                 if stack_count > 0:
                     call assembler.emit(output, x86_64.add_reg_imm32(4, stack_count * 8))
                 end
-                call assembler.emit(output, x86_64.cmp_reg_imm8(14, 0))
+                call assembler.emit(output, x86_64.cmp_fs_imm8(8, 0))
                 if generator["error_label"] != "":
                     call assembler.relative(output, [15, 133], generator["error_label"])
                 else:
@@ -3305,7 +3306,7 @@ function emit_expression(generator, syntax):
         if stack_count > 0:
             call assembler.emit(output, x86_64.add_reg_imm32(4, stack_count * 8))
         end
-        call assembler.emit(output, x86_64.cmp_reg_imm8(14, 0))
+        call assembler.emit(output, x86_64.cmp_fs_imm8(8, 0))
         if generator["error_label"] != "":
             call assembler.relative(output, [15, 133], generator["error_label"])
         else:
@@ -3723,7 +3724,7 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                         call assembler.emit(generator["builder"], x86_64.push(6))
                         call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 2))
                         call assembler.relative(generator["builder"], [232], "function___lsl_require_real")
-                        call assembler.emit(generator["builder"], x86_64.cmp_reg_imm8(14, 0))
+                        call assembler.emit(generator["builder"], x86_64.cmp_fs_imm8(8, 0))
                         if generator["error_label"] != "":
                             call assembler.relative(generator["builder"], [15, 133], generator["error_label"])
                         else:
@@ -4001,7 +4002,7 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             call emit_statements(generator, statement["body"], break_label, continue_label, return_label)
             generator["error_label"] = old_error_label
             call assembler.label(generator["builder"], safe_end)
-            call assembler.emit(generator["builder"], x86_64.xor_reg_reg(14, 14))
+            call assembler.emit(generator["builder"], x86_64.store_fs_imm32(8, 0))
         elif kind == "try":
             try_failure = label_name(generator, "try_failure")
             try_end = label_name(generator, "try_end")
@@ -4010,7 +4011,7 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             call emit_statements(generator, statement["body"], break_label, continue_label, return_label)
             call assembler.relative(generator["builder"], [233], try_end)
             call assembler.label(generator["builder"], try_failure)
-            call assembler.emit(generator["builder"], x86_64.xor_reg_reg(14, 14))
+            call assembler.emit(generator["builder"], x86_64.store_fs_imm32(8, 0))
             generator["error_label"] = old_error_label
             call emit_statements(generator, statement["otherwise"], break_label, continue_label, return_label)
             call assembler.label(generator["builder"], try_end)
@@ -4033,8 +4034,8 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 call assembler.emit(generator["builder"], x86_64.pop(7))
                 call assembler.relative(generator["builder"], [232], "runtime_string_concat")
             end
-            call assembler.emit(generator["builder"], x86_64.move_reg_reg(13, 0))
-            call assembler.emit(generator["builder"], x86_64.mov_imm64(14, 1))
+            call assembler.emit(generator["builder"], x86_64.store_fs(0, 0))
+            call assembler.emit(generator["builder"], x86_64.store_fs_imm32(8, 1))
             if generator["error_label"] != "":
                 call assembler.relative(generator["builder"], [233], generator["error_label"])
             else:
@@ -4959,18 +4960,20 @@ function generate(path, source, program):
     generator["types"] = main_types
     call assembler.label(output, "main")
     main_offset = assembler.position(output)
+    # r15 carries the initial stack top only until the thread-local block
+    # exists; afterwards it is an ordinary callee-saved register.
     call assembler.emit(output, x86_64.move_reg_reg(15, 4))
-    call assembler.emit(output, x86_64.xor_reg_reg(14, 14))
-    call assembler.emit(output, x86_64.xor_reg_reg(13, 13))
     call assembler.emit(output, x86_64.function_prologue(aligned_frame(main_variables)))
     call assembler.emit(output, x86_64.mov_imm64(0, 12))
     call assembler.emit(output, x86_64.mov_imm64(7, 0))
     call assembler.emit(output, x86_64.syscall())
     call assembler.emit(output, x86_64.move_reg_reg(3, 0))
-    # State uses bytes 0..159: 0..95 runtime, 96/104 futex mutexes, 112 thread
-    # table, 120 main stack top, 128 gc gate. Keep only the 1 MiB String-intern
-    # table on brk; the object registry starts small in mmap.
-    call assembler.emit(output, x86_64.lea_base(9, 3, 160))
+    # State uses bytes 0..191: 0..95 runtime, 96/104 futex mutexes, 112 thread
+    # table, 120 main stack top, 128 gc gate, 136 threads flag, 160..183 the
+    # main thread's thread-local block (fs base: pending error, error flag,
+    # stack top). Keep only the 1 MiB String-intern table on brk; the object
+    # registry starts small in mmap.
+    call assembler.emit(output, x86_64.lea_base(9, 3, 192))
     call assembler.emit(output, x86_64.move_reg_reg(7, 9))
     call assembler.emit(output, x86_64.add_reg_imm32(7, 1048576))
     call assembler.emit(output, x86_64.mov_imm64(0, 12))
@@ -4990,16 +4993,23 @@ function generate(path, source, program):
     call assembler.emit(output, x86_64.store_memory(3, 32, 0))
     call assembler.emit(output, x86_64.mov_imm64(10, registry_mask))
     call assembler.emit(output, x86_64.store_memory(3, 40, 10))
-    call assembler.emit(output, x86_64.lea_base(9, 3, 160))
+    call assembler.emit(output, x86_64.lea_base(9, 3, 192))
     call assembler.emit(output, x86_64.store_memory(3, 48, 9))
     call assembler.emit(output, x86_64.mov_imm64(10, 65535))
     call assembler.emit(output, x86_64.store_memory(3, 56, 10))
-    # Main-thread identity for gc(): the initial stack top in r15.
+    # Main-thread identity for gc() and envp lookup: the initial stack top.
     call assembler.emit(output, x86_64.store_memory(3, 120, 15))
+    # Thread-local block for the main thread: arch_prctl(ARCH_SET_FS, state+160),
+    # then fs:16 = stack top (fs:0/fs:8 pending error state start zeroed).
+    call assembler.emit(output, x86_64.mov_imm64(7, 4098))
+    call assembler.emit(output, x86_64.lea_base(6, 3, 160))
+    call assembler.emit(output, x86_64.mov_imm64(0, 158))
+    call assembler.emit(output, x86_64.syscall())
+    call assembler.emit(output, x86_64.store_fs(16, 15))
     # Thread table: one zeroed page of 32-byte entries (see thread_runtime).
     call assembler.emit(output, x86_64.mov_imm64(0, 9))
     call assembler.emit(output, x86_64.xor_reg_reg(7, 7))
-    call assembler.emit(output, x86_64.mov_imm64(6, 4096))
+    call assembler.emit(output, x86_64.mov_imm64(6, 8192))
     call assembler.emit(output, x86_64.mov_imm64(2, 3))
     call assembler.emit(output, x86_64.mov_imm64(10, 34))
     call assembler.emit(output, x86_64.mov_imm64(8, -1))

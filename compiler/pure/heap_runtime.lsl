@@ -943,24 +943,25 @@ function emit_gc(output):
     # stacks are scanned conservatively below while the main thread holds
     # both mutexes.
     call assembler.emit(output, x86_64.load_memory(1, 3, 120))
-    call assembler.emit(output, x86_64.cmp_reg_reg(15, 1))
+    call assembler.emit(output, x86_64.load_fs(2, 16))
+    call assembler.emit(output, x86_64.cmp_reg_reg(2, 1))
     call assembler.relative(output, [15, 133], "gc_thread_skip")
     call assembler.relative(output, [232], "runtime_mutex_lock")
     # Roots the conservative stack scan cannot see: the pending-error String
-    # kept only in callee-saved r13, and the last capture() stderr String at
+    # kept only in the thread-local block (fs:0), and the last capture() stderr String at
     # state+72. Both must survive across gc().
-    call assembler.emit(output, x86_64.move_reg_reg(7, 13))
+    call assembler.emit(output, x86_64.load_fs(7, 0))
     call assembler.relative(output, [232], "runtime_mark")
     call assembler.emit(output, x86_64.load_memory(7, 3, 72))
     call assembler.relative(output, [232], "runtime_mark")
     # Conservatively scan the whole live stack, from just above this frame
-    # up to the process stack base in r15, so roots held in any live caller
+    # up to the thread stack base (fs:16), so roots held in any live caller
     # frame (not only the immediate one) are marked. Scanning only the
     # direct caller previously let gc() free objects still referenced by
     # outer frames, corrupting long-lived state such as pending input.
     call assembler.emit(output, x86_64.lea_base(8, 5, 16))
     call assembler.emit(output, x86_64.store_stack(-8, 8))
-    call assembler.emit(output, x86_64.move_reg_reg(8, 15))
+    call assembler.emit(output, x86_64.load_fs(8, 16))
     call assembler.emit(output, x86_64.store_stack(-32, 8))
     call assembler.label(output, "gc_root_loop")
     call assembler.emit(output, x86_64.load_stack(8, -8))
@@ -1033,7 +1034,7 @@ function emit_gc(output):
     call assembler.relative(output, [15, 141], "gc_suspend_checked")
     call assembler.emit(output, x86_64.load_memory(8, 3, 112))
     call assembler.emit(output, x86_64.move_reg_reg(10, 1))
-    call assembler.emit(output, x86_64.shift_left_imm(10, 5))
+    call assembler.emit(output, x86_64.shift_left_imm(10, 6))
     call assembler.emit(output, x86_64.lea_indexed(9, 8, 10, 0))
     call assembler.emit(output, x86_64.add_reg_imm8(9, 8))
     call assembler.emit(output, x86_64.load_memory(2, 9, 16))
@@ -1074,7 +1075,7 @@ function emit_gc(output):
     call assembler.relative(output, [15, 141], "gc_thread_done")
     call assembler.emit(output, x86_64.load_memory(8, 3, 112))
     call assembler.emit(output, x86_64.move_reg_reg(10, 1))
-    call assembler.emit(output, x86_64.shift_left_imm(10, 5))
+    call assembler.emit(output, x86_64.shift_left_imm(10, 6))
     call assembler.emit(output, x86_64.lea_indexed(9, 8, 10, 0))
     call assembler.emit(output, x86_64.add_reg_imm8(9, 8))
     call assembler.emit(output, x86_64.load_memory(2, 9, 16))
@@ -2450,8 +2451,9 @@ function emit_dict_get(output):
     call assembler.emit(output, x86_64.load_indexed(0, 8, 2, 3))
     call assembler.emit(output, x86_64.function_epilogue())
     call assembler.label(output, "dict_get_missing")
-    call assembler.relative(output, x86_64.lea_rip_prefix(13), "dict_get_error_data")
-    call assembler.emit(output, x86_64.mov_imm64(14, 1))
+    call assembler.relative(output, x86_64.lea_rip_prefix(11), "dict_get_error_data")
+    call assembler.emit(output, x86_64.store_fs(0, 11))
+    call assembler.emit(output, x86_64.store_fs_imm32(8, 1))
     call assembler.emit(output, x86_64.mov_imm64(0, 0))
     call assembler.emit(output, x86_64.function_epilogue())
     call assembler.label(output, "dict_get_error_data")

@@ -4,14 +4,16 @@
 # State block (RBX) words used by threads:
 #   +96  heap mutex word (runtime_alloc / gc() serialization)
 #  +104  thread-table mutex word
-#  +112  thread table pointer (one anonymous 4096-byte mmap page)
+#  +112  thread table pointer (two anonymous mmap pages, 8192 bytes)
 #  +120  main thread stack top (gc() identity check against r15)
 #  +128  gc gate word: 1 while the main thread collects, 0 otherwise
 #  +136  threads-started flag: set by the first thread_spawn, never cleared
 #
-# Thread table: [+0 reserved], then 32-byte entries:
+# Thread table: [+0 reserved], then 64-byte entries:
 #   [+0 kernel tid, +8 stack base (top of the 8 MiB mapping),
-#    +16 status, +24 saved rsp of a suspended worker]
+#    +16 status, +24 saved rsp of a suspended worker,
+#    +32.. the worker's thread-local block (fs base): +32 pending error,
+#    +40 error flag, +48 stack top]
 # The top bit of the tid word marks a slot whose exited thread has already
 # been joined. Only such a slot (or one that never held a thread) is reused,
 # so an exited but unjoined thread keeps its record and join still finds it.
@@ -100,7 +102,7 @@ function emit_entry_lookup(output, found_label, missing_label):
     call assembler.emit(output, x86_64.cmp_reg_imm32(1, 127))
     call assembler.relative(output, [15, 141], missing_label)
     call assembler.emit(output, x86_64.move_reg_reg(10, 1))
-    call assembler.emit(output, x86_64.shift_left_imm(10, 5))
+    call assembler.emit(output, x86_64.shift_left_imm(10, 6))
     call assembler.emit(output, x86_64.lea_indexed(9, 8, 10, 0))
     call assembler.emit(output, x86_64.add_reg_imm8(9, 8))
     call assembler.emit(output, x86_64.load_memory(2, 9, 0))
@@ -115,7 +117,7 @@ end
 function emit_slot_address(output):
     # rcx = slot index, r8 = table -> r9 = that entry.
     call assembler.emit(output, x86_64.move_reg_reg(10, 1))
-    call assembler.emit(output, x86_64.shift_left_imm(10, 5))
+    call assembler.emit(output, x86_64.shift_left_imm(10, 6))
     call assembler.emit(output, x86_64.lea_indexed(9, 8, 10, 0))
     call assembler.emit(output, x86_64.add_reg_imm8(9, 8))
 end
@@ -207,16 +209,22 @@ function emit_spawn(output):
     call assembler.emit(output, x86_64.store_memory_imm32(9, 16, 1))
     # clone(flags, child_stack = top - 16, parent_tid = 0,
     #       child_tid = &entry.status, tls = 0) with CLONE_VM|CLONE_FS|
-    # CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|
+    # CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|
     # CLONE_CHILD_CLEARTID: the kernel zeroes the status word and wakes its
     # futex only once the thread has fully exited, so joiners and stack
     # reuse never race with a thread still running on that stack.
+    # The entry's second half (entry+32..) is the child's thread-local block:
+    # +32 pending error, +40 error flag, +48 stack top; CLONE_SETTLS points
+    # fs at it.
+    call assembler.emit(output, x86_64.store_memory_imm32(9, 32, 0))
+    call assembler.emit(output, x86_64.store_memory_imm32(9, 40, 0))
+    call assembler.emit(output, x86_64.store_memory(9, 48, 10))
     call assembler.emit(output, x86_64.lea_base(6, 10, -16))
+    call assembler.emit(output, x86_64.lea_base(8, 9, 32))
     call assembler.emit(output, x86_64.lea_base(10, 9, 16))
     call assembler.emit(output, x86_64.mov_imm64(0, 56))
-    call assembler.emit(output, x86_64.mov_imm64(7, 2428672))
+    call assembler.emit(output, x86_64.mov_imm64(7, 2952960))
     call assembler.emit(output, x86_64.xor_reg_reg(2, 2))
-    call assembler.emit(output, x86_64.xor_reg_reg(8, 8))
     call assembler.emit(output, x86_64.syscall())
     call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
     call assembler.relative(output, [15, 132], "runtime_thread_entry")
@@ -245,9 +253,9 @@ end
 
 function emit_entry(output):
     # Child start: rsp = stack top - 16 with [rsp] = entry, [rsp+8] = tagged
-    # Function. rbx, r12 and r13 are inherited from the spawning thread.
+    # Function. rbx and r12 are inherited from the spawning thread; fs points
+    # at the entry's thread-local block.
     call assembler.label(output, "runtime_thread_entry")
-    call assembler.emit(output, x86_64.lea_base(15, 4, 16))
     call assembler.emit(output, x86_64.load_memory(7, 4, 8))
     call assembler.emit(output, x86_64.push(5))
     call assembler.emit(output, x86_64.move_reg_reg(5, 4))

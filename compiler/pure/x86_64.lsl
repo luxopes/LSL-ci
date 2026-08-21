@@ -560,6 +560,36 @@ function trailing_zeros_reg(destination, source):
     return [243, rex(True, destination >= 8, False, source >= 8), 15, 188, modrm(3, destination, source)]
 end
 
+function load_fs(register, displacement):
+    # mov r64, fs:[displacement] (thread-local block, absolute disp32).
+    result = [100, rex(True, register >= 8, False, False), 139, modrm(0, register, 4), 37]
+    call bytes.append_little(result, displacement, 4)
+    return result
+end
+
+function store_fs(displacement, register):
+    # mov fs:[displacement], r64
+    result = [100, rex(True, register >= 8, False, False), 137, modrm(0, register, 4), 37]
+    call bytes.append_little(result, displacement, 4)
+    return result
+end
+
+function store_fs_imm32(displacement, value):
+    # mov qword fs:[displacement], imm32 (sign-extended)
+    result = [100, 72, 199, modrm(0, 0, 4), 37]
+    call bytes.append_little(result, displacement, 4)
+    call bytes.append_little(result, value, 4)
+    return result
+end
+
+function cmp_fs_imm8(displacement, value):
+    # cmp qword fs:[displacement], imm8
+    result = [100, 72, 131, modrm(0, 7, 4), 37]
+    call bytes.append_little(result, displacement, 4)
+    result.append(value % 256)
+    return result
+end
+
 function pause():
     # PAUSE hint for spin-wait loops.
     return [243, 144]

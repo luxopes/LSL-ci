@@ -7,6 +7,11 @@ manuály a soubory ke stažení zůstávají dostupné v
 ## Nevydáno
 
 - `cpu_count()`: počet CPU v affinity masce procesu (`sched_getaffinity`), pro dimenzování worker poolů.
+- Stav výjimek a vrchol zásobníku vlákna se přesunuly z registrů r13/r14/r15
+  do thread-local bloku adresovaného přes `fs` (`arch_prctl(ARCH_SET_FS)`,
+  u workerů `CLONE_SETTLS`; hlavní vlákno state+160, workery druhá polovina
+  64bytového záznamu v tabulce vláken). Uvolňuje tři callee-saved registry
+  pro budoucí alokaci registrů lokálům; chování programů se nemění.
 - `popcount(x)` a `trailing_zeros(x)` builtiny (POPCNT/TZCNT nad raw Int;
   `trailing_zeros(0)` je 64). Test `tests/bit_builtins_conformance.lsl`.
 - Peephole v assembleru: `cmp r64, 0` → `test r64, r64`. Eliminace
