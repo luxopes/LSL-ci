@@ -4,6 +4,36 @@ Na této stránce jsou uživatelsky významné změny vydaných verzí. Stabiln�
 manuály a soubory ke stažení zůstávají dostupné v
 [historii vydání](/releases/).
 
+## Nevydáno
+
+### Jazyk a runtime
+
+- `thread_spawn(function)` a `thread_join(tid)`: sdílená vlákna přes
+  `clone(CLONE_VM|CLONE_THREAD|…|CLONE_CHILD_CLEARTID)` s 8 MiB mmap
+  zásobníky, tabulkou až 127 workerů a futex join; kernel nuluje status slot
+  po skutečném ukončení vlákna, takže join a opětovné použití zásobníku nikdy
+  nezávodí s dobíhajícím workerem.
+- Allokátor je chráněn tříhodnotovým futex mutexem (bez syscallu, dokud není
+  kontendován), který se zapne až prvním `thread_spawn`; jednovláknové
+  programy mají stejnou alokační cestu jako dřív.
+- `gc()` z hlavního vlákna zastaví workery signálem `SIGUSR1`
+  (`SA_RESTORER` handler, `rt_sigreturn`), konzervativně projde jejich živé
+  zásobníky od uloženého `rsp` po vrchol mapování a po sweepu je probudí přes
+  futex gate; ve workeru je `gc()` no-op.
+- `atomic_add`/`atomic_xchg`/`atomic_cas`/`atomic_pause` jsou zdokumentované
+  jako synchronizační primitiva pro sdílené `IntArray` sloty.
+- Nové `tests/thread_conformance.lsl`: čtyři atomické čítače, workery
+  alokující během `gc()` a slot reuse.
+
+### Výkon
+
+- FloatArray kernely `float_sum`, `float_dot`, `float_axpy`, `float_fill` a
+  `float_matmul` používají SSE2 packed double (dvě lane, skalární ocas).
+  `float_matmul` běží v pořadí i-k-j s vysíláním `A[i,k]` a je bitově shodný
+  se skalární verzí; 256×256 je přibližně 4,5× rychlejší. `float_sum` a
+  `float_dot` sčítají ve dvou akumulátorech.
+- Self-hostovaný compiler zůstává bitově reprodukovatelný ve fixed pointu.
+
 ## 0.6.3 — 21. 8. 2026
 
 Výkonnostní vydání zaměřené na řízení toku a celočíselné hot pathy.

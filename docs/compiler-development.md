@@ -36,7 +36,8 @@ ulimit -v 1048576
 | `compiler/pure/x86_64.lsl` | auditable instruction encoder |
 | `compiler/pure/assembler.lsl` | labely, rel32 fixups, byte stream |
 | `compiler/pure/native_runtime.lsl` | scalar runtime, clock_gettime a nanosleep emission |
-| `compiler/pure/heap_runtime.lsl` | allocator, registry, GC, kolekce |
+| `compiler/pure/heap_runtime.lsl` | allocator, registry, GC, kolekce, SSE2 FloatArray kernely |
+| `compiler/pure/thread_runtime.lsl` | futex mutexy, clone spawn/join, stop-the-world handler pro gc() |
 | `compiler/pure/io_runtime.lsl` | soubory, argv/env, text/binární I/O a TTY/EOF stav |
 | `compiler/pure/process_runtime.lsl` | fork/exec/capture/status/streaming |
 | `compiler/pure/native_plugin_runtime.lsl` | omezený ET_DYN loader ABI v1 |

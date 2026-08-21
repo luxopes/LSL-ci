@@ -196,6 +196,15 @@ c = float_matmul(a, b, m, k, n)    # FloatArray(m*k) × FloatArray(k*n) → Floa
 call float_fill(data, 42.0)        # všechny prvky na 42.0
 ```
 
+Kernely jsou vektorizované: pracují nad dvěma SSE2 lane (`movupd`,
+`addpd`, `mulpd`) se skalárním ocasem pro lichou délku. `float_sum` a
+`float_dot` drží sudé a liché prvky v oddělených akumulátorech a spojí je na
+konci, takže se u velmi dlouhých polí mohou v posledních bitech lišit od čistě
+sekvenčního součtu; `float_axpy`, `float_fill` a `float_matmul` dávají bitově
+stejné výsledky jako skalární smyčka (matmul akumuluje řádek `C[i, :]` v
+pořadí `k` s vysíláním `A[i, k]` do obou lane, což je zároveň cache-friendly —
+256×256 matmul je proti skalární verzi přibližně 4,5× rychlejší).
+
 Výkonnostní rozdíl oproti uživatelským smyčkám může být **400× a více**.
 V horké smyčce nikdy neindexujte FloatArray po prvcích v LSL — použijte
 bulk kernel.
@@ -427,6 +436,56 @@ y = get_y()
 result = compute(x, y)
 ```
 
+## Vlákna
+
+`thread_spawn(function)` spustí funkci bez parametrů jako worker se sdílenou
+pamětí a vrátí Int tid (`-1` při vyčerpání 127 slotů nebo selhání mmap 8 MiB
+zásobníku); `thread_join(tid)` počká na jeho konec (vrací `0`, `126` pro
+neznámý tid). Sdílená data předávejte přes globální proměnné a synchronizujte
+je `atomic_add`/`atomic_xchg`/`atomic_cas` nad `IntArray` sloty a
+`atomic_pause()` ve spin smyčkách.
+
+```lsl
+# lsl: unchecked-intarray
+partial = IntArray()
+partial.append(0)
+partial.append(0)
+
+function half0():
+    acc = 0
+    i = 0
+    while i < 5000000:
+        acc += i % 7
+        i += 1
+    end
+    partial[0] = acc
+    return None
+end
+
+function half1():
+    acc = 0
+    i = 5000000
+    while i < 10000000:
+        acc += i % 7
+        i += 1
+    end
+    partial[1] = acc
+    return None
+end
+
+a = thread_spawn(half0)
+b = thread_spawn(half1)
+call thread_join(a)
+call thread_join(b)
+print partial[0] + partial[1]
+```
+
+Allokátor je serializovaný futex mutexem aktivovaným prvním `thread_spawn`
+(jednovláknové programy neplatí nic), takže alokačně těžké workery se o zámek
+dělí — dělte práci tak, aby vlákna počítala nad `IntArray`/`FloatArray` bez
+alokací v hot path. `gc()` smí volat jen hlavní vlákno; zastaví workery přes
+`SIGUSR1`, projde jejich zásobníky a po sweepu je probudí.
+
 ## Benchmarking
 
 Měření provádějte sériově na stejném stroji:
@@ -495,8 +554,10 @@ Na GeForce GTX 1650 bylo první end-to-end matmul 1024×1024 přibližně 11,73 
 na CPU a 1,16 s přes CUDA. Pro 128×128 bylo CPU přibližně 0,003 s a první
 CUDA dispatch 0,87 s; proto je výchozí automatický práh konzervativní.
 
-Persistentní CUDA proces, přímý in-process CUDA driver ABI, zero-copy device
-buffery a SIMD autovektorizace zatím nejsou součástí 0.6.
+Persistentní CUDA proces, přímý in-process CUDA driver ABI a zero-copy device
+buffery zatím nejsou součástí 0.6. FloatArray kernely používají ruční SSE2
+vektorizaci (viz výše); obecná autovektorizace uživatelských smyček
+neexistuje.
 
 ## Kam dál
 

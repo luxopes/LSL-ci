@@ -919,6 +919,18 @@ compiler fixed point je
 CLI hash je
 `c8cbfee17d838c3150f96bab1220eb178791af6985d025a09747335d42414c61`.
 
+Po 0.6.3 přibyla sdílená vlákna (`thread_runtime.lsl`: futex mutexy,
+`clone`-based `thread_spawn`/`thread_join`, `CLONE_CHILD_CLEARTID` status,
+SIGUSR1 stop-the-world handler pro `gc()` se scanem worker zásobníků) a SSE2
+vektorizace FloatArray kernelů (`float_sum`/`float_dot` dvouakumulátorově,
+`float_axpy`/`float_fill`/`float_matmul` bitově shodně; matmul i-k-j). Zámek
+allokátoru je guardovaný příznakem prvního spawnu (bez vláken jen načtení
+příznaku, self-host compile přibližně o 2 % pomalejší).
+`tests/thread_conformance.lsl` je ve full suite. Full suite, fixed point,
+config, instalovaná kopie a ELF audit prošly; compiler fixed point je
+`4f1db957d5942d736d98700239665bd401829071185b465d25737fecafecfa95` a CLI hash
+je `c0aca66fe530e85bb2adfdbfe1fdda9321aa3353cce8887fe05dd822cb0223ed`.
+
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,
 collections, GC robustnost, syscall I/O, native/tensor ABI, AI vrstva,

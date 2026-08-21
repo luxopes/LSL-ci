@@ -43,7 +43,8 @@ Produkční kód compileru je v `compiler/pure/`:
 | `x86_64.lsl` | Auditovatelný instrukční encoder |
 | `assembler.lsl` | Labely, rel32 fixups, byte stream |
 | `native_runtime.lsl` | Skalární runtime, clock_gettime a nanosleep emise |
-| `heap_runtime.lsl` | Allokátor, registr, GC, kolekce |
+| `heap_runtime.lsl` | Allokátor, registr, GC, kolekce, SSE2 FloatArray kernely |
+| `thread_runtime.lsl` | Futex mutexy, clone spawn/join, stop-the-world handler pro gc() |
 | `io_runtime.lsl` | Soubory, argv/env, text/bin I/O, TTY/EOF stav |
 | `process_runtime.lsl` | fork/execve/wait4/capture/status/streaming |
 | `native_plugin_runtime.lsl` | Omezený ET_DYN loader ABI v1 |

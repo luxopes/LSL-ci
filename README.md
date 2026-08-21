@@ -145,8 +145,10 @@ Vstupní bod je `compiler/pure/lslc_direct.lsl`. Lexer, parser, linker, x86_64 e
 
 Známé zbývající mezery jsou vedené výhradně v `PURE_LSL_PROGRESS.md`; CUDA
 v 0.6 používá bundlovaný izolovaný NVIDIA CUDA Runtime worker s CPU fallbackem,
-nikoli přímý in-process CUDA driver ABI. SIMD autovektorizace, persistentní
-CUDA kontext, širší Tensor operace a obecné foreign shared-object ABI zůstávají
+nikoli přímý in-process CUDA driver ABI. FloatArray kernely jsou ručně
+vektorizované přes SSE2 a `thread_spawn`/`thread_join` poskytují sdílená
+vlákna s atomickými builtiny; obecná autovektorizace, persistentní CUDA
+kontext, širší Tensor operace a obecné foreign shared-object ABI zůstávají
 otevřené.
 
 Licence: MIT, viz `LICENSE`.

@@ -175,6 +175,46 @@ function double_to_int(integer_register, xmm_register):
     return [242, rex(True, integer_register >= 8, False, xmm_register >= 8), 15, 44, modrm(3, integer_register, xmm_register)]
 end
 
+function packed_double(operation, destination, source):
+    # SSE2 packed-double register operation (66 0F op /r) on two lanes.
+    return [102, rex(False, destination >= 8, False, source >= 8), 15, operation, modrm(3, destination, source)]
+end
+
+function add_packed(destination, source):
+    return packed_double(88, destination, source)
+end
+
+function mul_packed(destination, source):
+    return packed_double(89, destination, source)
+end
+
+function move_packed(destination, source):
+    # movapd xmm, xmm
+    return packed_double(40, destination, source)
+end
+
+function unpack_low_packed(destination, source):
+    # unpcklpd: destination = [destination.low, source.low]; with the same
+    # register on both sides this broadcasts the low lane.
+    return packed_double(20, destination, source)
+end
+
+function unpack_high_packed(destination, source):
+    # unpckhpd: destination = [destination.high, source.high]; with the same
+    # register on both sides this moves the high lane down.
+    return packed_double(21, destination, source)
+end
+
+function load_packed_indexed(xmm_register, base_register, index_register, scale):
+    # movupd xmm, [base + index*2^scale]: two unaligned doubles.
+    return [102, rex(False, xmm_register >= 8, index_register >= 8, base_register >= 8), 15, 16, modrm(0, xmm_register, 4), sib(scale, index_register, base_register)]
+end
+
+function store_packed_indexed(base_register, index_register, scale, xmm_register):
+    # movupd [base + index*2^scale], xmm
+    return [102, rex(False, xmm_register >= 8, index_register >= 8, base_register >= 8), 15, 17, modrm(0, xmm_register, 4), sib(scale, index_register, base_register)]
+end
+
 function jump_relative(displacement):
     result = [233]
     call bytes.append_little(result, displacement, 4)
@@ -484,6 +524,27 @@ function lock_xadd_memory(base_register, displacement, source_register):
     # lock xadd [base + displacement], r64 for fixed state words.
     mode = memory_mode(base_register, displacement)
     result = [240, rex(True, source_register >= 8, False, base_register >= 8), 15, 193]
+    result.extend(memory_tail(base_register, mode, source_register))
+    call append_displacement(result, mode, displacement)
+    return result
+end
+
+function lock_xchg_memory(base_register, displacement, source_register):
+    # lock xchg [base + displacement], r64 for fixed state words. The previous
+    # word value ends up in the source register.
+    mode = memory_mode(base_register, displacement)
+    result = [240, rex(True, source_register >= 8, False, base_register >= 8), 135]
+    result.extend(memory_tail(base_register, mode, source_register))
+    call append_displacement(result, mode, displacement)
+    return result
+end
+
+function lock_cmpxchg_memory(base_register, displacement, source_register):
+    # lock cmpxchg [base + displacement], r64 for fixed state words: on a
+    # match with RAX it stores the register and sets ZF, otherwise it loads
+    # the word into RAX and clears ZF.
+    mode = memory_mode(base_register, displacement)
+    result = [240, rex(True, source_register >= 8, False, base_register >= 8), 15, 177]
     result.extend(memory_tail(base_register, mode, source_register))
     call append_displacement(result, mode, displacement)
     return result

@@ -255,7 +255,7 @@ del(items[0])
 
 Čárky mezi řádky jednoduchého víceřádkového dictionary jsou volitelné. `RealArray` lze indexově měnit, ale jeho délka je pevná: `append`, `extend`, `pop` a `del(fixed[i])` selžou.
 
-`IntArray` ukládá hodnoty přímo jako contiguous Int64 bez per-element objektu. `FloatArray` stejně ukládá raw IEEE-754 Float64 bity a poskytuje nativní `float_zeros`, `float_fill`, `float_sum`, `float_dot`, `float_axpy` a `float_matmul` kernely. `ByteArray` je packed byte buffer (jeden byte na prvek) pro `readbytes`/`writebytes` a nativní/OS I/O. Indexace a iterace mají statický typ `Int`, resp. `Float`; `append` a indexové přiřazení odmítnou chybný typ a ByteArray navíc hodnoty mimo `0..255`. Pro heterogenní data zůstává `List`.
+`IntArray` ukládá hodnoty přímo jako contiguous Int64 bez per-element objektu. `FloatArray` stejně ukládá raw IEEE-754 Float64 bity a poskytuje nativní `float_zeros`, `float_fill`, `float_sum`, `float_dot`, `float_axpy` a `float_matmul` kernely. Kernely běží nad dvěma SSE2 lane (packed double) se skalárním ocasem; `float_sum` a `float_dot` sčítají sudé a liché prvky v oddělených akumulátorech a na konci je spojí, takže se u dlouhých polí mohou v posledních bitech lišit od sekvenčního součtu. `float_axpy`, `float_fill` a `float_matmul` provádějí po prvcích stejné operace ve stejném pořadí jako skalární smyčka. `ByteArray` je packed byte buffer (jeden byte na prvek) pro `readbytes`/`writebytes` a nativní/OS I/O. Indexace a iterace mají statický typ `Int`, resp. `Float`; `append` a indexové přiřazení odmítnou chybný typ a ByteArray navíc hodnoty mimo `0..255`. Pro heterogenní data zůstává `List`.
 
 Povolené metody:
 
@@ -268,6 +268,48 @@ Povolené metody:
 - ByteArray: `append`, `clear`; dále packed indexace, indexové přiřazení, `len`, iterace, `readbytes` a `writebytes`
 
 Indexace a slicing (`value[start:stop]`) mají pravou mez exkluzivní a podporují záporné indexy. String indexy, `len`, slicing, iterace, `find` a `index` počítají validní Unicode code points, ne UTF-8 bajty.
+
+## Vlákna a atomické operace
+
+`thread_spawn(function)` spustí zadanou funkci bez parametrů v novém vláknu
+se sdílenou pamětí (Linux `clone` s `CLONE_VM|CLONE_THREAD`) a vrátí Int
+identifikátor vlákna, nebo `-1`, když je tabulka vláken plná (127 současně
+běžících workerů) nebo se nepodařilo namapovat 8 MiB zásobník.
+`thread_join(tid)` blokuje, dokud worker neskončí, a vrátí `0`; pro neznámý
+`tid` (nikdy nespuštěný nebo slot už znovu použitý) vrátí `126`. Návratová
+hodnota worker funkce se zahazuje; neodchycená výjimka ve workeru ukončí celý
+proces stejně jako v hlavním vláknu.
+
+```lsl
+counter = IntArray()
+counter.append(0)
+
+function bump():
+    i = 0
+    while i < 1000:
+        call atomic_add(counter, 0, 1)
+        i += 1
+    end
+    return None
+end
+
+t = thread_spawn(bump)
+u = thread_spawn(bump)
+print thread_join(t), thread_join(u), counter[0]   # 0 0 2000
+```
+
+Data si vlákna předávají přes globální proměnné. Běžné zápisy do sdílených
+kolekcí nejsou synchronizované; pro sdílené čítače a zámky slouží lock-free
+builtiny nad sloty `IntArray`: `atomic_add(array, index, delta)`,
+`atomic_xchg(array, index, value)` a `atomic_cas(array, index, expected, new)`
+vrací předchozí hodnotu slotu (`lock xadd`/`xchg`/`cmpxchg`, bez kontroly
+mezí), `atomic_pause()` je `PAUSE` hint pro spin-wait smyčky.
+
+Allokátor je chráněn futex mutexem, který se aktivuje až prvním
+`thread_spawn`; jednovláknové programy neplatí nic. `gc()` smí volat jen hlavní
+vlákno: zastaví workery signálem `SIGUSR1`, konzervativně projde jejich živé
+zásobníky (včetně registrů uložených v signal frame) a po sweepu je probudí.
+Ve workeru `gc()` vrátí `0` bez akce.
 
 ## Mazání
 
