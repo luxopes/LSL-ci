@@ -934,6 +934,21 @@ compiler fixed point
 `f57a02a58a7fba00a78f8dbfe8e2384f1acc1cf4491455524551eb35a8e03e57` a CLI hash
 `e8ef227843a680123b969b363c7407bcddf5824fa63fae4e5d18472e424c14c4`.
 
+Vydání 0.6.5 dokončuje optimalizaci `String(Float)`: odstranilo heapové sestavování a parsování
+desetinného kandidáta z korekční i zkracovací smyčky: intrinsic nyní vytvoří
+platný kandidát ve stackovém bufferu, úzký nativní parser vrátí raw IEEE-754
+bity a porovnání neboxuje Float ani pomocné Stringy. Veřejný `Float(String)`
+mutuje jeden privátní Float akumulátor místo dvou nových boxů na číslici, při
+bitově shodném výsledku a diagnostice. Post-format kolekce se spustí teprve
+při kombinaci 256 formátování a 4 096 nových adres v objektovém
+registru, takže dlouhé smyčky mají omezenou paměť bez globální GC pauzy v
+krátkém smíšeném programu. Původní reprodukce 60 000 převodů skončila bez
+chyb s maximálním RSS 31 900 KiB místo přibližně 5,1 GiB; optimalizační ELF má
+63 842 B pod limitem 64 000 B. Nový samostatný allocation conformance, fast i
+full suite a fixed point prošly. Release 0.6.5 má compiler fixed point
+`84adb2928bdb9115a4949906319b7845e111c165eb1f075c38754f7f3def3fca` a CLI hash
+`b76b88da7bd434006c5b63a9f84efb7b6ef719d9982107a774d9533b663b06ae`.
+
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,
 collections, GC robustnost, syscall I/O, native/tensor ABI, AI vrstva,

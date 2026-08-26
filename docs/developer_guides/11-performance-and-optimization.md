@@ -16,7 +16,7 @@ který funguje. Teprve potom ho zrychlujte — a po každé změně ověřte,
 
 ## Co compiler optimalizuje automaticky
 
-Codegen LSL 0.6 bezpečně provádí tyto optimalizace (žádná nemění
+Codegen LSL 0.6.5 bezpečně provádí tyto optimalizace (žádná nemění
 pozorovatelnou sémantiku):
 
 ### 1. Constant folding (skládání konstant)
@@ -536,6 +536,20 @@ Allokátor je serializovaný futex mutexem aktivovaným prvním `thread_spawn`
 dělí — dělte práci tak, aby vlákna počítala nad `IntArray`/`FloatArray` bez
 alokací v hot path. `gc()` smí volat jen hlavní vlákno; zastaví workery přes
 `SIGUSR1`, projde jejich zásobníky a po sweepu je probudí.
+
+## Převody Float a paměť
+
+`String(Float)` v 0.6.5 hledá nejkratší round-trip zápis pomocí stackového
+kandidáta a porovnání raw IEEE-754 bitů. Korekční ani zkracovací smyčka proto
+nevytváří pomocný heapový String a Float pro každý pokus. Veřejný
+`Float(String)` při čtení číslic mutuje jeden privátní akumulátor.
+
+Dlouhá smyčka s opakovaným formátováním může vytvářet výsledné Stringy, ale
+runtime po kombinaci alespoň 256 převodů a růstu registru objektů o 4 096
+adres spustí omezenou kolekci. Reprodukce se 60 000 převody tak drží RSS kolem
+31 MiB místo přibližně 5,1 GiB. Pro numerické hot pathy přesto dál preferujte
+`FloatArray` bulk kernely; optimalizace převodu není náhradou za neboxovaná
+pole.
 
 ## Benchmarking
 

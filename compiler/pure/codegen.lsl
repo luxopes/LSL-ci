@@ -2716,6 +2716,32 @@ function emit_expression(generator, syntax):
                     call assembler.relative(output, [232], "runtime_box_dynamic_int")
                 end
                 return
+            elif target["name"] == "__lsl_float_accumulate":
+                call emit_expression(generator, syntax["arguments"][0])
+                call assembler.emit(output, x86_64.push(0))
+                call emit_expression(generator, syntax["arguments"][1])
+                if infer_expression_type(syntax["arguments"][1], generator["types"], generator["function_returns"]) == "Any":
+                    call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                    call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+                end
+                call assembler.emit(output, x86_64.move_reg_reg(6, 0))
+                call assembler.emit(output, x86_64.pop(7))
+                call assembler.relative(output, [232], "runtime_float_accumulate")
+                return
+            elif target["name"] == "__lsl_float_candidate_bits":
+                for argument in syntax["arguments"]:
+                    call emit_expression(generator, argument)
+                    if infer_expression_type(argument, generator["types"], generator["function_returns"]) == "Any":
+                        call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                        call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+                    end
+                    call assembler.emit(output, x86_64.push(0))
+                end
+                call assembler.emit(output, x86_64.pop(2))
+                call assembler.emit(output, x86_64.pop(6))
+                call assembler.emit(output, x86_64.pop(7))
+                call assembler.relative(output, [232], "runtime_float_candidate_bits")
+                return
             elif target["name"] == "__lsl_float_string":
                 call emit_expression(generator, syntax["arguments"][0])
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
@@ -2872,6 +2898,11 @@ function emit_expression(generator, syntax):
                 elif argument_type == "Float":
                     format_float_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_format_float"}, "arguments": syntax["arguments"]}
                     call emit_expression(generator, format_float_call)
+                    # Root the returned String while a bounded post-format GC
+                    # reclaims the formatter's temporary Float/String objects.
+                    call assembler.emit(output, x86_64.push(0))
+                    call assembler.relative(output, [232], "runtime_maybe_gc")
+                    call assembler.emit(output, x86_64.pop(0))
                 elif argument_type == "Int":
                     call emit_expression(generator, syntax["arguments"][0])
                     call assembler.emit(output, x86_64.move_reg_reg(7, 0))
@@ -3476,7 +3507,7 @@ function emit_expression(generator, syntax):
                 call assembler.label(output, done_label)
                 return
             elif target["name"] == "help":
-                call emit_static_write(generator, "Lux Simple Lang (LSL) 0.6.4" + chr(10) + "functions: print printl input for loop safe if elif else try class ctype function type del len abs sqrt help" + chr(10) + "types: Bool Int Float String List Tuple RealArray IntArray FloatArray ByteArray Dictionary" + chr(10) + "modules: os time json process config ai tensor cuda native math bigint" + chr(10) + "docs: see README.md and docs/" + chr(10))
+                call emit_static_write(generator, "Lux Simple Lang (LSL) 0.6.5" + chr(10) + "functions: print printl input for loop safe if elif else try class ctype function type del len abs sqrt help" + chr(10) + "types: Bool Int Float String List Tuple RealArray IntArray FloatArray ByteArray Dictionary" + chr(10) + "modules: os time json process config ai tensor cuda native math bigint" + chr(10) + "docs: see README.md and docs/" + chr(10))
                 call assembler.emit(output, x86_64.mov_imm64(0, 0))
                 return
             elif target["name"] == "abs":
@@ -4086,6 +4117,7 @@ function emit_print_value(generator, expression):
             call emit_expression(generator, format_float_call)
             call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
             call assembler.relative(generator["builder"], [232], "runtime_print_string")
+            call assembler.relative(generator["builder"], [232], "runtime_maybe_gc")
             return
         end
         call emit_expression(generator, expression)
@@ -5567,7 +5599,8 @@ function generate(path, source, program):
     # State uses bytes 0..191: 0..95 runtime, 96/104 futex mutexes, 112 thread
     # table, 120 main stack top, 128 gc gate, 136 threads flag, 160..183 the
     # main thread's thread-local block (fs base: pending error, error flag,
-    # stack top); then the program globals (globals_bytes) and the 1 MiB
+    # stack top), 144 the next bounded-GC object threshold and 152 its Float
+    # formatting counter; then the program globals (globals_bytes) and the 1 MiB
     # String-intern table, all on brk; the object registry starts small in
     # mmap.
     call assembler.emit(output, x86_64.lea_base(9, 3, 192 + globals_bytes))

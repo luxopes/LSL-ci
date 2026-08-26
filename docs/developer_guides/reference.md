@@ -1,6 +1,6 @@
 # 📋 Referenční příručka všech funkcí LSL
 
-Kompletní seznam všech funkcí, metod a built-in příkazů jazyka LSL 0.6.
+Kompletní seznam všech funkcí, metod a built-in příkazů jazyka LSL 0.6.5.
 Každá položka obsahuje název, signaturu a stručný popis.
 
 ---
@@ -63,6 +63,8 @@ Každá položka obsahuje název, signaturu a stručný popis.
 | `~a` | Bitový NOT, tedy jedničkový doplněk. |
 | `a << b` | Posun vlevo; `b >= 64` dává `0`, záporné `b` vyvolá `ValueError`. |
 | `a >> b` | Aritmetický posun vpravo, tedy `a // 2^b`; `b >= 64` dává `0` nebo `-1` podle znaménka. |
+| `popcount(x)` | Vrátí počet jedničkových bitů raw 64bitového `Int`. |
+| `trailing_zeros(x)` | Vrátí počet nulových bitů zprava; pro `0` vrací `64`. |
 
 Operandy musí být `Int` nebo `Bool`, výsledek je vždy `Int`. Literály lze psát
 s prefixem `0x`, `0o` nebo `0b`. Složená přiřazení `&=`, `|=`, `~=`, `<<=`
@@ -80,6 +82,18 @@ a `>>=` fungují stejně jako `+=`.
 | Funkce | Popis |
 |---|---|
 | `clock()` | Vrátí monotónní čas v sekundách (Float). |
+
+### <span class="badge badge-builtin">VLÁKNA</span> Vlákna a atomické operace
+
+| Funkce | Popis |
+|---|---|
+| `cpu_count()` | Vrátí počet CPU v affinity masce procesu; při chybě `1`. |
+| `thread_spawn(function)` | Spustí bezargumentovou funkci ve sdíleném worker vláknu a vrátí tid, nebo `-1`. |
+| `thread_join(tid)` | Počká na worker; vrátí `0`, nebo `126` pro neznámý tid. |
+| `atomic_add(array, index, delta)` | Atomicky přičte `delta` do slotu `IntArray` a vrátí původní hodnotu. |
+| `atomic_xchg(array, index, value)` | Atomicky vymění slot `IntArray` a vrátí původní hodnotu. |
+| `atomic_cas(array, index, expected, desired)` | Provede compare-and-swap a vrátí původní hodnotu slotu. |
+| `atomic_pause()` | Vloží CPU pause pro čekací spin smyčku. |
 
 ### <span class="badge badge-builtin">SOUBORY</span> Soubory (textové)
 

@@ -1,6 +1,6 @@
 # Lux Simple Lang (LSL)
 
-LSL 0.6.4 je self-hostovaný jazyk pro běžné programování, deklarativní
+LSL 0.6.5 je self-hostovaný jazyk pro běžné programování, deklarativní
 konfiguraci, AI orchestrace a volitelné CUDA výpočty. Compiler i host runtime
 jsou pouze LSL: compiler přímo zapisuje statický Linux x86_64 ELF a runtime
 používá přímé syscalls, bez libc, assembleru, linkeru, Pythonu nebo shell
@@ -10,17 +10,17 @@ pure-LSL a Tensor používá CPU fallback.
 
 ## Self-hosted vydání
 
-LSL 0.6.4 je nejnovější vydání. Binární balík pro Linux x86_64, zdrojový archiv
+LSL 0.6.5 je nejnovější vydání. Binární balík pro Linux x86_64, zdrojový archiv
 a kompletní český manuál jsou na
-[lsl25.netlify.app](https://lsl25.netlify.app/). Stabilní manuály obou verzí
+[lsl25.netlify.app](https://lsl25.netlify.app/). Stabilní manuály vydání
 jsou v [historii vydání](https://lsl25.netlify.app/releases/):
 
-- [LSL 0.6](https://lsl25.netlify.app/releases/0.6/) — Lux Stringy, aliasy
-  modulů, další optimalizace a skutečné CUDA Runtime kernely; údržbové
-  vydání 0.6.1 k nim přidává bitové operátory a literály `0x`/`0o`/`0b` a
-  0.6.2 zrychluje typované `IntArray` hot pathy a rekurzivní specializaci a
-  0.6.3 přidává přímé Boolean větvení, levnější volání a RMW optimalizace a
-  0.6.4 sdílená vlákna `thread_spawn`/`thread_join` a SSE2 FloatArray kernely;
+- [LSL 0.6.5](https://lsl25.netlify.app/releases/0.6.5/) — aktuální manuál;
+  bitové operace, rychlé typované `IntArray` hot pathy, sdílená vlákna,
+  SSE2 FloatArray kernely, registrový Int codegen a paměťově omezené
+  round-trip převody Float;
+- [LSL 0.6](https://lsl25.netlify.app/releases/0.6/) — původní stabilní
+  snapshot s Lux Stringy, aliasy modulů a skutečnými CUDA Runtime kernely;
 - [LSL 0.5](https://lsl25.netlify.app/releases/0.5/) — první veřejné
   self-hosted vydání.
 
@@ -132,12 +132,13 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 - [Dependency manifest config.lconf](docs/lconf.md)
 - [Native/plugin ABI](docs/native-plugins.md)
 - [CUDA backend a worker protokol](docs/cuda.md)
+- [Poznámky k lokálnímu vydání 0.6.5](docs/release-0.6.5.md)
 - [Poznámky k lokálnímu vydání 0.6.4](docs/release-0.6.4.md)
 - [Poznámky k lokálnímu vydání 0.6.3](docs/release-0.6.3.md)
 - [Poznámky k lokálnímu vydání 0.6.2](docs/release-0.6.2.md)
 - [Poznámky k lokálnímu vydání 0.6.1](docs/release-0.6.1.md)
 - [Poznámky k lokálnímu vydání 0.6](docs/release-0.6.md)
-- [Datovaný changelog 0.5, 0.6 a 0.6.1](docs/developer_guides/CHANGELOG.md)
+- [Datovaný changelog všech vydání](docs/developer_guides/CHANGELOG.md)
 - [Webová historie stabilních manuálů](docs/developer_guides/releases/index.html)
 - [Linux target](docs/linux.md)
 

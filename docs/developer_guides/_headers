@@ -18,3 +18,9 @@
 
 /releases/0.5/downloads/*
   Cache-Control: public, max-age=31536000, immutable
+
+/releases/0.6/downloads/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/releases/0.6.5/downloads/*
+  Cache-Control: public, max-age=31536000, immutable

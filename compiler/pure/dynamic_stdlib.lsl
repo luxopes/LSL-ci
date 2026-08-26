@@ -339,6 +339,12 @@ function __lsl_sum(values):
     return result
 end
 
+function __lsl_float_accumulate(value, digit):
+    # Bootstrap fallback. New codegens mutate the parser's private accumulator
+    # Float in place, avoiding two fresh boxes for every decimal digit.
+    return value * 10.0 + __lsl_float_from_int(__lsl_typed_int(digit))
+end
+
 function __lsl_parse_float(text):
     normalized = __lsl_lower(text)
     if normalized == "nan" or normalized == "+nan" or normalized == "-nan":
@@ -356,8 +362,8 @@ function __lsl_parse_float(text):
     elif len(text) > 0 and text[0] == "+":
         index = 1
     end
-    value = 0.0
-    fraction_scale = 1.0
+    value = __lsl_float_from_int(0)
+    fraction_scale = __lsl_float_from_int(1)
     after_dot = False
     exponent = 0
     exponent_negative = False
@@ -375,10 +381,10 @@ function __lsl_parse_float(text):
                 exponent_digits += 1
                 exponent_sign_allowed = False
             else:
-                value = value * 10.0 + Float(digit)
+                value = __lsl_float_accumulate(value, digit)
                 digits += 1
                 if after_dot:
-                    fraction_scale *= 10.0
+                    fraction_scale = __lsl_float_accumulate(fraction_scale, 0)
                 end
             end
         elif character == "." and not after_dot and not in_exponent:
@@ -409,10 +415,10 @@ function __lsl_parse_float(text):
         if step > 22:
             step = 22
         end
-        scale = 1.0
+        scale = __lsl_float_from_int(1)
         counter = 0
         while counter < step:
-            scale *= 10.0
+            scale = __lsl_float_accumulate(scale, 0)
             counter += 1
         end
         if exponent_negative:
@@ -465,6 +471,23 @@ function __lsl_float_candidate(significand, digit_count, exponent):
         return result + "e+" + __lsl_int_to_string(exponent)
     end
     return result + "e-" + __lsl_int_to_string(-exponent)
+end
+
+function __lsl_float_candidate_bits(significand, digit_count, exponent):
+    # Bootstrap fallback. New codegens recognize this helper as an intrinsic
+    # and build/parse the candidate entirely in a native stack buffer.
+    return __lsl_float_bits(__lsl_parse_float(__lsl_float_candidate(significand, digit_count, exponent)))
+end
+
+function __lsl_decimal_digits_match(value, digit_count):
+    if digit_count == 1:
+        return value >= 0 and value < 10
+    end
+    lower = 1
+    for index in rang(digit_count - 1):
+        lower *= 10
+    end
+    return value >= lower and value < lower * 10
 end
 
 function __lsl_render_float_digits(significand, digit_count, exponent, negative):
@@ -589,13 +612,12 @@ function __lsl_format_float(value):
     # unreachable through the parser; the closer bracketing side then wins
     # instead of failing the whole format.
     attempts = 0
-    candidate = __lsl_float_candidate(significand, 17, exponent)
-    parsed = __lsl_parse_float(candidate)
-    while __lsl_float_bits(parsed) != target_bits and attempts < 300:
+    parsed_bits = __lsl_float_candidate_bits(significand, 17, exponent)
+    while parsed_bits != target_bits and attempts < 300:
         previous_significand = significand
         previous_exponent = exponent
-        previous_parsed = parsed
-        if parsed < value:
+        previous_bits = parsed_bits
+        if parsed_bits < target_bits:
             significand += 1
         else:
             significand -= 1
@@ -607,30 +629,29 @@ function __lsl_format_float(value):
             significand = significand * 10 + 9
             exponent -= 1
         end
-        candidate = __lsl_float_candidate(significand, 17, exponent)
-        parsed = __lsl_parse_float(candidate)
+        parsed_bits = __lsl_float_candidate_bits(significand, 17, exponent)
         attempts += 1
-        if __lsl_float_bits(parsed) != target_bits:
+        if parsed_bits != target_bits:
             crossed = False
-            if previous_parsed < value and parsed > value:
-                low_parsed = previous_parsed
+            if previous_bits < target_bits and parsed_bits > target_bits:
+                low_bits = previous_bits
                 low_significand = previous_significand
                 low_exponent = previous_exponent
-                high_parsed = parsed
+                high_bits = parsed_bits
                 high_significand = significand
                 high_exponent = exponent
                 crossed = True
-            elif previous_parsed > value and parsed < value:
-                low_parsed = parsed
+            elif previous_bits > target_bits and parsed_bits < target_bits:
+                low_bits = parsed_bits
                 low_significand = significand
                 low_exponent = exponent
-                high_parsed = previous_parsed
+                high_bits = previous_bits
                 high_significand = previous_significand
                 high_exponent = previous_exponent
                 crossed = True
             end
             if crossed:
-                if value - low_parsed <= high_parsed - value:
+                if target_bits - low_bits <= high_bits - target_bits:
                     significand = low_significand
                     exponent = low_exponent
                 else:
@@ -648,10 +669,8 @@ function __lsl_format_float(value):
         next_count = digit_count - 1
         matched = False
         rounded = (significand + 5) // 10
-        rounded_text = __lsl_int_to_string(rounded)
-        if len(rounded_text) == next_count:
-            rounded_candidate = __lsl_float_candidate(rounded, next_count, exponent)
-            if __lsl_float_bits(__lsl_parse_float(rounded_candidate)) == target_bits:
+        if __lsl_decimal_digits_match(rounded, next_count):
+            if __lsl_float_candidate_bits(rounded, next_count, exponent) == target_bits:
                 significand = rounded
                 digit_count = next_count
                 matched = True
@@ -659,10 +678,8 @@ function __lsl_format_float(value):
         end
         if not matched:
             lower = significand // 10
-            lower_text = __lsl_int_to_string(lower)
-            if len(lower_text) == next_count:
-                lower_candidate = __lsl_float_candidate(lower, next_count, exponent)
-                if __lsl_float_bits(__lsl_parse_float(lower_candidate)) == target_bits:
+            if __lsl_decimal_digits_match(lower, next_count):
+                if __lsl_float_candidate_bits(lower, next_count, exponent) == target_bits:
                     significand = lower
                     digit_count = next_count
                     matched = True

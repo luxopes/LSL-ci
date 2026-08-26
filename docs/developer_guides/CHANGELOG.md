@@ -4,8 +4,20 @@ Na této stránce jsou uživatelsky významné změny vydaných verzí. Stabiln�
 manuály a soubory ke stažení zůstávají dostupné v
 [historii vydání](/releases/).
 
-## Nevydáno
+## 0.6.5 — 26. 8. 2026
 
+Výkonnostní a stabilizační vydání zaměřené na celočíselný codegen a
+paměťovou náročnost převodů Float.
+
+- `String(Float)` ověřuje a zkracuje desetinné kandidáty přes nativní
+  stackový buffer a porovnání raw IEEE-754 bitů, bez dočasných heapových
+  Float/String objektů pro každý pokus. Omezovaná post-format GC se spustí až
+  po 256 formátováních a růstu registru o 4 096 adres, takže dlouhé konverzní
+  smyčky drží paměť, ale krátké smíšené programy nedostanou globální GC pauzu.
+  Veřejný `Float(String)` navíc mutuje jeden privátní akumulátor místo dvou
+  nových Float boxů na číslici, při zachování původních IEEE bitů a chyb.
+  Původní reprodukce (60 000 převodů) klesla z přibližně 5,1 GiB na 31 MiB;
+  nový `float_format_allocation_conformance` hlídá správnost i růst tabulky.
 - `cpu_count()`: počet CPU v affinity masce procesu (`sched_getaffinity`), pro dimenzování worker poolů.
 - Posuny s proměnným počtem (`x << n`, `x >> n`) jsou součástí registrového
   emitoru: jedna bezznaménková kontrola `n > 63` na horké cestě, záporný
@@ -201,5 +213,6 @@ První veřejné self-hosted vydání LSL.
 
 ## Odkazy na stabilní manuály
 
+- [LSL 0.6.5 — manuál a soubory ke stažení](/releases/0.6.5/)
 - [LSL 0.6 — manuál a soubory ke stažení](/releases/0.6/)
 - [LSL 0.5 — historický manuál a soubory ke stažení](/releases/0.5/)
