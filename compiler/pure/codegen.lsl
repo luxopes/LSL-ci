@@ -316,8 +316,13 @@ function collect_types(statements, types, function_returns):
                 end
             end
             iterable_type = infer_expression_type(for_iterable, types, function_returns)
+            # Hidden loop controls are ordinary locals in current codegen.
+            # Give their unboxed integer values types so the register-local
+            # allocator can keep hot counters and explicit steps off-stack.
+            types[statement["index_name"]] = "Int"
             if for_is_range:
                 types[statement["name"]] = "Int"
+                types[statement["iterator_name"]] = "Int"
             elif iterable_type == "String":
                 types[statement["name"]] = "String"
             elif iterable_type == "IntArray":
@@ -986,7 +991,7 @@ function repeated_fast_intarray(generator, syntax):
 end
 
 function local_register(generator, name):
-    # Register-resident locals map to callee-saved r13/r14/r15; -1 otherwise.
+    # Register-resident locals map to callee-saved r12-r15; -1 otherwise.
     registers = generator.get("register_locals", {})
     if name in registers:
         return registers[name]
@@ -1024,7 +1029,7 @@ end
 
 function scan_local_uses(node, counts, excluded, weight, ranges, clock):
     # Weighted name use counts, the names codegen addresses by stack slot
-    # directly (for-loop variables, class slots, deleted names), and live
+    # directly (class slots and deleted names), and live
     # intervals ranges[name] = [first, last] over a statement clock (clock[0]
     # advances per statement; names used inside a loop are widened to the
     # whole loop so a register can only be shared by disjoint lifetimes).
@@ -1066,9 +1071,30 @@ function scan_local_uses(node, counts, excluded, weight, ranges, clock):
     if kind == "while" or kind == "loop" or kind == "for":
         body_weight = weight * 4
         if kind == "for":
-            excluded[node["name"]] = True
-            excluded[node["iterator_name"]] = True
-            excluded[node["index_name"]] = True
+            for_is_range = False
+            for_iterable = node["iterable"]
+            if for_iterable["kind"] == "call":
+                if for_iterable["target"]["kind"] == "name":
+                    if for_iterable["target"]["name"] == "rang" or for_iterable["target"]["name"] == "range":
+                        for_is_range = True
+                    end
+                end
+            end
+            if for_is_range:
+                # These accesses are synthesized by emit_statements and do
+                # not otherwise appear as name nodes in the source AST.
+                call scan_local_uses({"kind": "name", "name": node["name"]}, counts, excluded, body_weight * 3, ranges, clock)
+                call scan_local_uses({"kind": "name", "name": node["iterator_name"]}, counts, excluded, body_weight, ranges, clock)
+                if len(for_iterable["arguments"]) == 3:
+                    call scan_local_uses({"kind": "name", "name": node["index_name"]}, counts, excluded, body_weight * 2, ranges, clock)
+                end
+            else:
+                # Collection objects must remain visible to the stack-scanning
+                # GC. Their unboxed index and item value are safe in registers.
+                excluded[node["iterator_name"]] = True
+                call scan_local_uses({"kind": "name", "name": node["index_name"]}, counts, excluded, body_weight * 4, ranges, clock)
+                call scan_local_uses({"kind": "name", "name": node["name"]}, counts, excluded, body_weight, ranges, clock)
+            end
         end
     elif kind == "class":
         excluded[node["name"]] = True
@@ -1076,6 +1102,12 @@ function scan_local_uses(node, counts, excluded, weight, ranges, clock):
         if node["target"]["kind"] == "name":
             excluded[node["target"]["name"]] = True
         end
+    end
+    # A compound assignment reads and then writes its target. Count that
+    # second access so a loop-carried accumulator reaches the same register
+    # threshold as the equivalent `value = value + expression` form.
+    if kind == "assign" and node["operator"] != "=":
+        call scan_local_uses(node["target"], counts, excluded, weight, ranges, clock)
     end
     for field in ["target", "value", "condition", "expression", "iterable", "left", "right", "operand", "index", "start", "stop", "step", "message", "parent"]:
         if field in node:
@@ -1116,7 +1148,7 @@ end
 
 function choose_register_locals(declaration, variables, types):
     # Statically Int/Bool locals (parameters included) with weighted use count
-    # >= 8 get r13/r14/r15; a register is shared by locals whose live
+    # >= 8 get r12-r15; a register is shared by locals whose live
     # intervals (statement clock, loops widened) do not overlap, hottest
     # first.
     counts = {}
@@ -4538,7 +4570,8 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 call assembler.relative(generator["builder"], [232], "runtime_unbox_dynamic_int")
             end
             call emit_store_local(generator, stop_name, 0)
-            if len(arguments) == 3:
+            explicit_step = len(arguments) == 3
+            if explicit_step:
                 step_syntax = arguments[2]
                 step_type = infer_expression_type(step_syntax, generator["types"], generator["function_returns"])
                 if step_type != "Int" and step_type != "Any":
@@ -4551,17 +4584,16 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                     call emit_pending_error(generator)
                 end
                 call emit_store_local(generator, step_name, 0)
-            else:
-                call assembler.emit(generator["builder"], x86_64.mov_imm64(0, 1))
-                call emit_store_local(generator, step_name, 0)
             end
-            rang_step_ready = label_name(generator, "rang_step_ready")
-            call emit_load_local(generator, 0, step_name)
-            call assembler.emit(generator["builder"], x86_64.cmp_reg_imm8(0, 0))
-            call assembler.relative(generator["builder"], [15, 133], rang_step_ready)
-            rang_source_path = statement.get("path", generator["path"])
-            call emit_runtime_raise(generator, "ValueError: rang step cannot be zero at " + rang_source_path + ":" + String(statement["line"]))
-            call assembler.label(generator["builder"], rang_step_ready)
+            if explicit_step:
+                rang_step_ready = label_name(generator, "rang_step_ready")
+                call emit_load_local(generator, 0, step_name)
+                call assembler.emit(generator["builder"], x86_64.cmp_reg_imm8(0, 0))
+                call assembler.relative(generator["builder"], [15, 133], rang_step_ready)
+                rang_source_path = statement.get("path", generator["path"])
+                call emit_runtime_raise(generator, "ValueError: rang step cannot be zero at " + rang_source_path + ":" + String(statement["line"]))
+                call assembler.label(generator["builder"], rang_step_ready)
+            end
             start_label = label_name(generator, "for_start")
             positive_check = label_name(generator, "for_positive_check")
             body_label = label_name(generator, "for_body")
@@ -4570,21 +4602,27 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             call assembler.label(generator["builder"], start_label)
             call emit_load_local(generator, 0, loop_name)
             call emit_load_local(generator, 1, stop_name)
-            call emit_load_local(generator, 2, step_name)
-            call assembler.emit(generator["builder"], x86_64.cmp_reg_imm8(2, 0))
-            call assembler.relative(generator["builder"], [15, 143], positive_check)
-            call assembler.emit(generator["builder"], x86_64.cmp_reg_reg(0, 1))
-            call assembler.relative(generator["builder"], [15, 142], end_label)
-            call assembler.relative(generator["builder"], [233], body_label)
-            call assembler.label(generator["builder"], positive_check)
+            if explicit_step:
+                call emit_load_local(generator, 2, step_name)
+                call assembler.emit(generator["builder"], x86_64.cmp_reg_imm8(2, 0))
+                call assembler.relative(generator["builder"], [15, 143], positive_check)
+                call assembler.emit(generator["builder"], x86_64.cmp_reg_reg(0, 1))
+                call assembler.relative(generator["builder"], [15, 142], end_label)
+                call assembler.relative(generator["builder"], [233], body_label)
+                call assembler.label(generator["builder"], positive_check)
+            end
             call assembler.emit(generator["builder"], x86_64.cmp_reg_reg(0, 1))
             call assembler.relative(generator["builder"], [15, 141], end_label)
             call assembler.label(generator["builder"], body_label)
             call emit_statements(generator, statement["body"], end_label, continue_target, return_label)
             call assembler.label(generator["builder"], continue_target)
             call emit_load_local(generator, 0, loop_name)
-            call emit_load_local(generator, 1, step_name)
-            call assembler.emit(generator["builder"], x86_64.add_reg_reg(0, 1))
+            if explicit_step:
+                call emit_load_local(generator, 1, step_name)
+                call assembler.emit(generator["builder"], x86_64.add_reg_reg(0, 1))
+            else:
+                call assembler.emit(generator["builder"], x86_64.increment(0))
+            end
             call emit_store_local(generator, loop_name, 0)
             call assembler.relative(generator["builder"], [233], start_label)
             call assembler.label(generator["builder"], end_label)

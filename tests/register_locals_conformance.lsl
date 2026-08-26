@@ -51,9 +51,31 @@ function wide(a, b, c, d, e, f, g, h):
     return sum
 end
 
+function registered_range_sum(limit):
+    total = 0
+    for index in rang(limit):
+        total += index
+    end
+    return total
+end
+
+function registered_intarray_sum(values):
+    total = 0
+    for value in values:
+        total += value
+    end
+    return total
+end
+
 print outer(5, 7)
 print depth(10, 1)
 print wide(1, 2, 3, 4, 5, 6, 7, 8)
+print registered_range_sum(8)
+registered_values = IntArray()
+registered_values.append(3)
+registered_values.append(4)
+registered_values.append(5)
+print registered_intarray_sum(registered_values)
 try:
     print inner(100000, 1)
 else:

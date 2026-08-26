@@ -949,6 +949,20 @@ full suite a fixed point prošly. Release 0.6.5 má compiler fixed point
 `84adb2928bdb9115a4949906319b7845e111c165eb1f075c38754f7f3def3fca` a CLI hash
 `b76b88da7bd434006c5b63a9f84efb7b6ef719d9982107a774d9533b663b06ae`.
 
+Následná optimalizace `for` smyček odstranila zastaralé vyloučení jejich
+skalárních řídicích proměnných z alokace registrů. Analýza nyní započítává i
+syntetická čtení/zápisy čítače, indexu a explicitního kroku a složené
+přiřazení počítá jako čtení i zápis. `rang(stop)` a `rang(start, stop)` mají
+přímou kladnou větev s inkrementem o jedna bez zásobníkového step slotu a
+testu znaménka. Na 1 000 000 000 iteracích se zachovaným checksumem klesl
+medián aritmetické `rang` smyčky z 2,13 s na 0,83 s; jednoduchý součet
+čítače z 1,67 s na 0,58 s a user CPU self-host kompilace z 2,09 s na 1,97 s.
+Regrese pokrývá `rang` i `IntArray` iteraci. Tři stage dosáhly bitového fixed
+pointu, fast/full suite, instalovaná kopie, config a audit všech regenerovaných
+ELF prošly. Compiler fixed point je
+`69b6cf41fdb8c3bfb2a9ca968d55dcc389e2f5e5df77dcf2f330512c0b7036d4` a CLI hash
+`82027c3ee96ba078eb23499412b03fee78e3e4f08649b2b3da568810c97e88cb`.
+
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,
 collections, GC robustnost, syscall I/O, native/tensor ABI, AI vrstva,
