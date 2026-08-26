@@ -1,6 +1,6 @@
 # 📋 Referenční příručka všech funkcí LSL
 
-Kompletní seznam všech funkcí, metod a built-in příkazů jazyka LSL 0.6.6.
+Kompletní seznam všech funkcí, metod a built-in příkazů jazyka LSL 0.6.7.
 Každá položka obsahuje název, signaturu a stručný popis.
 
 ---
@@ -131,7 +131,9 @@ a `>>=` fungují stejně jako `+=`.
 | `capture(program, arguments)` | Spustí program a vrátí jeho stdout jako String. |
 | `capture_stream(program, arguments, callback)` | Spustí program a streamuje výstup po částech do callbacku. |
 | `capture_input(program, arguments, input_text)` | Spustí program, pošle mu vstup, vrátí stdout. |
-| `capture_status()` | Vrátí exit status posledního `capture()` volání. |
+| `capture_input_stream(program, arguments, input_text, callback)` | Současně pošle stdin a streamuje stdout do callbacku. |
+| `capture_status()` | Vrátí exit status posledního `capture*()` volání. |
+| `capture_stderr()` | Vrátí stderr posledního `capture*()` volání. |
 | `exit(status)` | Ukončí program s daným exit kódem. |
 
 ### <span class="badge badge-builtin">CHYBY</span> Chybové
@@ -315,7 +317,7 @@ print number.power(2).text()
 | Funkce | Popis |
 |---|---|
 | `http.get(url)` | HTTP GET, vrátí `{status, text, ok}`. |
-| `http.post(url, body, headers, timeout)` | HTTP POST, `body` se automaticky serializuje (pokud je Dict/List). |
+| `http.post(url, body, headers, timeout)` | HTTPS POST (HTTP jen loopback); `body` se automaticky serializuje a s hlavičkami jde curlu přes stdin. |
 | `http.post_stream(url, body, headers, timeout, on_chunk)` | Streamovaný POST — `on_chunk(chunk)` je callback. |
 
 ### <span class="badge badge-module">env</span> env — proměnné prostředí
@@ -355,8 +357,10 @@ print number.power(2).text()
 |---|---|
 | `process.capture_result(program, arguments)` | Spustí program, vrátí `{stdout, stderr, status, ok}`. |
 | `process.capture_input_result(program, arguments, input_text)` | Jako `capture_result`, ale pošle programu vstup. |
+| `process.capture_input_stream_result(program, arguments, input_text, callback)` | Pošle stdin, streamuje stdout a vrátí strukturovaný výsledek. |
 | `process.check(program, arguments)` | Spustí, vrátí stdout; při nenulovém statusu `ProcessError`. |
 | `process.check_input(program, arguments, input_text)` | Jako `check`, ale s poslaným vstupem. |
+| `process.check_input_stream(program, arguments, input_text, callback)` | Jako `check_input`, současně předává stdout callbacku. |
 
 ### <span class="badge badge-module">system</span> system — správa systému (LuxOS/Debian)
 
@@ -595,7 +599,7 @@ print number.power(2).text()
 
 | Funkce | Popis |
 |---|---|
-| `native.open(path)` | Načte self-contained ET_DYN image, vrátí handle. |
+| `native.open(path)` | Načte důvěryhodný self-contained ET_DYN image, vrátí handle. |
 | `native.symbol(library, name)` | Vyhledá symbol v SHT_DYNSYM, vrátí opaque Function. |
 | `native.call(func, [args...])` | Zavolá nativní funkci s max 6 Int argumenty, vrátí Int. |
 | `native.close(library)` | Uvolní nativní knihovnu. |
@@ -604,8 +608,9 @@ print number.power(2).text()
 
 | Funkce | Popis |
 |---|---|
-| `plugin.request(executable, operation, payload)` | Spustí plugin jako proces, komunikuje přes JSON argv/stdout. |
-| `plugin.request_input(executable, operation, payload)` | Jako `request`, ale JSON posílá přes stdin i nad limitem jednoho argv. |
+| `plugin.request(executable, operation, payload)` | Spustí plugin jako proces, komunikuje přes JSON stdin/stdout a kontroluje exit status. |
+| `plugin.request_input(executable, operation, payload)` | Kompatibilní alias `request`. |
+| `plugin.request_argv(executable, operation, payload)` | Legacy argv transport; nepoužívat pro secrets. |
 
 ### <span class="badge badge-module">cuda</span> cuda — volitelný CUDA backend
 

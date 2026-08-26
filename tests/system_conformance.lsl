@@ -1,6 +1,6 @@
 load system
 
-manager = "/tmp/lsl-system-package-server"
+manager = arg(1) + "/system-package-server"
 print system.install_with("lux-editor", manager, manager)
 print system.install_with("lux-solo", manager, None)
 print system.install_with("git", manager, manager)

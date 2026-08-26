@@ -967,6 +967,21 @@ corpus zůstaly stabilní. Ve vydání 0.6.6 je compiler fixed point
 `326db5b802778fefc6fd6e81f1741544c542446811ca9f32d5d2cf28d02f434b` a CLI hash
 `821c00d035cfd9941e95eafcc898a392c1cf2a3aa5831e0485413653a2f594aa`.
 
+Vydání 0.6.7 převádí všechny generované executable na statické PIE `ET_DYN` s
+nulovou bází, jediným RX `PT_LOAD` a explicitním RW `PT_GNU_STACK`; opakovaná
+spuštění mají rozdílný ASLR load bias. HTTP request config včetně secrets a
+těla jde curlu přes stdin, vzdálené URL vyžadují HTTPS a hlavičky mají striktní
+validaci. `capture_input_stream` kombinuje stdin se stream callbackem;
+`plugin.request` používá JSON stdin, kontroluje exit status a argv transport je
+jen explicitní legacy varianta. Native loader kontroluje map bounds a odmítá
+relocation/dynamic či nekonzistentní section/symbol data. Test runner i CLI
+používají per-process scratch cesty; dva paralelní fast suites, full suite,
+fixed point, čistá instalace, živý loopback curl test a ELF audit prošly.
+Compiler fixed point je
+`d4dd94ec7fa3f491a58ff4cf84e49a04a399363b9aa513394c2472fe9269e894`, CLI
+hash je
+`305f1a00d50566a76422e2a8388a4f31d6eb9619c9f94a0fd8efac44efa93e1a`.
+
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,
 collections, GC robustnost, syscall I/O, native/tensor ABI, AI vrstva,

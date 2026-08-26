@@ -1,6 +1,6 @@
 # Lux Simple Lang (LSL)
 
-LSL 0.6.6 je self-hostovaný jazyk pro běžné programování, deklarativní
+LSL 0.6.7 je self-hostovaný jazyk pro běžné programování, deklarativní
 konfiguraci, AI orchestrace a volitelné CUDA výpočty. Compiler i host runtime
 jsou pouze LSL: compiler přímo zapisuje statický Linux x86_64 ELF a runtime
 používá přímé syscalls, bez libc, assembleru, linkeru, Pythonu nebo shell
@@ -10,13 +10,15 @@ pure-LSL a Tensor používá CPU fallback.
 
 ## Self-hosted vydání
 
-LSL 0.6.6 je nejnovější vydání. Binární balík pro Linux x86_64, zdrojový
-archiv a kompatibilní český manuál jsou na
+LSL 0.6.7 je nejnovější vydání. Binární balík pro Linux x86_64, zdrojový
+archiv a aktualizovaný český manuál jsou na
 [lsl.lux-ai.cz](https://lsl.lux-ai.cz/). Stabilní manuály vydání jsou v
 [historii vydání](https://lsl.lux-ai.cz/releases/):
 
-- [LSL 0.6.6](https://lsl.lux-ai.cz/) — aktuální výkonnostní patch s
-  rychlejšími `for`/`rang` smyčkami; používá kompatibilní manuál 0.6.5;
+- [LSL 0.6.7](https://lsl.lux-ai.cz/) — statické PIE s ASLR, bezpečnější HTTP
+  a process plugin transport, zpevněný native loader a paralelně izolované
+  testy;
+- LSL 0.6.6 — výkonnostní patch s rychlejšími `for`/`rang` smyčkami;
 - [LSL 0.6.5](https://lsl.lux-ai.cz/releases/0.6.5/) — stabilní manuál;
   bitové operace, rychlé typované `IntArray` hot pathy, sdílená vlákna,
   SSE2 FloatArray kernely, registrový Int codegen a paměťově omezené
@@ -42,7 +44,11 @@ Datovaný přehled změn je v
 ./compiler/lslc program.lsl program
 ```
 
-`lsl` i `compiler/lslc` jsou LSL-generované ELF soubory. Výstup compileru je statický syscall-only ELF bez section headeru a bez dynamic interpreteru. Bez argumentů `lsl` na terminálu zobrazí `>>>`, sbírá jednu společnou translation unit do řádku `exit` a pak ji přeloží/spustí. Pipe skončí prostým EOF a nepotřebuje `exit`:
+`lsl` i `compiler/lslc` jsou LSL-generované statické PIE ELF soubory. Výstup
+compileru má ASLR, jediný RX LOAD, neproveditelný stack, žádný section header
+ani dynamic interpreter. Bez argumentů `lsl` na terminálu zobrazí `>>>`, sbírá
+jednu společnou translation unit do řádku `exit` a pak ji přeloží/spustí. Pipe
+skončí prostým EOF a nepotřebuje `exit`:
 
 ```text
 printf 'print 6 * 7\n' | ./lsl
@@ -113,7 +119,7 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 - statické aliasy modulů (`load tensor as t`), first-class interpolované Lux
   Stringy, knihovní `BigInt`, rozšířený modul `math` a vestavěné `sqrt`;
 - conservative stack/global-root mark-sweep GC s reusable free-list;
-- JSON, strict `config.lconf` dependency codec pro zdroje apt/lux/lsl, čistý config evaluator, LuxOS/Debian modul `system` pro balíčky, služby, uživatele, atomické soubory, mounty a generace/rollback, wall/monotonic time a sleep, filesystem, argv, environment, bezpečné `os.run("ls -al")`, process/capture, HTTP(S) přes bezpečné `curl` argv, verzované JSON process plugin ABI bez shellu a skutečný NVIDIA CUDA worker se sum/dot/AXPY/matmul kernely a binárním Float64 transportem;
+- JSON, strict `config.lconf` dependency codec pro zdroje apt/lux/lsl, čistý config evaluator, LuxOS/Debian modul `system` pro balíčky, služby, uživatele, atomické soubory, mounty a generace/rollback, wall/monotonic time a sleep, filesystem, argv, environment, bezpečné `os.run("ls -al")`, process/capture, HTTP(S) přes validovaný curl config na stdin, verzované JSON-stdin process plugin ABI bez shellu a skutečný NVIDIA CUDA worker se sum/dot/AXPY/matmul kernely a binárním Float64 transportem;
 - strukturované compile errors: kód, soubor, řádek, sloupec, výřez, caret a help.
 
 `tests/selfhost_conformance.lsl` produkuje přesně `tests/selfhost_conformance.out`. Config příklad produkuje přesně `tests/config_expected.json`.
@@ -134,6 +140,7 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 - [Dependency manifest config.lconf](docs/lconf.md)
 - [Native/plugin ABI](docs/native-plugins.md)
 - [CUDA backend a worker protokol](docs/cuda.md)
+- [Poznámky k lokálnímu vydání 0.6.7](docs/release-0.6.7.md)
 - [Poznámky k lokálnímu vydání 0.6.6](docs/release-0.6.6.md)
 - [Poznámky k lokálnímu vydání 0.6.5](docs/release-0.6.5.md)
 - [Poznámky k lokálnímu vydání 0.6.4](docs/release-0.6.4.md)

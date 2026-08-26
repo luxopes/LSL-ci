@@ -249,11 +249,11 @@ print result["stdout"]
 result = process.capture_input_result("/usr/bin/sort", [], "c\na\nb\n")
 print result["stdout"]   # "a\nb\nc\n"
 
-# Streamování výstupu za běhu
+# Současné odeslání vstupu a streamování výstupu za běhu
 function handle_chunk(chunk):
     print "Přijato:", len(chunk), "bytů"
 end
-result = process.capture_stream("/usr/bin/curl", [url], handle_chunk)
+result = process.capture_input_stream_result("/usr/bin/tool", [], "request\n", handle_chunk)
 ```
 
 ### Vestavěné run()
@@ -289,7 +289,10 @@ print response["text"]
 ```
 
 HTTP transport používá systémový `/usr/bin/curl` přes `execve` — shell se
-nespouští. Parametry se předávají jako oddělené argv prvky.
+nespouští. V argv jsou pouze `--config -`; URL, request body a hlavičky včetně
+tokenů procházejí validovaným configem na stdin. Vzdálené URL musí používat
+HTTPS, plaintext HTTP je povolen jen pro loopback. Hlavičky s CR/LF nebo
+neplatným názvem jsou odmítnuté před spuštěním curlu.
 
 ## Proměnné prostředí
 

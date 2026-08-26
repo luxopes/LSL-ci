@@ -1,4 +1,4 @@
-path = "/tmp/lsl-bytearray-conformance.bin"
+path = arg(1) + "/bytearray-conformance.bin"
 bytes = ByteArray()
 bytes.append(0)
 bytes.append(65)

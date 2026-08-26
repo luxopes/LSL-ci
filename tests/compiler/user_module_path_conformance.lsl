@@ -1,6 +1,6 @@
 load linker
 
-home = "/tmp/lsl-user-module-home"
+home = arg(1) + "/user-module-home"
 call mkdir(home)
 call mkdir(home + "/.local")
 call mkdir(home + "/.local/lib")

@@ -5,7 +5,7 @@ load linker
 load package
 load parser
 
-VERSION = "0.6.6"
+VERSION = "0.6.7"
 
 function print_help():
     print "Lux Simple Lang (LSL) " + VERSION
@@ -95,27 +95,30 @@ function user_home():
     return home
 end
 
-# Scratch path for a compiled program. A fixed /tmp name is shared between
-# users: whoever creates it owns it, and the sticky bit stops anyone else
-# from replacing it, so every other account gets "cannot write file". Prefer
-# a private per-user cache and fall back to a name that carries the user.
+# Scratch path for a compiled program. Include the process id so concurrent
+# CLI invocations never overwrite or execute each other's partially written
+# ELF. Prefer a private per-user cache; without HOME, claim a private /tmp
+# directory atomically instead of following a predictable file or symlink.
 function scratch_program_path():
+    process = String(__lsl_syscall(39, 0, 0, 0, 0))
     home = __lsl_getenv("HOME")
     if home != None and home != "":
         directory = home + "/.cache/lsl"
         status = __lsl_run("/bin/mkdir", ["-p", directory])
         if status == 0:
-            return directory + "/program"
+            return directory + "/program-" + process
         end
     end
-    user = __lsl_getenv("USER")
-    if user == None or user == "":
-        user = __lsl_getenv("LOGNAME")
+    attempt = 0
+    directory = "/tmp/lsl-program-" + process
+    while mkdir(directory) != 0:
+        attempt += 1
+        if attempt > 100:
+            Error(FileError: "cannot create a private CLI scratch directory")
+        end
+        directory = "/tmp/lsl-program-" + process + "-" + String(attempt)
     end
-    if user == None or user == "":
-        user = "anon"
-    end
-    return "/tmp/lsl-program-" + user
+    return directory + "/program"
 end
 
 function read_stdin_source():
@@ -156,7 +159,9 @@ if command == None:
     end
     scratch = scratch_program_path()
     call compile_source("<stdin>", source, scratch)
-    exit(run(scratch, []))
+    status = run(scratch, [])
+    call unlink(scratch)
+    exit(status)
 end
 
 if command == "--help" or command == "-h" or command == "help":
@@ -180,7 +185,7 @@ elif command == "config":
         print "usage: lsl config ENTRY"
         exit(2)
     end
-    wrapper = dirname(entry) + "/.lsl-config-evaluator.lsl"
+    wrapper = dirname(entry) + "/.lsl-config-evaluator-" + String(__lsl_syscall(39, 0, 0, 0, 0)) + ".lsl"
     status = run(tool_path("./compiler/pure/lsl-configure", "lsl-configure"), [entry, wrapper])
     if status != 0:
         exit(status)
@@ -189,6 +194,7 @@ elif command == "config":
     call compile_file(wrapper, evaluator)
     call unlink(wrapper)
     status = run(evaluator, [])
+    call unlink(evaluator)
     exit(status)
 elif command == "install":
     name = arg(2)
@@ -226,4 +232,6 @@ while index < arg_count():
     arguments.append(arg(index))
     index += 1
 end
-exit(run(scratch, arguments))
+status = run(scratch, arguments)
+call unlink(scratch)
+exit(status)

@@ -1,10 +1,32 @@
 program = executable_path()
 
+function dirname(path):
+    index = len(path) - 1
+    while index >= 0 and path[index] != "/":
+        index -= 1
+    end
+    if index <= 0:
+        return "/"
+    end
+    return path[0:index]
+end
+
+server_root = dirname(program)
+
+function stable_argument(value):
+    if value == server_root:
+        return "/tmp"
+    elif value.startswith(server_root + "/"):
+        return "/tmp/lsl-" + value[len(server_root) + 1:len(value)]
+    end
+    return value
+end
+
 function joined_arguments():
     values = []
     index = 1
     while index < arg_count():
-        values.append(arg(index))
+        values.append(stable_argument(arg(index)))
         index += 1
     end
     return "|".join(values)
@@ -42,7 +64,7 @@ elif program.endswith("-account"):
     exit(0)
 elif program.endswith("-file-tool"):
     if arg_count() == 2 and arg(1).endswith("XXXXXX"):
-        print "/tmp/lsl-system-managed-temp"
+        print server_root + "/system-managed-temp"
         exit(0)
     elif arg(1) == "-f":
         source = arg(3)
@@ -54,7 +76,7 @@ elif program.endswith("-file-tool"):
     exit(0)
 elif program.endswith("-mount-tool"):
     if arg(1) == "-q":
-        if arg(3) == "/tmp/lsl-system-active-mount":
+        if arg(3) == server_root + "/system-active-mount":
             exit(0)
         end
         exit(1)

@@ -153,13 +153,13 @@ Deduplikované String literály se připojí za kód jako read-only data.
 
 ### 9. Vytvoření ELF image
 
-`elf_image.lsl` vytvoří finální ELF64:
+`elf_image.lsl` vytvoří finální statický PIE ELF64:
 
-- Jeden RX `PT_LOAD` segment (read + execute).
-- `PT_LOAD` offsety, virtuální adresy, filesz, memsz.
-- Žádný `PT_INTERP`, `PT_DYNAMIC`, `PT_GNU_STACK` ani `PT_TLS`.
-- Symbol table (volitelná, pro debug).
-- Entry point.
+- Typ `ET_DYN` a nulovou virtuální bázi pro kernelový ASLR load bias.
+- Jeden RX `PT_LOAD` segment (read + execute), který pokrývá celý image.
+- Explicitní RW `PT_GNU_STACK`, tedy neproveditelný stack.
+- Žádný `PT_INTERP`, `PT_DYNAMIC`, `PT_TLS`, section table ani relocace.
+- Relativní entry point.
 
 Výstup se zapíše přes `writebytes`.
 
@@ -355,7 +355,7 @@ cmp compiler/pure/lslc-direct /tmp/installed-fixed
 
 # 3. ELF audit
 readelf -W -l compiler/pure/lslc-direct
-# Ověř: jeden LOAD, flags R E, žádný INTERP, DYNAMIC, RWE
+# Ověř: ET_DYN, jeden nulový LOAD R E, GNU_STACK RW, žádný INTERP/DYNAMIC/RWE
 ```
 
 ## Runtime syscalls

@@ -16,7 +16,7 @@ který funguje. Teprve potom ho zrychlujte — a po každé změně ověřte,
 
 ## Co compiler optimalizuje automaticky
 
-Codegen LSL 0.6.6 bezpečně provádí tyto optimalizace (žádná nemění
+Codegen LSL 0.6.7 bezpečně provádí tyto optimalizace (žádná nemění
 pozorovatelnou sémantiku):
 
 ### 1. Constant folding (skládání konstant)

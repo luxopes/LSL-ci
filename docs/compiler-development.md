@@ -15,7 +15,8 @@ součástí self-host řetězce. Každá změna musí zachovat:
 1. funkční 2–3stage self-host;
 2. bitově shodný fixed point;
 3. deterministické pořadí kódu, dat, symbolů a diagnostiky;
-4. jediný RX `PT_LOAD`, bez `INTERP`, `DYNAMIC` a RWX;
+4. statický PIE `ET_DYN`, jediný RX `PT_LOAD`, explicitní RW
+   `PT_GNU_STACK`, bez `INTERP`, `DYNAMIC` a RWX;
 5. veřejný tagged Any ABI a raw-Int/live-pointer collision bezpečnost;
 6. původní source path, řádek a sloupec v diagnostice.
 
@@ -203,8 +204,15 @@ cmp compiler/pure/lslc-direct /tmp/installed-fixed
 readelf -W -l compiler/pure/lslc-direct
 ```
 
-Použijte nový neexistující install prefix. Auditujte všechny tracked ELF: právě
-jeden `LOAD`, flags `R E`, žádný `INTERP`, `DYNAMIC` ani `RWE`.
+Použijte nový neexistující install prefix. Auditujte všechny tracked ELF:
+`ET_DYN`, právě jeden `LOAD` s nulovou virtuální bází a flags `R E`, jeden RW
+`GNU_STACK`, žádný `INTERP`, `DYNAMIC` ani `RWE`. Spuštěním stejného ELF vícekrát
+a kontrolou `/proc/$pid/maps` ověřte měnící se load bias.
+
+Test runner vytváří vlastní `/tmp/lsl-test-PID[-N]` kořen. Fixture ani pomocný
+compiler nesmí používat globální pevnou `/tmp/lsl-*` cestu; agregovanému
+programu se kořen předává jako `arg(1)`. Při mismatchi zachovejte actual i
+expected artefakt a uveďte první rozdílný byte.
 
 ## Jak přidat jazykovou vlastnost
 

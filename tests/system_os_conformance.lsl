@@ -1,11 +1,12 @@
 load system
 
-apt = "/tmp/lsl-system-command-apt"
-systemctl = "/tmp/lsl-system-command-systemctl"
-account = "/tmp/lsl-system-command-account"
-file_tool = "/tmp/lsl-system-command-file-tool"
-mount_tool = "/tmp/lsl-system-command-mount-tool"
-lux = "/tmp/lsl-system-command-lux"
+test_root = arg(1)
+apt = test_root + "/system-command-apt"
+systemctl = test_root + "/system-command-systemctl"
+account = test_root + "/system-command-account"
+file_tool = test_root + "/system-command-file-tool"
+mount_tool = test_root + "/system-command-mount-tool"
+lux = test_root + "/system-command-lux"
 
 print system.refresh_with(apt)
 call system.enable_service_with("ssh.service", systemctl)
@@ -24,8 +25,8 @@ print system.ensure_user_with("existing", "/bin/luxsh", ["adm", "sudo"], account
 print system.ensure_user_with("ada", "/bin/luxsh", ["developers"], account, account, account)
 call system.remove_user_with("olduser", account)
 
-target = "/tmp/lsl-system-managed-file"
-temporary = "/tmp/lsl-system-managed-temp"
+target = test_root + "/system-managed-file"
+temporary = test_root + "/system-managed-temp"
 call system.remove_file(target)
 call system.remove_file(temporary)
 tools = {"mkdir": file_tool, "mktemp": file_tool, "chmod": file_tool, "chown": file_tool, "mv": file_tool}
@@ -33,13 +34,13 @@ call system.write_file_with(target, "first\n", "0640", None, None, tools)
 print readfile(target) == "first\n"
 call system.write_file_with(target, "owned\n", "0600", "root", "root", tools)
 print readfile(target) == "owned\n"
-call system.ensure_directory_with("/tmp/lsl-system-directory", "0750", file_tool, file_tool)
+call system.ensure_directory_with(test_root + "/system-directory", "0750", file_tool, file_tool)
 call system.remove_file(target)
 print not exists(target)
 
-print system.ensure_mount_with("/dev/vdb1", "/tmp/lsl-system-mount", "ext4", ["rw", "noatime"], mount_tool, mount_tool, mount_tool)
-print system.ensure_mount_with("/dev/vdb1", "/tmp/lsl-system-active-mount", "ext4", [], mount_tool, mount_tool, mount_tool)
-call system.unmount_with("/tmp/lsl-system-mount", mount_tool)
+print system.ensure_mount_with("/dev/vdb1", test_root + "/system-mount", "ext4", ["rw", "noatime"], mount_tool, mount_tool, mount_tool)
+print system.ensure_mount_with("/dev/vdb1", test_root + "/system-active-mount", "ext4", [], mount_tool, mount_tool, mount_tool)
+call system.unmount_with(test_root + "/system-mount", mount_tool)
 
 call system.check_system_with("/etc/luxos/system.lsl", lux)
 call system.apply_system_with("/etc/luxos/system.lsl", False, lux)
@@ -75,7 +76,7 @@ else:
     print last_error()
 end
 try:
-    call system.ensure_mount_with("/dev/vdb1", "/tmp/x", "ext4", "rw", mount_tool, mount_tool, mount_tool)
+    call system.ensure_mount_with("/dev/vdb1", test_root + "/x", "ext4", "rw", mount_tool, mount_tool, mount_tool)
 else:
     print last_error()
 end
@@ -85,7 +86,7 @@ else:
     print last_error()
 end
 try:
-    call system.write_file_with("/tmp/bad-mode", "x", "0999", None, None, tools)
+    call system.write_file_with(test_root + "/bad-mode", "x", "0999", None, None, tools)
 else:
     print last_error()
 end

@@ -8,14 +8,16 @@
 load plugin
 
 value = plugin.request("/opt/my-plugin", "embed", {"text": "hello"})
-# Pro velké JSON dokumenty:
+# request_input je kompatibilní alias stejného bezpečného stdin transportu.
 value = plugin.request_input("/opt/my-plugin", "embed", {"text": "hello"})
 ```
 
 Plugin je executable (může být přímo LSL-generovaný ELF). Host jej spustí přes
-`fork`/`execve` a zachytí jednu JSON stdout response. `request` předává JSON v
-argv; `request_input` jej streamuje přes stdin a není omezený Linux
-`MAX_ARG_STRLEN`.
+`fork`/`execve`, request zapíše jako jediný JSON dokument na stdin a zachytí
+jednu JSON stdout response. Payload ani token proto nejsou viditelné v
+`/proc/*/cmdline` a transport není omezený Linux `MAX_ARG_STRLEN`. Staré
+workery, které čtou JSON z argv, lze během migrace volat explicitním
+`plugin.request_argv`; pro secrets není tato legacy varianta bezpečná.
 
 Request:
 
@@ -35,7 +37,10 @@ Chyba:
 {"abi":1,"ok":false,"error":"model unavailable"}
 ```
 
-Host kontroluje ABI verzi, `ok`, prázdnou odpověď a propaguje `PluginError`. Hodnoty jsou omezené na JSON-compatible typy. Argumenty jsou oddělené argv; shellová interpolace se nepoužívá. Conformance je v `tests/plugin_process_*`.
+Host kontroluje exit status, ABI verzi, `ok`, prázdnou odpověď a propaguje
+`PluginError`. Hodnoty jsou omezené na JSON-compatible typy. Shellová
+interpolace se nepoužívá. Conformance ověřuje i nulový počet payload argv v
+`tests/plugin_process_*`.
 
 Tato hranice je vhodná pro AI model servery, GPU workery a pluginy, kde isolation a jednoduché ownership převažují nad zero-copy.
 
@@ -68,7 +73,11 @@ skutečný device test `tests/cuda_hardware_conformance.lsl`.
 
 ## Podporované: omezené in-process CPU ET_DYN ABI v1
 
-`stdlib/native.lsl` mapuje self-contained Linux x86_64 `ET_DYN` image přímo přes syscalls, validuje ELF class/type/machine a section bounds, vyhledá symbol v `SHT_DYNSYM`, vytvoří opaque native Function a zavolá ji s nejvýše šesti signed Int argumenty. Image se explicitně uvolní `native.close`.
+`stdlib/native.lsl` mapuje self-contained Linux x86_64 `ET_DYN` image přímo
+přes syscalls, validuje ELF class/type/machine a všechny section/symbol/string
+bounds, vyhledá symbol v `SHT_DYNSYM`, vytvoří opaque native Function a zavolá
+ji s nejvýše šesti signed Int argumenty. Image se explicitně uvolní
+`native.close`.
 
 ```lsl
 load native
@@ -78,8 +87,29 @@ print native.call(add, [19, 23])
 call native.close(library)
 ```
 
-ABI v1 je záměrně omezené: image musí být position-independent, bez relocations, external symbols, libc a constructors; `st_value` musí odpovídat file mapping offsetu. Vstup i výstup jsou Int64. Loader nepředává pluginu LSL heap pointery. Malformed ELF, chybějící symbol, špatná architektura a příliš široké/non-Int volání jsou odmítnuté. Conformance vyrábí ET_DYN image pouze pomocí LSL `writebytes`, načte jej a in-process zavolá strojový symbol.
+ABI v1 je záměrně omezené: image musí být position-independent, bez
+relocations, dynamic sections, external symbols, libc a constructors;
+`st_value` musí odpovídat file mapping offsetu a ležet v executable
+`SHT_PROGBITS`. Vstup i výstup jsou Int64. Loader nepředává pluginu LSL heap
+pointery. Malformed ELF, chybějící/undefined symbol, špatná architektura a
+příliš široké/non-Int volání jsou odmítnuté. Conformance zahrnuje i poškozenou
+section tabulku a zakázanou relocation sekci.
 
 Bohatší CPU ABI může v další verzi přidat explicitně povolené `R_X86_64_RELATIVE` relocations a opaque Tensor descriptors. Přímý in-process GPU/device ABI není součástí aktuálního scope; podporovaná CUDA hranice je izolovaný worker výše.
 
-Process JSON ABI zůstává doporučená izolovaná hranice pro obecné pluginy; omezený ET_DYN ABI je rychlá in-process CPU hranice pro důvěryhodné self-contained kernels.
+Process JSON ABI zůstává doporučená izolovaná hranice pro obecné pluginy;
+omezený ET_DYN ABI je rychlá in-process CPU hranice pouze pro důvěryhodné
+self-contained kernely. Loader umí odmítnout vadnou strukturu souboru, ale
+nemůže zabránit memory-corruption chybě uvnitř už spuštěného C/C++ kódu. Pro
+nedůvěryhodný nebo složitý native kód použijte krátkodobý worker omezený na
+úrovni hostitele (namespaces/seccomp/cgroup, bez secrets a s minimálními
+filesystem/network oprávněními).
+
+## Hranice control plane
+
+Release target LSL je Linux x86-64. Compiler, GC a codegen nemají nezávislý
+víceletý bezpečnostní audit a stdlib nenahrazuje vyzrálý PostgreSQL,
+TLS/OAuth/OIDC ani telemetry ekosystém. Bezpečnostní kořen služby proto držte v
+hostitelském runtime s auditovanými knihovnami; LSL i C++/CUDA používejte jako
+oddělené krátkodobé workery. Statické PIE bez interpreteru je pro tuto roli
+výhoda, ne důvod přesunout do LSL celý control plane.

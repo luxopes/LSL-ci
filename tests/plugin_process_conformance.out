@@ -1,2 +1,4 @@
 {"text":"pure","count":3}
+0
 PluginError: unknown operation
+PluginError: plugin exited with status 9

@@ -1,4 +1,4 @@
-path = "/tmp/lsl-io-conformance.txt"
+path = arg(1) + "/io-conformance.txt"
 call writefile(path, "a")
 call appendfile(path, "b")
 print readfile(path)

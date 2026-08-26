@@ -1,4 +1,4 @@
-# Programování v LSL 0.6.6
+# Programování v LSL 0.6.7
 
 Toto je praktický průvodce pro autory aplikací. Přesná syntaxe a hraniční
 sémantika jsou v [language.md](language.md); interní compiler je popsaný v
@@ -27,7 +27,7 @@ Bez argumentů se spustí interaktivní zápis jedné společné translation uni
 
 ```text
 $ ./lsl
-Lux Simple Lang 0.6.6 interactive source mode
+Lux Simple Lang 0.6.7 interactive source mode
 Enter code; type exit on its own line to compile and run.
 >>> value = 6 * 7
 >>> print value

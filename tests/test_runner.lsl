@@ -16,10 +16,62 @@ function require_failure(status, name):
     end
 end
 
+function difference(actual, expected):
+    limit = min(len(actual), len(expected))
+    index = 0
+    while index < limit and actual[index] == expected[index]:
+        index += 1
+    end
+    if index < limit:
+        return " at byte " + String(index) + " (actual " + String(ord(actual[index])) + ", expected " + String(ord(expected[index])) + "); actual length " + String(len(actual)) + ", expected length " + String(len(expected))
+    end
+    return " at byte " + String(index) + "; actual length " + String(len(actual)) + ", expected length " + String(len(expected))
+end
+
+function elf_integer(image, offset, width):
+    if offset < 0 or width < 0 or offset + width > len(image):
+        Error(TestFailure: "truncated ELF header")
+    end
+    value = 0
+    scale = 1
+    index = 0
+    while index < width:
+        value += image[offset + index] * scale
+        scale *= 256
+        index += 1
+    end
+    return value
+end
+
+function require_hardened_elf(path):
+    image = readbytes(path)
+    if len(image) < 176 or elf_integer(image, 16, 2) != 3 or elf_integer(image, 18, 2) != 62:
+        Error(TestFailure: "generated executable is not Linux x86_64 static PIE")
+    end
+    program_offset = elf_integer(image, 32, 8)
+    program_size = elf_integer(image, 54, 2)
+    program_count = elf_integer(image, 56, 2)
+    if program_size != 56 or program_count != 2 or program_offset + program_size * program_count > len(image):
+        Error(TestFailure: "generated executable has an invalid program table")
+    end
+    load_header = program_offset
+    stack = program_offset + program_size
+    if elf_integer(image, load_header, 4) != 1 or elf_integer(image, load_header + 4, 4) != 5 or elf_integer(image, load_header + 8, 8) != 0 or elf_integer(image, load_header + 16, 8) != 0:
+        Error(TestFailure: "generated executable does not have one zero-based RX segment")
+    end
+    if elf_integer(image, load_header + 32, 8) != len(image) or elf_integer(image, load_header + 40, 8) != len(image):
+        Error(TestFailure: "generated executable load segment does not cover the image")
+    end
+    if elf_integer(image, stack, 4) != 1685382481 or elf_integer(image, stack + 4, 4) != 6:
+        Error(TestFailure: "generated executable does not declare a non-executable stack")
+    end
+end
+
 function require_output(program, arguments, expected_path, name):
     actual = capture(program, arguments)
-    if actual != readfile(expected_path):
-        Error(TestFailure: name)
+    expected = readfile(expected_path)
+    if actual != expected:
+        Error(TestFailure: name + difference(actual, expected))
     end
 end
 
@@ -46,9 +98,30 @@ if compiler == None:
     compiler = "./compiler/pure/lslc-direct"
 end
 
+# Every invocation owns a fresh namespace. This prevents concurrent or aborted
+# runs from reusing executables, installer prefixes and conformance fixtures.
+test_pid = String(__lsl_syscall(39, 0, 0, 0, 0))
+test_token = test_pid
+test_root = "/tmp/lsl-test-" + test_token
+test_suffix = 0
+while exists(test_root):
+    test_suffix += 1
+    test_token = test_pid + "-" + String(test_suffix)
+    test_root = "/tmp/lsl-test-" + test_token
+end
+if mkdir(test_root) != 0:
+    Error(TestFailure: "cannot create isolated test root " + test_root)
+end
+
+function test_path(name):
+    return test_root + "/" + name
+end
+
 if mode == "fixed-point":
-    call require_success(run(compiler, ["compiler/pure/lslc_direct.lsl", "/tmp/lsl-fixed-test"]), "compile fixed-point stage")
-    if readfile(compiler) != readfile("/tmp/lsl-fixed-test"):
+    fixed_test = test_path("fixed-test")
+    call require_success(run(compiler, ["compiler/pure/lslc_direct.lsl", fixed_test]), "compile fixed-point stage")
+    call require_hardened_elf(fixed_test)
+    if readfile(compiler) != readfile(fixed_test):
         Error(TestFailure: "compiler fixed point differs")
     end
     print "pure LSL fixed point passed"
@@ -56,18 +129,24 @@ if mode == "fixed-point":
 end
 
 # Standalone smoke/fixed-table programs cannot safely share aggregate state.
-call require_success(run(compiler, ["tests/compiler/scalar_smoke.lsl", "/tmp/lsl-scalar-test"]), "compile scalar smoke")
-call require_success(run("/tmp/lsl-scalar-test", []), "run scalar smoke")
-call require_success(run(compiler, ["tests/compiler/float_smoke.lsl", "/tmp/lsl-float-test"]), "compile Float smoke")
-call require_success(run("/tmp/lsl-float-test", []), "run Float smoke")
-call require_success(run(compiler, ["tests/codegen_optimization_conformance.lsl", "/tmp/lsl-codegen-optimization-test"]), "compile codegen optimization conformance")
-call require_output("/tmp/lsl-codegen-optimization-test", [], "tests/codegen_optimization_conformance.out", "codegen optimization output differs")
-if len(readbytes("/tmp/lsl-codegen-optimization-test")) > 64000:
+scalar_test = test_path("scalar-test")
+float_test = test_path("float-test")
+optimization_test = test_path("codegen-optimization-test")
+cli_test = test_path("stdin-cli-test")
+call require_success(run(compiler, ["tests/compiler/scalar_smoke.lsl", scalar_test]), "compile scalar smoke")
+call require_success(run(scalar_test, []), "run scalar smoke")
+call require_success(run(compiler, ["tests/compiler/float_smoke.lsl", float_test]), "compile Float smoke")
+call require_success(run(float_test, []), "run Float smoke")
+call require_success(run(compiler, ["tests/codegen_optimization_conformance.lsl", optimization_test]), "compile codegen optimization conformance")
+call require_hardened_elf(optimization_test)
+call require_output(optimization_test, [], "tests/codegen_optimization_conformance.out", "codegen optimization output differs")
+if len(readbytes(optimization_test)) > 64000:
     Error(TestFailure: "optimized standalone ELF exceeds 64000 bytes")
 end
-call require_success(run(compiler, ["compiler/pure/cli.lsl", "/tmp/lsl-stdin-cli-test"]), "compile stdin CLI")
-help_output = capture("/tmp/lsl-stdin-cli-test", ["--help"])
-expected_help = "Lux Simple Lang (LSL) 0.6.6" + chr(10)
+call require_success(run(compiler, ["compiler/pure/cli.lsl", cli_test]), "compile stdin CLI")
+call require_hardened_elf(cli_test)
+help_output = capture(cli_test, ["--help"])
+expected_help = "Lux Simple Lang (LSL) 0.6.7" + chr(10)
 expected_help += chr(10)
 expected_help += "Usage:" + chr(10)
 expected_help += "  lsl [SOURCE [ARG...]]" + chr(10)
@@ -85,37 +164,38 @@ expected_help += "  --version      Show version" + chr(10)
 if capture_status() != 0 or help_output != expected_help:
     Error(TestFailure: "CLI --help output differs")
 end
-version_output = capture("/tmp/lsl-stdin-cli-test", ["version"])
-if capture_status() != 0 or version_output != "0.6.6" + chr(10):
+version_output = capture(cli_test, ["version"])
+if capture_status() != 0 or version_output != "0.6.7" + chr(10):
     Error(TestFailure: "CLI version output differs")
 end
-version_flag_output = capture("/tmp/lsl-stdin-cli-test", ["--version"])
-if capture_status() != 0 or version_flag_output != "0.6.6" + chr(10):
+version_flag_output = capture(cli_test, ["--version"])
+if capture_status() != 0 or version_flag_output != "0.6.7" + chr(10):
     Error(TestFailure: "CLI --version output differs")
 end
 stdin_source = "value = 6 * 7" + chr(10) + "if value == 42:" + chr(10) + "    print \"stdin\", value" + chr(10) + "end" + chr(10) + "exit" + chr(10)
-stdin_output = capture_input("/tmp/lsl-stdin-cli-test", [], stdin_source)
+stdin_output = capture_input(cli_test, [], stdin_source)
 if capture_status() != 0 or stdin_output != "stdin 42" + chr(10):
     Error(TestFailure: "stdin CLI terminated source differs")
 end
-eof_output = capture_input("/tmp/lsl-stdin-cli-test", [], "print \"eof\", 9" + chr(10))
+eof_output = capture_input(cli_test, [], "print \"eof\", 9" + chr(10))
 if capture_status() != 0 or eof_output != "eof 9" + chr(10):
     Error(TestFailure: "stdin CLI EOF source differs")
 end
-time_output = capture_input("/tmp/lsl-stdin-cli-test", [], "load time" + chr(10) + "print time.time() > 1577836800.0" + chr(10) + "exit" + chr(10))
+time_output = capture_input(cli_test, [], "load time" + chr(10) + "print time.time() > 1577836800.0" + chr(10) + "exit" + chr(10))
 if capture_status() != 0 or time_output != "True" + chr(10):
     Error(TestFailure: "stdin CLI module lookup differs")
 end
-exit_output = capture_input("/tmp/lsl-stdin-cli-test", [], "exit(7)" + chr(10) + "exit" + chr(10))
+exit_output = capture_input(cli_test, [], "exit(7)" + chr(10) + "exit" + chr(10))
 if capture_status() != 7 or exit_output != "":
     Error(TestFailure: "stdin CLI exact exit terminator differs")
 end
 
 # The installed self-host source set must contain every module imported by
 # lslc_direct/codegen, not only the bootstrapping binary.
-call require_success(run(compiler, ["compiler/pure/install.lsl", "/tmp/lsl-install-tool-test"]), "compile installer conformance")
-install_test_prefix = "/tmp/lsl-install-prefix-test"
-call require_success(run("/tmp/lsl-install-tool-test", [install_test_prefix]), "run installer conformance")
+install_test = test_path("install-tool-test")
+call require_success(run(compiler, ["compiler/pure/install.lsl", install_test]), "compile installer conformance")
+install_test_prefix = test_path("install-prefix-test")
+call require_success(run(install_test, [install_test_prefix]), "run installer conformance")
 installed_thread_runtime = install_test_prefix + "/lib/lsl/compiler/pure/thread_runtime.lsl"
 if readfile(installed_thread_runtime) != readfile("compiler/pure/thread_runtime.lsl"):
     Error(TestFailure: "installed compiler source set is incomplete")
@@ -123,11 +203,15 @@ end
 
 # Per-user source libraries use a strict name/hash/compile/atomic-move path, and
 # built-in modules retain precedence over the user directory.
-call require_success(run(compiler, ["tests/compiler/package_command_server.lsl", "/tmp/lsl-package-command-server"]), "compile package command server")
-call require_success(run(compiler, ["tests/compiler/package_install_conformance.lsl", "/tmp/lsl-package-install-test"]), "compile package install conformance")
-call require_success(run(compiler, ["tests/compiler/package_update_config_conformance.lsl", "/tmp/lsl-package-update-config-test"]), "compile package update/config conformance")
-call require_success(run(compiler, ["tests/compiler/package_config_negative.lsl", "/tmp/lsl-package-config-negative"]), "compile package config negative test")
-package_home = "/tmp/lsl-package-home"
+package_server = test_path("package-command-server")
+package_install = test_path("package-install-test")
+package_update = test_path("package-update-config-test")
+package_negative = test_path("package-config-negative")
+call require_success(run(compiler, ["tests/compiler/package_command_server.lsl", package_server]), "compile package command server")
+call require_success(run(compiler, ["tests/compiler/package_install_conformance.lsl", package_install]), "compile package install conformance")
+call require_success(run(compiler, ["tests/compiler/package_update_config_conformance.lsl", package_update]), "compile package update/config conformance")
+call require_success(run(compiler, ["tests/compiler/package_config_negative.lsl", package_negative]), "compile package config negative test")
+package_home = test_path("package-home")
 call mkdir(package_home)
 call mkdir(package_home + "/.local")
 call mkdir(package_home + "/.local/lib")
@@ -137,71 +221,87 @@ package_destination = package_home + "/.local/lib/lsl/stdlib/registry_probe.lsl"
 if exists(package_destination):
     call unlink(package_destination)
 end
-package_arguments = ["registry_probe", package_home, "http://127.0.0.1:8080/lsl", "/tmp/lsl-package-command-server", "/tmp/lsl-stdin-cli-test"]
-call require_output("/tmp/lsl-package-install-test", package_arguments, "tests/compiler/package_install_conformance.out", "package install output differs")
+package_arguments = ["registry_probe", package_home, "http://127.0.0.1:8080/lsl", package_server, cli_test]
+package_output = capture(package_install, package_arguments)
+expected_package_output = readfile("tests/compiler/package_install_conformance.out").replace("/tmp/lsl-package-home", package_home)
+if package_output != expected_package_output:
+    Error(TestFailure: "package install output differs" + difference(package_output, expected_package_output))
+end
 if not exists(package_destination):
     Error(TestFailure: "package install did not create the user module")
 end
 call unlink(package_destination)
-bad_hash_arguments = ["registry_probe", package_home, "http://127.0.0.1:8080/bad", "/tmp/lsl-package-command-server", "/tmp/lsl-stdin-cli-test"]
-call require_failure(run("/tmp/lsl-package-install-test", bad_hash_arguments), "package hash mismatch unexpectedly installed")
+bad_hash_arguments = ["registry_probe", package_home, "http://127.0.0.1:8080/bad", package_server, cli_test]
+call require_failure(run(package_install, bad_hash_arguments), "package hash mismatch unexpectedly installed")
 if exists(package_destination):
     Error(TestFailure: "package hash failure left an installed module")
 end
-bad_name_arguments = ["Bad/Name", package_home, "http://127.0.0.1:8080/lsl", "/tmp/lsl-package-command-server", "/tmp/lsl-stdin-cli-test"]
-call require_failure(run("/tmp/lsl-package-install-test", bad_name_arguments), "unsafe package name unexpectedly installed")
-package_config = "/tmp/lsl-package-list.conf"
+bad_name_arguments = ["Bad/Name", package_home, "http://127.0.0.1:8080/lsl", package_server, cli_test]
+call require_failure(run(package_install, bad_name_arguments), "unsafe package name unexpectedly installed")
+package_config = test_path("package-list.conf")
 call writefile(package_config, "# libraries" + chr(10) + "config_probe" + chr(10) + "second_probe" + chr(10))
-update_arguments = [package_home, "http://127.0.0.1:8080/lsl", "/tmp/lsl-package-command-server", "/tmp/lsl-stdin-cli-test", package_config]
-call require_success(run("/tmp/lsl-package-update-config-test", update_arguments), "package update/config install failed")
+update_arguments = [package_home, "http://127.0.0.1:8080/lsl", package_server, cli_test, package_config]
+call require_success(run(package_update, update_arguments), "package update/config install failed")
 call writefile(package_config, "duplicate" + chr(10) + "duplicate" + chr(10))
-call require_failure(run("/tmp/lsl-package-config-negative", [package_config]), "duplicate config library unexpectedly accepted")
+call require_failure(run(package_negative, [package_config]), "duplicate config library unexpectedly accepted")
 call writefile(package_config, "bad name" + chr(10))
-call require_failure(run("/tmp/lsl-package-config-negative", [package_config]), "unsafe config library unexpectedly accepted")
-call require_success(run(compiler, ["tests/compiler/user_module_path_conformance.lsl", "/tmp/lsl-user-module-path-test"]), "compile user module path conformance")
-call require_output("/tmp/lsl-user-module-path-test", [], "tests/compiler/user_module_path_conformance.out", "user module path output differs")
+call require_failure(run(package_negative, [package_config]), "unsafe config library unexpectedly accepted")
+user_module_test = test_path("user-module-path-test")
+call require_success(run(compiler, ["tests/compiler/user_module_path_conformance.lsl", user_module_test]), "compile user module path conformance")
+call require_output(user_module_test, [test_root], "tests/compiler/user_module_path_conformance.out", "user module path output differs")
 
-call require_success(run(compiler, ["tests/selfhost_conformance.lsl", "/tmp/lsl-selfhost-test"]), "compile selfhost conformance")
-call require_output("/tmp/lsl-selfhost-test", [], "tests/selfhost_conformance.out", "selfhost conformance output differs")
-call require_success(run(compiler, ["tests/table_growth_conformance.lsl", "/tmp/lsl-table-growth-test"]), "compile table growth conformance")
-call require_output("/tmp/lsl-table-growth-test", [], "tests/table_growth_conformance.out", "table growth conformance output differs")
-call require_success(run(compiler, ["tests/float_format_allocation_conformance.lsl", "/tmp/lsl-float-format-allocation-test"]), "compile Float format allocation conformance")
-call require_output("/tmp/lsl-float-format-allocation-test", [], "tests/float_format_allocation_conformance.out", "Float format allocation growth differs")
+selfhost_test = test_path("selfhost-test")
+table_test = test_path("table-growth-test")
+float_allocation_test = test_path("float-format-allocation-test")
+call require_success(run(compiler, ["tests/selfhost_conformance.lsl", selfhost_test]), "compile selfhost conformance")
+call require_output(selfhost_test, [], "tests/selfhost_conformance.out", "selfhost conformance output differs")
+call require_success(run(compiler, ["tests/table_growth_conformance.lsl", table_test]), "compile table growth conformance")
+call require_output(table_test, [], "tests/table_growth_conformance.out", "table growth conformance output differs")
+call require_success(run(compiler, ["tests/float_format_allocation_conformance.lsl", float_allocation_test]), "compile Float format allocation conformance")
+call require_output(float_allocation_test, [], "tests/float_format_allocation_conformance.out", "Float format allocation growth differs")
 
 # Process clients in the aggregate require independently executable children.
 servers = [
-    ["tests/capture_large_server.lsl", "/tmp/lsl-capture-large-server"],
-    ["tests/capture_stream_server.lsl", "/tmp/lsl-capture-stream-server"],
-    ["tests/capture_result_server.lsl", "/tmp/lsl-capture-result-server"],
-    ["tests/input_conformance.lsl", "/tmp/lsl-input-server"],
-    ["tests/input_bare_server.lsl", "/tmp/lsl-input-bare-server"],
-    ["tests/process_status_server.lsl", "/tmp/lsl-process-status-server"],
-    ["tests/plugin_process_server.lsl", "/tmp/lsl-plugin-process-server"],
-    ["tests/cuda_worker.lsl", "/tmp/lsl-cuda-worker"],
-    ["tests/os_command_server.lsl", "/tmp/lsl-os-command-server"],
-    ["tests/system_package_server.lsl", "/tmp/lsl-system-package-server"],
-    ["tests/system_command_server.lsl", "/tmp/lsl-system-command-apt"],
-    ["tests/system_command_server.lsl", "/tmp/lsl-system-command-systemctl"],
-    ["tests/system_command_server.lsl", "/tmp/lsl-system-command-account"],
-    ["tests/system_command_server.lsl", "/tmp/lsl-system-command-file-tool"],
-    ["tests/system_command_server.lsl", "/tmp/lsl-system-command-mount-tool"],
-    ["tests/system_command_server.lsl", "/tmp/lsl-system-command-lux"]
+    ["tests/capture_large_server.lsl", test_path("capture-large-server")],
+    ["tests/capture_stream_server.lsl", test_path("capture-stream-server")],
+    ["tests/capture_result_server.lsl", test_path("capture-result-server")],
+    ["tests/input_conformance.lsl", test_path("input-server")],
+    ["tests/input_bare_server.lsl", test_path("input-bare-server")],
+    ["tests/process_status_server.lsl", test_path("process-status-server")],
+    ["tests/plugin_process_server.lsl", test_path("plugin-process-server")],
+    ["tests/http_transport_server.lsl", test_path("http-transport-server")],
+    ["tests/cuda_worker.lsl", test_path("cuda-worker")],
+    ["tests/os_command_server.lsl", test_path("os-command-server")],
+    ["tests/system_package_server.lsl", test_path("system-package-server")],
+    ["tests/system_command_server.lsl", test_path("system-command-apt")],
+    ["tests/system_command_server.lsl", test_path("system-command-systemctl")],
+    ["tests/system_command_server.lsl", test_path("system-command-account")],
+    ["tests/system_command_server.lsl", test_path("system-command-file-tool")],
+    ["tests/system_command_server.lsl", test_path("system-command-mount-tool")],
+    ["tests/system_command_server.lsl", test_path("system-command-lux")]
 ]
 for server in servers:
     call require_success(run(compiler, server), "compile process conformance server")
 end
 
 if env.get("LSL_CUDA_HARDWARE_TEST", "0") == "1":
-    call require_success(run(compiler, ["tests/cuda_hardware_conformance.lsl", "/tmp/lsl-cuda-hardware-test"]), "compile CUDA hardware conformance")
-    call require_success(run("/tmp/lsl-cuda-hardware-test", []), "run CUDA hardware conformance")
+    cuda_hardware_test = test_path("cuda-hardware-test")
+    call require_success(run(compiler, ["tests/cuda_hardware_conformance.lsl", cuda_hardware_test]), "compile CUDA hardware conformance")
+    call require_success(run(cuda_hardware_test, []), "run CUDA hardware conformance")
 end
 
-call require_success(run(compiler, ["tests/thread_reuse_conformance.lsl", "/tmp/lsl-thread-reuse-test"]), "compile thread slot reuse conformance")
-call require_output("/tmp/lsl-thread-reuse-test", [], "tests/thread_reuse_conformance.out", "thread slot reuse output differs")
-call require_success(run(compiler, ["tests/full_conformance.lsl", "/tmp/lsl-full-conformance-test"]), "compile aggregated conformance")
-aggregate_output = capture("/tmp/lsl-full-conformance-test", [])
-if aggregate_output != aggregate_expected():
-    Error(TestFailure: "aggregated conformance output differs")
+thread_test = test_path("thread-reuse-test")
+aggregate_test = test_path("full-conformance-test")
+call require_success(run(compiler, ["tests/thread_reuse_conformance.lsl", thread_test]), "compile thread slot reuse conformance")
+call require_output(thread_test, [], "tests/thread_reuse_conformance.out", "thread slot reuse output differs")
+call require_success(run(compiler, ["tests/full_conformance.lsl", aggregate_test]), "compile aggregated conformance")
+call require_hardened_elf(aggregate_test)
+aggregate_output = capture(aggregate_test, [test_root])
+expected_aggregate_output = aggregate_expected()
+if aggregate_output != expected_aggregate_output:
+    call writefile(test_path("aggregate.actual"), aggregate_output)
+    call writefile(test_path("aggregate.expected"), expected_aggregate_output)
+    Error(TestFailure: "aggregated conformance output differs" + difference(aggregate_output, expected_aggregate_output) + "; artifacts: " + test_root)
 end
 
 if mode == "fast":
@@ -209,81 +309,96 @@ if mode == "fast":
     exit(0)
 end
 
-call require_success(run(compiler, ["tests/json_fuzz_conformance.lsl", "/tmp/lsl-json-fuzz-test"]), "compile JSON fuzz conformance")
-call require_output("/tmp/lsl-json-fuzz-test", [], "tests/json_fuzz_conformance.out", "JSON fuzz conformance output differs")
-call require_success(run(compiler, ["tests/gc_stress_conformance.lsl", "/tmp/lsl-gc-stress-test"]), "compile GC stress conformance")
-call require_output("/tmp/lsl-gc-stress-test", [], "tests/gc_stress_conformance.out", "GC stress conformance output differs")
-call require_success(run(compiler, ["tests/compiler/frontend_fuzz.lsl", "/tmp/lsl-frontend-fuzz-test"]), "compile frontend fuzz conformance")
-call require_output("/tmp/lsl-frontend-fuzz-test", [], "tests/frontend_fuzz.out", "frontend fuzz conformance output differs")
-call require_success(run(compiler, ["tests/process_fault_conformance.lsl", "/tmp/lsl-process-fault-test"]), "compile process fault conformance")
-call require_output("/tmp/lsl-process-fault-test", ["0"], "tests/process_fault_pipe.out", "pipe fault conformance output differs")
-call require_output("/tmp/lsl-process-fault-test", ["2"], "tests/process_fault_memfd.out", "memfd fault conformance output differs")
+json_fuzz_test = test_path("json-fuzz-test")
+gc_stress_test = test_path("gc-stress-test")
+frontend_fuzz_test = test_path("frontend-fuzz-test")
+process_fault_test = test_path("process-fault-test")
+call require_success(run(compiler, ["tests/json_fuzz_conformance.lsl", json_fuzz_test]), "compile JSON fuzz conformance")
+call require_output(json_fuzz_test, [], "tests/json_fuzz_conformance.out", "JSON fuzz conformance output differs")
+call require_success(run(compiler, ["tests/gc_stress_conformance.lsl", gc_stress_test]), "compile GC stress conformance")
+call require_output(gc_stress_test, [], "tests/gc_stress_conformance.out", "GC stress conformance output differs")
+call require_success(run(compiler, ["tests/compiler/frontend_fuzz.lsl", frontend_fuzz_test]), "compile frontend fuzz conformance")
+call require_output(frontend_fuzz_test, [], "tests/frontend_fuzz.out", "frontend fuzz conformance output differs")
+call require_success(run(compiler, ["tests/process_fault_conformance.lsl", process_fault_test]), "compile process fault conformance")
+call require_output(process_fault_test, ["0", test_root], "tests/process_fault_pipe.out", "pipe fault conformance output differs")
+call require_output(process_fault_test, ["2", test_root], "tests/process_fault_memfd.out", "memfd fault conformance output differs")
 
 # Compile-time diagnostics must remain failures and retain original source spans.
-call require_failure(run(compiler, ["tests/builtin_arity_negative.lsl", "/tmp/lsl-arity-negative"]), "builtin arity mismatch unexpectedly compiled")
-call require_failure(run(compiler, ["tests/method_arity_negative.lsl", "/tmp/lsl-method-negative"]), "method arity mismatch unexpectedly compiled")
-call require_failure(run(compiler, ["tests/inheritance_cycle_negative.lsl", "/tmp/lsl-inheritance-cycle-negative"]), "cyclic inheritance unexpectedly compiled")
-call require_failure(run(compiler, ["tests/origin_without_parent_negative.lsl", "/tmp/lsl-origin-negative"]), "origin without parent unexpectedly compiled")
-call require_failure(run(compiler, ["tests/fixed_collection_negative.lsl", "/tmp/lsl-fixed-negative"]), "fixed collection mutation unexpectedly compiled")
-call require_failure(run(compiler, ["tests/private_class_negative.lsl", "/tmp/lsl-private-negative"]), "private module class unexpectedly compiled")
-call require_failure(run(compiler, ["tests/dictionary_key_negative.lsl", "/tmp/lsl-dictionary-key-negative"]), "collection Dictionary key unexpectedly compiled")
-call require_failure(run(compiler, ["tests/intarray_type_negative.lsl", "/tmp/lsl-intarray-type-negative"]), "non-Int IntArray append unexpectedly compiled")
-call require_failure(run(compiler, ["tests/floatarray_type_negative.lsl", "/tmp/lsl-floatarray-type-negative"]), "non-Float FloatArray append unexpectedly compiled")
-call require_failure(run(compiler, ["tests/bytearray_type_negative.lsl", "/tmp/lsl-bytearray-type-negative"]), "non-Int ByteArray append unexpectedly compiled")
-call require_failure(run(compiler, ["tests/legacy_power_negative.lsl", "/tmp/lsl-legacy-power-negative"]), "legacy ** power syntax unexpectedly compiled")
-call require_failure(run(compiler, ["tests/bitwise_float_negative.lsl", "/tmp/lsl-bitwise-float-negative"]), "Float bitwise operand unexpectedly compiled")
-call require_failure(run(compiler, ["tests/bitwise_shift_negative.lsl", "/tmp/lsl-bitwise-shift-negative"]), "constant negative shift unexpectedly compiled")
-call require_failure(run(compiler, ["tests/base_literal_negative.lsl", "/tmp/lsl-base-literal-negative"]), "base prefix without digits unexpectedly compiled")
-call require_success(run(compiler, ["tests/bitwise_dynamic_negative.lsl", "/tmp/lsl-bitwise-dynamic-negative"]), "compile dynamic bitwise negative test")
-call require_failure(run("/tmp/lsl-bitwise-dynamic-negative", []), "dynamic Float bitwise operand unexpectedly succeeded")
+call require_failure(run(compiler, ["tests/builtin_arity_negative.lsl", test_path("arity-negative")]), "builtin arity mismatch unexpectedly compiled")
+call require_failure(run(compiler, ["tests/method_arity_negative.lsl", test_path("method-negative")]), "method arity mismatch unexpectedly compiled")
+call require_failure(run(compiler, ["tests/inheritance_cycle_negative.lsl", test_path("inheritance-cycle-negative")]), "cyclic inheritance unexpectedly compiled")
+call require_failure(run(compiler, ["tests/origin_without_parent_negative.lsl", test_path("origin-negative")]), "origin without parent unexpectedly compiled")
+call require_failure(run(compiler, ["tests/fixed_collection_negative.lsl", test_path("fixed-negative")]), "fixed collection mutation unexpectedly compiled")
+call require_failure(run(compiler, ["tests/private_class_negative.lsl", test_path("private-negative")]), "private module class unexpectedly compiled")
+call require_failure(run(compiler, ["tests/dictionary_key_negative.lsl", test_path("dictionary-key-negative")]), "collection Dictionary key unexpectedly compiled")
+call require_failure(run(compiler, ["tests/intarray_type_negative.lsl", test_path("intarray-type-negative")]), "non-Int IntArray append unexpectedly compiled")
+call require_failure(run(compiler, ["tests/floatarray_type_negative.lsl", test_path("floatarray-type-negative")]), "non-Float FloatArray append unexpectedly compiled")
+call require_failure(run(compiler, ["tests/bytearray_type_negative.lsl", test_path("bytearray-type-negative")]), "non-Int ByteArray append unexpectedly compiled")
+call require_failure(run(compiler, ["tests/legacy_power_negative.lsl", test_path("legacy-power-negative")]), "legacy ** power syntax unexpectedly compiled")
+call require_failure(run(compiler, ["tests/bitwise_float_negative.lsl", test_path("bitwise-float-negative")]), "Float bitwise operand unexpectedly compiled")
+call require_failure(run(compiler, ["tests/bitwise_shift_negative.lsl", test_path("bitwise-shift-negative")]), "constant negative shift unexpectedly compiled")
+call require_failure(run(compiler, ["tests/base_literal_negative.lsl", test_path("base-literal-negative")]), "base prefix without digits unexpectedly compiled")
+bitwise_dynamic_test = test_path("bitwise-dynamic-negative")
+call require_success(run(compiler, ["tests/bitwise_dynamic_negative.lsl", bitwise_dynamic_test]), "compile dynamic bitwise negative test")
+call require_failure(run(bitwise_dynamic_test, []), "dynamic Float bitwise operand unexpectedly succeeded")
 
-configure = "/tmp/lsl-configure-test"
+configure = test_path("configure-test")
 call require_success(run(compiler, ["stdlib/configure.lsl", configure]), "compile config generator")
-time_impure_output = capture(configure, ["tests/config/time_impure.lsl", "/tmp/lsl-time-impure-evaluator.lsl"])
-if time_impure_output != readfile("tests/config/time_impure.out") or exists("/tmp/lsl-time-impure-evaluator.lsl"):
+time_impure_evaluator = test_path("time-impure-evaluator.lsl")
+time_impure_output = capture(configure, ["tests/config/time_impure.lsl", time_impure_evaluator])
+if time_impure_output != readfile("tests/config/time_impure.out") or exists(time_impure_evaluator):
     Error(TestFailure: "config time purity diagnostic differs")
 end
-os_impure_output = capture(configure, ["tests/config/os_impure.lsl", "/tmp/lsl-os-impure-evaluator.lsl"])
-if os_impure_output != readfile("tests/config/os_impure.out") or exists("/tmp/lsl-os-impure-evaluator.lsl"):
+os_impure_evaluator = test_path("os-impure-evaluator.lsl")
+os_impure_output = capture(configure, ["tests/config/os_impure.lsl", os_impure_evaluator])
+if os_impure_output != readfile("tests/config/os_impure.out") or exists(os_impure_evaluator):
     Error(TestFailure: "config os purity diagnostic differs")
 end
-system_impure_output = capture(configure, ["tests/config/system_impure.lsl", "/tmp/lsl-system-impure-evaluator.lsl"])
-if system_impure_output != readfile("tests/config/system_impure.out") or exists("/tmp/lsl-system-impure-evaluator.lsl"):
+system_impure_evaluator = test_path("system-impure-evaluator.lsl")
+system_impure_output = capture(configure, ["tests/config/system_impure.lsl", system_impure_evaluator])
+if system_impure_output != readfile("tests/config/system_impure.out") or exists(system_impure_evaluator):
     Error(TestFailure: "config system purity diagnostic differs")
 end
-config_wrapper = "tests/config/.defaults-test-evaluator.lsl"
+config_wrapper = "tests/config/.defaults-test-" + test_token + "-evaluator.lsl"
 call require_success(run(configure, ["tests/config/defaults.lsl", config_wrapper]), "generate config defaults evaluator")
-call require_success(run(compiler, [config_wrapper, "/tmp/lsl-config-defaults-test"]), "compile config defaults evaluator")
+config_defaults_test = test_path("config-defaults-test")
+call require_success(run(compiler, [config_wrapper, config_defaults_test]), "compile config defaults evaluator")
 call unlink(config_wrapper)
-call require_output("/tmp/lsl-config-defaults-test", [], "tests/config/defaults.out", "config defaults output differs")
+call require_output(config_defaults_test, [], "tests/config/defaults.out", "config defaults output differs")
 
-lazy_wrapper = "tests/config/.lazy-test-evaluator.lsl"
+lazy_wrapper = "tests/config/.lazy-test-" + test_token + "-evaluator.lsl"
 call require_success(run(configure, ["tests/config/lazy.lsl", lazy_wrapper]), "generate lazy config evaluator")
-call require_success(run(compiler, [lazy_wrapper, "/tmp/lsl-config-lazy-test"]), "compile lazy config evaluator")
+config_lazy_test = test_path("config-lazy-test")
+call require_success(run(compiler, [lazy_wrapper, config_lazy_test]), "compile lazy config evaluator")
 call unlink(lazy_wrapper)
-call require_output("/tmp/lsl-config-lazy-test", [], "tests/config/lazy.out", "lazy config output differs")
+call require_output(config_lazy_test, [], "tests/config/lazy.out", "lazy config output differs")
 
-type_error_wrapper = "tests/config/.type-error-test-evaluator.lsl"
+type_error_wrapper = "tests/config/.type-error-test-" + test_token + "-evaluator.lsl"
 call require_success(run(configure, ["tests/config/type_error.lsl", type_error_wrapper]), "generate config type-error evaluator")
-call require_success(run(compiler, [type_error_wrapper, "/tmp/lsl-config-type-error-test"]), "compile config type-error evaluator")
+config_type_error_test = test_path("config-type-error-test")
+call require_success(run(compiler, [type_error_wrapper, config_type_error_test]), "compile config type-error evaluator")
 call unlink(type_error_wrapper)
-call require_output("/tmp/lsl-config-type-error-test", [], "tests/config/type_error.out", "config type-error provenance differs")
+call require_output(config_type_error_test, [], "tests/config/type_error.out", "config type-error provenance differs")
 
-generated_wrapper = "tests/config/.generated-test-evaluator.lsl"
+generated_wrapper = "tests/config/.generated-test-" + test_token + "-evaluator.lsl"
 call require_success(run(configure, ["tests/config/generated.lsl", generated_wrapper]), "generate config fuzz evaluator")
-call require_success(run(compiler, [generated_wrapper, "/tmp/lsl-config-generated-test"]), "compile config fuzz evaluator")
+config_generated_test = test_path("config-generated-test")
+call require_success(run(compiler, [generated_wrapper, config_generated_test]), "compile config fuzz evaluator")
 call unlink(generated_wrapper)
-generated_config_output = capture("/tmp/lsl-config-generated-test", [])
-call require_success(run(compiler, ["tests/config_generated_check.lsl", "/tmp/lsl-config-generated-check"]), "compile config fuzz checker")
-call require_output("/tmp/lsl-config-generated-check", [generated_config_output], "tests/config_generated_check.out", "config fuzz output differs")
+generated_config_output = capture(config_generated_test, [])
+config_generated_check = test_path("config-generated-check")
+call require_success(run(compiler, ["tests/config_generated_check.lsl", config_generated_check]), "compile config fuzz checker")
+call require_output(config_generated_check, [generated_config_output], "tests/config_generated_check.out", "config fuzz output differs")
 
-config_cycle_output = capture(configure, ["tests/config/cycle_a.lsl", "/tmp/lsl-cycle-evaluator.lsl"])
+config_cycle_output = capture(configure, ["tests/config/cycle_a.lsl", test_path("cycle-evaluator.lsl")])
 if config_cycle_output != readfile("tests/config/cycle.out"):
     Error(TestFailure: "config cycle diagnostic differs")
 end
 
-call require_success(run(compiler, ["compiler/pure/lslc_direct.lsl", "/tmp/lsl-fixed-test"]), "compile fixed-point stage")
-if readfile(compiler) != readfile("/tmp/lsl-fixed-test"):
+fixed_test = test_path("fixed-test")
+call require_success(run(compiler, ["compiler/pure/lslc_direct.lsl", fixed_test]), "compile fixed-point stage")
+call require_hardened_elf(fixed_test)
+if readfile(compiler) != readfile(fixed_test):
     Error(TestFailure: "compiler fixed point differs")
 end
 

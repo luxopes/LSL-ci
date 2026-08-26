@@ -219,14 +219,14 @@ if not result["ok"]:
 end
 
 # Vstup do procesu
-result = process.capture_input_result("/usr/bin/sort", [])
+result = process.capture_input_result("/usr/bin/sort", [], "c\na\nb\n")
 print result["stdout"]
 
 # Streamování výstupu
 function on_chunk(chunk):
     print "chunk:", len(chunk), "bytů"
 end
-result = process.capture_stream("/usr/bin/find", ["/tmp"], on_chunk)
+result = process.capture_input_stream_result("/usr/bin/tool", [], "request\n", on_chunk)
 ```
 
 ### system — správa systému (LuxOS/Debian)
@@ -320,7 +320,7 @@ Obecné relocatable/libc pluginy nejsou součástí ABI v1. Viz
 load plugin
 
 result = plugin.request("/opt/my-plugin", "embed", {"text": "hello"})
-# komunikuje přes JSON argv/stdout s izolovaným procesem
+# komunikuje přes JSON stdin/stdout s izolovaným procesem
 ```
 
 ### ai — AI orchestrace

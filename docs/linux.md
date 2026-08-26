@@ -1,6 +1,8 @@
 # Linux x86_64
 
-První produkční target je Linux x86_64. `lsl` a `lslc` jsou statické LSL-generované ELF soubory bez libc, dynamic interpreteru, assembleru nebo linkeru.
+První produkční target je Linux x86_64. `lsl` a `lslc` jsou statické
+LSL-generované PIE ELF soubory s ASLR a neproveditelným stackem, bez libc,
+dynamic interpreteru, assembleru nebo linkeru.
 
 ## Ověření bootstrapu
 
@@ -27,6 +29,12 @@ No-argument `lsl` rozlišuje terminál přes `ioctl(TCGETS)`. TTY dostane intera
 
 ## Runtime syscalls
 
-Runtime přímo používá mimo jiné `read`, `write`, `open`, `close`, `access`, `lseek`, `brk`, `fork`, `execve`, `wait4`, `pipe`, `dup2`, `readlink`, `mkdir` a `unlink`. HTTP(S) modul spouští systémový `/usr/bin/curl` bezpečným argv bez shellové interpolace. Modul `os` tokenizuje String nebo přijme List[String], hledá executable v `PATH` a také volá přímý `execve`; `/bin/sh -c` nepoužívá.
+Runtime přímo používá mimo jiné `read`, `write`, `open`, `close`, `access`,
+`lseek`, `brk`, `fork`, `execve`, `wait4`, `pipe`, `dup2`, `readlink`, `mkdir`
+a `unlink`. HTTP(S) modul spouští systémový `/usr/bin/curl`; citlivý request
+config předává přes stdin a shell nepoužívá. Modul `os` tokenizuje String nebo
+přijme List[String], hledá executable v `PATH` a také volá přímý `execve`;
+`/bin/sh -c` nepoužívá.
 
-ELF má jediný RX `PT_LOAD`; writable stav allocatoru/GC je rezervován přes `brk`, takže image není RWX.
+ELF má nulovou virtuální bázi, jediný RX `PT_LOAD` a RW `PT_GNU_STACK`;
+writable stav allocatoru/GC je rezervován přes `brk`, takže image není RWX.

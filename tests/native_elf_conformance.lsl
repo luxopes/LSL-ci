@@ -1,5 +1,7 @@
 load native
 
+test_root = arg(1)
+
 function little(value, width):
     result = []
     index = 0
@@ -55,9 +57,10 @@ call put(image, 360, little(2, 4))
 call put(image, 364, little(1, 4))
 call put(image, 368, little(8, 8))
 call put(image, 376, little(24, 8))
-call writebytes("/tmp/lsl-native-flat.so", image)
+valid_path = test_root + "/native-flat.so"
+call writebytes(valid_path, image)
 
-library = native.open("/tmp/lsl-native-flat.so")
+library = native.open(valid_path)
 addition = native.symbol(library, "add")
 print native.call(addition, [19, 23])
 caught = ""
@@ -74,9 +77,37 @@ else:
     caught = last_error()
 end
 print caught
-call writebytes("/tmp/lsl-native-invalid.so", [0])
+
+relocation_image = image[0:len(image)]
+call put(relocation_image, 196, little(4, 4))
+relocation_path = test_root + "/native-relocation.so"
+call writebytes(relocation_path, relocation_image)
+relocation_library = native.open(relocation_path)
 try:
-    call native.open("/tmp/lsl-native-invalid.so")
+    call native.symbol(relocation_library, "add")
+else:
+    caught = last_error()
+end
+print caught
+call native.close(relocation_library)
+
+truncated_image = image[0:len(image)]
+call put(truncated_image, 40, little(360, 8))
+truncated_path = test_root + "/native-truncated.so"
+call writebytes(truncated_path, truncated_image)
+truncated_library = native.open(truncated_path)
+try:
+    call native.symbol(truncated_library, "add")
+else:
+    caught = last_error()
+end
+print caught
+call native.close(truncated_library)
+
+invalid_path = test_root + "/native-invalid.so"
+call writebytes(invalid_path, [0])
+try:
+    call native.open(invalid_path)
 else:
     caught = last_error()
 end

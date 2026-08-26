@@ -69,4 +69,5 @@ load capture_input_conformance
 load input_bare_conformance
 load process_status_conformance
 load plugin_process_conformance
+load http_security_conformance
 load language_06_conformance

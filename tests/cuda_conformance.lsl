@@ -1,6 +1,6 @@
 load cuda
 
-call cuda.configure("/tmp/lsl-cuda-worker", "required", 0)
+call cuda.configure(arg(1) + "/cuda-worker", "required", 0)
 print cuda.available(), cuda.device_count(), cuda.backend()
 
 left = FloatArray()

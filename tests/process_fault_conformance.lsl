@@ -5,7 +5,7 @@ if opened <= 0:
 end
 caught = ""
 try:
-    call capture("/tmp/lsl-process-fault-child", [])
+    call capture(arg(2) + "/process-fault-child", [])
 else:
     caught = last_error()
 end

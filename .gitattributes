@@ -1,0 +1,6 @@
+# Release archives are published beside the source archive and must not be
+# recursively embedded in it.
+docs/developer_guides/downloads export-ignore
+docs/developer_guides/releases/0.5/downloads export-ignore
+docs/developer_guides/releases/0.6/downloads export-ignore
+docs/developer_guides/releases/0.6.5/downloads export-ignore

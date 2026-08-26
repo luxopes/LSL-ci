@@ -51,7 +51,16 @@ Heap používá conservative mark-sweep:
 - sweep bloky vrací do size-aware free listu;
 - `gc()` spouští collection explicitně.
 
-ELF image má pouze RX `PT_LOAD`. Mutable allocator stav a počáteční 64K-entry String-template intern table jsou v `brk` oblasti. Object registry je samostatný anonymous `mmap`: běžný program začíná na 64K slots, compiler profil na 8M slots; před překročením 50% occupancy se zdvojnásobí, deterministicky rehashuje a starou mapu vrátí přes `munmap`. Intern table se při zaplnění také zdvojnásobí a rehashuje v rostoucí `brk` oblasti. Interned Strings jsou explicitní GC roots. Selhání alokace nebo úplný probe končí deterministicky statusem 70 a `MemoryError`, nikoli zápisem přes neplatnou adresu nebo nekonečnou smyčkou.
+ELF image je statický PIE `ET_DYN` s nulovou virtuální bází, jediným RX
+`PT_LOAD` a explicitním RW `PT_GNU_STACK`; nemá interpreter, dynamic sekci ani
+relocace. Mutable allocator stav a počáteční 64K-entry String-template intern
+table jsou v `brk` oblasti. Object registry je samostatný anonymous `mmap`:
+běžný program začíná na 64K slots, compiler profil na 8M slots; před
+překročením 50% occupancy se zdvojnásobí, deterministicky rehashuje a starou
+mapu vrátí přes `munmap`. Intern table se při zaplnění také zdvojnásobí a
+rehashuje v rostoucí `brk` oblasti. Interned Strings jsou explicitní GC roots.
+Selhání alokace nebo úplný probe končí deterministicky statusem 70 a
+`MemoryError`, nikoli zápisem přes neplatnou adresu nebo nekonečnou smyčkou.
 
 ## Process/I/O cleanup
 

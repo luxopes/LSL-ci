@@ -4,6 +4,24 @@ Na této stránce jsou uživatelsky významné změny vydaných verzí. Stabiln�
 manuály a soubory ke stažení zůstávají dostupné v
 [historii vydání](/releases/).
 
+## 0.6.7 — 26. 8. 2026
+
+Integrační a bezpečnostní hardening bez změny syntaxe jazyka.
+
+- Generované programy jsou statické PIE (`ET_DYN`) s ASLR, jediným RX LOAD a
+  explicitním RW/non-executable `PT_GNU_STACK`.
+- HTTP posílá curl config včetně těla a hlaviček přes stdin, ne argv; vzdálené
+  URL vyžadují HTTPS a validace blokuje header/control-character injection.
+- Přibyl kombinovaný `capture_input_stream`; `plugin.request` používá JSON
+  stdin, ověřuje exit status a starý argv režim je jen `request_argv`.
+- Native loader dělá bounds kontroly před čtením mapování a odmítá relocation,
+  dynamic a nekonzistentní symbol/section data. Native kód zůstává pouze pro
+  důvěryhodné kernely; nedůvěryhodné komponenty patří do process workeru.
+- Testy i CLI scratch soubory mají per-process cesty. Dva souběžné fast suites
+  prošly; agregovaný mismatch nyní uvádí byte/length a ukládá oba artefakty.
+- Linux x86-64 zůstává jediný release target. Databáze, TLS/OIDC a auditní
+  control plane jsou výslovně odpovědností zralého hostitelského runtime.
+
 ## 0.6.6 — 26. 8. 2026
 
 Výkonnostní patch kompatibilní s jazykem a manuálem 0.6.5.
@@ -236,7 +254,8 @@ První veřejné self-hosted vydání LSL.
 
 ## Odkazy na stabilní manuály
 
-- LSL 0.6.6 používá beze změny [manuál 0.6.5](/releases/0.6.5/).
+- LSL 0.6.7 aktualizuje živý manuál; 0.6.5 zůstává poslední neměnný snapshot.
+- LSL 0.6.6 používá [manuál 0.6.5](/releases/0.6.5/).
 - [LSL 0.6.5 — manuál a soubory ke stažení](/releases/0.6.5/)
 - [LSL 0.6 — manuál a soubory ke stažení](/releases/0.6/)
 - [LSL 0.5 — historický manuál a soubory ke stažení](/releases/0.5/)

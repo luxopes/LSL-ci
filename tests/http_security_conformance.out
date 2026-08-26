@@ -1,0 +1,12 @@
+200 True
+True
+True True
+True
+True
+True
+200 True True
+HTTPError: HTTP transport requires HTTPS or a loopback URL
+HTTPError: invalid HTTP header name: Good
+Injected
+HTTPError: HTTP header value contains a control character
+0 False True

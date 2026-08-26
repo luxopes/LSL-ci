@@ -27,7 +27,7 @@ function calling a správu secrets.
 |---|---|
 | `ai` | OpenAI-compatible request, validace response, streaming |
 | `json` | Enkódování a dekódování JSON |
-| `http` | HTTP(S) transport přes curl (bezpečný argv) |
+| `http` | HTTP(S) transport přes validovaný curl config na stdin |
 | `env` | Runtime hranice pro secrets (API klíče, tokeny) |
 
 ## Rychlý start: jednoduchý AI dotaz
@@ -188,6 +188,10 @@ print response["text"]
 - `body` — String, List, nebo Dictionary (automaticky se serializuje do JSON).
 - `headers` — Dictionary s HTTP hlavičkami.
 - `timeout` — maximální doba v sekundách.
+
+Transport předává URL, tělo i autorizační hlavičky curlu přes stdin, takže
+secrets nejsou v process argv. Vzdálený endpoint musí být HTTPS; HTTP je
+povolen pouze pro lokální loopback služby.
 
 ### http.post_stream(url, body, headers, timeout, on_chunk)
 

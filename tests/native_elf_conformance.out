@@ -1,4 +1,6 @@
 42
 NativeError: native symbol not found: missing
 NativeError: native library is closed
+NativeError: native ABI does not accept relocations or dynamic sections
+NativeError: invalid ELF section table
 NativeError: cannot map valid Linux x86_64 ET_DYN image
