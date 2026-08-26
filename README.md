@@ -1,6 +1,6 @@
 # Lux Simple Lang (LSL)
 
-LSL 0.6.5 je self-hostovaný jazyk pro běžné programování, deklarativní
+LSL 0.6.6 je self-hostovaný jazyk pro běžné programování, deklarativní
 konfiguraci, AI orchestrace a volitelné CUDA výpočty. Compiler i host runtime
 jsou pouze LSL: compiler přímo zapisuje statický Linux x86_64 ELF a runtime
 používá přímé syscalls, bez libc, assembleru, linkeru, Pythonu nebo shell
@@ -10,22 +10,24 @@ pure-LSL a Tensor používá CPU fallback.
 
 ## Self-hosted vydání
 
-LSL 0.6.5 je nejnovější vydání. Binární balík pro Linux x86_64, zdrojový archiv
-a kompletní český manuál jsou na
-[lsl25.netlify.app](https://lsl25.netlify.app/). Stabilní manuály vydání
-jsou v [historii vydání](https://lsl25.netlify.app/releases/):
+LSL 0.6.6 je nejnovější vydání. Binární balík pro Linux x86_64, zdrojový
+archiv a kompatibilní český manuál jsou na
+[lsl.lux-ai.cz](https://lsl.lux-ai.cz/). Stabilní manuály vydání jsou v
+[historii vydání](https://lsl.lux-ai.cz/releases/):
 
-- [LSL 0.6.5](https://lsl25.netlify.app/releases/0.6.5/) — aktuální manuál;
+- [LSL 0.6.6](https://lsl.lux-ai.cz/) — aktuální výkonnostní patch s
+  rychlejšími `for`/`rang` smyčkami; používá kompatibilní manuál 0.6.5;
+- [LSL 0.6.5](https://lsl.lux-ai.cz/releases/0.6.5/) — stabilní manuál;
   bitové operace, rychlé typované `IntArray` hot pathy, sdílená vlákna,
   SSE2 FloatArray kernely, registrový Int codegen a paměťově omezené
   round-trip převody Float;
-- [LSL 0.6](https://lsl25.netlify.app/releases/0.6/) — původní stabilní
+- [LSL 0.6](https://lsl.lux-ai.cz/releases/0.6/) — původní stabilní
   snapshot s Lux Stringy, aliasy modulů a skutečnými CUDA Runtime kernely;
-- [LSL 0.5](https://lsl25.netlify.app/releases/0.5/) — první veřejné
+- [LSL 0.5](https://lsl.lux-ai.cz/releases/0.5/) — první veřejné
   self-hosted vydání.
 
 Datovaný přehled změn je v
-[changelogu](https://lsl25.netlify.app/#CHANGELOG).
+[changelogu](https://lsl.lux-ai.cz/#CHANGELOG).
 
 ## Použití
 
@@ -132,6 +134,7 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 - [Dependency manifest config.lconf](docs/lconf.md)
 - [Native/plugin ABI](docs/native-plugins.md)
 - [CUDA backend a worker protokol](docs/cuda.md)
+- [Poznámky k lokálnímu vydání 0.6.6](docs/release-0.6.6.md)
 - [Poznámky k lokálnímu vydání 0.6.5](docs/release-0.6.5.md)
 - [Poznámky k lokálnímu vydání 0.6.4](docs/release-0.6.4.md)
 - [Poznámky k lokálnímu vydání 0.6.3](docs/release-0.6.3.md)

@@ -1,12 +1,12 @@
 # LSL — Vývojářské příručky
 
-> **LSL 0.6.5 — výkonnostní a stabilizační self-hosted vydání.**
+> **LSL 0.6.6 — rychlejší `for`/`rang` smyčky v self-hosted vydání.**
 > [Historie verzí](/releases/) · [Manuál 0.5](/releases/0.5/) ·
 > [Manuál 0.6](/releases/0.6/) · [Manuál 0.6.5](/releases/0.6.5/) ·
 > [Changelog](CHANGELOG.md)
-> [Stáhnout binárky, zdrojový kód nebo offline manuál](index.html#downloads).
+> [Stáhnout binárky nebo zdrojový kód](index.html#downloads).
 
-Podrobné průvodce jazykem LSL (Lux Simple Lang) 0.6.5. Každá kapitola
+Podrobné průvodce jazykem LSL (Lux Simple Lang) 0.6.6. Každá kapitola
 vysvětluje jednu oblast od základů — text předpokládá, že s programováním
 teprve začínáte. Všechny konstrukty jsou popsány srozumitelně: co dělají,
 k čemu slouží, jak se zapisují a jak fungují.

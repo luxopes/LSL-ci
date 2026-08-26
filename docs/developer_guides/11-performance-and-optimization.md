@@ -16,7 +16,7 @@ který funguje. Teprve potom ho zrychlujte — a po každé změně ověřte,
 
 ## Co compiler optimalizuje automaticky
 
-Codegen LSL 0.6.5 bezpečně provádí tyto optimalizace (žádná nemění
+Codegen LSL 0.6.6 bezpečně provádí tyto optimalizace (žádná nemění
 pozorovatelnou sémantiku):
 
 ### 1. Constant folding (skládání konstant)
@@ -100,6 +100,15 @@ displacements.
 základ se přitom vyhodnotí právě jednou. Strom složený pouze z konstantních
 Stringů se spojí při překladu. Lux String používá vyvážený concat strom, takže
 šablona s mnoha poli nekopíruje rostoucí prefix kvadraticky.
+
+### 10. Registrové `for` smyčky
+
+Staticky celočíselné čítače, indexy a akumulátory horkých smyček zůstávají v
+callee-saved registrech. Compiler při tom počítá i skryté přístupy vytvořené
+loweringem `for` a čtení i zápis složeného přiřazení, například `total += i`.
+`rang(stop)` a `rang(start, stop)` používají přímou kladnou větev s krokem
+jedna; dynamická kontrola znaménka a nulového kroku zůstává jen u varianty se
+třetím argumentem.
 
 ## Co compiler NEoptimalizuje
 

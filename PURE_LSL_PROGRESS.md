@@ -959,9 +959,13 @@ medián aritmetické `rang` smyčky z 2,13 s na 0,83 s; jednoduchý součet
 čítače z 1,67 s na 0,58 s a user CPU self-host kompilace z 2,09 s na 1,97 s.
 Regrese pokrývá `rang` i `IntArray` iteraci. Tři stage dosáhly bitového fixed
 pointu, fast/full suite, instalovaná kopie, config a audit všech regenerovaných
-ELF prošly. Compiler fixed point je
-`69b6cf41fdb8c3bfb2a9ca968d55dcc389e2f5e5df77dcf2f330512c0b7036d4` a CLI hash
-`82027c3ee96ba078eb23499412b03fee78e3e4f08649b2b3da568810c97e88cb`.
+ELF prošly. Release audit navíc odstranil ASLR-závislou kolizi: staticky známý
+raw Int se na tagged hranici boxuje přímo a už se předem neklasifikuje jako
+možný heap pointer. Deterministická regrese používá číslo bitově shodné s
+adresou živého boxovaného Intu; Float/String stress i opakovaný agregovaný
+corpus zůstaly stabilní. Ve vydání 0.6.6 je compiler fixed point
+`326db5b802778fefc6fd6e81f1741544c542446811ca9f32d5d2cf28d02f434b` a CLI hash
+`821c00d035cfd9941e95eafcc898a392c1cf2a3aa5831e0485413653a2f594aa`.
 
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,

@@ -4,6 +4,29 @@ Na této stránce jsou uživatelsky významné změny vydaných verzí. Stabiln�
 manuály a soubory ke stažení zůstávají dostupné v
 [historii vydání](/releases/).
 
+## 0.6.6 — 26. 8. 2026
+
+Výkonnostní patch kompatibilní s jazykem a manuálem 0.6.5.
+
+- `for`/`rang` řídicí proměnné už nejsou vyřazené z alokace registrů;
+  analýza započítává syntetické přístupy k čítači, indexu a explicitnímu
+  kroku.
+- Složené přiřazení lokálu se pro výběr registru správně počítá jako čtení i
+  zápis, takže horké akumulátory typu `total += value` nezůstávají na stacku.
+- `rang(stop)` a `rang(start, stop)` mají specializovanou větev s krokem
+  `+1`, bez step slotu a opakovaného testu znaménka.
+- Medián miliardové aritmetické smyčky klesl z 2,13 s na 0,83 s (−61 %),
+  jednoduchého součtu čítače z 1,67 s na 0,58 s (−65 %) a user CPU self-host
+  kompilace z 2,09 s na 1,97 s (−5,7 %). Checksumy zůstaly shodné.
+- Přibyly regrese pro `rang` a `IntArray` iteraci; bitový fixed point, celý
+  test suite, instalovaná kopie, config a audit statických ELF prošly.
+- Installer nyní přibalí také `thread_runtime.lsl`, který importuje codegen;
+  compiler v rozbaleném binárním balíku tak má úplnou self-host zdrojovou sadu.
+- Staticky známý `Int` se na tagged hranici boxuje přímo bez pointerové
+  klasifikace. Tím je odstraněna ASLR-závislá kolize s adresou živého
+  boxovaného `Int`, která mohla náhodně poškodit číselné formátování; nový
+  test tuto kolizi vytváří deterministicky.
+
 ## 0.6.5 — 26. 8. 2026
 
 Výkonnostní a stabilizační vydání zaměřené na celočíselný codegen a
@@ -213,6 +236,7 @@ První veřejné self-hosted vydání LSL.
 
 ## Odkazy na stabilní manuály
 
+- LSL 0.6.6 používá beze změny [manuál 0.6.5](/releases/0.6.5/).
 - [LSL 0.6.5 — manuál a soubory ke stažení](/releases/0.6.5/)
 - [LSL 0.6 — manuál a soubory ke stažení](/releases/0.6/)
 - [LSL 0.5 — historický manuál a soubory ke stažení](/releases/0.5/)

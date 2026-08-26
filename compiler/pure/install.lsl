@@ -45,6 +45,7 @@ sources = [
     "package.lsl",
     "parser.lsl",
     "process_runtime.lsl",
+    "thread_runtime.lsl",
     "x86_64.lsl"
 ]
 for name in sources:

@@ -13,3 +13,13 @@ print through_dict[address], type(through_dict.keys()[0]), through_dict["object"
 print through_call == object, through_list == object
 call gc()
 print through_call == address, through_dict[address]
+
+# A raw Int can also equal the address of a boxed Int. Static Int boundaries
+# must box those bits directly instead of mistaking the existing box for the
+# value being passed.
+boxed_owner = [123456789]
+boxed_address = __lsl_address(boxed_owner[0])
+boxed_address_list = [boxed_address]
+boxed_address_dict = {boxed_address: "address"}
+print __lsl_unbox_int(boxed_address_list[0]) == __lsl_raw_int(boxed_address)
+print boxed_address_dict[boxed_address] == "address"

@@ -67,7 +67,7 @@ if len(readbytes("/tmp/lsl-codegen-optimization-test")) > 64000:
 end
 call require_success(run(compiler, ["compiler/pure/cli.lsl", "/tmp/lsl-stdin-cli-test"]), "compile stdin CLI")
 help_output = capture("/tmp/lsl-stdin-cli-test", ["--help"])
-expected_help = "Lux Simple Lang (LSL) 0.6.5" + chr(10)
+expected_help = "Lux Simple Lang (LSL) 0.6.6" + chr(10)
 expected_help += chr(10)
 expected_help += "Usage:" + chr(10)
 expected_help += "  lsl [SOURCE [ARG...]]" + chr(10)
@@ -86,11 +86,11 @@ if capture_status() != 0 or help_output != expected_help:
     Error(TestFailure: "CLI --help output differs")
 end
 version_output = capture("/tmp/lsl-stdin-cli-test", ["version"])
-if capture_status() != 0 or version_output != "0.6.5" + chr(10):
+if capture_status() != 0 or version_output != "0.6.6" + chr(10):
     Error(TestFailure: "CLI version output differs")
 end
 version_flag_output = capture("/tmp/lsl-stdin-cli-test", ["--version"])
-if capture_status() != 0 or version_flag_output != "0.6.5" + chr(10):
+if capture_status() != 0 or version_flag_output != "0.6.6" + chr(10):
     Error(TestFailure: "CLI --version output differs")
 end
 stdin_source = "value = 6 * 7" + chr(10) + "if value == 42:" + chr(10) + "    print \"stdin\", value" + chr(10) + "end" + chr(10) + "exit" + chr(10)
@@ -109,6 +109,16 @@ end
 exit_output = capture_input("/tmp/lsl-stdin-cli-test", [], "exit(7)" + chr(10) + "exit" + chr(10))
 if capture_status() != 7 or exit_output != "":
     Error(TestFailure: "stdin CLI exact exit terminator differs")
+end
+
+# The installed self-host source set must contain every module imported by
+# lslc_direct/codegen, not only the bootstrapping binary.
+call require_success(run(compiler, ["compiler/pure/install.lsl", "/tmp/lsl-install-tool-test"]), "compile installer conformance")
+install_test_prefix = "/tmp/lsl-install-prefix-test"
+call require_success(run("/tmp/lsl-install-tool-test", [install_test_prefix]), "run installer conformance")
+installed_thread_runtime = install_test_prefix + "/lib/lsl/compiler/pure/thread_runtime.lsl"
+if readfile(installed_thread_runtime) != readfile("compiler/pure/thread_runtime.lsl"):
+    Error(TestFailure: "installed compiler source set is incomplete")
 end
 
 # Per-user source libraries use a strict name/hash/compile/atomic-move path, and
