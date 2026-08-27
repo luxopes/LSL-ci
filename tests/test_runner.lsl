@@ -183,10 +183,20 @@ scalar_test = test_path("scalar-test")
 float_test = test_path("float-test")
 optimization_test = test_path("codegen-optimization-test")
 cli_test = test_path("stdin-cli-test")
+syscall6_test = test_path("syscall6-test")
+httpserver_test = test_path("httpserver-test")
 call require_success(run(compiler, ["tests/compiler/scalar_smoke.lsl", scalar_test]), "compile scalar smoke")
 call require_success(run(scalar_test, []), "run scalar smoke")
 call require_success(run(compiler, ["tests/compiler/float_smoke.lsl", float_test]), "compile Float smoke")
 call require_success(run(float_test, []), "run Float smoke")
+call require_success(run(compiler, ["tests/syscall6_conformance.lsl", syscall6_test]), "compile six-argument syscall conformance")
+call require_output(syscall6_test, [], "tests/syscall6_conformance.out", "six-argument syscall output differs")
+call require_success(run(compiler, ["tests/httpserver_conformance.lsl", httpserver_test]), "compile HTTP server conformance")
+httpserver_root = test_path("httpserver-root")
+call mkdir(httpserver_root)
+call writefile(httpserver_root + "/index.html", "hello-http" + chr(10))
+call writefile(httpserver_root + "/large.txt", "x" * 1048576)
+call require_output(httpserver_test, [httpserver_root], "tests/httpserver_conformance.out", "HTTP server conformance output differs")
 call require_success(run(compiler, ["tests/codegen_optimization_conformance.lsl", optimization_test]), "compile codegen optimization conformance")
 call require_hardened_elf(optimization_test)
 call require_output(optimization_test, [], "tests/codegen_optimization_conformance.out", "codegen optimization output differs")
@@ -199,16 +209,18 @@ end
 call require_success(run(compiler, ["compiler/pure/cli.lsl", cli_test]), "compile stdin CLI")
 call require_hardened_elf(cli_test)
 help_output = capture(cli_test, ["--help"])
-expected_help = "Lux Simple Lang (LSL) 0.6.9" + chr(10)
+expected_help = "Lux Simple Lang (LSL) 0.7.0" + chr(10)
 expected_help += chr(10)
 expected_help += "Usage:" + chr(10)
 expected_help += "  lsl [SOURCE [ARG...]]" + chr(10)
-expected_help += "  lsl compile SOURCE OUTPUT" + chr(10)
+expected_help += "  lsl compile [--unsafe] SOURCE OUTPUT" + chr(10)
 expected_help += "  lsl config ENTRY" + chr(10)
 expected_help += "  lsl install NAME" + chr(10)
 expected_help += "  lsl install --config FILE" + chr(10)
 expected_help += "  lsl update NAME" + chr(10)
-expected_help += "  lsl server" + chr(10)
+expected_help += "  lsl origin [NAME]" + chr(10)
+expected_help += "  lsl server [OPTIONS]" + chr(10)
+expected_help += "  lsl sandbox [OPTIONS] SOURCE [ARG...]" + chr(10)
 expected_help += "  lsl version" + chr(10)
 expected_help += chr(10)
 expected_help += "Options:" + chr(10)
@@ -218,12 +230,32 @@ if capture_status() != 0 or help_output != expected_help:
     Error(TestFailure: "CLI --help output differs")
 end
 version_output = capture(cli_test, ["version"])
-if capture_status() != 0 or version_output != "0.6.9" + chr(10):
+if capture_status() != 0 or version_output != "0.7.0" + chr(10):
     Error(TestFailure: "CLI version output differs")
 end
 version_flag_output = capture(cli_test, ["--version"])
-if capture_status() != 0 or version_flag_output != "0.6.9" + chr(10):
+if capture_status() != 0 or version_flag_output != "0.7.0" + chr(10):
     Error(TestFailure: "CLI --version output differs")
+end
+config_output = capture(cli_test, ["config", "examples/config/system.lsl"])
+if capture_status() != 0 or config_output != readfile("tests/config_expected.json"):
+    Error(TestFailure: "CLI trusted config wrapper output differs")
+end
+origin_output = capture(cli_test, ["origin"])
+if capture_status() != 0 or origin_output != "https://luxos-registry-temp-2026.netlify.app/lsl" + chr(10):
+    Error(TestFailure: "CLI registry origin output differs")
+end
+server_help = capture(cli_test, ["server", "--help"])
+if capture_status() != 0 or server_help.find("--tls-cert FILE") < 0 or server_help.find("--max-requests N") < 0:
+    Error(TestFailure: "CLI server help differs")
+end
+sandbox_help = capture(cli_test, ["sandbox", "--help"])
+if capture_status() != 0 or sandbox_help.find("--profile NAME") < 0 or sandbox_help.find("--read PATH") < 0:
+    Error(TestFailure: "CLI sandbox help differs")
+end
+call capture(cli_test, ["server", "--tls-cert", "missing.pem"])
+if capture_status() == 0 or capture_stderr().find("--tls-cert and --tls-key must be supplied together") < 0:
+    Error(TestFailure: "CLI accepted an incomplete TLS key pair")
 end
 stdin_source = "value = 6 * 7" + chr(10) + "if value == 42:" + chr(10) + "    print \"stdin\", value" + chr(10) + "end" + chr(10) + "exit" + chr(10)
 stdin_output = capture_input(cli_test, [], stdin_source)
@@ -241,6 +273,66 @@ end
 exit_output = capture_input(cli_test, [], "exit(7)" + chr(10) + "exit" + chr(10))
 if capture_status() != 7 or exit_output != "":
     Error(TestFailure: "stdin CLI exact exit terminator differs")
+end
+
+# The ordinary CLI is memory-safe by default. Raw runtime/native/thread doors
+# require a lexical unsafe block; sandbox compilation rejects unsafe entirely.
+unsafe_block_test = test_path("unsafe-block-test")
+call require_success(run(cli_test, ["compile", "tests/unsafe_block_conformance.lsl", unsafe_block_test]), "compile explicit unsafe block")
+unsafe_block_output = capture(unsafe_block_test, [])
+if capture_status() != 0 or not unsafe_block_output.endswith("unsafe block explicit" + chr(10)):
+    Error(TestFailure: "explicit unsafe block output differs")
+end
+call capture(cli_test, ["compile", "tests/unsafe_outside_negative.lsl", test_path("unsafe-outside-negative")])
+if capture_status() == 0 or capture_stderr().find("unsafe operation outside an unsafe block") < 0:
+    Error(TestFailure: "raw operation outside unsafe unexpectedly compiled")
+end
+call capture(cli_test, ["compile", "tests/unsafe_import_negative.lsl", test_path("unsafe-import-negative")])
+if capture_status() == 0 or capture_stderr().find("unsafe operation outside an unsafe block") < 0:
+    Error(TestFailure: "raw operation in an imported user module unexpectedly compiled")
+end
+call require_success(run(cli_test, ["compile", "--unsafe", "tests/unsafe_outside_negative.lsl", test_path("unsafe-cli-override")]), "explicit --unsafe CLI override failed")
+call capture(cli_test, ["compile", "tests/unchecked_intarray_cli_negative.lsl", test_path("unchecked-cli-negative")])
+if capture_status() == 0 or capture_stderr().find("unchecked-intarray requires lsl compile --unsafe") < 0:
+    Error(TestFailure: "unchecked IntArray optimization bypassed safe CLI")
+end
+
+# Compiler tools use a compact raw ABI internally, while linked public modules
+# use tagged Any values. A literal zero must remain Int(0) across that boundary
+# rather than being mistaken for None.
+internal_directory = test_path("compiler")
+call mkdir(internal_directory)
+internal_directory += "/pure"
+call mkdir(internal_directory)
+internal_boundary_source = internal_directory + "/public-boundary.lsl"
+internal_boundary_program = test_path("internal-public-boundary")
+call writefile(internal_boundary_source, "load sandbox" + chr(10) + "print sandbox.input_path(0)" + chr(10) + "print sandbox.output_path(0)" + chr(10))
+call require_success(run(compiler, [internal_boundary_source, internal_boundary_program]), "compile internal/public ABI boundary")
+internal_boundary_output = capture(internal_boundary_program, [])
+if capture_status() != 0 or internal_boundary_output != "/input/0" + chr(10) + "/output/0" + chr(10):
+    Error(TestFailure: "internal/public ABI zero boundary differs")
+end
+
+sandbox_supported = (exists("/usr/bin/bwrap") or exists("/bin/bwrap")) and (exists("/usr/bin/systemd-run") or exists("/bin/systemd-run")) and env.get("XDG_RUNTIME_DIR", "") != "" and env.get("DBUS_SESSION_BUS_ADDRESS", "") != ""
+if sandbox_supported:
+    sandbox_output_directory = test_path("sandbox-output")
+    call mkdir(sandbox_output_directory)
+    sandbox_output = capture(cli_test, [
+        "sandbox", "--timeout", "5",
+        "--read", "tests/sandbox_fixture.txt",
+        "--write", sandbox_output_directory,
+        "tests/sandbox_child.lsl", "argument"
+    ])
+    if capture_status() != 0 or sandbox_output != readfile("tests/sandbox_child.out"):
+        Error(TestFailure: "capability sandbox output differs")
+    end
+    if readfile(sandbox_output_directory + "/sandbox-result.txt") != "sandbox-write" + chr(10):
+        Error(TestFailure: "sandbox writable capability differs")
+    end
+    call capture(cli_test, ["sandbox", "--timeout", "5", "tests/unsafe_block_conformance.lsl"])
+    if capture_status() == 0 or capture_stderr().find("unsafe block is forbidden in sandbox compilation") < 0:
+        Error(TestFailure: "sandbox compilation accepted an unsafe block")
+    end
 end
 
 # Compiler limits are byte budgets, not Unicode code-point budgets. Four-byte
@@ -309,6 +401,9 @@ installed_thread_runtime = install_test_prefix + "/lib/lsl/compiler/pure/thread_
 if readfile(installed_thread_runtime) != readfile("compiler/pure/thread_runtime.lsl"):
     Error(TestFailure: "installed compiler source set is incomplete")
 end
+if readfile(install_test_prefix + "/lib/lsl/stdlib/httpserver.lsl") != readfile("stdlib/httpserver.lsl") or readfile(install_test_prefix + "/lib/lsl/stdlib/sandbox.lsl") != readfile("stdlib/sandbox.lsl"):
+    Error(TestFailure: "installed 0.7 standard library set is incomplete")
+end
 
 # Per-user source libraries use a strict name/hash/compile/atomic-move path, and
 # built-in modules retain precedence over the user directory.
@@ -327,8 +422,12 @@ call mkdir(package_home + "/.local/lib")
 call mkdir(package_home + "/.local/lib/lsl")
 call mkdir(package_home + "/.local/lib/lsl/stdlib")
 package_destination = package_home + "/.local/lib/lsl/stdlib/registry_probe.lsl"
+package_origin = package_destination + ".origin"
 if exists(package_destination):
     call unlink(package_destination)
+end
+if exists(package_origin):
+    call unlink(package_origin)
 end
 package_arguments = ["registry_probe", package_home, "http://127.0.0.1:8080/lsl", package_server, cli_test]
 package_output = capture(package_install, package_arguments)
@@ -339,7 +438,19 @@ end
 if not exists(package_destination):
     Error(TestFailure: "package install did not create the user module")
 end
+if not exists(package_origin):
+    Error(TestFailure: "package install did not record provenance")
+end
+named_origin_output = capture_clean("/usr/bin/env", ["-i", "HOME=" + package_home, cli_test, "origin", "registry_probe"])
+expected_named_origin = "name registry_probe" + chr(10)
+expected_named_origin += "origin http://127.0.0.1:8080/lsl" + chr(10)
+expected_named_origin += "source http://127.0.0.1:8080/lsl/registry_probe.lsl" + chr(10)
+expected_named_origin += "sha256 " + readfile(package_origin).split("sha256=")[1].strip() + chr(10)
+if capture_status() != 0 or named_origin_output != expected_named_origin:
+    Error(TestFailure: "CLI named package origin output differs")
+end
 call unlink(package_destination)
+call unlink(package_origin)
 bad_hash_arguments = ["registry_probe", package_home, "http://127.0.0.1:8080/bad", package_server, cli_test]
 call require_failure(run(package_install, bad_hash_arguments), "package hash mismatch unexpectedly installed")
 if exists(package_destination):

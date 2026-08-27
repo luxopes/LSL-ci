@@ -29,6 +29,11 @@ function module_prefix(name):
     return name.replace(".", "__") + "__"
 end
 
+function builtin_module(name):
+    builtins = "|ai|bigint|config|configure|css|cuda|display|env|fd|gfx|http|httpserver|input|json|lconf|lux|luxos|math|native|os|plugin|process|sandbox|system|tensor|time|tui|ui|unixsock|wayland|x11|"
+    return "|" + String(name) + "|" in builtins
+end
+
 function module_path_with_home(name, owner_path, home):
     relative_name = name.replace(".", "/") + ".lsl"
     standard_path = "stdlib/" + relative_name
@@ -53,9 +58,7 @@ function module_path_with_home(name, owner_path, home):
     installed_layout = binary_directory == prefix_bin
     installed_path = prefix + "/lib/lsl/" + standard_path
     if installed_layout:
-        builtins = "|ai|bigint|config|configure|css|cuda|display|env|fd|gfx|http|input|json|lconf|lux|luxos|math|native|os|plugin|process|system|tensor|time|tui|ui|unixsock|wayland|x11|"
-        marker = "|" + name + "|"
-        if exists(installed_path) or marker in builtins:
+        if exists(installed_path) or builtin_module(name):
             # A missing built-in fails at its trusted prefix path. Local/user
             # modules remain available for names outside the built-in set.
             return installed_path
@@ -129,7 +132,7 @@ function collect_names(statements, result):
                 call collect_names(branch[1], result)
             end
             call collect_names(statement["otherwise"], result)
-        elif kind == "while" or kind == "loop" or kind == "safe":
+        elif kind == "while" or kind == "loop" or kind == "safe" or kind == "unsafe":
             call collect_names(statement["body"], result)
         elif kind == "try":
             call collect_names(statement["body"], result)
@@ -206,7 +209,7 @@ function annotate_statements(statements, path):
     for statement in statements:
         statement["path"] = path
         kind = statement["kind"]
-        if kind == "function" or kind == "loop" or kind == "safe":
+        if kind == "function" or kind == "loop" or kind == "safe" or kind == "unsafe":
             call annotate_statements(statement["body"], path)
         elif kind == "while":
             call annotate_expression(statement["condition"], path)
@@ -244,6 +247,135 @@ function annotate_statements(statements, path):
             call annotate_expression(statement["target"], path)
         end
     end
+end
+
+function mark_trusted(statements, trusted):
+    for statement in statements:
+        statement["trusted"] = trusted
+        kind = statement["kind"]
+        if kind == "function" or kind == "loop" or kind == "safe" or kind == "unsafe":
+            call mark_trusted(statement["body"], trusted)
+        elif kind == "while" or kind == "for":
+            call mark_trusted(statement["body"], trusted)
+        elif kind == "try":
+            call mark_trusted(statement["body"], trusted)
+            call mark_trusted(statement["otherwise"], trusted)
+        elif kind == "if":
+            for branch in statement["branches"]:
+                call mark_trusted(branch[1], trusted)
+            end
+            call mark_trusted(statement["otherwise"], trusted)
+        elif kind == "class":
+            call mark_trusted(statement["body"], trusted)
+        end
+    end
+end
+
+function unsafe_name(name):
+    value = String(name)
+    return value == "thread_spawn" or value.startswith("__lsl_") or value.startswith("native__") or value.startswith("native_")
+end
+
+function unsafe_failure(expression, name, sandbox_mode):
+    detail = "unsafe operation outside an unsafe block"
+    if sandbox_mode:
+        detail = "unsafe operation is forbidden in sandbox compilation"
+    end
+    Error(CompileError: detail + " at " + String(expression.get("path", "<source>")) + ":" + String(expression.get("line", 0)) + ": " + String(name))
+end
+
+function validate_safe_expression(expression, trusted, unsafe_context, sandbox_mode):
+    if expression == None:
+        return None
+    end
+    kind = expression["kind"]
+    if kind == "name":
+        name = expression["name"]
+        if not trusted and unsafe_name(name) and (not unsafe_context or sandbox_mode):
+            call unsafe_failure(expression, name, sandbox_mode)
+        end
+    elif kind == "member":
+        call validate_safe_expression(expression["target"], trusted, unsafe_context, sandbox_mode)
+    elif kind == "call":
+        call validate_safe_expression(expression["target"], trusted, unsafe_context, sandbox_mode)
+        for argument in expression["arguments"]:
+            call validate_safe_expression(argument, trusted, unsafe_context, sandbox_mode)
+        end
+    elif kind == "binary":
+        call validate_safe_expression(expression["left"], trusted, unsafe_context, sandbox_mode)
+        call validate_safe_expression(expression["right"], trusted, unsafe_context, sandbox_mode)
+    elif kind == "unary":
+        call validate_safe_expression(expression["operand"], trusted, unsafe_context, sandbox_mode)
+    elif kind == "compare":
+        for operand in expression["operands"]:
+            call validate_safe_expression(operand, trusted, unsafe_context, sandbox_mode)
+        end
+    elif kind == "index":
+        call validate_safe_expression(expression["target"], trusted, unsafe_context, sandbox_mode)
+        call validate_safe_expression(expression["index"], trusted, unsafe_context, sandbox_mode)
+    elif kind == "slice":
+        call validate_safe_expression(expression["target"], trusted, unsafe_context, sandbox_mode)
+        call validate_safe_expression(expression["start"], trusted, unsafe_context, sandbox_mode)
+        call validate_safe_expression(expression["stop"], trusted, unsafe_context, sandbox_mode)
+    elif kind == "list" or kind == "tuple" or kind == "real_array":
+        for item in expression["items"]:
+            call validate_safe_expression(item, trusted, unsafe_context, sandbox_mode)
+        end
+    elif kind == "dictionary":
+        for entry in expression["entries"]:
+            call validate_safe_expression(entry[0], trusted, unsafe_context, sandbox_mode)
+            call validate_safe_expression(entry[1], trusted, unsafe_context, sandbox_mode)
+        end
+    end
+    return None
+end
+
+function validate_safe_statements(statements, unsafe_context, sandbox_mode):
+    for statement in statements:
+        trusted = statement.get("trusted", False)
+        kind = statement["kind"]
+        if kind == "unsafe":
+            if not trusted and sandbox_mode:
+                Error(CompileError: "unsafe block is forbidden in sandbox compilation at " + String(statement.get("path", "<source>")) + ":" + String(statement.get("line", 0)))
+            end
+            call validate_safe_statements(statement["body"], True, sandbox_mode)
+        elif kind == "function" or kind == "loop" or kind == "safe":
+            call validate_safe_statements(statement["body"], unsafe_context, sandbox_mode)
+        elif kind == "while":
+            call validate_safe_expression(statement["condition"], trusted, unsafe_context, sandbox_mode)
+            call validate_safe_statements(statement["body"], unsafe_context, sandbox_mode)
+        elif kind == "for":
+            call validate_safe_expression(statement["iterable"], trusted, unsafe_context, sandbox_mode)
+            call validate_safe_statements(statement["body"], unsafe_context, sandbox_mode)
+        elif kind == "try":
+            call validate_safe_statements(statement["body"], unsafe_context, sandbox_mode)
+            call validate_safe_statements(statement["otherwise"], unsafe_context, sandbox_mode)
+        elif kind == "class":
+            call validate_safe_expression(statement["condition"], trusted, unsafe_context, sandbox_mode)
+            call validate_safe_expression(statement.get("parent", None), trusted, unsafe_context, sandbox_mode)
+            call validate_safe_statements(statement["body"], unsafe_context, sandbox_mode)
+        elif kind == "assign":
+            call validate_safe_expression(statement["target"], trusted, unsafe_context, sandbox_mode)
+            call validate_safe_expression(statement["value"], trusted, unsafe_context, sandbox_mode)
+        elif kind == "print":
+            for expression in statement["expressions"]:
+                call validate_safe_expression(expression, trusted, unsafe_context, sandbox_mode)
+            end
+        elif kind == "expression" or kind == "return":
+            call validate_safe_expression(statement["expression"], trusted, unsafe_context, sandbox_mode)
+        elif kind == "if":
+            for branch in statement["branches"]:
+                call validate_safe_expression(branch[0], trusted, unsafe_context, sandbox_mode)
+                call validate_safe_statements(branch[1], unsafe_context, sandbox_mode)
+            end
+            call validate_safe_statements(statement["otherwise"], unsafe_context, sandbox_mode)
+        elif kind == "error":
+            call validate_safe_expression(statement["message"], trusted, unsafe_context, sandbox_mode)
+        elif kind == "delete":
+            call validate_safe_expression(statement["target"], trusted, unsafe_context, sandbox_mode)
+        end
+    end
+    return None
 end
 
 function transform_expression(expression, own_functions, imported_names, namespaces):
@@ -341,7 +473,7 @@ function transform_statements(statements, own_functions, imported_names, namespa
             end
             call transform_expression(statement["iterable"], own_functions, imported_names, namespaces)
             call transform_statements(statement["body"], own_functions, imported_names, namespaces)
-        elif kind == "loop" or kind == "safe":
+        elif kind == "loop" or kind == "safe" or kind == "unsafe":
             call transform_statements(statement["body"], own_functions, imported_names, namespaces)
         elif kind == "try":
             call transform_statements(statement["body"], own_functions, imported_names, namespaces)
@@ -383,6 +515,7 @@ function collect_module(name, owner_path, cache, output, source_budget):
     source_budget[0] += source_bytes
     program = parser.parse(path, source)
     call annotate_statements(program, path)
+    call mark_trusted(program, builtin_module(name))
     prefix = module_prefix(name)
     cache[name] = prefix
     namespaces = {}
@@ -421,7 +554,7 @@ function collect_module(name, owner_path, cache, output, source_budget):
     return prefix
 end
 
-function link(path, source):
+function link_mode(path, source, safety_mode):
     checked_source = String(source)
     source_bytes = __lsl_text_byte_length(checked_source)
     if source_bytes > 16777216:
@@ -429,6 +562,7 @@ function link(path, source):
     end
     program = parser.parse(path, checked_source)
     call annotate_statements(program, path)
+    call mark_trusted(program, False)
     cache = {}
     linked = []
     namespaces = {}
@@ -455,5 +589,20 @@ function link(path, source):
     end
     call transform_statements(filtered, own_functions, imported_names, namespaces)
     linked.extend(filtered)
+    if safety_mode != 0:
+        call validate_safe_statements(linked, False, safety_mode == 2)
+    end
     return linked
+end
+
+function link(path, source):
+    return link_mode(path, source, 0)
+end
+
+function link_checked(path, source, sandbox_mode):
+    mode = 1
+    if Bool(sandbox_mode):
+        mode = 2
+    end
+    return link_mode(path, source, mode)
 end

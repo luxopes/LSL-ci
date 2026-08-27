@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
-<meta name="description" content="LSL 0.6.9 — opravy dynamického ABI, kolekcí, numeriky a diagnostiky compileru.">
-<title>LSL 0.6.9 — produkční stabilizace</title>
+<meta name="description" content="LSL 0.7.0 — nativní HTTP/HTTPS server, provenance balíčků, capability sandbox a explicitní unsafe hranice.">
+<title>LSL 0.7.0 — aplikační a bezpečnostní vydání</title>
 <style>
   :root {
     --bg: #0d1117;
@@ -416,8 +416,8 @@
 <button id="menu-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
 
 <nav id="sidebar">
-  <div class="logo">LSL <span>0.6.9</span></div>
-  <a href="./" data-home="home">🚀 Vydání 0.6.9</a>
+  <div class="logo">LSL <span>0.7.0</span></div>
+  <a href="./" data-home="home">🚀 Vydání 0.7.0</a>
   <a href="./#downloads" data-home="downloads">↓ Ke stažení</a>
   <a href="/releases/">◷ Historie vydání</a>
   <a href="#" data-page="CHANGELOG">✦ Changelog</a>
@@ -439,6 +439,8 @@
   <a href="#" data-page="10-ai-applications">10. AI aplikace</a>
   <a href="#" data-page="11-performance-and-optimization">11. Výkon a optimalizace</a>
   <a href="#" data-page="12-compiler-internals">12. Interní architektura</a>
+  <a href="#" data-page="13-server-and-origin">13. Server a původ knihoven</a>
+  <a href="#" data-page="14-sandbox-and-safety">14. Sandbox a bezpečnost</a>
   <div class="section">Referenční</div>
   <a href="#" data-page="reference">📋 Kompletní reference funkcí</a>
 </nav>
@@ -446,40 +448,40 @@
 <main id="content">
   <div class="release-shell">
     <section class="welcome-hero">
-      <div class="release-kicker"><span class="release-version">0.6.9</span> Produkční stabilizace</div>
+      <div class="release-kicker"><span class="release-version">0.7.0</span> Aplikační a bezpečnostní vydání</div>
       <h1>Lux Simple Lang</h1>
-      <p>Self-hosted LSL s korektním dynamickým ABI, kontrolovanými kolekcemi a numerikou, přesnější diagnostikou a reprodukovatelným toolchainem.</p>
+      <p>Self-hosted LSL s nativním HTTP/HTTPS serverem, ověřitelným původem balíčků, capability sandboxem a explicitní hranicí mezi bezpečným a unsafe kódem.</p>
       <div class="release-actions">
-        <a class="release-button primary" href="downloads/lsl-0.6.9-linux-x86_64.tar.gz" download>Stáhnout pro Linux x86_64</a>
+        <a class="release-button primary" href="downloads/lsl-0.7.0-linux-x86_64.tar.gz" download>Stáhnout pro Linux x86_64</a>
         <a class="release-button" href="#README" data-page="README">Otevřít manuál</a>
         <a class="release-button" href="/releases/">Historie verzí</a>
         <a class="release-button" href="#CHANGELOG" data-page="CHANGELOG">Co se změnilo</a>
       </div>
-      <div class="release-command"><span class="prompt">$</span> tar -xzf lsl-0.6.9-linux-x86_64.tar.gz
-<span class="prompt">$</span> ./lsl-0.6.9/bin/lsl version
-0.6.9</div>
+      <div class="release-command"><span class="prompt">$</span> tar -xzf lsl-0.7.0-linux-x86_64.tar.gz
+<span class="prompt">$</span> ./lsl-0.7.0/bin/lsl version
+0.7.0</div>
     </section>
 
     <section class="release-section" id="downloads">
       <h2>Ke stažení</h2>
       <p class="release-lead">Vydání obsahuje bootstrapping binárky, úplný zdrojový strom a aktualizovaný živý český manuál.</p>
       <div class="download-grid">
-        <a class="download-card" href="downloads/lsl-0.6.9-linux-x86_64.tar.gz" download>
+        <a class="download-card" href="downloads/lsl-0.7.0-linux-x86_64.tar.gz" download>
           <span class="download-icon">⬡</span>
           <h3>Binární balík</h3>
           <p>Spustitelné <code>lsl</code>, <code>lslc</code>, nástroje, CUDA worker a kompletní standardní knihovna.</p>
           <span class="download-meta">Linux · x86_64 · tar.gz ↓</span>
         </a>
-        <a class="download-card" href="downloads/lsl-0.6.9-source.tar.gz" download>
+        <a class="download-card" href="downloads/lsl-0.7.0-source.tar.gz" download>
           <span class="download-icon">⌘</span>
           <h3>Repozitář</h3>
           <p>Zdroj compileru, runtime, stdlib, testy, příklady a auditovatelný binary seed.</p>
-          <span class="download-meta">LSL 0.6.9 · source · tar.gz ↓</span>
+          <span class="download-meta">LSL 0.7.0 · source · tar.gz ↓</span>
         </a>
         <a class="download-card" href="#README" data-page="README">
           <span class="download-icon">▤</span>
           <h3>Aktuální manuál</h3>
-          <p>Všech 12 kapitol, reference a výslovný bezpečnostní model LSL 0.6.9.</p>
+          <p>Všech 14 kapitol, reference a výslovný bezpečnostní model LSL 0.7.0.</p>
           <span class="download-meta">Čeština · online manuál →</span>
         </a>
       </div>
@@ -489,7 +491,7 @@
     <div class="release-facts">
       <div class="release-fact"><strong>Self-hosted</strong><span>Compiler překládá sám sebe bitově shodně.</span></div>
       <div class="release-fact"><strong>Statický PIE</strong><span>ASLR, RX image, RW non-executable stack, bez interpreteru.</span></div>
-      <div class="release-fact"><strong>Kontrolované Any ABI</strong><span>Dynamické kolekce a numerika ověřují typy před přístupem k raw layoutu.</span></div>
+      <div class="release-fact"><strong>Safe + sandbox</strong><span>Unsafe operace jsou explicitní a nedůvěryhodný kód lze spustit s omezenými capabilities.</span></div>
     </div>
 
     <section class="release-section" id="manual">
@@ -503,7 +505,7 @@
       <div class="welcome-grid" id="welcome-grid"></div>
     </section>
 
-    <footer class="release-footer">LSL 0.6.9 · Produkční stabilizace · Linux x86_64 · MIT License</footer>
+    <footer class="release-footer">LSL 0.7.0 · Aplikační a bezpečnostní vydání · Linux x86_64 · MIT License</footer>
   </div>
 </main>
 
@@ -518,6 +520,9 @@ function guidePageName(href) {
     '../configuration.md': '08-configuration-system',
     '../ai.md': '10-ai-applications',
     '../cuda.md': '11-performance-and-optimization',
+    '../server.md': '13-server-and-origin',
+    '../sandbox.md': '14-sandbox-and-safety',
+    '../release-0.7.md': 'README',
     '../release-0.6.9.md': 'README',
     '../release-0.6.8.md': 'README',
     '../release-0.6.7.md': 'README',
@@ -687,7 +692,7 @@ function renderMarkdown(md) {
     code = code.replace(/(#.*$)/gm, m => { prot.push(m); return `\x01P${pi++}\x01`; });
 
     // 4. Keywords (safe: protected content is hidden)
-    code = code.replace(/\b(function|if|elif|else|end|for|while|loop|break|continue|return|class|load|from|as|safe|try|call|del|and|or|not|True|False|None|ctype|Public|Private|in|Error|check|range|rang)\b/g,
+    code = code.replace(/\b(function|if|elif|else|end|for|while|loop|break|continue|return|class|load|from|as|safe|unsafe|try|call|del|and|or|not|True|False|None|ctype|Public|Private|in|Error|check|range|rang)\b/g,
       '<span class="kw">$1</span>');
 
     // 5. Numbers
@@ -783,6 +788,8 @@ function buildWelcomeGrid() {
     ['10-ai-applications', '10', 'AI aplikace', 'OpenAI API, streaming, function calling, secrets management.'],
     ['11-performance-and-optimization', '11', 'Výkon a optimalizace', 'Typovaná pole, nativní kernely, benchmarking a optimalizace compileru.'],
     ['12-compiler-internals', '12', 'Interní architektura', 'Self-host, fixed point, parser, codegen, runtime, ABI a garbage collector.'],
+    ['13-server-and-origin', '13', 'Server a původ knihoven', 'Nativní HTTP/HTTPS server, bezpečné publikování souborů a ověřitelný původ balíčků.'],
+    ['14-sandbox-and-safety', '14', 'Sandbox a bezpečnost', 'Capability sandbox, limity zdrojů, bezpečný compiler a explicitní unsafe hranice.'],
   ];
   grid.innerHTML = chapters.map(([page, num, title, desc]) =>
     `<a class="welcome-card" href="#${page}" data-page="${page}">

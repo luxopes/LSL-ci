@@ -1,6 +1,6 @@
 # Lux Simple Lang (LSL)
 
-LSL 0.6.9 je self-hostovaný jazyk pro běžné programování, deklarativní
+**LSL 0.7.0** rozšiřuje self-hostovaný jazyk pro běžné programování, deklarativní
 konfiguraci, AI orchestrace a volitelné CUDA výpočty. Compiler i host runtime
 jsou pouze LSL: compiler přímo zapisuje statický Linux x86_64 ELF a runtime
 používá přímé syscalls, bez libc, assembleru, linkeru, Pythonu nebo shell
@@ -10,12 +10,14 @@ pure-LSL a Tensor používá CPU fallback.
 
 ## Self-hosted vydání
 
-LSL 0.6.9 je nejnovější vydání. Binární balík pro Linux x86_64, zdrojový
-archiv a aktualizovaný český manuál jsou na
+LSL 0.7.0 je nejnovější stabilní vydání. Binární balík pro Linux x86_64,
+zdrojový archiv a aktualizovaný český manuál jsou na
 [lsl.lux-ai.cz](https://lsl.lux-ai.cz/). Stabilní manuály vydání jsou v
 [historii vydání](https://lsl.lux-ai.cz/releases/):
 
-- [LSL 0.6.9](https://lsl.lux-ai.cz/) — opravy veřejného Any ABI,
+- [LSL 0.7.0](https://lsl.lux-ai.cz/) — HTTP/HTTPS server, provenance,
+  capability sandbox a explicitní safe/unsafe hranice;
+- LSL 0.6.9 — opravy veřejného Any ABI,
   dynamických kolekcí, numeriky, konverzí a diagnostiky compileru;
 - LSL 0.6.8 — bezpečnostní hardening runtime,
   procesů, native izolace, I/O, parseru a standardní knihovny;
@@ -42,9 +44,13 @@ Datovaný přehled změn je v
 ./lsl version
 ./lsl                              # interaktivní zdroj ze stdin, konec řádkem exit
 ./lsl program.lsl arg1 arg2
-./lsl compile program.lsl program
+./lsl compile program.lsl program     # bezpečný výchozí režim
+./lsl compile --unsafe raw.lsl raw    # výslovně privilegovaný překlad
 ./lsl config examples/config/system.lsl
 ./lsl install textkit
+./lsl origin textkit
+./lsl server --dir public --port 8080
+./lsl sandbox --read input.txt program.lsl
 ./compiler/lslc program.lsl program
 ```
 
@@ -98,11 +104,12 @@ Bez argumentu installer používá `/usr/local` (podle oprávnění procesu). In
 ./lsl install textkit
 ./lsl update textkit
 ./lsl install --config libraries.conf
-./lsl server
+./lsl origin textkit
 ```
 
 Knihovna se stáhne z dočasného HTTPS registru, ověří zveřejněným SHA-256,
-zkušebně přeloží a atomicky uloží do `~/.local/lib/lsl/stdlib`. `update`
+zkušebně přeloží, zapíše ověřitelný `.origin` provenance sidecar a atomicky
+uloží do `~/.local/lib/lsl/stdlib`. `update`
 vyžaduje existující knihovnu a používá stejnou ověřenou atomickou cestu. Config
 obsahuje jeden název na řádek; prázdné řádky a řádky začínající `#` se ignorují.
 Built-in moduly
@@ -119,11 +126,14 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 - functions, recursion, first-class Function pointers a callbacks;
 - classes/instances, jednoduchá dědičnost `class Child(Parent)`, přepisování
   metod, `origin.method()` a public/private module class lowering;
-- recursive modules, `safe`, `try/else`, `Error`, `check`, `last_error`;
+- recursive modules, `safe`, `try/else`, explicitní paměťově privilegované
+  `unsafe:`, `Error`, `check`, `last_error`;
 - statické aliasy modulů (`load tensor as t`), first-class interpolované Lux
   Stringy, knihovní `BigInt`, rozšířený modul `math` a vestavěné `sqrt`;
 - conservative stack/global-root mark-sweep GC s reusable free-list;
 - JSON, strict `config.lconf` dependency codec pro zdroje apt/lux/lsl, čistý config evaluator, LuxOS/Debian modul `system` pro balíčky, služby, uživatele, atomické soubory, mounty a generace/rollback, wall/monotonic time a sleep, filesystem, argv, environment, přímé `os.run("ls -al")` bez shellu, process/capture, HTTP(S) přes validovaný curl config na stdin, verzované JSON-stdin process plugin ABI bez shellu a skutečný NVIDIA CUDA worker se sum/dot/AXPY/matmul kernely a binárním Float64 transportem;
+- syscall-only statický HTTP server, HTTPS přes systémový nginx/OpenSSL a
+  capability sandbox s namespaces, cgroup/prlimit limity a čistým prostředím;
 - strukturované compile errors: kód, soubor, řádek, sloupec, výřez, caret a help.
 
 `tests/selfhost_conformance.lsl` produkuje přesně `tests/selfhost_conformance.out`. Config příklad produkuje přesně `tests/config_expected.json`.
@@ -140,11 +150,14 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 - [Čas a měření](docs/time.md)
 - [Linux příkazy přes modul os](docs/os.md)
 - [Instalace LSL knihoven](docs/packages.md)
+- [HTTP/HTTPS server](docs/server.md)
+- [Capability sandbox a unsafe hranice](docs/sandbox.md)
 - [Správa balíčků LuxOS](docs/system.md)
 - [Dependency manifest config.lconf](docs/lconf.md)
 - [Bezpečnostní model a hranice důvěry](docs/security.md)
 - [Native/plugin ABI](docs/native-plugins.md)
 - [CUDA backend a worker protokol](docs/cuda.md)
+- [Poznámky k vydání 0.7.0](docs/release-0.7.md)
 - [Poznámky k lokálnímu vydání 0.6.9](docs/release-0.6.9.md)
 - [Poznámky k lokálnímu vydání 0.6.8](docs/release-0.6.8.md)
 - [Poznámky k lokálnímu vydání 0.6.7](docs/release-0.6.7.md)
@@ -164,7 +177,7 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 Vstupní bod je `compiler/pure/lslc_direct.lsl`. Lexer, parser, linker, x86_64 encoder, ELF writer a runtime jsou moduly v `compiler/pure/`. Standardní moduly jsou v `stdlib/`.
 
 Známé zbývající mezery jsou vedené výhradně v `PURE_LSL_PROGRESS.md`; CUDA
-v 0.6 používá bundlovaný izolovaný NVIDIA CUDA Runtime worker s CPU fallbackem,
+LSL používá bundlovaný izolovaný NVIDIA CUDA Runtime worker s CPU fallbackem,
 nikoli přímý in-process CUDA driver ABI. FloatArray kernely jsou ručně
 vektorizované přes SSE2 a `thread_spawn`/`thread_join` poskytují sdílená
 vlákna s atomickými builtiny; obecná autovektorizace, persistentní CUDA

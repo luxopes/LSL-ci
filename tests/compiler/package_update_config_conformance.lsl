@@ -15,5 +15,9 @@ for name in ["registry_probe", "config_probe", "second_probe"]:
     if not exists(destination):
         Error(TestFailure: "package operation did not create " + name)
     end
+    provenance = package.origin(name, home)
+    if provenance["name"] != name or provenance["origin"] != server:
+        Error(TestFailure: "package operation did not preserve origin for " + name)
+    end
 end
 print "package-update-config-ok"

@@ -22,6 +22,10 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktu�
   metody a I/O; typed arrays a ByteArray slicing mají samostatné boundary testy.
 - 0.6.9: odstraněny zbývající nalezené raw-Int/live-pointer kolize v
   dynamických operátorech a redukcích; compiler hlásí chybnou aritu bez pádu.
+- 0.7.0: `lsl origin`, syscall-only HTTP / nginx/OpenSSL HTTPS server,
+  provenance sidecary a nový capability `lsl sandbox`.
+- 0.7.0: lexikální `unsafe:` hranice, safe kontrola uživatelského importního
+  grafu, sandbox zákaz unsafe kódu a oprava interní/public ABI hranice modulů.
 
 ## Aktivní plán
 
@@ -40,6 +44,10 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktu�
 - [x] Ošetřit process pipe/memfd/fork/read/wait/lseek/dup2 failure a doplnit deadlock-free `capture_input`.
 - [x] Doplnit reálný RLIMIT_NOFILE fault corpus pro pipe/memfd cleanup a uzavřít close(2)/EINTR politiku.
 - [ ] Volitelně rozšířit syntetický fault injection na obtížně vyvolatelné fork/wait/read větve.
+- [x] Ověřit 0.7.0 přes full suite, čistou instalaci, instalovaný fixed
+  point, config, reálný loopback HTTP/HTTPS smoke test a audit generovaných ELF.
+- [x] Povýšit 0.7.0 na release, reprodukovat binárky a vytvořit archivy, tag
+  a webový manuál.
 - [x] Doplnit valid-source frontend fuzz, strict JSON malformed/round-trip corpus, generativní config corpus a GC cycle/deep/reuse stress.
 - [x] Změřit a zrychlit compiler bez změny deterministického výstupu; doplnit near-native IntArray/FloatArray kernely a packed ByteArray.
 
@@ -49,6 +57,11 @@ Feature scope je implementovaný: self-host compiler/runtime, jazyk a collection
 
 ## Zbývá hardening/bugfix/audit
 
+- plný Rust ownership/borrow checker ani statický důkaz absence data races
+  zatím nejsou implementované; 0.7 poskytuje auditovatelnou `unsafe:` hranici,
+  checked runtime a procesový sandbox, což je záměrně užší model;
+- pro vysoce rizikový multi-tenant provoz zůstává nad rámec vestavěného
+  sandboxu host-level seccomp allowlist nebo VM/microVM hranice;
 - případná budoucí změna definované Int overflow sémantiky by byla samostatná
   jazyková změna; současné two's-complement modulo `2^64` chování má conformance;
 - případná ABI v2 rozšíření nad hotovým self-contained CPU ET_DYN v1 (relocations/Tensor descriptors); GPU je mimo aktuální scope;

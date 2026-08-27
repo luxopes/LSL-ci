@@ -107,15 +107,80 @@ function remove_if_exists(path):
     end
 end
 
-function cleanup_work(work, stage, check_path):
+function cleanup_work(work, stage, check_path, origin_stage):
     call remove_if_exists(stage)
     call remove_if_exists(check_path)
+    call remove_if_exists(origin_stage)
     call rmdir(work)
 end
 
-function fail_after_cleanup(message, work, stage, check_path):
-    call cleanup_work(work, stage, check_path)
+function fail_after_cleanup(message, work, stage, check_path, origin_stage):
+    call cleanup_work(work, stage, check_path, origin_stage)
     Error(PackageError: message)
+end
+
+function provenance_text(name, server, source_url, hash):
+    return "format=1" + chr(10) + "name=" + name + chr(10) + "origin=" + server + chr(10) + "source=" + source_url + chr(10) + "sha256=" + hash + chr(10)
+end
+
+function parse_provenance(name, content):
+    text = String(content)
+    if len(text) == 0 or __lsl_text_byte_length(text) > 8192:
+        Error(PackageError: "package provenance has an invalid size: " + name)
+    end
+    values = {}
+    for line in text.split(chr(10)):
+        if line == "":
+            continue
+        end
+        for character in line:
+            code = ord(character)
+            if code < 32 or code > 126:
+                Error(PackageError: "package provenance must use printable ASCII: " + name)
+            end
+        end
+        separator = line.find("=")
+        if separator <= 0:
+            Error(PackageError: "package provenance contains an invalid field: " + name)
+        end
+        key = line[0:separator]
+        value = line[separator + 1:len(line)]
+        if key != "format" and key != "name" and key != "origin" and key != "source" and key != "sha256":
+            Error(PackageError: "package provenance contains an unknown field: " + key)
+        elif key in values:
+            Error(PackageError: "package provenance contains a duplicate field: " + key)
+        end
+        values[key] = value
+    end
+    for required in ["format", "name", "origin", "source", "sha256"]:
+        if required not in values:
+            Error(PackageError: "package provenance is missing " + required + ": " + name)
+        end
+    end
+    if values["format"] != "1" or values["name"] != name:
+        Error(PackageError: "package provenance identity differs: " + name)
+    end
+    values["origin"] = normalize_server(values["origin"])
+    expected_source = values["origin"] + "/" + name + ".lsl"
+    if values["source"] != expected_source or not valid_hash(values["sha256"]):
+        Error(PackageError: "package provenance URL or SHA-256 is invalid: " + name)
+    end
+    return values
+end
+
+function origin(name, home):
+    if not valid_name(name):
+        Error(PackageError: "invalid library name: " + String(name))
+    end
+    destination = user_directory(home) + "/" + name + ".lsl"
+    if not exists(destination):
+        Error(PackageError: "library is not installed: " + name)
+    end
+    sidecar = destination + ".origin"
+    if not exists(sidecar):
+        Error(PackageError: "library has no recorded origin; update it with LSL 0.7: " + name)
+    end
+    return parse_provenance(name, readfile(sidecar))
 end
 
 function fetch(curl_path, server, url):
@@ -282,26 +347,35 @@ function install(name, home, server, curl_path, sha256_path, move_path, chmod_pa
     work = work_directory(directory, name)
     stage = work + "/source.lsl"
     check_path = work + "/compiled-check"
+    origin_stage = work + "/source.origin"
     call writefile(stage, source)
 
     hash_output = capture_clean(sha256_path, [stage])
     hash_status = capture_status()
     if hash_status != 0 or len(hash_output) < 64:
-        call fail_after_cleanup("cannot calculate downloaded SHA-256", work, stage, check_path)
+        call fail_after_cleanup("cannot calculate downloaded SHA-256", work, stage, check_path, origin_stage)
     end
     actual = hash_output[0:64]
     if not valid_hash(actual) or actual != expected:
-        call fail_after_cleanup("SHA-256 mismatch for " + name, work, stage, check_path)
+        call fail_after_cleanup("SHA-256 mismatch for " + name, work, stage, check_path, origin_stage)
     end
     if run_clean(chmod_path, ["0644", "--", stage]) != 0:
-        call fail_after_cleanup("cannot set safe library permissions", work, stage, check_path)
+        call fail_after_cleanup("cannot set safe library permissions", work, stage, check_path, origin_stage)
     end
     if run_clean(lsl_path, ["compile", stage, check_path]) != 0:
-        call fail_after_cleanup("downloaded library does not compile", work, stage, check_path)
+        call fail_after_cleanup("downloaded library does not compile", work, stage, check_path, origin_stage)
     end
     call remove_if_exists(check_path)
+    call writefile(origin_stage, provenance_text(name, server, source_url, expected))
+    if run_clean(chmod_path, ["0644", "--", origin_stage]) != 0:
+        call fail_after_cleanup("cannot set safe provenance permissions", work, stage, check_path, origin_stage)
+    end
     if run_clean(move_path, ["-f", "--", stage, destination]) != 0:
-        call fail_after_cleanup("atomic library installation failed", work, stage, check_path)
+        call fail_after_cleanup("atomic library installation failed", work, stage, check_path, origin_stage)
+    end
+    if run_clean(move_path, ["-f", "--", origin_stage, destination + ".origin"]) != 0:
+        call cleanup_work(work, stage, check_path, origin_stage)
+        Error(PackageError: "library installed but provenance update failed: " + name)
     end
     call rmdir(work)
     print "Installed", name, "into", destination + "."

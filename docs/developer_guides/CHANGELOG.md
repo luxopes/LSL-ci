@@ -4,6 +4,21 @@ Na této stránce jsou uživatelsky významné změny vydaných verzí. Stabiln�
 manuály a soubory ke stažení zůstávají dostupné v
 [historii vydání](/releases/).
 
+## 0.7.0 — 27. 8. 2026
+
+- `lsl server` nyní spouští omezený statický HTTP server; s certifikátem a
+  klíčem deleguje HTTPS systémovému nginx/OpenSSL. Původ registru se přesunul
+  do `lsl origin [NAME]` a install/update zapisuje ověřený provenance sidecar.
+- `lsl sandbox` spouští safe-compiled worker přes bubblewrap namespaces,
+  explicitní read/write capabilities, systemd cgroup, prlimit a timeout.
+- Nový `unsafe:` blok ohraničuje privátní runtime/native/thread operace.
+  Výchozí CLI kontroluje celý uživatelský importní graf; sandbox unsafe kód
+  odmítá. Unchecked IntArray vyžaduje `lsl compile --unsafe`.
+- Přibyla šestargumentová syscall brána, oprava tagged Any hranice mezi
+  interním compiler ABI a veřejnými stdlib funkcemi a HTTP/sandbox/ABI
+  regrese. HTTP socket writes používají `MSG_NOSIGNAL`, takže reset klienta
+  neukončí server přes `SIGPIPE`.
+
 ## 0.6.9 — 27. 8. 2026
 
 Stabilizační vydání veřejného dynamického ABI bez změny syntaxe.

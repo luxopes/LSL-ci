@@ -11,4 +11,8 @@ expected = "function registry_answer():" + chr(10) + "    return 42" + chr(10) +
 if readfile(destination) != expected:
     Error(TestFailure: "installed library source differs")
 end
+provenance = package.origin(name, home)
+if provenance["name"] != name or provenance["origin"] != server or provenance["source"] != server + "/" + name + ".lsl" or provenance["sha256"] != "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa":
+    Error(TestFailure: "installed library provenance differs")
+end
 print "package-install-ok"

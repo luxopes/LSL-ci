@@ -29,6 +29,8 @@ Každá změna musí zachovat:
 4. **Jeden RX `PT_LOAD`** — žádný `INTERP`, `DYNAMIC` ani RWX segment.
 5. **Veřejný tagged Any ABI** — raw Int/live pointer collision bezpečnost.
 6. **Původní source path, řádek a sloupec** — v diagnostice.
+7. **Safe/unsafe provenance uzlů** — built-in trust core se nesmí zaměnit za
+   uživatelský modul stejného jména.
 
 ## Mapa zdrojových souborů
 
@@ -96,6 +98,12 @@ Zdrojový kód se rozdělí na tokeny (`lexer.lsl`) a ty se složí do AST
 
 Linker zachovává `path` a `line`/`column`/`end_column` pro přesnou
 diagnostiku.
+
+V bezpečném CLI režimu navíc označí built-in moduly jako trusted, projde
+výrazy celého uživatelského importního grafu a odmítne privátní `__lsl_*`,
+native a thread operace mimo `unsafe:`. Sandbox režim odmítá i samotný unsafe
+blok. Přímý self-host `lslc` tento policy pass nepoužívá, protože je součástí
+explicitního trust core.
 
 ### 4. Sestavení class/function tables
 
@@ -192,6 +200,10 @@ Volání je **SysV-like** (Linux x86\_64):
   tagovaný výsledek. Raw Int se nesmí klasifikovat podle shody s heap adresou.
 - **Staticky známá lokální aritmetika** a trusted self-host cesta mohou
   držet raw skaláry (Int64 přímo v registru, bez heap alokace).
+- Přímé volání z interního compiler nástroje do linked stdlib/user funkce
+  přepíná argumentovou hranici zpět na veřejné tagování a její tělo se emituje
+  s public kontrolami. Jinak by raw `0` mohl být v dynamickém parametru
+  zaměněn za `None`.
 - `runtime_writebytes_raw` a ostatní raw vstupy jsou vyhrazené self-host
   toolchainu; běžný program používá kontrolované veřejné entrypointy.
 
@@ -369,8 +381,9 @@ readelf -W -l compiler/pure/lslc-direct
 
 Runtime používá přímo Linux syscalls (x86\_64: přes `syscall` instrukci):
 
-- **I/O**: `read`, `write`, `open`, `close`, `lseek`, `access`
-- **Paměť**: `brk` (heap), `mmap` (ET_DYN plugin)
+- **I/O/síť**: `read`, `write`, `open`, `openat2`, `close`, `lseek`, `access`,
+  `socket`, `bind`, `listen`, `accept4`, `setsockopt`
+- **Paměť**: `brk`, `mmap`, `munmap`
 - **Procesy**: `fork`, `execve`, `wait4`, `pipe`, `dup2`, `exit`
 - **Souborový systém**: `readlink`, `mkdir`, `unlink`, `rename` (přes mv)
 - **Čas**: `clock_gettime`, `nanosleep`
@@ -378,22 +391,30 @@ Runtime používá přímo Linux syscalls (x86\_64: přes `syscall` instrukci):
 
 Žádné volání libc — runtime je plně soběstačný.
 
+Historický `__lsl_syscall` přijímá číslo a čtyři argumenty. HTTP/openat2 a
+další Linux ABI používají `__lsl_syscall6(nr, a, b, c, d, e, f)`: codegen
+vyhodnotí sedm výrazů zprava doleva, SysV registry přemapuje na Linux
+`rdi,rsi,rdx,r10,r8,r9` a šestý syscall argument vezme ze stacku. Samostatná
+mmap/munmap regrese hlídá skutečné pořadí registrů, nestačí jen fixed point.
+
 ## Bezpečnostní model
 
 Běžný programovací režim **není** sandbox. LSL program má plná práva
-aktuálního procesu: může číst/zapisovat soubory, spouštět procesy,
-měnit systémové balíčky.
+aktuálního procesu. `lsl sandbox` je nová vnější hranice: bezpečně přeloží
+zdroj bez unsafe bloků a spustí jej přes bubblewrap namespaces, prázdný root,
+explicitní bind capabilities, systemd cgroup, prlimit a timeout.
 
 Oddělený `lsl config` režim staticky odmítá ambientní I/O, síť,
 environment a process capabilities — je to čistý evaluator pro
 reprodukovatelnou konfiguraci.
 
 Privátní builtiny začínající `__lsl_` zpřístupňují stdlib přímé syscalls,
-adresy a raw memory operace. Nejsou bezpečným aplikačním API a mohou obejít
-kontroly veřejných modulů. `native.call` chrání integritu rodiče krátkodobým
-strict-seccomp child procesem, ale fork snapshot není hranicí důvěrnosti.
-Nedůvěryhodný kód proto patří do externího `exec` workeru bez secrets a do OS
-sandboxu; podrobnosti jsou v [bezpečnostním modelu](security.md).
+adresy a raw memory operace. Výchozí CLI je povolí jen v auditním `unsafe:`
+bloku; unchecked IntArray vyžaduje celý překlad `--unsafe`. `native.call`
+chrání integritu rodiče krátkodobým strict-seccomp child procesem, ale fork
+snapshot není hranicí důvěrnosti. Nedůvěryhodný kód proto patří do externího
+`exec` workeru bez secrets a do `lsl sandbox` nebo silnější VM hranice;
+podrobnosti jsou v [bezpečnostním modelu](security.md).
 
 ## Kam dál
 

@@ -1024,6 +1024,36 @@ hash je
 CUDA worker zůstal bitově beze změny s hashem
 `56334b8eee4363f1886bb5f0e66fcbcfbb86ef5ab2c0ca23dd35358629ef7114`.
 
+Vydání 0.7.0 odděluje původ balíčků od serverového příkazu:
+`lsl origin [NAME]` čte striktní provenance sidecar a `lsl server` spouští
+omezený syscall-only GET/HEAD HTTP server. Statické cesty jsou připnuté přes
+directory fd a otevírané `openat2` s beneath/no-symlink policy; HTTPS deleguje
+TLS 1.2/1.3 systémovému nginx/OpenSSL bez plaintext fallbacku. Nový
+`lsl sandbox` používá bubblewrap namespaces, čisté prostředí, explicitní
+read/write bind capabilities, systemd cgroup a prlimit/timeout limity.
+
+Parser/linker/codegen současně přidávají lexikální `unsafe:`. Veřejný CLI
+kontroluje celý uživatelský importní graf a bez bloku odmítá raw `__lsl_*`,
+native a `thread_spawn`; sandbox překlad unsafe kód odmítá vždy. Nejde o plný
+Rust borrow checker. Opravena byla hranice interního raw ABI compilerových
+nástrojů vůči veřejnému tagged Any ABI modulů, včetně regresního případu
+`Int(0)` versus `None`, a přibyla skutečná šestargumentová syscall brána.
+
+Tři nové self-host stage byly bitově shodné. Fast i finální full suite,
+`lsl config`, čistá instalace, installed-prefix fixed point, audit sedmi
+pure-LSL ELF a reálné loopback HTTP/HTTPS smoke testy prošly. Audit čisté
+instalace odhalil a uzavřel regresi důvěryhodného generovaného config wrapperu;
+nový CLI test ji hlídá. Následný serverový audit nahradil socketový `write`
+úplnou `sendto(MSG_NOSIGNAL)` smyčkou; TCP-reset regrese prošla 10/10 a brání
+ukončení celého serveru přes `SIGPIPE`. Compiler fixed point je
+`d19fbb95f937344a74118b4ab7dfc0a9c0d9c2398ede44705899757ea33094fa`, CLI
+hash je
+`942e5fc4dd93e492309cb1f4bffacdbdaef720ad2f80f73b497a139f7caf436b` a test
+runner má
+`4ad8b40fd02d146693a03dd62d91e7b6915bbc2a028037bf4bb77399516d72cf`.
+Vydání obsahuje reprodukovatelné binární a zdrojové archivy, nový snapshot
+manuálu 0.7 a tag `v0.7.0`.
+
 ## Roadmap k "kompletní 1" (17 okruhů)
 
 Produkční okruhy (tagged ABI, numerika, kolekce, GC robustnost, syscall I/O,
@@ -1031,4 +1061,4 @@ native/tensor ABI, AI vrstva, config, diagnostika, fuzz/bench/determinismus,
 cleanup a dokumentace) jsou pro aktuální Linux x86-64 scope uzavřené.
 Další targety, syntetická fault injection a případná změna definované
 two's-complement Int overflow sémantiky jsou navazující práce, ne známé
-blockery vydání 0.6.9. Aktuální seznam je v `TODO.md`.
+blockery vydání 0.7.0. Aktuální seznam je v `TODO.md`.

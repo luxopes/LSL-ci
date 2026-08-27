@@ -1187,6 +1187,21 @@ function emit_gpu(output):
     call assembler.emit(output, x86_64.syscall())
     call assembler.emit(output, x86_64.ret())
 
+    # __lsl_syscall6: rdi nr, rsi a, rdx b, rcx c, r8 d, r9 e,
+    # stack[0] f -> raw six-argument Linux syscall. This is kept separate from
+    # the historical four-argument door so existing generated code and its ABI
+    # remain bit-for-bit stable unless a source explicitly needs arg5/arg6.
+    call assembler.label(output, "runtime_syscall6")
+    call assembler.emit(output, x86_64.move_reg_reg(0, 7))
+    call assembler.emit(output, x86_64.move_reg_reg(7, 6))
+    call assembler.emit(output, x86_64.move_reg_reg(6, 2))
+    call assembler.emit(output, x86_64.move_reg_reg(2, 1))
+    call assembler.emit(output, x86_64.move_reg_reg(10, 8))
+    call assembler.emit(output, x86_64.move_reg_reg(8, 9))
+    call assembler.emit(output, x86_64.load_memory(9, 4, 8))
+    call assembler.emit(output, x86_64.syscall())
+    call assembler.emit(output, x86_64.ret())
+
     # __lsl_mem_unpack: rdi IntArray dst, rsi dst_off (elements),
     # rdx raw source address, rcx count. Reads BGRX dwords out of mapped
     # memory (a client's shared buffer) into pixel words, the exact

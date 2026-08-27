@@ -1,6 +1,6 @@
 # 📋 Referenční příručka všech funkcí LSL
 
-Kompletní seznam všech funkcí, metod a built-in příkazů jazyka LSL 0.6.9.
+Kompletní seznam všech funkcí, metod a built-in příkazů LSL 0.7.
 Každá položka obsahuje název, signaturu a stručný popis.
 
 ---
@@ -88,7 +88,7 @@ a `>>=` fungují stejně jako `+=`.
 | Funkce | Popis |
 |---|---|
 | `cpu_count()` | Vrátí počet CPU v affinity masce procesu; při chybě `1`. |
-| `thread_spawn(function)` | Spustí bezargumentovou funkci ve sdíleném worker vláknu a vrátí tid, nebo `-1`. |
+| `thread_spawn(function)` | V `unsafe:` bloku spustí bezargumentovou funkci ve sdíleném worker vláknu a vrátí tid, nebo `-1`. |
 | `thread_join(tid)` | Počká na worker; vrátí `0`, nebo `126` pro neznámý tid. |
 | `atomic_add(array, index, delta)` | Atomicky přičte `delta` do slotu `IntArray` a vrátí původní hodnotu. |
 | `atomic_xchg(array, index, value)` | Atomicky vymění slot `IntArray` a vrátí původní hodnotu. |
@@ -254,6 +254,20 @@ a `>>=` fungují stejně jako `+=`.
 | `float_axpy(alpha, x, y)` | Provede `y = alpha * x + y` (in-place, nativní kernel). |
 | `float_matmul(a, b, m, k, n)` | Vynásobí matice `(m×k) × (k×n)` a vrátí FloatArray `(m×n)`. |
 
+`float_axpy` je BLAS operace AXPY. `alpha` musí být `Float`, `x` a `y` musí
+být stejně dlouhé `FloatArray`. Funkce změní pouze `y` a vrací `None`:
+
+```lsl
+x = float_zeros(2)
+y = float_zeros(2)
+x[0] = 1.0
+x[1] = 2.0
+y[0] = 10.0
+y[1] = 20.0
+call float_axpy(0.5, x, y)
+print y  # [10.5, 21.0]
+```
+
 ---
 
 ## <span class="badge badge-module">MODULY</span> 3. Standardní moduly
@@ -292,6 +306,11 @@ number = bigint.BigInt("123456789012345678901234567890")
 print number.power(2).text()
 ```
 
+`BigInt.power(exponent)` používá exponentiation by squaring a vrací nový
+`BigInt`; původní číslo nemění. Exponent se převádí na běžný `Int`, musí být
+nezáporný, `x.power(0)` je `1` (včetně `0.power(0)`) a záporný exponent vyvolá
+`ValueError`.
+
 `BigInt` a kompatibilní `SuperInt` poskytují metody `text`, `add`,
 `subtract`, `multiply`, `floor_divide`, `divide`, `modulo`, `power`,
 `compare`, `equals`, `negate`, `absolute`, `is_zero` a `to_int`.
@@ -319,6 +338,24 @@ print number.power(2).text()
 | `http.get(url)` | HTTP GET, vrátí `{status, text, ok}`. |
 | `http.post(url, body, headers, timeout)` | HTTPS POST (HTTP jen loopback); `body` se automaticky serializuje a s hlavičkami jde curlu přes stdin. |
 | `http.post_stream(url, body, headers, timeout, on_chunk)` | Streamovaný POST — `on_chunk(chunk)` je callback. |
+
+### <span class="badge badge-module">httpserver</span> httpserver — omezený HTTP server
+
+| Funkce | Popis |
+|---|---|
+| `httpserver.serve_static(root, address, port, max_requests)` | Obsluhuje GET/HEAD soubory z připnutého rootu. `0` znamená bez request limitu. |
+| `httpserver.serve(handler, address, port, max_requests)` | Volá handler s `{method,target,version,headers}` a normalizuje jeho odpověď. |
+| `httpserver.serve_static_tls(root, address, port, cert, key, max_requests)` | Statické HTTPS přes systémový nginx/OpenSSL; `max_requests` musí být `0`. |
+
+### <span class="badge badge-module">sandbox</span> sandbox — capability izolace
+
+| Funkce | Popis |
+|---|---|
+| `sandbox.run(executable, args, policy)` | Spustí executable v namespace/cgroup sandboxu a vrátí status. |
+| `sandbox.available()` | Ověří přítomnost potřebných host nástrojů. |
+| `sandbox.is_active()` | Vrátí `True` uvnitř `lsl sandbox`. |
+| `sandbox.profile()` | Vrátí `strict`, `server`, nebo `None`. |
+| `sandbox.input_path(n)` / `output_path(n)` | Vrátí `/input/N`, resp. `/output/N`. |
 
 ### <span class="badge badge-module">env</span> env — proměnné prostředí
 
@@ -687,7 +724,7 @@ pracovních jednotek.
 | `if` *podmínka* `:` | Začátek podmíněného bloku. |
 | `elif` *podmínka* `:` | Další podmínka v `if` řetězci. |
 | `else:` | Výchozí větev podmínky. |
-| `end` | Ukončuje blok (`if`, `for`, `while`, `loop`, `function`, `class`, `safe`, `try`). |
+| `end` | Ukončuje blok (`if`, `for`, `while`, `loop`, `function`, `class`, `safe`, `try`, `unsafe`). |
 | `for` *var* `in` *iterable* `:` | Smyčka přes iterovatelnou hodnotu. |
 | `while` *podmínka* `:` | Smyčka, dokud podmínka platí. |
 | `loop:` | Nekonečná smyčka. |
@@ -702,6 +739,7 @@ pracovních jednotek.
 | `from` *modul* `load` *jméno* | Selektivní import. |
 | `from` *modul* `load` *jméno* `as` *alias* | Import s přejmenováním. |
 | `safe:` | Blok odolný chybám — chyba se potlačí. |
+| `unsafe:` | Auditní hranice pro privátní `__lsl_*`, native a thread operace; chyby nepotlačuje. |
 | `try:` | Blok s fallbackem. |
 | `else:` *(v `try`)* | Provede se, pokud `try` selhal. |
 | `Error(`*Typ*`: "`*zpráva*`")` | Vyvolá vlastní chybu. |

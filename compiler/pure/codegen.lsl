@@ -76,6 +76,8 @@ function collect_variables(statements, variables):
             if include_body:
                 call collect_variables(statement["body"], variables)
             end
+        elif kind == "unsafe":
+            call collect_variables(statement["body"], variables)
         elif kind == "safe" or kind == "try":
             call collect_variables(statement["body"], variables)
             call collect_variables(statement["otherwise"], variables)
@@ -222,7 +224,7 @@ function infer_expression_type(syntax, types, function_returns):
             if name == "sum":
                 return "Any"
             end
-            if name == "len" or name == "Int" or name == "ord" or name == "arg_count" or name == "run" or name == "__lsl_run" or name == "run_clean" or name == "__lsl_run_clean" or name == "capture_status" or name == "native_u64" or name == "native_size" or name == "native_call" or name == "native_close" or name == "__lsl_type_code" or name == "__lsl_raw_equal" or name == "__lsl_float_bits" or name == "__lsl_float_to_int" or name == "__lsl_unbox_int" or name == "__lsl_raw_int" or name == "__lsl_typed_int" or name == "__lsl_checked_index" or name == "__lsl_parse_literal_int" or name == "__lsl_test_fd_fault" or name == "__lsl_address" or name == "__lsl_object_table_mask" or name == "__lsl_intern_table_mask" or name == "__lsl_fd_open" or name == "__lsl_fd_read" or name == "__lsl_fd_write" or name == "__lsl_fd_seek" or name == "__lsl_fd_close" or name == "__lsl_fd_socket" or name == "__lsl_fd_connect" or name == "__lsl_raster_pack" or name == "__lsl_raster_copy" or name == "__lsl_raster_fill" or name == "__lsl_fd_ioctl" or name == "__lsl_fd_mmap" or name == "__lsl_mem_pack" or name == "__lsl_data_address" or name == "__lsl_syscall" or name == "__lsl_mem_unpack" or name == "__lsl_byte_copy" or name == "__lsl_text_byte" or name == "__lsl_text_byte_length" or name == "atomic_add" or name == "atomic_xchg" or name == "atomic_cas" or name == "thread_spawn" or name == "thread_join" or name == "cpu_count" or name == "popcount" or name == "trailing_zeros":
+            if name == "len" or name == "Int" or name == "ord" or name == "arg_count" or name == "run" or name == "__lsl_run" or name == "run_clean" or name == "__lsl_run_clean" or name == "capture_status" or name == "native_u64" or name == "native_size" or name == "native_call" or name == "native_close" or name == "__lsl_type_code" or name == "__lsl_raw_equal" or name == "__lsl_float_bits" or name == "__lsl_float_to_int" or name == "__lsl_unbox_int" or name == "__lsl_raw_int" or name == "__lsl_typed_int" or name == "__lsl_checked_index" or name == "__lsl_parse_literal_int" or name == "__lsl_test_fd_fault" or name == "__lsl_address" or name == "__lsl_object_table_mask" or name == "__lsl_intern_table_mask" or name == "__lsl_fd_open" or name == "__lsl_fd_read" or name == "__lsl_fd_write" or name == "__lsl_fd_seek" or name == "__lsl_fd_close" or name == "__lsl_fd_socket" or name == "__lsl_fd_connect" or name == "__lsl_raster_pack" or name == "__lsl_raster_copy" or name == "__lsl_raster_fill" or name == "__lsl_fd_ioctl" or name == "__lsl_fd_mmap" or name == "__lsl_mem_pack" or name == "__lsl_data_address" or name == "__lsl_syscall" or name == "__lsl_syscall6" or name == "__lsl_mem_unpack" or name == "__lsl_byte_copy" or name == "__lsl_text_byte" or name == "__lsl_text_byte_length" or name == "atomic_add" or name == "atomic_xchg" or name == "atomic_cas" or name == "thread_spawn" or name == "thread_join" or name == "cpu_count" or name == "popcount" or name == "trailing_zeros":
                 return "Int"
             elif name == "Float" or name == "sqrt" or name == "__lsl_float_from_bits" or name == "float_sum" or name == "float_dot" or name == "__lsl_wall_time":
                 return "Float"
@@ -359,6 +361,8 @@ function collect_types(statements, types, function_returns):
             if include_body:
                 call collect_types(statement["body"], types, function_returns)
             end
+        elif kind == "unsafe":
+            call collect_types(statement["body"], types, function_returns)
         elif kind == "safe" or kind == "try":
             call collect_types(statement["body"], types, function_returns)
             call collect_types(statement["otherwise"], types, function_returns)
@@ -1100,7 +1104,7 @@ function scan_local_uses(node, counts, excluded, weight, ranges, clock):
     if kind == "literal":
         return
     end
-    is_statement = kind == "assign" or kind == "expression" or kind == "return" or kind == "if" or kind == "while" or kind == "loop" or kind == "for" or kind == "try" or kind == "safe" or kind == "error" or kind == "delete" or kind == "print" or kind == "class" or kind == "break" or kind == "continue"
+    is_statement = kind == "assign" or kind == "expression" or kind == "return" or kind == "if" or kind == "while" or kind == "loop" or kind == "for" or kind == "try" or kind == "safe" or kind == "unsafe" or kind == "error" or kind == "delete" or kind == "print" or kind == "class" or kind == "break" or kind == "continue"
     if is_statement:
         clock[0] = clock[0] + 1
     end
@@ -1669,6 +1673,20 @@ function emit_dynamic_boundary_box(generator, syntax):
     if not generator["internal_abi"]:
         call emit_collection_box(generator, syntax)
     end
+end
+
+function emit_direct_call_boundary_box(generator, syntax, public_callee):
+    if not public_callee:
+        call emit_collection_box(generator, syntax)
+        return
+    end
+    # compiler/pure tools use a raw whole-program ABI internally, but linked
+    # stdlib and user functions retain the public tagged Any ABI. Temporarily
+    # select it while materializing a direct argument at that boundary.
+    old_internal = generator["internal_abi"]
+    generator["internal_abi"] = False
+    call emit_collection_box(generator, syntax)
+    generator["internal_abi"] = old_internal
 end
 
 function emit_dictionary_key_box(generator, syntax):
@@ -2712,6 +2730,7 @@ function emit_expression(generator, syntax):
             builtin_arity["__lsl_typed_int"] = 1
             builtin_arity["__lsl_unbox_bool"] = 1
             builtin_arity["__lsl_unbox_int"] = 1
+            builtin_arity["__lsl_syscall6"] = 7
             if target["name"] in builtin_arity:
                 expected_builtin = builtin_arity[target["name"]]
                 if len(syntax["arguments"]) != expected_builtin:
@@ -3680,6 +3699,31 @@ function emit_expression(generator, syntax):
                 call assembler.emit(output, x86_64.pop(7))
                 call assembler.relative(output, [232], "runtime_syscall")
                 return
+            elif target["name"] == "__lsl_syscall6":
+                # Evaluate right-to-left like a normal seven-argument call.
+                # Six values land in the SysV registers and the final syscall
+                # argument remains at stack[0] for runtime_syscall6.
+                syscall_index = 6
+                while syscall_index >= 0:
+                    call emit_expression(generator, syntax["arguments"][syscall_index])
+                    call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                    call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+                    if syscall_index == 0:
+                        call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                    else:
+                        call assembler.emit(output, x86_64.push(0))
+                    end
+                    syscall_index -= 1
+                end
+                syscall_registers = [7, 6, 2, 1, 8, 9]
+                syscall_index = 1
+                while syscall_index < 6:
+                    call assembler.emit(output, x86_64.pop(__lsl_typed_int(syscall_registers[syscall_index])))
+                    syscall_index += 1
+                end
+                call assembler.relative(output, [232], "runtime_syscall6")
+                call assembler.emit(output, x86_64.add_reg_imm8(4, 8))
+                return
             elif target["name"] == "__lsl_fd_seek":
                 call emit_expression(generator, syntax["arguments"][0])
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
@@ -3885,7 +3929,7 @@ function emit_expression(generator, syntax):
                 call assembler.label(output, done_label)
                 return
             elif target["name"] == "help":
-                call emit_static_write(generator, "Lux Simple Lang (LSL) 0.6.9" + chr(10) + "functions: print printl input for loop safe if elif else try class ctype function type del len abs sqrt help" + chr(10) + "types: Bool Int Float String List Tuple RealArray IntArray FloatArray ByteArray Dictionary" + chr(10) + "modules: os time json process config ai tensor cuda native math bigint" + chr(10) + "docs: see README.md and docs/" + chr(10))
+                call emit_static_write(generator, "Lux Simple Lang (LSL) 0.7.0" + chr(10) + "functions: print printl input for loop safe unsafe if elif else try class ctype function type del len abs sqrt help" + chr(10) + "types: Bool Int Float String List Tuple RealArray IntArray FloatArray ByteArray Dictionary" + chr(10) + "modules: os time json process config ai tensor cuda native math bigint httpserver sandbox" + chr(10) + "docs: see README.md and docs/" + chr(10))
                 call assembler.emit(output, x86_64.mov_imm64(0, 0))
                 return
             elif target["name"] == "abs":
@@ -4259,11 +4303,13 @@ function emit_expression(generator, syntax):
             end
         end
         arguments = syntax["arguments"]
+        public_callee = False
         if not indirect_call:
             expected_arguments = len(generator["functions"][target["name"]]["parameters"])
             if len(arguments) != expected_arguments:
                 call unsupported(generator["path"], generator["lines"], syntax, "function argument count mismatch for " + target["name"], "pass exactly " + String(expected_arguments) + " arguments")
             end
+            public_callee = generator["functions"][target["name"]].get("path", generator["path"]).find("compiler/pure/") < 0
         end
         index = len(arguments) - 1
         while index >= 0:
@@ -4273,7 +4319,7 @@ function emit_expression(generator, syntax):
                 expected_parameter_type = generator["function_parameters"][target["name"]][index]
             end
             if expected_parameter_type == "Any":
-                call emit_collection_box(generator, arguments[index])
+                call emit_direct_call_boundary_box(generator, arguments[index], public_callee)
             end
             # Arguments are evaluated from right to left. The first argument is
             # therefore evaluated last and can move straight from rax to rdi;
@@ -5116,6 +5162,8 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 call unsupported(generator["path"], generator["lines"], statement, "continue used outside a loop", "move continue into while or loop")
             end
             call assembler.relative(generator["builder"], [233], continue_label)
+        elif kind == "unsafe":
+            call emit_statements(generator, statement["body"], break_label, continue_label, return_label)
         elif kind == "safe":
             safe_end = label_name(generator, "safe_end")
             old_error_label = generator["error_label"]
@@ -5464,6 +5512,9 @@ function returned_type(statements, types, function_returns):
                 branch_type = returned_type(statement["body"], types, function_returns)
                 result = merge_return_type(result, branch_type)
             end
+        elif kind == "unsafe":
+            branch_type = returned_type(statement["body"], types, function_returns)
+            result = merge_return_type(result, branch_type)
         elif kind == "safe" or kind == "try":
             branch_type = returned_type(statement["body"], types, function_returns)
             result = merge_return_type(result, branch_type)
@@ -5645,6 +5696,8 @@ function observe_statement_types(statements, types, function_returns, functions,
             end
             types[statement["name"]] = item_type
             call observe_statement_types(statement["body"], types, function_returns, functions, observations, escaped)
+        elif kind == "unsafe":
+            call observe_statement_types(statement["body"], types, function_returns, functions, observations, escaped)
         elif kind == "safe" or kind == "try":
             call observe_statement_types(statement["body"], types, function_returns, functions, observations, escaped)
             call observe_statement_types(statement["otherwise"], types, function_returns, functions, observations, escaped)
@@ -5759,6 +5812,10 @@ function statements_block_specialization(statements):
             elif kind == "for" and expression_blocks_specialization(statement["iterable"]):
                 return True
             end
+            if statements_block_specialization(statement["body"]):
+                return True
+            end
+        elif kind == "unsafe":
             if statements_block_specialization(statement["body"]):
                 return True
             end
@@ -6011,11 +6068,15 @@ function emit_function(generator, declaration):
     old_error_label = generator["error_label"]
     old_current_return_type = generator.get("current_return_type", "Any")
     old_internal_function = generator.get("current_internal_function", False)
+    old_internal_abi = generator["internal_abi"]
     old_current_class_name = generator.get("current_class_name", "")
     generator["variables"] = variables
     generator["types"] = types
     generator["current_return_type"] = generator["function_returns"].get(name, "Any")
     generator["current_internal_function"] = declaration.get("path", generator["path"]).find("compiler/pure/") >= 0
+    if not generator["current_internal_function"]:
+        generator["internal_abi"] = False
+    end
     generator["current_class_name"] = declaration.get("class_name", "")
     # Keep hot loop/function entries off cross-cache-line boundaries. The
     # direct ELF backend has no external linker to provide normal text
@@ -6057,6 +6118,7 @@ function emit_function(generator, declaration):
     generator["error_label"] = old_error_label
     generator["current_return_type"] = old_current_return_type
     generator["current_internal_function"] = old_internal_function
+    generator["internal_abi"] = old_internal_abi
     generator["current_class_name"] = old_current_class_name
 end
 

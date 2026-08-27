@@ -1,4 +1,4 @@
-# Programování v LSL 0.6.9
+# Programování v LSL 0.7
 
 Toto je praktický průvodce pro autory aplikací. Přesná syntaxe a hraniční
 sémantika jsou v [language.md](language.md); interní compiler je popsaný v
@@ -27,7 +27,7 @@ Bez argumentů se spustí interaktivní zápis jedné společné translation uni
 
 ```text
 $ ./lsl
-Lux Simple Lang 0.6.9 interactive source mode
+Lux Simple Lang 0.7.0 interactive source mode
 Enter code; type exit on its own line to compile and run.
 >>> value = 6 * 7
 >>> print value
@@ -138,6 +138,11 @@ call writebytes("copy.bin", payload)
 `float_axpy` a `float_matmul`. `stdlib/tensor.lsl` nad ním přidává shape,
 strides, views a maticové operace. Bulk kernel je rychlejší než uživatelská
 smyčka s indexací a zároveň dává compileru jasnější záměr.
+
+`float_axpy(alpha, x, y)` provede in-place operaci `y[i] = alpha * x[i] +
+y[i]` pro každý prvek. `alpha` musí být `Float`, obě pole stejně dlouhá a
+návratová hodnota je `None`; výsledek je v `y`. Název pochází z BLAS „A·X Plus
+Y“ a nejde o maticové násobení.
 
 ## Řízení toku
 

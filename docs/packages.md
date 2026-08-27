@@ -1,12 +1,14 @@
-# Instalace LSL knihoven
+# Instalace a původ LSL knihoven
 
-LSL 0.6 umí instalovat jednosouborové zdrojové moduly bez sudo:
+LSL 0.7 umí instalovat jednosouborové zdrojové moduly bez sudo a uchovává
+jejich ověřený původ:
 
 ```text
 lsl install textkit
 lsl update textkit
 lsl install --config libraries.conf
-lsl server
+lsl origin
+lsl origin textkit
 ```
 
 Výchozí endpoint je:
@@ -31,7 +33,14 @@ Klient:
 4. zapíše skrytý staging soubor a ověří jeho hash přes `sha256sum`;
 5. spustí `lsl compile` nad staging zdrojem, takže syntakticky nebo linkově
    neplatná knihovna se nenainstaluje;
-6. nastaví mód `0644` a atomickým `mv` nahradí cílový soubor.
+6. vytvoří přísně parsovaný `NAME.lsl.origin` sidecar se jménem, normalizovaným
+   registry originem, přesnou source URL a ověřeným SHA-256;
+7. nastaví mód `0644` a atomickým `mv` nahradí zdroj i provenance metadata.
+
+`lsl origin` bez jména vypíše aktivní registry URL. `lsl origin NAME` čte
+lokální sidecar a vypíše pole `name`, `origin`, `source` a `sha256`; síť přitom
+nekontaktuje. Balíček instalovaný starší verzí sidecar nemá a musí se nejdřív
+aktualizovat pomocí LSL 0.7.
 
 `lsl update NAME` nejdřív vyžaduje existující cílový modul a potom používá
 stejné ověření, zkušební překlad a atomickou náhradu jako instalace.

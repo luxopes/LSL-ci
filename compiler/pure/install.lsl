@@ -122,7 +122,7 @@ for name in sources:
     call copy_text(source_path("compiler/pure/" + name), prefix + "/lib/lsl/compiler/pure/" + name)
 end
 
-standard_modules = ["ai.lsl", "bigint.lsl", "config.lsl", "configure.lsl", "css.lsl", "cuda.lsl", "display.lsl", "env.lsl", "fd.lsl", "gfx.lsl", "http.lsl", "input.lsl", "json.lsl", "lconf.lsl", "lux.lsl", "luxos.lsl", "math.lsl", "native.lsl", "os.lsl", "plugin.lsl", "process.lsl", "system.lsl", "tensor.lsl", "time.lsl", "tui.lsl", "ui.lsl", "unixsock.lsl", "wayland.lsl", "x11.lsl"]
+standard_modules = ["ai.lsl", "bigint.lsl", "config.lsl", "configure.lsl", "css.lsl", "cuda.lsl", "display.lsl", "env.lsl", "fd.lsl", "gfx.lsl", "http.lsl", "httpserver.lsl", "input.lsl", "json.lsl", "lconf.lsl", "lux.lsl", "luxos.lsl", "math.lsl", "native.lsl", "os.lsl", "plugin.lsl", "process.lsl", "sandbox.lsl", "system.lsl", "tensor.lsl", "time.lsl", "tui.lsl", "ui.lsl", "unixsock.lsl", "wayland.lsl", "x11.lsl"]
 for name in standard_modules:
     call copy_text(source_path("stdlib/" + name), prefix + "/lib/lsl/stdlib/" + name)
 end

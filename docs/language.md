@@ -335,7 +335,7 @@ print lux.version, value_type([1, 2])
 
 `load foo.bar` hledá `foo/bar.lsl` nejprve vedle zdrojového souboru, v compiler interních a built-in/system `lib/lsl/stdlib` cestách a teprve potom pod `~/.local/lib/lsl/stdlib`. `load foo.bar as baz` zpřístupní stejný staticky linkovaný modul pod prefixem `baz.`. Uživatelskou knihovnu lze získat přes `lsl install NAME`; built-in modul proto nelze uživatelskou kopií zastínit. Modulové symbols dostávají deterministický namespace prefix. Třídy označené `ctype Private` nejsou dostupné přes vnější namespace; public classes lze přímo konstruovat. `native` modul podporuje omezené self-contained Linux x86_64 ET_DYN Int64 kernels; obecné relocatable/libc pluginy nejsou součástí ABI v1.
 
-Vestavěný modul `lux` exportuje `version`, `language` a `l` (alias `type`). Další standardní moduly jsou `json`, `lconf`, `http`, `env`, `config`, `time`, `os`, `system`, `math` a `bigint`; podrobnosti jsou v `configuration.md`, `lconf.md`, `ai.md`, `time.md`, `os.md` a `system.md`.
+Vestavěný modul `lux` exportuje `version`, `language` a `l` (alias `type`). Další standardní moduly jsou `json`, `lconf`, `http`, `httpserver`, `sandbox`, `env`, `config`, `time`, `os`, `system`, `math` a `bigint`; podrobnosti jsou v `configuration.md`, `lconf.md`, `ai.md`, `server.md`, `sandbox.md`, `time.md`, `os.md` a `system.md`.
 
 ## Standardní funkce
 
@@ -358,4 +358,13 @@ Int constant folding používá stejné modulo `2^64` a floor `//`/`%` chování
 
 ## Bezpečnost
 
-Běžný programovací režim není bezpečnostní sandbox. LSL program může číst a zapisovat soubory, spouštět procesy nebo přes modul `system` měnit balíčky s právy aktuálního procesu. Oddělený `lsl config` režim staticky odmítá ambientní I/O, síť, environment a process capabilities. Privátní `__lsl_*` builtiny jsou privilegované interní ABI; úplné hranice důvěry popisuje [bezpečnostní model](security.md).
+Běžný programovací režim není bezpečnostní sandbox. Výchozí `lsl compile`
+však odmítá privátní `__lsl_*`, native a thread operace mimo lexikální
+`unsafe:` blok a kontroluje i uživatelské importy. Direktiva
+`# lsl: unchecked-intarray` vyžaduje `lsl compile --unsafe`; nízkoúrovňový
+`lslc` zůstává explicitní trust-core compiler.
+
+`lsl sandbox` unsafe zdroj vůbec nepřeloží a spustí program v oddělených Linux
+namespaces, prázdném root filesystemu a cgroup/resource limitech. Host cesty
+jsou dostupné jen přes explicitní `--read`/`--write` capabilities. Podrobnosti
+jsou v [bezpečnostním modelu](security.md) a [sandbox příručce](sandbox.md).

@@ -1,12 +1,12 @@
 # LSL — Vývojářské příručky
 
-> **LSL 0.6.9 — opravy dynamického ABI a produkční stabilizace.**
+> **LSL 0.7.0 — server, capability sandbox a explicitní unsafe hranice.**
 > [Historie verzí](/releases/) · [Manuál 0.5](/releases/0.5/) ·
 > [Manuál 0.6](/releases/0.6/) · [Manuál 0.6.5](/releases/0.6.5/) ·
 > [Changelog](CHANGELOG.md)
 > [Stáhnout binárky nebo zdrojový kód](index.html#downloads).
 
-Podrobné průvodce jazykem LSL (Lux Simple Lang) 0.6.9. Každá kapitola
+Podrobné průvodce stabilním LSL (Lux Simple Lang) 0.7. Každá kapitola
 vysvětluje jednu oblast od základů — text předpokládá, že s programováním
 teprve začínáte. Všechny konstrukty jsou popsány srozumitelně: co dělají,
 k čemu slouží, jak se zapisují a jak fungují.
@@ -60,6 +60,14 @@ k čemu slouží, jak se zapisují a jak fungují.
     Pipeline, mapa zdrojových souborů, self-host, fixed-point, ABI,
     garbage collector, jak přidat jazykovou vlastnost.
 
+13. **[Server a původ knihoven](13-server-and-origin.md)**
+    Nativní HTTP/HTTPS server, bezpečné publikování souborů, příkaz
+    `lsl origin` a ověřování původu nainstalovaných balíčků.
+
+14. **[Sandbox a bezpečnost](14-sandbox-and-safety.md)**
+    Capability sandbox, omezení zdrojů, bezpečný výchozí režim compileru,
+    explicitní `unsafe:` hranice a omezení ochrany paměti v LSL 0.7.
+
 ## Referenční příručka
 
 - **[Kompletní reference všech funkcí](reference.md)** — abecedně řazený
@@ -75,4 +83,6 @@ k čemu slouží, jak se zapisují a jak fungují.
 - [AI aplikace](10-ai-applications.md) — AI orchestrace
 - [Výkon a optimalizace](11-performance-and-optimization.md) — měření a optimalizace
 - [Interní architektura compileru](12-compiler-internals.md) — compiler, runtime a ABI
-- [Bezpečnostní model](security.md) — hranice důvěry, native ABI a sandboxing
+- [Server a původ knihoven](13-server-and-origin.md) — HTTP/HTTPS a provenance balíčků
+- [Sandbox a bezpečnost](14-sandbox-and-safety.md) — izolované spouštění a unsafe hranice
+- [Bezpečnostní model](security.md) — safe/unsafe, capability sandbox a native ABI

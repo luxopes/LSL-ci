@@ -1,23 +1,27 @@
 # Public pure-LSL command frontend.
 
 load codegen
+load httpserver
 load linker
 load package
 load parser
+load sandbox
 
-VERSION = "0.6.9"
+VERSION = "0.7.0"
 
 function print_help():
     print "Lux Simple Lang (LSL) " + VERSION
     print ""
     print "Usage:"
     print "  lsl [SOURCE [ARG...]]"
-    print "  lsl compile SOURCE OUTPUT"
+    print "  lsl compile [--unsafe] SOURCE OUTPUT"
     print "  lsl config ENTRY"
     print "  lsl install NAME"
     print "  lsl install --config FILE"
     print "  lsl update NAME"
-    print "  lsl server"
+    print "  lsl origin [NAME]"
+    print "  lsl server [OPTIONS]"
+    print "  lsl sandbox [OPTIONS] SOURCE [ARG...]"
     print "  lsl version"
     print ""
     print "Options:"
@@ -25,18 +29,93 @@ function print_help():
     print "  --version      Show version"
 end
 
-function compile_source(source_path, source, output_path):
+function print_server_help():
+    print "Usage: lsl server [OPTIONS]"
+    print ""
+    print "Serve static files from a pinned directory. HTTP is implemented by LSL;"
+    print "HTTPS uses the maintained system nginx/OpenSSL TLS stack."
+    print ""
+    print "Options:"
+    print "  --dir ROOT          Document root (default: .)"
+    print "  --bind IPV4         Numeric bind address (default: 127.0.0.1)"
+    print "  --port PORT         TCP port (default: 8080)"
+    print "  --once              Stop native HTTP after one request"
+    print "  --max-requests N    Stop native HTTP after N requests; 0 is unlimited"
+    print "  --tls-cert FILE     Enable HTTPS with this PEM certificate"
+    print "  --tls-key FILE      PEM private key paired with --tls-cert"
+    print "  -h, --help          Show this help"
+end
+
+function print_sandbox_help():
+    print "Usage: lsl sandbox [OPTIONS] SOURCE [ARG...]"
+    print ""
+    print "Compile SOURCE and run it in a short-lived capability sandbox."
+    print "The strict profile has a private network namespace; server shares network."
+    print ""
+    print "Options:"
+    print "  --profile NAME      strict (default) or server"
+    print "  --timeout SECONDS   Wall/CPU limit, 1..3600 (default: 30)"
+    print "  --memory BYTES      Address-space limit, 64 MiB..8 GiB (default: 1 GiB)"
+    print "  --read PATH         Add read-only capability as /input/N (repeatable)"
+    print "  --write PATH        Add writable capability as /output/N (repeatable)"
+    print "  --                   End options; useful when SOURCE begins with -"
+    print "  -h, --help          Show this help"
+end
+
+function decimal_option(value, minimum, maximum, label):
+    text = String(value)
+    if len(text) == 0 or len(text) > 19:
+        Error(CliError: String(label) + " must be a decimal integer")
+    end
+    result = 0
+    for character in text:
+        code = ord(character)
+        if code < 48 or code > 57:
+            Error(CliError: String(label) + " must be a decimal integer")
+        end
+        digit = code - 48
+        if result > (Int(maximum) - digit) // 10:
+            Error(CliError: String(label) + " is outside the supported range")
+        end
+        result = result * 10 + digit
+    end
+    if result < Int(minimum) or result > Int(maximum):
+        Error(CliError: String(label) + " is outside " + String(minimum) + ".." + String(maximum))
+    end
+    return result
+end
+
+function compile_source_mode(source_path, source, output_path, safety_mode):
     stdlib_name = "compiler/pure/dynamic_stdlib.lsl"
     stdlib_path = resource_path(stdlib_name)
     stdlib_source = readfile(stdlib_path)
     program = parser.parse(stdlib_name, stdlib_source)
     call linker.annotate_statements(program, stdlib_name)
-    program.extend(linker.link(source_path, source))
+    if safety_mode == 0:
+        program.extend(linker.link(source_path, source))
+    else:
+        if String(source).find("# lsl: unchecked-intarray") >= 0:
+            Error(CompileError: "unchecked-intarray requires lsl compile --unsafe")
+        end
+        program.extend(linker.link_checked(source_path, source, safety_mode == 2))
+    end
     call writebytes(output_path, codegen.generate(source_path, source, program))
+end
+
+function compile_source(source_path, source, output_path):
+    call compile_source_mode(source_path, source, output_path, 1)
 end
 
 function compile_file(source_path, output_path):
     call compile_source(source_path, readfile(source_path), output_path)
+end
+
+function compile_file_unsafe(source_path, output_path):
+    call compile_source_mode(source_path, readfile(source_path), output_path, 0)
+end
+
+function compile_file_sandbox(source_path, output_path):
+    call compile_source_mode(source_path, readfile(source_path), output_path, 2)
 end
 
 function dirname(path):
@@ -210,11 +289,24 @@ elif command == "version" or command == "--version":
 elif command == "compile":
     source_path = arg(2)
     output_path = arg(3)
-    if source_path == None or output_path == None:
-        print "usage: lsl compile SOURCE OUTPUT"
+    unsafe_compile = False
+    if source_path == "--unsafe":
+        unsafe_compile = True
+        source_path = arg(3)
+        output_path = arg(4)
+        extra = arg(5)
+    else:
+        extra = arg(4)
+    end
+    if source_path == None or output_path == None or extra != None:
+        print "usage: lsl compile [--unsafe] SOURCE OUTPUT"
         exit(2)
     end
-    call compile_file(source_path, output_path)
+    if unsafe_compile:
+        call compile_file_unsafe(source_path, output_path)
+    else:
+        call compile_file(source_path, output_path)
+    end
     exit(0)
 elif command == "config":
     entry = arg(2)
@@ -239,7 +331,11 @@ elif command == "config":
         exit(status)
     end
     synthetic_path = snapshot_directory + "/lsl_config_wrapper.lsl"
-    call compile_source(synthetic_path, wrapper, evaluator)
+    # configure has already validated and snapshotted the complete user graph.
+    # Its generated evaluator intentionally uses private runtime helpers for
+    # identity-safe merging, so compile this trusted synthetic source through
+    # the compiler-internal path rather than treating it as user-authored code.
+    call compile_source_mode(synthetic_path, wrapper, evaluator, 0)
     # Even lexically pure configuration may contain an infinite loop or an
     # allocation bomb. Evaluate it in a clean subprocess with wall-clock, CPU,
     # address-space, file-size and descriptor limits.
@@ -273,13 +369,139 @@ elif command == "update":
     end
     call package.update(name, user_home(), registry_server(), "/usr/bin/curl", "/usr/bin/sha256sum", "/usr/bin/mv", "/usr/bin/chmod", executable_path())
     exit(0)
-elif command == "server":
-    if arg(2) != None:
-        print "usage: lsl server"
+elif command == "origin":
+    name = arg(2)
+    if arg(3) != None:
+        print "usage: lsl origin [NAME]"
         exit(2)
     end
-    print registry_server()
+    if name == None:
+        print registry_server()
+    else:
+        provenance = package.origin(name, user_home())
+        print "name", provenance["name"]
+        print "origin", provenance["origin"]
+        print "source", provenance["source"]
+        print "sha256", provenance["sha256"]
+    end
     exit(0)
+elif command == "server":
+    root = "."
+    address = "127.0.0.1"
+    port = 8080
+    maximum_requests = 0
+    certificate = None
+    private_key = None
+    option_index = 2
+    while option_index < arg_count():
+        option = arg(option_index)
+        if option == "--help" or option == "-h":
+            call print_server_help()
+            exit(0)
+        elif option == "--once":
+            maximum_requests = 1
+        elif option == "--dir" or option == "--bind" or option == "--port" or option == "--max-requests" or option == "--tls-cert" or option == "--tls-key":
+            option_index += 1
+            if option_index >= arg_count():
+                Error(CliError: String(option) + " requires a value")
+            end
+            value = arg(option_index)
+            if option == "--dir":
+                root = value
+            elif option == "--bind":
+                address = value
+            elif option == "--port":
+                port = decimal_option(value, 1, 65535, "port")
+            elif option == "--max-requests":
+                maximum_requests = decimal_option(value, 0, 1000000000, "maximum request count")
+            elif option == "--tls-cert":
+                certificate = value
+            else:
+                private_key = value
+            end
+        else:
+            Error(CliError: "unknown server option: " + String(option))
+        end
+        option_index += 1
+    end
+    if (certificate == None) != (private_key == None):
+        Error(CliError: "--tls-cert and --tls-key must be supplied together")
+    elif certificate == None:
+        call httpserver.serve_static(root, address, port, maximum_requests)
+        exit(0)
+    else:
+        exit(httpserver.serve_static_tls(root, address, port, certificate, private_key, maximum_requests))
+    end
+elif command == "sandbox":
+    selected_profile = "strict"
+    wall_seconds = 30
+    memory_bytes = 1073741824
+    read_capabilities = []
+    write_capabilities = []
+    source_path = None
+    option_index = 2
+    while option_index < arg_count() and source_path == None:
+        option = arg(option_index)
+        if option == "--help" or option == "-h":
+            call print_sandbox_help()
+            exit(0)
+        elif option == "--":
+            option_index += 1
+            if option_index >= arg_count():
+                Error(CliError: "sandbox source is required after --")
+            end
+            source_path = arg(option_index)
+        elif option == "--profile" or option == "--timeout" or option == "--memory" or option == "--read" or option == "--write":
+            option_index += 1
+            if option_index >= arg_count():
+                Error(CliError: String(option) + " requires a value")
+            end
+            value = arg(option_index)
+            if option == "--profile":
+                if value != "strict" and value != "server":
+                    Error(CliError: "sandbox profile must be strict or server")
+                end
+                selected_profile = value
+            elif option == "--timeout":
+                wall_seconds = decimal_option(value, 1, 3600, "sandbox timeout")
+            elif option == "--memory":
+                memory_bytes = decimal_option(value, 67108864, 8589934592, "sandbox memory")
+            elif option == "--read":
+                read_capabilities.append(value)
+            else:
+                write_capabilities.append(value)
+            end
+        elif String(option).startswith("-"):
+            Error(CliError: "unknown sandbox option: " + String(option))
+        else:
+            source_path = option
+        end
+        option_index += 1
+    end
+    if source_path == None:
+        print "usage: lsl sandbox [OPTIONS] SOURCE [ARG...]"
+        exit(2)
+    end
+    if not sandbox.available():
+        Error(SandboxError: "lsl sandbox requires bubblewrap, systemd-run, timeout, prlimit, realpath and env")
+    end
+    scratch = scratch_program_path()
+    call compile_file_sandbox(source_path, scratch)
+    sandbox_arguments = []
+    while option_index < arg_count():
+        sandbox_arguments.append(arg(option_index))
+        option_index += 1
+    end
+    policy = {
+        "profile": selected_profile,
+        "timeout": wall_seconds,
+        "memory": memory_bytes,
+        "read": read_capabilities,
+        "write": write_capabilities
+    }
+    status = sandbox.run(scratch, sandbox_arguments, policy)
+    call cleanup_program(scratch)
+    exit(status)
 end
 
 scratch = scratch_program_path()

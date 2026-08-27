@@ -718,6 +718,8 @@ function parse_statement(parser):
         return parse_loop_block(parser, opening, "loop")
     elif match(parser, "class"):
         return parse_class(parser, opening)
+    elif match(parser, "unsafe"):
+        return parse_loop_block(parser, opening, "unsafe")
     elif match(parser, "safe"):
         return parse_try_block(parser, opening, True)
     elif match(parser, "try"):

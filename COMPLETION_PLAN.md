@@ -1,4 +1,4 @@
-# LSL 0.5 completion handoff
+# LSL 0.7 release handoff
 
 ## Cíl a aktuální stav
 
@@ -12,7 +12,9 @@ N+1 bit po bitu.
 - Aktuální implementační milníky jsou v `git log`; handoff záměrně neukládá
   self-referenční hash vlastního dokumentačního commitu.
 - Aktuální fixed-point SHA-256:
-  `7822a3a60e3361ce05ecbfdc2890a0bb538d1c01de0dfe402acb6d026b1928a8`
+  `d19fbb95f937344a74118b4ab7dfc0a9c0d9c2398ede44705899757ea33094fa`
+- Aktuální CLI SHA-256:
+  `942e5fc4dd93e492309cb1f4bffacdbdaef720ad2f80f73b497a139f7caf436b`
 - `compiler/pure/lslc-direct == compiler/lslc`
 - `compiler/pure/lsl-cli == lsl`
 - ELF: jediný RX `PT_LOAD`, bez `INTERP` a RWX
@@ -22,7 +24,7 @@ N+1 bit po bitu.
 Podrobné historické hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`; veřejný scope
 je v `TODO.md`.
 
-## Ověřeně dokončený scope 0.5 (bez GPU)
+## Ověřeně dokončený scope 0.7
 
 - pure-LSL lexer/parser/linker, source spans a strukturovaná diagnostika;
 - přímý x86_64 encoder, assembler model, ELF writer a self-host fixed point;
@@ -37,6 +39,15 @@ je v `TODO.md`.
 - config defaults/types/provenance/lazy/cycles, AI retry/cancel/SSE streaming;
 - process JSON plugin ABI, zero-copy CPU Tensor a omezený in-process ET_DYN ABI;
 - relocatable pure-LSL CLI, configure tool, installer a test runner.
+- `lsl origin` a striktní provenance sidecar balíčků;
+- omezený syscall-only HTTP server a statický HTTPS frontend přes
+  systémový nginx/OpenSSL;
+- capability `lsl sandbox` s namespaces, systemd cgroup, prlimit/timeout a
+  explicitními read/write bindy;
+- výchozí safe CLI překlad, lexikální `unsafe:` hranice a zákaz unsafe kódu
+  při sandbox kompilaci;
+- šestargumentová syscall brána a explicitní přechod mezi interním raw ABI
+  compileru a veřejným tagged Any ABI modulů.
 
 ## Testy, hardening a výkon
 
@@ -80,12 +91,13 @@ neopakuje, protože descriptor už může být recyklovaný.
 
 ## Zbývající neblokující práce
 
-Feature scope 0.5 je uzavřený. Následující body nejsou release blockery:
+Implementační scope 0.7 je uzavřený. Následující body nejsou blockery vydání:
 
 1. syntetická fault injection pro obtížně vyvolatelné fork/wait/read failures;
 2. další benchmark/regression limity a snížení compiler peak RSS;
 3. volitelná native ABI v2 (povolené relocations, Tensor descriptors);
-4. další CPU targety; GPU/device ABI je mimo scope 0.5.
+4. další CPU targety a obecnější device ABI;
+5. plný Rust ownership/borrow checker a statický důkaz absence data races;
 
 ## Provozní pravidla
 
