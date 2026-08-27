@@ -63,8 +63,10 @@ elif program.endswith("-account"):
     print "account", joined_arguments()
     exit(0)
 elif program.endswith("-file-tool"):
-    if arg_count() == 2 and arg(1).endswith("XXXXXX"):
-        print server_root + "/system-managed-temp"
+    if arg_count() == 3 and arg(1) == "-d" and arg(2).endswith("XXXXXX"):
+        temporary = arg(2)[0:len(arg(2)) - 6] + "ABC123"
+        call __lsl_mkdir_private(temporary)
+        print temporary
         exit(0)
     elif arg(1) == "-f":
         source = arg(3)

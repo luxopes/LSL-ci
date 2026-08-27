@@ -9,7 +9,7 @@ if first == "-f":
     call unlink(source)
 elif first == "0644":
     exit(0)
-elif first.startswith("--"):
+elif first.startswith("-"):
     url = arg(arg_count() - 1)
     if url.endswith(".sha256"):
         if "/bad/" in url:

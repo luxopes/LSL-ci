@@ -3,15 +3,42 @@
 load http
 load json
 
+function checked_request(endpoint, token, model, messages, options):
+    if type(endpoint) != "String" or len(endpoint) == 0 or __lsl_text_byte_length(String(endpoint)) > 8192:
+        Error(AIProviderError: "AI endpoint must be a non-empty URL String")
+    elif type(token) != "String" or __lsl_text_byte_length(String(token)) > 65536 or chr(0) in token:
+        Error(AIProviderError: "AI token is invalid or too long")
+    elif type(model) != "String" or len(model) == 0 or len(model) > 256:
+        Error(AIProviderError: "AI model name is invalid")
+    elif type(messages) != "List" or len(messages) > 4096:
+        Error(AIProviderError: "AI messages must be a bounded List")
+    elif type(options) != "Dictionary" or len(options) > 32:
+        Error(AIProviderError: "AI options must be a bounded Dictionary")
+    end
+    for key in options:
+        if type(key) != "String" or key not in ["temperature", "max_tokens", "timeout", "retries", "cancel", "transport_chunk"]:
+            Error(AIProviderError: "unknown AI request option: " + String(key))
+        end
+    end
+end
+
+function bounded_provider_text(value):
+    text = String(value)
+    if len(text) > 4096:
+        return text[0:4096]
+    end
+    return text
+end
+
 function provider_message(data, fallback):
     if __lsl_type_code(data) == 3 and "error" in data:
         error = data["error"]
         if __lsl_type_code(error) == 3 and "message" in error:
-            return String(error["message"])
+            return bounded_provider_text(error["message"])
         end
-        return String(error)
+        return bounded_provider_text(error)
     end
-    return fallback
+    return bounded_provider_text(fallback)
 end
 
 function decode_response(response):
@@ -44,6 +71,7 @@ function decode_response(response):
 end
 
 function request(endpoint, token, model, messages, options):
+    call checked_request(endpoint, token, model, messages, options)
     headers = {"Content-Type": "application/json"}
     if len(token) > 0:
         headers["Authorization"] = "Bearer " + token
@@ -63,6 +91,9 @@ function request(endpoint, token, model, messages, options):
     if "retries" in options:
         retries = Int(options["retries"])
     end
+    if retries < 0 or retries > 10:
+        Error(AIProviderError: "AI retries must be between 0 and 10")
+    end
     attempt = 0
     while True:
         if "cancel" in options and options["cancel"] != None:
@@ -78,6 +109,7 @@ function request(endpoint, token, model, messages, options):
             return decode_response(response)
         end
         attempt += 1
+        call __lsl_sleep(min(2.0, Float(attempt) * 0.1))
     end
 end
 
@@ -116,6 +148,7 @@ function stream_text(text, on_event, cancel):
 end
 
 function stream(endpoint, token, model, messages, options, on_event):
+    call checked_request(endpoint, token, model, messages, options)
     headers = {"Content-Type": "application/json"}
     if len(token) > 0:
         headers["Authorization"] = "Bearer " + token

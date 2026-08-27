@@ -208,6 +208,9 @@ function infer_expression_type(syntax, types, function_returns):
             if name == "abs":
                 return infer_expression_type(syntax["arguments"][0], types, function_returns)
             end
+            if name == "__lsl_fd_snapshot":
+                return "Int"
+            end
             if name == "min" or name == "max":
                 if len(syntax["arguments"]) == 2:
                     if infer_expression_type(syntax["arguments"][0], types, function_returns) == "Int" and infer_expression_type(syntax["arguments"][1], types, function_returns) == "Int":
@@ -219,13 +222,13 @@ function infer_expression_type(syntax, types, function_returns):
             if name == "sum":
                 return "Any"
             end
-            if name == "len" or name == "Int" or name == "ord" or name == "arg_count" or name == "run" or name == "__lsl_run" or name == "capture_status" or name == "native_u64" or name == "native_size" or name == "native_call" or name == "native_close" or name == "__lsl_type_code" or name == "__lsl_raw_equal" or name == "__lsl_float_bits" or name == "__lsl_float_to_int" or name == "__lsl_unbox_int" or name == "__lsl_raw_int" or name == "__lsl_typed_int" or name == "__lsl_parse_literal_int" or name == "__lsl_test_fd_fault" or name == "__lsl_address" or name == "__lsl_object_table_mask" or name == "__lsl_intern_table_mask" or name == "__lsl_fd_open" or name == "__lsl_fd_read" or name == "__lsl_fd_write" or name == "__lsl_fd_seek" or name == "__lsl_fd_close" or name == "__lsl_fd_socket" or name == "__lsl_fd_connect" or name == "__lsl_raster_pack" or name == "__lsl_raster_copy" or name == "__lsl_raster_fill" or name == "__lsl_fd_ioctl" or name == "__lsl_fd_mmap" or name == "__lsl_mem_pack" or name == "__lsl_data_address" or name == "__lsl_syscall" or name == "__lsl_mem_unpack" or name == "__lsl_byte_copy" or name == "__lsl_text_byte" or name == "__lsl_text_byte_length" or name == "atomic_add" or name == "atomic_xchg" or name == "atomic_cas" or name == "thread_spawn" or name == "thread_join" or name == "cpu_count" or name == "popcount" or name == "trailing_zeros":
+            if name == "len" or name == "Int" or name == "ord" or name == "arg_count" or name == "run" or name == "__lsl_run" or name == "run_clean" or name == "__lsl_run_clean" or name == "capture_status" or name == "native_u64" or name == "native_size" or name == "native_call" or name == "native_close" or name == "__lsl_type_code" or name == "__lsl_raw_equal" or name == "__lsl_float_bits" or name == "__lsl_float_to_int" or name == "__lsl_unbox_int" or name == "__lsl_raw_int" or name == "__lsl_typed_int" or name == "__lsl_parse_literal_int" or name == "__lsl_test_fd_fault" or name == "__lsl_address" or name == "__lsl_object_table_mask" or name == "__lsl_intern_table_mask" or name == "__lsl_fd_open" or name == "__lsl_fd_read" or name == "__lsl_fd_write" or name == "__lsl_fd_seek" or name == "__lsl_fd_close" or name == "__lsl_fd_socket" or name == "__lsl_fd_connect" or name == "__lsl_raster_pack" or name == "__lsl_raster_copy" or name == "__lsl_raster_fill" or name == "__lsl_fd_ioctl" or name == "__lsl_fd_mmap" or name == "__lsl_mem_pack" or name == "__lsl_data_address" or name == "__lsl_syscall" or name == "__lsl_mem_unpack" or name == "__lsl_byte_copy" or name == "__lsl_text_byte" or name == "__lsl_text_byte_length" or name == "atomic_add" or name == "atomic_xchg" or name == "atomic_cas" or name == "thread_spawn" or name == "thread_join" or name == "cpu_count" or name == "popcount" or name == "trailing_zeros":
                 return "Int"
             elif name == "Float" or name == "sqrt" or name == "__lsl_float_from_bits" or name == "float_sum" or name == "float_dot" or name == "__lsl_wall_time":
                 return "Float"
             elif name == "Bool" or name == "__lsl_isatty" or name == "__lsl_stdin_eof":
                 return "Bool"
-            elif name == "String" or name == "chr" or name == "arg" or name == "input" or name == "readfile" or name == "last_error" or name == "type" or name == "capture" or name == "__lsl_capture" or name == "capture_stream" or name == "capture_input" or name == "capture_input_stream" or name == "capture_stderr" or name == "executable_path" or name == "__lsl_text_from_bytes" or name == "__lsl_floatarray_bytes":
+            elif name == "String" or name == "chr" or name == "arg" or name == "input" or name == "readfile" or name == "last_error" or name == "type" or name == "capture" or name == "__lsl_capture" or name == "capture_clean" or name == "__lsl_capture_clean" or name == "capture_stream" or name == "capture_stream_clean" or name == "capture_input" or name == "capture_input_clean" or name == "capture_input_stream" or name == "capture_input_stream_clean" or name == "capture_stderr" or name == "executable_path" or name == "__lsl_text_from_bytes" or name == "__lsl_floatarray_bytes":
                 return "String"
             elif name == "clock":
                 return "Float"
@@ -1688,8 +1691,8 @@ function emit_runtime_raise(generator, message):
     end
 end
 
-function emit_bounds_check(generator, syntax, target_type):
-    if target_type == "IntArray" and generator.get("unchecked_intarray", False):
+function emit_bounds_check(generator, syntax, target_type, force):
+    if not force and target_type == "IntArray" and generator.get("unchecked_intarray", False):
         return
     end
     source_path = syntax.get("path", generator["path"])
@@ -2073,7 +2076,7 @@ function emit_expression(generator, syntax):
             call assembler.relative(output, [232], "runtime_dict_get")
         else:
             if target_type == "String" or target_type == "List" or target_type == "Tuple" or target_type == "RealArray" or target_type == "IntArray" or target_type == "FloatArray" or target_type == "ByteArray":
-                call emit_bounds_check(generator, syntax, target_type)
+                call emit_bounds_check(generator, syntax, target_type, False)
             end
             if target_type == "ByteArray":
                 call assembler.relative(output, [232], "runtime_byte_array_get")
@@ -2236,6 +2239,7 @@ function emit_expression(generator, syntax):
             call assembler.emit(output, x86_64.move_reg_reg(6, 0))
             call assembler.emit(output, x86_64.pop(7))
             call assembler.relative(output, [232], dynamic_numeric_runtime(generator, "runtime_pow_any"))
+            call emit_pending_error(generator)
             return
         elif operator == "&" or operator == "|" or operator == "~" or operator == "<<" or operator == ">>":
             call emit_bitwise(generator, syntax)
@@ -2455,7 +2459,9 @@ function emit_expression(generator, syntax):
     elif kind == "call":
         target = syntax["target"]
         if target["kind"] == "name":
-            builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "Dictionary": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sqrt": 1, "sum": 1, "float_zeros": 1, "float_fill": 2, "float_sum": 1, "float_dot": 2, "float_axpy": 3, "float_matmul": 5, "type": 1, "exit": 1, "input": 1, "readfile": 1, "readbytes": 1, "__lsl_getenv": 1, "mkdir": 1, "unlink": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "help": 0, "run": 2, "capture": 2, "capture_stream": 3, "capture_input": 3, "capture_input_stream": 4, "capture_status": 0, "capture_stderr": 0, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2, "native_open": 1, "native_size": 1, "native_u64": 2, "native_name_equal": 3, "native_function": 2, "native_call": 2, "native_close": 1, "__lsl_test_small_tables": 0, "__lsl_test_fd_fault": 1, "__lsl_object_table_mask": 0, "__lsl_intern_table_mask": 0, "__lsl_wall_time": 0, "__lsl_sleep": 1, "__lsl_isatty": 1, "__lsl_stdin_eof": 0, "__lsl_run": 2, "__lsl_capture": 2, "__lsl_fd_open": 2, "__lsl_fd_read": 3, "__lsl_fd_write": 3, "__lsl_fd_seek": 2, "__lsl_fd_close": 1, "__lsl_fd_socket": 2, "__lsl_fd_connect": 3, "__lsl_int_zeros": 1, "__lsl_byte_zeros": 1, "__lsl_raster_pack": 5, "__lsl_raster_copy": 5, "__lsl_raster_fill": 4, "__lsl_fd_ioctl": 3, "__lsl_fd_mmap": 3, "__lsl_mem_pack": 5, "__lsl_data_address": 1, "__lsl_syscall": 5, "__lsl_mem_unpack": 4, "__lsl_text_from_bytes": 3, "__lsl_byte_copy": 5, "__lsl_text_byte": 2, "__lsl_text_byte_length": 1, "__lsl_floatarray_bytes": 1, "__lsl_floatarray_from_bytes": 1, "atomic_add": 3, "atomic_xchg": 3, "atomic_cas": 4, "atomic_pause": 0, "thread_spawn": 1, "thread_join": 1, "cpu_count": 0, "popcount": 1, "trailing_zeros": 1}
+            builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "Dictionary": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sqrt": 1, "sum": 1, "float_zeros": 1, "float_fill": 2, "float_sum": 1, "float_dot": 2, "float_axpy": 3, "float_matmul": 5, "type": 1, "exit": 1, "input": 1, "readfile": 1, "readbytes": 1, "__lsl_getenv": 1, "mkdir": 1, "unlink": 1, "rmdir": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "help": 0, "run": 2, "run_clean": 2, "capture": 2, "capture_clean": 2, "capture_stream": 3, "capture_stream_clean": 3, "capture_input": 3, "capture_input_clean": 3, "capture_input_stream": 4, "capture_input_stream_clean": 4, "capture_status": 0, "capture_stderr": 0, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2, "native_open": 1, "native_size": 1, "native_u64": 2, "native_name_equal": 3, "native_function": 2, "native_call": 2, "native_close": 1, "__lsl_test_small_tables": 0, "__lsl_test_fd_fault": 1, "__lsl_object_table_mask": 0, "__lsl_intern_table_mask": 0, "__lsl_wall_time": 0, "__lsl_sleep": 1, "__lsl_isatty": 1, "__lsl_stdin_eof": 0, "__lsl_run": 2, "__lsl_run_clean": 2, "__lsl_capture": 2, "__lsl_capture_clean": 2, "__lsl_fd_open": 2, "__lsl_fd_read": 3, "__lsl_fd_write": 3, "__lsl_fd_seek": 2, "__lsl_fd_close": 1, "__lsl_fd_socket": 2, "__lsl_fd_connect": 3, "__lsl_int_zeros": 1, "__lsl_byte_zeros": 1, "__lsl_raster_pack": 5, "__lsl_raster_copy": 5, "__lsl_raster_fill": 4, "__lsl_fd_ioctl": 3, "__lsl_fd_mmap": 3, "__lsl_mem_pack": 5, "__lsl_data_address": 1, "__lsl_syscall": 5, "__lsl_mem_unpack": 4, "__lsl_text_from_bytes": 3, "__lsl_byte_copy": 5, "__lsl_text_byte": 2, "__lsl_text_byte_length": 1, "__lsl_floatarray_bytes": 1, "__lsl_floatarray_from_bytes": 1, "atomic_add": 3, "atomic_xchg": 3, "atomic_cas": 4, "atomic_pause": 0, "thread_spawn": 1, "thread_join": 1, "cpu_count": 0, "popcount": 1, "trailing_zeros": 1}
+            builtin_arity["__lsl_mkdir_private"] = 1
+            builtin_arity["__lsl_fd_snapshot"] = 3
             if target["name"] in builtin_arity:
                 expected_builtin = builtin_arity[target["name"]]
                 if len(syntax["arguments"]) != expected_builtin:
@@ -2540,6 +2546,11 @@ function emit_expression(generator, syntax):
                     call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                     call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
                 end
+                int_zeros_size_ok = label_name(generator, "int_zeros_size_ok")
+                call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+                call assembler.relative(output, [15, 141], int_zeros_size_ok)
+                call emit_runtime_raise(generator, "ValueError: IntArray size cannot be negative")
+                call assembler.label(output, int_zeros_size_ok)
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 call assembler.emit(output, x86_64.xor_reg_reg(6, 6))
                 call assembler.relative(output, [232], "runtime_list_new")
@@ -2551,6 +2562,11 @@ function emit_expression(generator, syntax):
                     call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                     call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
                 end
+                byte_zeros_size_ok = label_name(generator, "byte_zeros_size_ok")
+                call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+                call assembler.relative(output, [15, 141], byte_zeros_size_ok)
+                call emit_runtime_raise(generator, "ValueError: ByteArray size cannot be negative")
+                call assembler.label(output, byte_zeros_size_ok)
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 call assembler.relative(output, [232], "runtime_byte_array_zeros")
                 return
@@ -2986,6 +3002,8 @@ function emit_expression(generator, syntax):
                     call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
                 end
                 call assembler.emit(output, x86_64.move_reg_reg(6, 0))
+                call assembler.emit(output, x86_64.cmp_reg_imm8(6, 0))
+                call assembler.relative(output, [15, 140], argument_missing)
                 call assembler.emit(output, x86_64.load_memory(11, 3, 120))
                 call assembler.emit(output, x86_64.load_memory(1, 11, 0))
                 call assembler.emit(output, x86_64.cmp_reg_reg(6, 1))
@@ -3006,9 +3024,10 @@ function emit_expression(generator, syntax):
                 call assembler.relative(output, [232], "runtime_gc")
                 return
             elif target["name"] == "atomic_add" or target["name"] == "atomic_xchg":
-                # Lock-free RMW over an IntArray slot; the result is the
-                # previous slot value. These low-level builtins do not check
-                # bounds, so a bad index corrupts memory like unchecked access.
+                # Lock-free RMW over a bounds-checked IntArray slot; the result
+                # is the previous slot value. Keep the array rooted while the
+                # index/value expressions run, and only load its backing pointer
+                # after all potentially allocating expressions have completed.
                 if infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"]) != "IntArray":
                     call unsupported(generator["path"], generator["lines"], syntax["arguments"][0], "atomic RMW requires an IntArray target", "pass an IntArray as the first argument")
                 end
@@ -3019,22 +3038,29 @@ function emit_expression(generator, syntax):
                     call unsupported(generator["path"], generator["lines"], syntax["arguments"][2], "atomic RMW value requires an Int", "convert the value with Int(...) first")
                 end
                 call emit_expression(generator, syntax["arguments"][0])
-                call assembler.emit(output, x86_64.load_memory(10, 0, 24))
+                call assembler.emit(output, x86_64.push(0))
                 if is_int_leaf(generator, syntax["arguments"][1]):
-                    call emit_int_leaf(generator, syntax["arguments"][1], 11)
+                    call emit_int_leaf(generator, syntax["arguments"][1], 6)
                 else:
                     call emit_expression(generator, syntax["arguments"][1])
-                    call assembler.emit(output, x86_64.move_reg_reg(11, 0))
+                    call assembler.emit(output, x86_64.move_reg_reg(6, 0))
                 end
+                call assembler.emit(output, x86_64.pop(7))
+                call emit_bounds_check(generator, syntax, "IntArray", True)
+                call assembler.emit(output, x86_64.push(7))
+                call assembler.emit(output, x86_64.push(6))
                 if is_int_leaf(generator, syntax["arguments"][2]):
                     call emit_int_leaf(generator, syntax["arguments"][2], 0)
                 else:
                     call emit_expression(generator, syntax["arguments"][2])
                 end
+                call assembler.emit(output, x86_64.pop(6))
+                call assembler.emit(output, x86_64.pop(7))
+                call assembler.emit(output, x86_64.load_memory(10, 7, 24))
                 if target["name"] == "atomic_add":
-                    call assembler.emit(output, x86_64.lock_xadd_indexed(10, 11, 3, 0))
+                    call assembler.emit(output, x86_64.lock_xadd_indexed(10, 6, 3, 0))
                 else:
-                    call assembler.emit(output, x86_64.lock_xchg_indexed(10, 11, 3, 0))
+                    call assembler.emit(output, x86_64.lock_xchg_indexed(10, 6, 3, 0))
                 end
                 return
             elif target["name"] == "atomic_cas":
@@ -3054,23 +3080,30 @@ function emit_expression(generator, syntax):
                     call unsupported(generator["path"], generator["lines"], syntax["arguments"][3], "atomic_cas desired value requires an Int", "convert the value with Int(...) first")
                 end
                 call emit_expression(generator, syntax["arguments"][0])
-                call assembler.emit(output, x86_64.load_memory(10, 0, 24))
+                call assembler.emit(output, x86_64.push(0))
                 if is_int_leaf(generator, syntax["arguments"][1]):
-                    call emit_int_leaf(generator, syntax["arguments"][1], 11)
+                    call emit_int_leaf(generator, syntax["arguments"][1], 6)
                 else:
                     call emit_expression(generator, syntax["arguments"][1])
-                    call assembler.emit(output, x86_64.move_reg_reg(11, 0))
+                    call assembler.emit(output, x86_64.move_reg_reg(6, 0))
                 end
+                call assembler.emit(output, x86_64.pop(7))
+                call emit_bounds_check(generator, syntax, "IntArray", True)
+                call assembler.emit(output, x86_64.push(7))
+                call assembler.emit(output, x86_64.push(6))
                 call emit_expression(generator, syntax["arguments"][2])
+                call assembler.emit(output, x86_64.push(0))
                 if is_int_leaf(generator, syntax["arguments"][3]):
                     call emit_int_leaf(generator, syntax["arguments"][3], 1)
                 else:
-                    call assembler.emit(output, x86_64.push(0))
                     call emit_expression(generator, syntax["arguments"][3])
                     call assembler.emit(output, x86_64.move_reg_reg(1, 0))
-                    call assembler.emit(output, x86_64.pop(0))
                 end
-                call assembler.emit(output, x86_64.lock_cmpxchg_indexed(10, 11, 3, 1))
+                call assembler.emit(output, x86_64.pop(0))
+                call assembler.emit(output, x86_64.pop(6))
+                call assembler.emit(output, x86_64.pop(7))
+                call assembler.emit(output, x86_64.load_memory(10, 7, 24))
+                call assembler.emit(output, x86_64.lock_cmpxchg_indexed(10, 6, 3, 1))
                 return
             elif target["name"] == "atomic_pause":
                 call assembler.emit(output, x86_64.pause())
@@ -3096,10 +3129,16 @@ function emit_expression(generator, syntax):
                 # Spawn a shared-memory worker running the given Function.
                 # Workers share globals; pass data through them. The builtin
                 # returns the logical tid (or -1 when the table is full).
+                spawn_type = infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"])
+                if spawn_type != "Function" and spawn_type != "Any":
+                    call unsupported(generator["path"], generator["lines"], syntax["arguments"][0], "thread_spawn requires a Function", "pass the name of a function with no parameters")
+                end
                 call emit_expression(generator, syntax["arguments"][0])
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
-                call assembler.relative(output, [232], "runtime_box_dynamic_function")
-                call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                if spawn_type == "Function":
+                    call assembler.relative(output, [232], "runtime_box_dynamic_function")
+                    call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                end
                 call assembler.relative(output, [232], "runtime_thread_spawn")
                 return
             elif target["name"] == "thread_join":
@@ -3117,24 +3156,24 @@ function emit_expression(generator, syntax):
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 call assembler.relative(output, [232], "runtime_getenv")
                 return
-            elif target["name"] == "run" or target["name"] == "__lsl_run" or target["name"] == "capture" or target["name"] == "__lsl_capture" or target["name"] == "capture_stream" or target["name"] == "capture_input" or target["name"] == "capture_input_stream":
+            elif target["name"] == "run" or target["name"] == "__lsl_run" or target["name"] == "run_clean" or target["name"] == "__lsl_run_clean" or target["name"] == "capture" or target["name"] == "__lsl_capture" or target["name"] == "capture_clean" or target["name"] == "__lsl_capture_clean" or target["name"] == "capture_stream" or target["name"] == "capture_stream_clean" or target["name"] == "capture_input" or target["name"] == "capture_input_clean" or target["name"] == "capture_input_stream" or target["name"] == "capture_input_stream_clean":
                 call emit_expression(generator, syntax["arguments"][0])
                 call assembler.emit(output, x86_64.push(0))
                 call emit_expression(generator, syntax["arguments"][1])
                 call assembler.emit(output, x86_64.push(0))
-                if target["name"] == "capture_input_stream":
+                if target["name"] == "capture_input_stream" or target["name"] == "capture_input_stream_clean":
                     call emit_expression(generator, syntax["arguments"][2])
                     call assembler.emit(output, x86_64.push(0))
                     call emit_expression(generator, syntax["arguments"][3])
                     call emit_collection_box(generator, syntax["arguments"][3])
                     call assembler.emit(output, x86_64.move_reg_reg(2, 0))
                     call assembler.emit(output, x86_64.pop(1))
-                elif target["name"] == "capture_stream":
+                elif target["name"] == "capture_stream" or target["name"] == "capture_stream_clean":
                     call emit_expression(generator, syntax["arguments"][2])
                     call emit_collection_box(generator, syntax["arguments"][2])
                     call assembler.emit(output, x86_64.move_reg_reg(2, 0))
                     call assembler.emit(output, x86_64.xor_reg_reg(1, 1))
-                elif target["name"] == "capture_input":
+                elif target["name"] == "capture_input" or target["name"] == "capture_input_clean":
                     call emit_expression(generator, syntax["arguments"][2])
                     call assembler.emit(output, x86_64.move_reg_reg(1, 0))
                     call assembler.emit(output, x86_64.xor_reg_reg(2, 2))
@@ -3144,7 +3183,12 @@ function emit_expression(generator, syntax):
                 end
                 call assembler.emit(output, x86_64.pop(6))
                 call assembler.emit(output, x86_64.pop(7))
-                if target["name"] == "run" or target["name"] == "__lsl_run":
+                if target["name"] == "run_clean" or target["name"] == "__lsl_run_clean" or target["name"] == "capture_clean" or target["name"] == "__lsl_capture_clean" or target["name"] == "capture_stream_clean" or target["name"] == "capture_input_clean" or target["name"] == "capture_input_stream_clean":
+                    call assembler.emit(output, x86_64.mov_imm64(8, 1))
+                else:
+                    call assembler.emit(output, x86_64.xor_reg_reg(8, 8))
+                end
+                if target["name"] == "run" or target["name"] == "__lsl_run" or target["name"] == "run_clean" or target["name"] == "__lsl_run_clean":
                     call assembler.relative(output, [232], "runtime_run")
                 else:
                     call assembler.relative(output, [232], "runtime_capture")
@@ -3264,6 +3308,23 @@ function emit_expression(generator, syntax):
                 call assembler.emit(output, x86_64.pop(6))
                 call assembler.emit(output, x86_64.pop(7))
                 call assembler.relative(output, [232], "runtime_fd_mmap")
+                return
+            elif target["name"] == "__lsl_fd_snapshot":
+                call emit_expression(generator, syntax["arguments"][0])
+                call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+                call assembler.emit(output, x86_64.push(0))
+                call emit_expression(generator, syntax["arguments"][1])
+                call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+                call assembler.emit(output, x86_64.push(0))
+                call emit_expression(generator, syntax["arguments"][2])
+                call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+                call assembler.emit(output, x86_64.move_reg_reg(2, 0))
+                call assembler.emit(output, x86_64.pop(6))
+                call assembler.emit(output, x86_64.pop(7))
+                call assembler.relative(output, [232], "runtime_fd_snapshot")
                 return
             elif target["name"] == "__lsl_mem_pack":
                 call emit_expression(generator, syntax["arguments"][0])
@@ -3478,11 +3539,15 @@ function emit_expression(generator, syntax):
                 end
                 call emit_string_pointer(generator, value_type)
                 return
-            elif target["name"] == "mkdir" or target["name"] == "unlink":
+            elif target["name"] == "mkdir" or target["name"] == "__lsl_mkdir_private" or target["name"] == "unlink" or target["name"] == "rmdir":
                 call emit_expression(generator, syntax["arguments"][0])
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
-                if target["name"] == "mkdir":
+                if target["name"] == "__lsl_mkdir_private":
+                    call assembler.relative(output, [232], "runtime_mkdir_private")
+                elif target["name"] == "mkdir":
                     call assembler.relative(output, [232], "runtime_mkdir")
+                elif target["name"] == "rmdir":
+                    call assembler.relative(output, [232], "runtime_rmdir")
                 else:
                     call assembler.relative(output, [232], "runtime_unlink")
                 end
@@ -3550,7 +3615,7 @@ function emit_expression(generator, syntax):
                 call assembler.label(output, done_label)
                 return
             elif target["name"] == "help":
-                call emit_static_write(generator, "Lux Simple Lang (LSL) 0.6.7" + chr(10) + "functions: print printl input for loop safe if elif else try class ctype function type del len abs sqrt help" + chr(10) + "types: Bool Int Float String List Tuple RealArray IntArray FloatArray ByteArray Dictionary" + chr(10) + "modules: os time json process config ai tensor cuda native math bigint" + chr(10) + "docs: see README.md and docs/" + chr(10))
+                call emit_static_write(generator, "Lux Simple Lang (LSL) 0.6.8" + chr(10) + "functions: print printl input for loop safe if elif else try class ctype function type del len abs sqrt help" + chr(10) + "types: Bool Int Float String List Tuple RealArray IntArray FloatArray ByteArray Dictionary" + chr(10) + "modules: os time json process config ai tensor cuda native math bigint" + chr(10) + "docs: see README.md and docs/" + chr(10))
                 call assembler.emit(output, x86_64.mov_imm64(0, 0))
                 return
             elif target["name"] == "abs":
@@ -4149,7 +4214,7 @@ function emit_print_value(generator, expression):
     end
     if True:
         value_type = infer_expression_type(expression, generator["types"], generator["function_returns"])
-        if value_type == "List" or value_type == "Tuple" or value_type == "RealArray" or value_type == "IntArray" or value_type == "FloatArray" or value_type == "ByteArray" or value_type == "Dictionary" or value_type == "Any":
+        if value_type == "List" or value_type == "Tuple" or value_type == "RealArray" or value_type == "IntArray" or value_type == "FloatArray" or value_type == "ByteArray" or value_type == "Dictionary" or value_type == "Function" or value_type == "Any":
             str_call = {"kind": "call", "line": expression["line"], "column": expression["column"], "end_column": expression["end_column"], "target": {"kind": "name", "name": "__lsl_str_value"}, "arguments": [expression]}
             call emit_expression(generator, str_call)
             call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
@@ -4180,8 +4245,6 @@ function emit_print_value(generator, expression):
             call assembler.label(generator["builder"], false_label)
             call emit_static_write(generator, "False")
             call assembler.label(generator["builder"], done_label)
-        elif value_type == "Any":
-            call assembler.relative(generator["builder"], [232], "runtime_print_any")
         else:
             call assembler.relative(generator["builder"], [232], "runtime_print_int")
         end
@@ -4384,7 +4447,7 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                         call assembler.emit(generator["builder"], x86_64.pop(7))
                     end
                     call assembler.emit(generator["builder"], x86_64.push(2))
-                    call emit_bounds_check(generator, statement, target_type)
+                    call emit_bounds_check(generator, statement, target_type, False)
                     call assembler.emit(generator["builder"], x86_64.pop(2))
                     if target_type == "ByteArray":
                         call assembler.relative(generator["builder"], [232], "runtime_byte_array_set")
@@ -4821,10 +4884,13 @@ function aligned_frame(variables):
     return frame_size
 end
 
-function class_table(program):
+function class_table(path, lines, program):
     result = {}
     for statement in program:
         if statement["kind"] == "class":
+            if statement["name"] in result:
+                call unsupported(path, lines, statement, "duplicate class: " + statement["name"], "rename one declaration")
+            end
             result[statement["name"]] = statement
         end
     end
@@ -5577,7 +5643,7 @@ end
 
 function generate(path, source, program):
     lines = source
-    classes = class_table(program)
+    classes = class_table(path, lines, program)
     call validate_class_hierarchy(path, lines, classes)
     functions = function_table(path, lines, program)
     parameter_types = dynamic_parameter_types(functions)
@@ -5645,11 +5711,13 @@ function generate(path, source, program):
     call assembler.emit(output, x86_64.mov_imm64(7, 0))
     call assembler.emit(output, x86_64.syscall())
     call assembler.emit(output, x86_64.move_reg_reg(3, 0))
-    # State uses bytes 0..191: 0..95 runtime, 96/104 futex mutexes, 112 thread
+    # State uses bytes 0..191: 0..87 runtime, 88 native mapping mutex,
+    # 96/104 heap/thread-table mutexes, 112 thread
     # table, 120 main stack top, 128 gc gate, 136 threads flag, 160..183 the
     # main thread's thread-local block (fs base: pending error, error flag,
-    # stack top), 144 the next bounded-GC object threshold and 152 its Float
-    # formatting counter; then the program globals (globals_bytes) and the 1 MiB
+    # stack top), 144 the next bounded-GC object threshold, 152 its Float
+    # formatting counter and 184 the bounded mark depth; then the program
+    # globals (globals_bytes) and the 1 MiB
     # String-intern table, all on brk; the object registry starts small in
     # mmap.
     call assembler.emit(output, x86_64.lea_base(9, 3, 192 + globals_bytes))
@@ -5684,6 +5752,8 @@ function generate(path, source, program):
     call assembler.emit(output, x86_64.lea_base(6, 3, 160))
     call assembler.emit(output, x86_64.mov_imm64(0, 158))
     call assembler.emit(output, x86_64.syscall())
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+    call assembler.relative(output, [15, 140], "runtime_fatal_setup")
     call assembler.emit(output, x86_64.store_fs(16, 15))
     # Thread table: one zeroed page of 32-byte entries (see thread_runtime).
     call assembler.emit(output, x86_64.mov_imm64(0, 9))
@@ -5715,6 +5785,8 @@ function generate(path, source, program):
     call assembler.emit(output, x86_64.mov_imm64(10, 8))
     call assembler.emit(output, x86_64.syscall())
     call assembler.emit(output, x86_64.add_reg_imm8(4, 32))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+    call assembler.relative(output, [15, 140], "runtime_fatal_setup")
     call assembler.emit(output, x86_64.lea_base(7, 3, 192))
     call assembler.emit(output, x86_64.lea_base(6, 3, 192 + globals_bytes))
     call assembler.relative(output, [232], "runtime_set_global_roots")

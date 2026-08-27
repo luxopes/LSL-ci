@@ -30,6 +30,13 @@ Modul hledá worker v tomto pořadí:
 
 Installer jej kopíruje do `<prefix>/bin/lsl-cuda-worker`.
 
+Worker je samostatná cizí procesní hranice, ne součást statického LSL runtime.
+Release binárka je PIE s plným RELRO, okamžitým bindingem, stack protector a
+neproveditelným stackem. JSON požadavek je omezen na 4 MiB a 64 úrovní,
+JSON pole na 131 072 prvků a binární transport na 32 MiB; binární pole, výstup
+i device buffer mají limit 2 000 000 Float64 prvků. Parser vyžaduje celý
+validní top-level objekt, ABI 1 a odmítá duplicitní používané klíče.
+
 ## Konfigurace
 
 ```text

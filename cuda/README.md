@@ -13,12 +13,21 @@ ovladač, glibc a libstdc++.
 
 ```text
 /usr/local/cuda/bin/nvcc -O3 -std=c++17 -arch=all-major \
+  -Xcompiler=-fPIE,-fstack-protector-strong,-D_FORTIFY_SOURCE=3,-Wformat,-Wformat-security,-Werror=format-security \
+  -Xlinker=-pie,-z,relro,-z,now \
   cuda/lsl_cuda_worker.cu -o cuda/lsl-cuda-worker
 strip --strip-unneeded cuda/lsl-cuda-worker
 ```
 
 Jinou cestu k `nvcc` lze použít beze změny zdroje. `-arch=all-major` je vhodné
 pro distribuovanou binárku; pro jediný stroj lze zvolit konkrétní `sm_XX`.
+Release build je PIE s plným RELRO, okamžitým bindingem, stack protector a
+neproveditelným stackem.
+
+Worker odmítá JSON nad 4 MiB, JSON pole nad 131 072 prvků, binární vstup nad
+32 MiB, binární pole a device buffery nad 2 000 000 prvků, JSON hlubší než
+64 úrovní, duplicitní používané klíče a neplatnou ABI verzi. Tyto limity platí
+i při přímém spuštění workeru mimo LSL.
 
 ## Ověření
 

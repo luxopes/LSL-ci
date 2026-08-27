@@ -61,19 +61,19 @@ function __lsl_upper_code(code):
 end
 
 function __lsl_lower(text):
-    result = ""
+    result = []
     for character in text:
-        result += chr(__lsl_lower_code(ord(character)))
+        result.append(chr(__lsl_lower_code(ord(character))))
     end
-    return result
+    return "".join(result)
 end
 
 function __lsl_upper(text):
-    result = ""
+    result = []
     for character in text:
-        result += chr(__lsl_upper_code(ord(character)))
+        result.append(chr(__lsl_upper_code(ord(character))))
     end
-    return result
+    return "".join(result)
 end
 
 function __lsl_capitalize(text):
@@ -84,30 +84,30 @@ function __lsl_capitalize(text):
 end
 
 function __lsl_title(text):
-    result = ""
+    result = []
     word_start = True
     for character in text:
         code = ord(character)
         if code >= 65 and code <= 90:
             if word_start:
-                result += character
+                result.append(character)
             else:
-                result += chr(code + 32)
+                result.append(chr(code + 32))
             end
             word_start = False
         elif code >= 97 and code <= 122:
             if word_start:
-                result += chr(code - 32)
+                result.append(chr(code - 32))
             else:
-                result += character
+                result.append(character)
             end
             word_start = False
         else:
-            result += character
+            result.append(character)
             word_start = True
         end
     end
-    return result
+    return "".join(result)
 end
 
 function __lsl_startswith(text, prefix):
@@ -144,13 +144,7 @@ function __lsl_lstrip(text):
     while start < len(text) and __lsl_is_space(text[start]):
         start += 1
     end
-    result = ""
-    index = start
-    while index < len(text):
-        result += text[index]
-        index += 1
-    end
-    return result
+    return text[start:len(text)]
 end
 
 function __lsl_rstrip(text):
@@ -158,13 +152,7 @@ function __lsl_rstrip(text):
     while stop > 0 and __lsl_is_space(text[stop - 1]):
         stop -= 1
     end
-    result = ""
-    index = 0
-    while index < stop:
-        result += text[index]
-        index += 1
-    end
-    return result
+    return text[0:stop]
 end
 
 function __lsl_strip(text):
@@ -176,6 +164,9 @@ function __lsl_find(text, needle):
         return 0
     end
     limit = len(text) - len(needle)
+    if len(needle) > 0 and len(text) > 100000000 // len(needle):
+        Error(ValueError: "substring search exceeds the safe work limit")
+    end
     start = 0
     while start <= limit:
         matches = True
@@ -214,6 +205,9 @@ function __lsl_split(text, separator):
     if m == 0 or m > n:
         call result.append(s)
         return result
+    end
+    if n > 100000000 // m:
+        Error(ValueError: "String split exceeds the safe work limit")
     end
     first = __lsl_text_byte(sep, 0)
     start = 0
@@ -346,6 +340,9 @@ function __lsl_float_accumulate(value, digit):
 end
 
 function __lsl_parse_float(text):
+    if len(text) > 4096:
+        Error(ValueError: "Float String exceeds 4096 characters")
+    end
     normalized = __lsl_lower(text)
     if normalized == "nan" or normalized == "+nan" or normalized == "-nan":
         return 0.0 / 0.0
@@ -377,7 +374,15 @@ function __lsl_parse_float(text):
         if code >= 48 and code <= 57:
             digit = code - 48
             if in_exponent:
-                exponent = exponent * 10 + digit
+                # Values beyond this point already underflow/overflow every
+                # finite Float. Saturating avoids Int wrap and an unbounded
+                # exponent-scaling loop on hostile decimal input.
+                if exponent < 10000:
+                    exponent = exponent * 10 + digit
+                    if exponent > 10000:
+                        exponent = 10000
+                    end
+                end
                 exponent_digits += 1
                 exponent_sign_allowed = False
             else:
@@ -695,6 +700,9 @@ end
 
 function __lsl_parse_int(text):
     length = len(text)
+    if length > 4096:
+        Error(ValueError: "Int String exceeds 4096 characters")
+    end
     index = 0
     sign = 1
     if length > 0 and text[0] == "-":
@@ -790,7 +798,19 @@ function __lsl_require_rang_step(value):
     return __lsl_raw_int(value)
 end
 
-function __lsl_render(value, quote):
+function __lsl_render_active(value, active):
+    for item in active:
+        if __lsl_raw_equal(item, value):
+            return True
+        end
+    end
+    return False
+end
+
+function __lsl_render_seen(value, quote, active, depth):
+    if depth > 64:
+        return "..."
+    end
     if not __lsl_is_heap(value):
         return __lsl_int_to_string(value)
     end
@@ -815,50 +835,67 @@ function __lsl_render(value, quote):
         return __lsl_format_float(value)
     elif code == 10:
         return "<Function>"
+    elif code == 11:
+        return "<NativeLibrary>"
+    elif code == 12:
+        return "<NativeFunction>"
     elif code == 3:
-        result = "{"
+        if __lsl_render_active(value, active):
+            return "{...}"
+        end
+        active.append(value)
+        result = ["{"]
         first = True
         for key in value.keys():
             if not first:
-                result = result + ", "
+                result.append(", ")
             end
-            result = result + __lsl_render(key, True) + ": " + __lsl_render(value[key], True)
+            result.append(__lsl_render_seen(key, True, active, depth + 1))
+            result.append(": ")
+            result.append(__lsl_render_seen(value[key], True, active, depth + 1))
             first = False
         end
-        return result + "}"
+        result.append("}")
+        call __lsl_pop(active)
+        return "".join(result)
     elif code == 13:
-        result = "IntArray(["
+        result = ["IntArray(["]
         index = 0
         while index < len(value):
             if index > 0:
-                result += ", "
+                result.append(", ")
             end
-            result += __lsl_int_to_string(__lsl_raw_int(value[index]))
+            result.append(__lsl_int_to_string(__lsl_raw_int(value[index])))
             index += 1
         end
-        return result + "])"
+        result.append("])")
+        return "".join(result)
     elif code == 14:
-        result = "FloatArray(["
+        result = ["FloatArray(["]
         index = 0
         while index < len(value):
             if index > 0:
-                result += ", "
+                result.append(", ")
             end
-            result += __lsl_format_float(__lsl_float_from_bits(__lsl_raw_int(value[index])))
+            result.append(__lsl_format_float(__lsl_float_from_bits(__lsl_raw_int(value[index]))))
             index += 1
         end
-        return result + "])"
+        result.append("])")
+        return "".join(result)
     elif code == 15:
-        result = "ByteArray(["
+        result = ["ByteArray(["]
         index = 0
         while index < len(value):
             if index > 0:
-                result += ", "
+                result.append(", ")
             end
-            result += __lsl_int_to_string(__lsl_raw_int(value[index]))
+            result.append(__lsl_int_to_string(__lsl_raw_int(value[index])))
             index += 1
         end
-        return result + "])"
+        result.append("])")
+        return "".join(result)
+    elif code != 2 and code != 7 and code != 8:
+        return "<Object>"
     end
     open_bracket = "["
     close_bracket = "]"
@@ -868,17 +905,27 @@ function __lsl_render(value, quote):
     elif code == 8:
         open_bracket = "!["
     end
-    result = open_bracket
+    if __lsl_render_active(value, active):
+        return open_bracket + "..." + close_bracket
+    end
+    active.append(value)
+    result = [open_bracket]
     index = 0
     length = len(value)
     while index < length:
         if index > 0:
-            result = result + ", "
+            result.append(", ")
         end
-        result = result + __lsl_render(value[index], True)
+        result.append(__lsl_render_seen(value[index], True, active, depth + 1))
         index += 1
     end
-    return result + close_bracket
+    result.append(close_bracket)
+    call __lsl_pop(active)
+    return "".join(result)
+end
+
+function __lsl_render(value, quote):
+    return __lsl_render_seen(value, quote, [], 0)
 end
 
 function __lsl_str_value(value):
@@ -1062,28 +1109,42 @@ function __lsl_slice3(target, start, has_start, stop, has_stop, step):
         end
     end
     if is_string:
-        joined = ""
-        for piece in parts:
-            joined += piece
-        end
-        return joined
+        return "".join(parts)
     end
     return parts
 end
 
 function __lsl_str_repeat(text, count):
-    result = ""
-    index = 0
-    while index < count:
-        result = result + text
-        index += 1
+    checked_text = String(text)
+    if count <= 0 or len(checked_text) == 0:
+        return ""
     end
-    return result
+    byte_count = __lsl_text_byte_length(checked_text)
+    if byte_count > 0 and count > 67108864 // byte_count:
+        Error(ValueError: "repeated String exceeds 64 MiB")
+    end
+    total = byte_count * count
+    result = __lsl_byte_zeros(total)
+    target = 0
+    repetition = 0
+    while repetition < count:
+        source = 0
+        while source < byte_count:
+            result[target] = __lsl_text_byte(checked_text, source)
+            source += 1
+            target += 1
+        end
+        repetition += 1
+    end
+    return __lsl_text_from_bytes(result, 0, total)
 end
 
-function __lsl_equal_seen(left, right, seen_left, seen_right):
+function __lsl_equal_seen(left, right, seen_left, seen_right, depth):
     if __lsl_raw_equal(left, right):
         return True
+    end
+    if depth > 64:
+        Error(ValueError: "comparison nesting exceeds 64 levels")
     end
     left_code = __lsl_type_code(left)
     right_code = __lsl_type_code(right)
@@ -1108,7 +1169,7 @@ function __lsl_equal_seen(left, right, seen_left, seen_right):
         end
         index = 0
         while index < length:
-            if not __lsl_equal_seen(left[index], right[index], seen_left, seen_right):
+            if not __lsl_equal_seen(left[index], right[index], seen_left, seen_right, depth + 1):
                 return False
             end
             index += 1
@@ -1163,7 +1224,7 @@ function __lsl_equal_seen(left, right, seen_left, seen_right):
             if not (key in right):
                 return False
             end
-            if not __lsl_equal_seen(left[key], right[key], seen_left, seen_right):
+            if not __lsl_equal_seen(left[key], right[key], seen_left, seen_right, depth + 1):
                 return False
             end
         end
@@ -1182,7 +1243,7 @@ function __lsl_equal(left, right):
         return False
     end
     if left_code == 2 or left_code == 7 or left_code == 8 or left_code == 13 or left_code == 14 or left_code == 15 or left_code == 3:
-        return __lsl_equal_seen(left, right, [], [])
+        return __lsl_equal_seen(left, right, [], [], 0)
     end
     return False
 end
@@ -1321,18 +1382,44 @@ function __lsl_reverse(target):
 end
 
 function __lsl_sort(target):
-    limit = len(target)
-    while limit > 1:
-        index = 1
-        while index < limit:
-            if target[index] < target[index - 1]:
-                temporary = target[index]
-                target[index] = target[index - 1]
-                target[index - 1] = temporary
+    length = len(target)
+    if length < 2:
+        return
+    end
+    source = target[0:length]
+    destination = target
+    width = 1
+    while width < length:
+        left = 0
+        while left < length:
+            middle = min(left + width, length)
+            stop = min(left + width + width, length)
+            first = left
+            second = middle
+            output = left
+            while output < stop:
+                if first < middle and (second >= stop or source[first] <= source[second]):
+                    destination[output] = source[first]
+                    first += 1
+                else:
+                    destination[output] = source[second]
+                    second += 1
+                end
+                output += 1
             end
+            left += width + width
+        end
+        temporary = source
+        source = destination
+        destination = temporary
+        width += width
+    end
+    if not __lsl_raw_equal(source, target):
+        index = 0
+        while index < length:
+            target[index] = source[index]
             index += 1
         end
-        limit -= 1
     end
 end
 
@@ -1417,15 +1504,36 @@ function __lsl_dict_pop_default(target, key, default_value):
 end
 
 function __lsl_replace(text, old_value, new_value):
-    result = ""
+    checked_text = String(text)
+    checked_old = String(old_value)
+    checked_new = String(new_value)
+    old_length = len(checked_old)
+    pieces = []
+    output_bytes = 0
+    if old_length == 0:
+        new_bytes = __lsl_text_byte_length(checked_new)
+        text_bytes = __lsl_text_byte_length(checked_text)
+        if new_bytes > 0 and len(checked_text) + 1 > (67108864 - min(text_bytes, 67108864)) // new_bytes:
+            Error(ValueError: "replaced String exceeds 64 MiB")
+        end
+        pieces.append(checked_new)
+        for character in checked_text:
+            pieces.append(character)
+            pieces.append(checked_new)
+        end
+        return "".join(pieces)
+    end
+    if len(checked_text) > 100000000 // old_length:
+        Error(ValueError: "String replace exceeds the safe work limit")
+    end
     index = 0
-    while index < len(text):
+    while index < len(checked_text):
         matches = False
-        if index + len(old_value) <= len(text):
+        if index + old_length <= len(checked_text):
             matches = True
             offset = 0
-            while offset < len(old_value):
-                if text[index + offset] != old_value[offset]:
+            while offset < old_length:
+                if checked_text[index + offset] != checked_old[offset]:
                     matches = False
                     break
                 end
@@ -1433,14 +1541,19 @@ function __lsl_replace(text, old_value, new_value):
             end
         end
         if matches:
-            result += new_value
-            index += len(old_value)
+            piece = checked_new
+            index += old_length
         else:
-            result += text[index]
+            piece = checked_text[index]
             index += 1
         end
+        output_bytes += __lsl_text_byte_length(String(piece))
+        if output_bytes > 67108864:
+            Error(ValueError: "replaced String exceeds 64 MiB")
+        end
+        pieces.append(piece)
     end
-    return result
+    return "".join(pieces)
 end
 
 function __lsl_count(text, needle):
@@ -1462,6 +1575,9 @@ function __lsl_count(text, needle):
 end
 
 function __lsl_find_offset(text, needle, offset):
+    if len(needle) > 0 and len(text) - min(max(offset, 0), len(text)) > 100000000 // len(needle):
+        Error(ValueError: "substring search exceeds the safe work limit")
+    end
     limit = len(text) - len(needle)
     start = offset
     while start <= limit:

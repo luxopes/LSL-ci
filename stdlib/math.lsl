@@ -93,6 +93,8 @@ function factorial(value):
     number = Int(value)
     if number < 0:
         Error(ValueError: "factorial requires a non-negative Int")
+    elif number > 20:
+        Error(OverflowError: "factorial result does not fit in Int")
     end
     result = 1
     factor = 2
@@ -107,6 +109,8 @@ function factorial_big(value):
     number = Int(value)
     if number < 0:
         Error(ValueError: "factorial_big requires a non-negative Int")
+    elif number > 10000:
+        Error(ValueError: "factorial_big exceeds the secure work limit")
     end
     result = bigint.BigInt(1)
     factor = 2
@@ -158,7 +162,9 @@ end
 
 function log(value):
     number = Float(value)
-    if number <= 0.0:
+    if number != number or number == 1.0 / 0.0:
+        Error(ValueError: "log requires a finite value")
+    elif number <= 0.0:
         Error(ValueError: "log domain error")
     end
 
@@ -340,6 +346,8 @@ function pi(decimal_places):
     places = Int(decimal_places)
     if places < 0:
         Error(ValueError: "pi decimal places cannot be negative")
+    elif places > 2000:
+        Error(ValueError: "pi exceeds the secure 2000-digit work limit")
     end
 
     # Rabinowitz-Wagon spigot algorithm. Every cell stays small enough for

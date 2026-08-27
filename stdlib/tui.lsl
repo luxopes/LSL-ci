@@ -26,6 +26,14 @@ color_magenta = 35
 color_cyan = 36
 color_white = 37
 
+function stty_tool():
+    command = os.which_trusted("stty")
+    if command == None:
+        Error(TUIError: "trusted stty executable is unavailable")
+    end
+    return command
+end
+
 class Terminal(True):
     ctype Public
 
@@ -40,8 +48,14 @@ class Terminal(True):
     # Enter cbreak + alternate screen. Saves the current stty state so leave()
     # can restore it exactly.
     function enter(self):
-        self.saved = os.capture_argv("stty", ["-g"]).strip()
-        call os.run_argv("stty", ["-echo", "-icanon", "min", "1", "time", "0"])
+        command = stty_tool()
+        self.saved = os.capture_argv_clean(command, ["-g"]).strip()
+        if capture_status() != 0 or len(self.saved) == 0 or len(self.saved) > 4096 or chr(0) in self.saved:
+            Error(TUIError: "cannot read terminal state")
+        end
+        if os.run_argv_clean(command, ["-echo", "-icanon", "min", "1", "time", "0"]) != 0:
+            Error(TUIError: "cannot enter terminal raw mode")
+        end
         call self.query_size()
         call self.emit(ESC + "[?1049h" + ESC + "[?25l" + ESC + "[2J")
         call self.flush()
@@ -54,18 +68,24 @@ class Terminal(True):
         call self.emit(ESC + "[?25h" + ESC + "[?1049l")
         call self.flush()
         if self.saved != "":
-            call os.run_argv("stty", [self.saved])
+            if os.run_argv_clean(stty_tool(), [self.saved]) != 0:
+                Error(TUIError: "cannot restore terminal state")
+            end
         end
         return None
     end
 
     # Read the terminal size (rows, cols) via `stty size`.
     function query_size(self):
-        size = os.capture_argv("stty", ["size"]).strip()
+        size = os.capture_argv_clean(stty_tool(), ["size"]).strip()
         parts = size.split(" ")
-        if len(parts) == 2:
-            self.rows = Int(parts[0])
-            self.cols = Int(parts[1])
+        if capture_status() == 0 and len(parts) == 2:
+            rows = Int(parts[0])
+            cols = Int(parts[1])
+            if rows >= 1 and rows <= 10000 and cols >= 1 and cols <= 10000:
+                self.rows = rows
+                self.cols = cols
+            end
         end
         return None
     end
@@ -75,6 +95,11 @@ class Terminal(True):
     # encoded — ByteArray.append rejects values over 255, so a frame containing
     # "↑" used to abort the caller's render loop mid-frame.
     function emit(self, text):
+        if type(text) != "String":
+            Error(TypeError: "terminal output must be a String")
+        elif __lsl_text_byte_length(String(text)) > 16777216 - len(ByteArray(self.out)):
+            Error(TUIError: "queued terminal output exceeds 16 MiB")
+        end
         buffer = ByteArray(self.out)
         i = 0
         limit = len(text)
@@ -174,6 +199,9 @@ class Terminal(True):
             end
             second = buffer[1]
             if second == 91 or second == 79:
+                if count < 3:
+                    return "esc"
+                end
                 third = buffer[2]
                 if third == 65:
                     return "up"

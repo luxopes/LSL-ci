@@ -14,6 +14,16 @@ function emit_allocator(output):
     call assembler.emit(output, x86_64.mov_imm64(0, 0))
     call assembler.emit(output, x86_64.ret())
     call assembler.label(output, "runtime_alloc")
+    # Reject wrapped or implausibly large requests before the alignment add.
+    # Without this guard, size+7 could wrap to a small allocation and callers
+    # would then copy the original, attacker-controlled length past the heap
+    # block. A one-GiB single-object ceiling prevents overcommit/OOM abuse and
+    # keeps every container growth calculation inside the signed range.
+    call assembler.emit(output, x86_64.cmp_reg_imm8(7, 0))
+    call assembler.relative(output, [15, 140], "runtime_fatal_allocation")
+    call assembler.emit(output, x86_64.mov_imm64(0, 1073741824))
+    call assembler.emit(output, x86_64.cmp_reg_reg(7, 0))
+    call assembler.relative(output, [15, 143], "runtime_fatal_allocation")
     call assembler.emit(output, x86_64.function_prologue(64))
     call assembler.emit(output, x86_64.store_stack(-48, 7))
     call assembler.relative(output, [232], "runtime_mutex_lock")
@@ -95,6 +105,18 @@ function emit_allocator(output):
     call assembler.emit(output, x86_64.syscall())
     call assembler.label(output, "fatal_allocation_data")
     call assembler.emit(output, bytes.utf8(message))
+    call assembler.label(output, "runtime_fatal_setup")
+    call assembler.emit(output, x86_64.mov_imm64(0, 1))
+    call assembler.emit(output, x86_64.mov_imm64(7, 2))
+    call assembler.relative(output, x86_64.lea_rip_prefix(6), "fatal_setup_data")
+    message = "LSL runtime error: OSError: required process protection is unavailable\n"
+    call assembler.emit(output, x86_64.mov_imm64(2, len(bytes.utf8(message))))
+    call assembler.emit(output, x86_64.syscall())
+    call assembler.emit(output, x86_64.mov_imm64(0, 60))
+    call assembler.emit(output, x86_64.mov_imm64(7, 71))
+    call assembler.emit(output, x86_64.syscall())
+    call assembler.label(output, "fatal_setup_data")
+    call assembler.emit(output, bytes.utf8(message))
 end
 
 function emit_object_table_growth(output):
@@ -103,6 +125,10 @@ function emit_object_table_growth(output):
     call assembler.emit(output, x86_64.store_stack(-24, 7))
     call assembler.emit(output, x86_64.load_memory(8, 3, 32))
     call assembler.emit(output, x86_64.load_memory(9, 3, 40))
+    # Keep doubling and byte-size arithmetic bounded even if registry state is
+    # corrupted or a hostile program exhausts the supported object count.
+    call assembler.emit(output, x86_64.cmp_reg_imm32(9, 33554431))
+    call assembler.relative(output, [15, 143], "runtime_fatal_allocation")
     call assembler.emit(output, x86_64.store_stack(-8, 8))
     call assembler.emit(output, x86_64.store_stack(-16, 9))
     call assembler.emit(output, x86_64.move_reg_reg(1, 9))
@@ -297,21 +323,33 @@ function emit_parse_literal_int(output):
 end
 
 function emit_int_power(output):
+    # reg7 = base, reg6 = a non-negative exponent. Exponentiation by squaring
+    # bounds the work to 64 iterations even for an attacker-controlled Int.
+    # Multiplication intentionally keeps the language's wrapping Int semantics.
     call assembler.label(output, "runtime_int_power")
     call assembler.emit(output, x86_64.mov_imm64(0, 1))
     call assembler.label(output, "int_power_loop")
     call assembler.emit(output, x86_64.cmp_reg_imm8(6, 0))
-    call assembler.relative(output, [15, 142], "int_power_done")
+    call assembler.relative(output, [15, 132], "int_power_done")
+    call assembler.emit(output, x86_64.move_reg_reg(8, 6))
+    call assembler.emit(output, x86_64.and_reg_imm8(8, 1))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(8, 0))
+    call assembler.relative(output, [15, 132], "int_power_shift")
     call assembler.emit(output, x86_64.imul_reg_reg(0, 7))
-    call assembler.emit(output, x86_64.decrement(6))
+    call assembler.label(output, "int_power_shift")
+    call assembler.emit(output, x86_64.shift_right_logical_imm(6, 1))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(6, 0))
+    call assembler.relative(output, [15, 132], "int_power_done")
+    call assembler.emit(output, x86_64.imul_reg_reg(7, 7))
     call assembler.relative(output, [233], "int_power_loop")
     call assembler.label(output, "int_power_done")
     call assembler.emit(output, x86_64.ret())
 end
 
 function emit_float_power(output):
-    # reg7 = boxed Float base, reg6 = raw Int exponent. Exact repeated
-    # multiplication; negative exponent yields the reciprocal.
+    # reg7 = boxed Float base, reg6 = raw Int exponent. Exponentiation by
+    # squaring bounds attacker-controlled work to 64 iterations. A negative
+    # exponent, including INT64_MIN, uses the reciprocal.
     call assembler.label(output, "runtime_float_power")
     call assembler.emit(output, x86_64.function_prologue(32))
     call assembler.emit(output, x86_64.load_memory(0, 7, 8))
@@ -325,9 +363,17 @@ function emit_float_power(output):
     call assembler.emit(output, x86_64.neg_reg(6))
     call assembler.label(output, "float_power_loop")
     call assembler.emit(output, x86_64.cmp_reg_imm8(6, 0))
-    call assembler.relative(output, [15, 142], "float_power_reduced")
+    call assembler.relative(output, [15, 132], "float_power_reduced")
+    call assembler.emit(output, x86_64.move_reg_reg(9, 6))
+    call assembler.emit(output, x86_64.and_reg_imm8(9, 1))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(9, 0))
+    call assembler.relative(output, [15, 132], "float_power_shift")
     call assembler.emit(output, x86_64.mul_double(0, 1))
-    call assembler.emit(output, x86_64.decrement(6))
+    call assembler.label(output, "float_power_shift")
+    call assembler.emit(output, x86_64.shift_right_logical_imm(6, 1))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(6, 0))
+    call assembler.relative(output, [15, 132], "float_power_reduced")
+    call assembler.emit(output, x86_64.mul_double(1, 1))
     call assembler.relative(output, [233], "float_power_loop")
     call assembler.label(output, "float_power_reduced")
     call assembler.emit(output, x86_64.cmp_reg_imm8(8, 0))
@@ -403,6 +449,8 @@ function emit_intern_table_growth(output):
     call assembler.emit(output, x86_64.function_prologue(64))
     call assembler.emit(output, x86_64.load_memory(8, 3, 48))
     call assembler.emit(output, x86_64.load_memory(9, 3, 56))
+    call assembler.emit(output, x86_64.cmp_reg_imm32(9, 16777215))
+    call assembler.relative(output, [15, 143], "runtime_fatal_allocation")
     call assembler.emit(output, x86_64.store_stack(-8, 8))
     call assembler.emit(output, x86_64.store_stack(-16, 9))
     call assembler.emit(output, x86_64.move_reg_reg(1, 9))
@@ -1106,6 +1154,17 @@ function emit_gc(output):
     call assembler.label(output, "runtime_mark")
     call assembler.emit(output, x86_64.function_prologue(80))
     call assembler.emit(output, x86_64.store_stack(-8, 7))
+    # Container graphs are user-controlled. Bound native recursion; when a
+    # live graph is deeper, abort this collection and retain every object
+    # rather than overflowing the process stack or freeing an unvisited child.
+    # state+184 is a signed depth counter, with -1 meaning fail-safe abort.
+    call assembler.emit(output, x86_64.load_memory(1, 3, 184))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(1, 0))
+    call assembler.relative(output, [15, 140], "mark_done")
+    call assembler.emit(output, x86_64.cmp_reg_imm32(1, 128))
+    call assembler.relative(output, [15, 141], "mark_depth_abort")
+    call assembler.emit(output, x86_64.increment(1))
+    call assembler.emit(output, x86_64.store_memory(3, 184, 1))
     call assembler.relative(output, [232], "runtime_mark_shallow")
     call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
     call assembler.relative(output, [15, 132], "mark_done")
@@ -1125,6 +1184,8 @@ function emit_gc(output):
     call assembler.relative(output, [15, 132], "mark_raw_list")
     call assembler.emit(output, x86_64.cmp_reg_imm8(1, 3))
     call assembler.relative(output, [15, 132], "mark_dict")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(1, 12))
+    call assembler.relative(output, [15, 132], "mark_native_function")
     call assembler.relative(output, [233], "mark_done")
     call assembler.label(output, "mark_list")
     call assembler.emit(output, x86_64.load_memory(7, 7, 24))
@@ -1182,7 +1243,23 @@ function emit_gc(output):
     call assembler.emit(output, x86_64.increment(1))
     call assembler.emit(output, x86_64.store_stack(-24, 1))
     call assembler.relative(output, [233], "mark_dict_loop")
+    call assembler.label(output, "mark_native_function")
+    # A resolved native Function owns its NativeLibrary handle. Without this
+    # edge, gc() could recycle the library object while the Function remained
+    # reachable and later validation would dereference unrelated object state.
+    call assembler.emit(output, x86_64.load_memory(7, 7, 16))
+    call assembler.relative(output, [232], "runtime_mark")
+    call assembler.relative(output, [233], "mark_done")
+    call assembler.label(output, "mark_depth_abort")
+    call assembler.emit(output, x86_64.mov_imm64(1, -1))
+    call assembler.emit(output, x86_64.store_memory(3, 184, 1))
     call assembler.label(output, "mark_done")
+    call assembler.emit(output, x86_64.load_memory(1, 3, 184))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(1, 0))
+    call assembler.relative(output, [15, 140], "mark_return")
+    call assembler.emit(output, x86_64.decrement(1))
+    call assembler.emit(output, x86_64.store_memory(3, 184, 1))
+    call assembler.label(output, "mark_return")
     call assembler.emit(output, x86_64.mov_imm64(0, 0))
     call assembler.emit(output, x86_64.function_epilogue())
 
@@ -1196,6 +1273,8 @@ function emit_gc(output):
     call assembler.emit(output, x86_64.cmp_reg_reg(2, 1))
     call assembler.relative(output, [15, 133], "gc_thread_skip")
     call assembler.relative(output, [232], "runtime_mutex_lock")
+    call assembler.emit(output, x86_64.xor_reg_reg(1, 1))
+    call assembler.emit(output, x86_64.store_memory(3, 184, 1))
     # Roots the conservative stack scan cannot see: the pending-error String
     # kept only in the thread-local block (fs:0), and the last capture() stderr String at
     # state+72. Both must survive across gc().
@@ -1369,12 +1448,32 @@ function emit_gc(output):
     call assembler.emit(output, x86_64.load_memory(1, 8, 16))
     call assembler.emit(output, x86_64.cmp_reg_imm8(1, 0))
     call assembler.relative(output, [15, 133], "gc_sweep_next")
+    call assembler.emit(output, x86_64.load_memory(1, 3, 184))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(1, 0))
+    call assembler.relative(output, [15, 140], "gc_sweep_clear_only")
     call assembler.emit(output, x86_64.load_memory(1, 8, 24))
     call assembler.emit(output, x86_64.cmp_reg_imm8(1, 0))
     call assembler.relative(output, [15, 132], "gc_free_block")
     call assembler.emit(output, x86_64.store_memory_imm32(8, 24, 0))
     call assembler.relative(output, [233], "gc_sweep_next")
+    call assembler.label(output, "gc_sweep_clear_only")
+    call assembler.emit(output, x86_64.store_memory_imm32(8, 24, 0))
+    call assembler.relative(output, [233], "gc_sweep_next")
     call assembler.label(output, "gc_free_block")
+    # NativeLibrary mappings are external resources rather than heap backing
+    # blocks. Finalize an unreachable live handle before recycling its object.
+    call assembler.emit(output, x86_64.load_memory(2, 8, 32))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(2, 11))
+    call assembler.relative(output, [15, 133], "gc_finalize_done")
+    call assembler.emit(output, x86_64.load_memory(7, 8, 40))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(7, 0))
+    call assembler.relative(output, [15, 132], "gc_finalize_done")
+    call assembler.emit(output, x86_64.load_memory(6, 8, 48))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(6, 64))
+    call assembler.relative(output, [15, 140], "gc_finalize_done")
+    call assembler.emit(output, x86_64.mov_imm64(0, 11))
+    call assembler.emit(output, x86_64.syscall())
+    call assembler.label(output, "gc_finalize_done")
     call assembler.emit(output, x86_64.store_memory_imm32(8, 16, 1))
     call assembler.emit(output, x86_64.load_memory(1, 10, 8))
     call assembler.emit(output, x86_64.store_memory(8, 24, 1))
@@ -1392,6 +1491,8 @@ function emit_gc(output):
     call assembler.emit(output, x86_64.store_stack(-16, 8))
     call assembler.relative(output, [233], "gc_sweep_loop")
     call assembler.label(output, "gc_done")
+    call assembler.emit(output, x86_64.xor_reg_reg(1, 1))
+    call assembler.emit(output, x86_64.store_memory(3, 184, 1))
     # Wake the suspended handlers only after the sweep finished.
     call assembler.emit(output, x86_64.store_memory_imm32(3, 128, 0))
     call assembler.emit(output, x86_64.lea_base(7, 3, 128))
@@ -1432,6 +1533,10 @@ function emit_byte_array(output):
     # a large buffer registers 2 objects instead of n and never blows up the
     # object table.
     call assembler.label(output, "runtime_byte_array_zeros")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(7, 0))
+    call assembler.relative(output, [15, 140], "runtime_fatal_allocation")
+    call assembler.emit(output, x86_64.cmp_reg_imm32(7, 1073741824))
+    call assembler.relative(output, [15, 143], "runtime_fatal_allocation")
     call assembler.emit(output, x86_64.function_prologue(32))
     call assembler.emit(output, x86_64.store_stack(-8, 7))
     call assembler.emit(output, x86_64.mov_imm64(7, 32))
@@ -1440,9 +1545,16 @@ function emit_byte_array(output):
     call assembler.emit(output, x86_64.store_memory_imm32(0, 0, 15))
     call assembler.emit(output, x86_64.load_stack(1, -8))
     call assembler.emit(output, x86_64.store_memory(0, 8, 1))
+    # A zero-length ByteArray must still have real append capacity. Previously
+    # capacity stayed zero, doubling kept it zero, and append wrote into a
+    # zero-byte backing allocation.
+    call assembler.emit(output, x86_64.mov_imm64(2, 64))
+    call assembler.emit(output, x86_64.cmp_reg_reg(1, 2))
+    call assembler.relative(output, [15, 141], "byte_zeros_capacity_ready")
+    call assembler.emit(output, x86_64.move_reg_reg(1, 2))
+    call assembler.label(output, "byte_zeros_capacity_ready")
     call assembler.emit(output, x86_64.store_memory(0, 16, 1))
-    call assembler.emit(output, x86_64.load_stack(7, -8))
-    call assembler.emit(output, x86_64.add_reg_imm8(7, 1))
+    call assembler.emit(output, x86_64.move_reg_reg(7, 1))
     call assembler.relative(output, [232], "runtime_alloc")
     call assembler.emit(output, x86_64.store_stack(-24, 0))
     call assembler.emit(output, x86_64.load_stack(1, -16))
@@ -1469,6 +1581,8 @@ function emit_byte_array(output):
     call assembler.emit(output, x86_64.load_memory(9, 7, 16))
     call assembler.emit(output, x86_64.cmp_reg_reg(8, 9))
     call assembler.relative(output, [15, 140], "byte_array_append_store")
+    call assembler.emit(output, x86_64.cmp_reg_imm32(9, 536870912))
+    call assembler.relative(output, [15, 143], "runtime_fatal_allocation")
     call assembler.emit(output, x86_64.add_reg_reg(9, 9))
     call assembler.emit(output, x86_64.store_stack(-24, 9))
     call assembler.emit(output, x86_64.load_memory(10, 7, 24))
@@ -1518,6 +1632,12 @@ end
 
 function emit_list_new(output):
     call assembler.label(output, "runtime_list_new")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(7, 0))
+    call assembler.relative(output, [15, 140], "runtime_fatal_allocation")
+    # Eight-byte slots are shifted before reaching runtime_alloc; reject a
+    # count that could overflow that multiplication first.
+    call assembler.emit(output, x86_64.cmp_reg_imm32(7, 134217728))
+    call assembler.relative(output, [15, 143], "runtime_fatal_allocation")
     call assembler.emit(output, x86_64.function_prologue(48))
     call assembler.emit(output, x86_64.store_stack(-8, 7))
     call assembler.emit(output, x86_64.store_stack(-16, 6))
@@ -1610,6 +1730,8 @@ function emit_list_append(output):
     call assembler.emit(output, x86_64.load_memory(9, 7, 16))
     call assembler.emit(output, x86_64.cmp_reg_reg(8, 9))
     call assembler.relative(output, [15, 140], "list_append_store")
+    call assembler.emit(output, x86_64.cmp_reg_imm32(9, 67108864))
+    call assembler.relative(output, [15, 143], "runtime_fatal_allocation")
     # Grow data capacity by two and copy live elements.
     call assembler.emit(output, x86_64.add_reg_reg(9, 9))
     call assembler.emit(output, x86_64.store_stack(-24, 9))
@@ -2316,9 +2438,8 @@ end
 
 function emit_pow_any(output):
     # reg7=base, reg6=Int exponent -> reg0. Boxed Float base uses float_power;
-    # raw Int base uses int_power (negative-exponent guard is at the Int call
-    # sites; here Any base with negative exponent yields 1 for Int like the
-    # loop, and the reciprocal for Float).
+    # raw Int base uses int_power. Dynamic Int bases enforce the same negative
+    # exponent error as statically typed Int expressions.
     call assembler.label(output, "runtime_pow_any")
     call assembler.emit(output, x86_64.function_prologue(16))
     call assembler.emit(output, x86_64.store_stack(-8, 6))
@@ -2336,6 +2457,8 @@ function emit_pow_any(output):
     call assembler.emit(output, x86_64.load_stack(7, -8))
     call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
     call assembler.emit(output, x86_64.move_reg_reg(6, 0))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(6, 0))
+    call assembler.relative(output, [15, 140], "pow_any_negative_int")
     call assembler.emit(output, x86_64.load_stack(7, -16))
     call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
     call assembler.emit(output, x86_64.move_reg_reg(7, 0))
@@ -2343,6 +2466,19 @@ function emit_pow_any(output):
     call assembler.emit(output, x86_64.move_reg_reg(7, 0))
     call assembler.relative(output, [232], "runtime_box_int")
     call assembler.emit(output, x86_64.function_epilogue())
+    call assembler.label(output, "pow_any_negative_int")
+    call assembler.relative(output, x86_64.lea_rip_prefix(11), "pow_any_negative_error_data")
+    call assembler.emit(output, x86_64.store_fs(0, 11))
+    call assembler.emit(output, x86_64.store_fs_imm32(8, 1))
+    call assembler.emit(output, x86_64.xor_reg_reg(7, 7))
+    call assembler.relative(output, [232], "runtime_box_int")
+    call assembler.emit(output, x86_64.function_epilogue())
+    call assembler.label(output, "pow_any_negative_error_data")
+    message = "ValueError: negative Int exponent"
+    call assembler.emit(output, bytes.little(1, 8))
+    call assembler.emit(output, bytes.little(len(bytes.utf8(message)), 8))
+    call assembler.emit(output, bytes.utf8(message))
+    call assembler.emit(output, [0])
 end
 
 function emit_num_any(output, name, float_routine, is_add):
@@ -2481,41 +2617,64 @@ end
 
 # Dictionary hash index: parallel keys@24/values@32 arrays stay in insertion
 # order; index@40 is an open-addressed table of pos+1 slots (0 = empty),
-# index_cap@48 slots (power of two, always >= 2*capacity). djb2 string hash.
+# index_cap@48 slots (power of two, always >= 2*capacity). Hashes are seeded
+# from the ASLR-randomized initial process stack so remote inputs cannot
+# precompute a collision set and turn Dictionary/JSON insertion into quadratic
+# work.
 function emit_dict_hash(output):
     call assembler.label(output, "runtime_string_hash")
     call assembler.emit(output, x86_64.load_memory(1, 7, 8))
     call assembler.emit(output, x86_64.lea_base(8, 7, 16))
-    call assembler.emit(output, x86_64.mov_imm64(0, 5381))
+    call assembler.emit(output, x86_64.load_memory(0, 3, 120))
+    call assembler.emit(output, x86_64.mov_imm64(10, 1099511628211))
     call assembler.emit(output, x86_64.xor_reg_reg(9, 9))
     call assembler.label(output, "string_hash_loop")
     call assembler.emit(output, x86_64.cmp_reg_reg(9, 1))
     call assembler.relative(output, [15, 141], "string_hash_done")
-    call assembler.emit(output, x86_64.move_reg_reg(10, 0))
-    call assembler.emit(output, x86_64.shift_left_imm(10, 5))
-    call assembler.emit(output, x86_64.add_reg_reg(10, 0))
     call assembler.emit(output, x86_64.load_byte_indexed(2, 8, 9))
-    call assembler.emit(output, x86_64.add_reg_reg(10, 2))
-    call assembler.emit(output, x86_64.move_reg_reg(0, 10))
+    call assembler.emit(output, x86_64.xor_reg_reg(0, 2))
+    call assembler.emit(output, x86_64.imul_reg_reg(0, 10))
     call assembler.emit(output, x86_64.increment(9))
     call assembler.relative(output, [233], "string_hash_loop")
     call assembler.label(output, "string_hash_done")
+    call assembler.relative(output, [233], "runtime_hash_mix")
+    # SplitMix64 finalizer. Besides distributing low Int bits over the
+    # power-of-two table it prevents a chosen scalar collision set without the
+    # per-process state address used as the key below.
+    call assembler.label(output, "runtime_hash_mix")
+    call assembler.emit(output, x86_64.move_reg_reg(1, 0))
+    call assembler.emit(output, x86_64.shift_right_logical_imm(1, 30))
+    call assembler.emit(output, x86_64.xor_reg_reg(0, 1))
+    call assembler.emit(output, x86_64.mov_imm64(1, -4658895280553007687))
+    call assembler.emit(output, x86_64.imul_reg_reg(0, 1))
+    call assembler.emit(output, x86_64.move_reg_reg(1, 0))
+    call assembler.emit(output, x86_64.shift_right_logical_imm(1, 27))
+    call assembler.emit(output, x86_64.xor_reg_reg(0, 1))
+    call assembler.emit(output, x86_64.mov_imm64(1, -7723592293110705685))
+    call assembler.emit(output, x86_64.imul_reg_reg(0, 1))
+    call assembler.emit(output, x86_64.move_reg_reg(1, 0))
+    call assembler.emit(output, x86_64.shift_right_logical_imm(1, 31))
+    call assembler.emit(output, x86_64.xor_reg_reg(0, 1))
     call assembler.emit(output, x86_64.ret())
-    # Hashable dict key -> hash consistent with runtime_equal_any: raw scalar
-    # (Int/Bool/None/Function) hashes to its value; String uses djb2; a boxed
-    # scalar hashes its payload word.
+    # Hashable dict key -> hash consistent with runtime_equal_any. Raw scalars
+    # (Int/Bool/None/Function) and boxed scalar payloads are mixed with the
+    # per-process seed; String bytes use seeded FNV-1a before the same mixer.
     call assembler.label(output, "runtime_key_hash")
     call assembler.relative(output, [232], "runtime_is_heap_object")
     call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
     call assembler.relative(output, [15, 133], "key_hash_heap")
     call assembler.emit(output, x86_64.move_reg_reg(0, 7))
-    call assembler.emit(output, x86_64.ret())
+    call assembler.emit(output, x86_64.load_memory(1, 3, 120))
+    call assembler.emit(output, x86_64.xor_reg_reg(0, 1))
+    call assembler.relative(output, [233], "runtime_hash_mix")
     call assembler.label(output, "key_hash_heap")
     call assembler.emit(output, x86_64.load_memory(1, 7, 0))
     call assembler.emit(output, x86_64.cmp_reg_imm8(1, 1))
     call assembler.relative(output, [15, 132], "runtime_string_hash")
     call assembler.emit(output, x86_64.load_memory(0, 7, 8))
-    call assembler.emit(output, x86_64.ret())
+    call assembler.emit(output, x86_64.load_memory(1, 3, 120))
+    call assembler.emit(output, x86_64.xor_reg_reg(0, 1))
+    call assembler.relative(output, [233], "runtime_hash_mix")
 end
 
 function emit_dict_probe(output):

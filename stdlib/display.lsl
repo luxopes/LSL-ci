@@ -18,6 +18,33 @@ load time
 # redraws in a tight loop with no sleep of its own cannot spin faster than
 # this, which bounds CPU and power. 60 Hz is plenty for a GUI.
 frame_interval = 0.0166
+MAX_DISPLAY_DIMENSION = 16384
+MAX_DISPLAY_BYTES = 1073741824
+
+function validate_frame_geometry(width, height, stride, label):
+    w = Int(width)
+    h = Int(height)
+    row = Int(stride)
+    if w <= 0 or h <= 0 or w > MAX_DISPLAY_DIMENSION or h > MAX_DISPLAY_DIMENSION:
+        Error(DisplayError: label + " dimensions are out of range")
+    elif w > 268435455 or row < w * 4:
+        Error(DisplayError: label + " stride is smaller than one pixel row")
+    elif row > MAX_DISPLAY_BYTES or h > MAX_DISPLAY_BYTES // row:
+        Error(DisplayError: label + " storage exceeds 1 GiB")
+    end
+end
+
+function validate_source(pixels, width, height):
+    data = IntArray(pixels)
+    w = Int(width)
+    h = Int(height)
+    if w < 0 or h < 0 or w > MAX_DISPLAY_DIMENSION or h > MAX_DISPLAY_DIMENSION:
+        Error(DisplayError: "source dimensions are out of range")
+    elif h > 0 and w > len(data) // h:
+        Error(DisplayError: "source pixel buffer is truncated")
+    end
+    return data
+end
 
 function sysfs_int(path):
     return Int(readfile(path).strip())
@@ -95,6 +122,16 @@ class Display(True):
     ctype Public
 
     function init(self, kind, width, height, title, stride):
+        if type(kind) != "String" or kind not in ["x11", "drm", "file"]:
+            Error(DisplayError: "display backend must be x11, drm or file")
+        elif type(title) != "String":
+            Error(TypeError: "display title/device must be a String")
+        end
+        if kind == "x11":
+            call validate_frame_geometry(width, height, Int(width) * 4, "X11 window")
+        elif kind == "file":
+            call validate_frame_geometry(width, height, stride, "framebuffer")
+        end
         self.kind = kind
         self.width = Int(width)
         self.height = Int(height)
@@ -136,6 +173,8 @@ class Display(True):
             count_connectors = get32(res, 40)
             if count_connectors < 1 or count_crtcs < 1:
                 Error(DisplayError: "DRM device has no outputs")
+            elif count_connectors > 4096 or count_crtcs > 4096:
+                Error(DisplayError: "DRM resource table exceeds the secure limit")
             end
             crtc_ids = __lsl_byte_zeros(count_crtcs * 4)
             conn_ids = __lsl_byte_zeros(count_connectors * 4)
@@ -164,6 +203,9 @@ class Display(True):
                 if fd.ioctl(self.handle, DRM_GETCONNECTOR, probe) >= 0:
                     nmodes = get32(probe, 32)
                     if get32(probe, 60) == 1 and nmodes > 0:
+                        if nmodes > 256:
+                            Error(DisplayError: "DRM connector mode table exceeds the secure limit")
+                        end
                         modes = __lsl_byte_zeros(nmodes * 68)
                         fetch = __lsl_byte_zeros(80)
                         call put64(fetch, 8, data_address(modes))
@@ -223,7 +265,7 @@ class Display(True):
             end
             self.width = get16(self.mode, 4)
             self.height = get16(self.mode, 14)
-            if self.width < 16 or self.height < 16:
+            if self.width < 16 or self.height < 16 or self.width > MAX_DISPLAY_DIMENSION or self.height > MAX_DISPLAY_DIMENSION:
                 Error(DisplayError: "DRM: no usable mode")
             end
             # Dumb buffer -> framebuffer object -> mapped pixels.
@@ -238,6 +280,10 @@ class Display(True):
             self.bo_handle = get32(dumb, 16)
             self.stride = get32(dumb, 20)
             bo_size = get32(dumb, 24) + get32(dumb, 28) * 4294967296
+            call validate_frame_geometry(self.width, self.height, self.stride, "DRM framebuffer")
+            if bo_size < self.stride * self.height or bo_size > MAX_DISPLAY_BYTES:
+                Error(DisplayError: "DRM buffer size is inconsistent or too large")
+            end
             addfb = __lsl_byte_zeros(28)
             call put32(addfb, 4, self.width)
             call put32(addfb, 8, self.height)
@@ -396,7 +442,7 @@ class Display(True):
         # (boxed members) directly inside the pack loop boxed a fresh Int
         # PER PIXEL (~8 MB of garbage per full-HD-ish frame), which the
         # conservative GC could not always reclaim.
-        src = IntArray(pixels)
+        src = validate_source(pixels, width, height)
         src_width = Int(width)
         rows = min(Int(height), Int(self.height))
         columns = min(src_width, Int(self.width))
@@ -422,7 +468,7 @@ class Display(True):
     # DRM full present: pack every row straight into the mapped buffer and
     # report the whole screen dirty.
     function present_drm(self, pixels, width, height):
-        src = IntArray(pixels)
+        src = validate_source(pixels, width, height)
         src_width = Int(width)
         rows = min(Int(height), Int(self.height))
         columns = min(src_width, Int(self.width))
@@ -448,7 +494,7 @@ class Display(True):
             return None
         end
         if self.kind == "drm":
-            src9 = IntArray(pixels)
+            src9 = validate_source(pixels, width, height)
             sw9 = Int(width)
             y09 = Int(ry)
             y19 = Int(ry) + Int(rh)
@@ -473,7 +519,7 @@ class Display(True):
             call self.flush_rect(0, y09, cols9, y19)
             return None
         end
-        src = IntArray(pixels)
+        src = validate_source(pixels, width, height)
         src_width = Int(width)
         x0 = Int(rx)
         y0 = Int(ry)
@@ -663,6 +709,9 @@ function open_framebuffer():
     device = env.get("LSL_FB_DEV", None)
     mode = env.get("LSL_FB_MODE", None)
     if device != None and mode != None:
+        if len(mode) > 128:
+            Error(DisplayError: "LSL_FB_MODE is too long")
+        end
         parts = mode.split("x")
         if len(parts) != 3:
             Error(DisplayError: "LSL_FB_MODE must be WIDTHxHEIGHTxSTRIDE")
@@ -673,6 +722,15 @@ function open_framebuffer():
 end
 
 function open_device(name):
+    if type(name) != "String" or len(name) == 0 or len(name) > 64:
+        Error(DisplayError: "framebuffer name has an invalid length")
+    end
+    for character in name:
+        code = ord(character)
+        if not ((code >= 48 and code <= 57) or (code >= 65 and code <= 90) or (code >= 97 and code <= 122) or character == "-" or character == "_"):
+            Error(DisplayError: "framebuffer name contains an invalid character")
+        end
+    end
     sys_base = "/sys/class/graphics/" + name + "/"
     if not exists(sys_base + "virtual_size"):
         Error(DisplayError: "framebuffer " + name + " is not available")
@@ -682,6 +740,9 @@ function open_device(name):
         Error(DisplayError: "only 32bpp framebuffers are supported")
     end
     size = readfile(sys_base + "virtual_size").strip().split(",")
+    if len(size) != 2:
+        Error(DisplayError: "framebuffer virtual_size is malformed")
+    end
     width = Int(size[0])
     height = Int(size[1])
     stride = sysfs_int(sys_base + "stride")

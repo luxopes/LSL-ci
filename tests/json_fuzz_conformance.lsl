@@ -25,7 +25,10 @@ invalid = [
     "true false",
     "nullx",
     "{1:2}",
-    "[,]"
+    "[,]",
+    "{\"a\":1,\"a\":2}",
+    "9223372036854775808",
+    "1e9999"
 ]
 rejected = 0
 for source in invalid:
@@ -34,6 +37,24 @@ for source in invalid:
     else:
         rejected += 1
     end
+end
+
+deep = "0"
+for index in rang(129):
+    deep = "[" + deep + "]"
+end
+try:
+    call json.decode(deep)
+else:
+    rejected += 1
+end
+
+cycle = []
+cycle.append(cycle)
+try:
+    call json.encode(cycle)
+else:
+    rejected += 1
 end
 
 seed = 123456789
@@ -50,4 +71,4 @@ for index in rang(200):
 end
 
 special = json.decode("[-0.5,1e3,\"" + slash + "uD83D" + slash + "uDE00\"]")
-print roundtrips, rejected, special[0], special[1], special[2]
+print roundtrips, rejected, special[0], special[1], special[2], json.encode(chr(1)) == "\"" + slash + "u0001\""

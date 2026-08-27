@@ -23,6 +23,10 @@ namespace {
 
 constexpr int kThreads = 256;
 constexpr int kTile = 16;
+constexpr std::size_t kMaxJsonBytes = 4 * 1024 * 1024;
+constexpr std::size_t kMaxJsonElements = 131072;
+constexpr std::size_t kMaxElements = 2000000;
+constexpr std::size_t kMaxBinaryBytes = kMaxElements * 2 * sizeof(double);
 constexpr unsigned long long kProbeInput = 0x4c534c4355444136ULL;
 constexpr unsigned long long kProbeOutput = 0x91f498ec5844b56bULL;
 
@@ -68,23 +72,270 @@ std::string json_escape(const std::string& text) {
     return output.str();
 }
 
+class JsonScanner {
+public:
+    explicit JsonScanner(const std::string& json) : json_(json), position_(0) {}
+
+    std::size_t top_level_value_position(const std::string& target,
+                                         std::size_t* value_end = nullptr) {
+        skip_whitespace();
+        expect('{', "request must be a JSON Object");
+        skip_whitespace();
+        bool found = false;
+        std::size_t result = 0;
+        std::size_t result_end = 0;
+        if (consume('}')) {
+            finish();
+            throw WorkerError("request is missing key " + target);
+        }
+        while (true) {
+            const std::string key = parse_string(true);
+            skip_whitespace();
+            expect(':', "JSON Object key has no value");
+            skip_whitespace();
+            const std::size_t value_position = position_;
+            const bool is_target = key == target;
+            if (is_target) {
+                if (found) {
+                    throw WorkerError("request contains duplicate key " + target);
+                }
+                found = true;
+                result = value_position;
+            }
+            skip_value(1);
+            if (is_target) {
+                result_end = position_;
+            }
+            skip_whitespace();
+            if (consume('}')) {
+                break;
+            }
+            expect(',', "expected comma or closing brace in JSON Object");
+            skip_whitespace();
+        }
+        finish();
+        if (!found) {
+            throw WorkerError("request is missing key " + target);
+        }
+        if (value_end != nullptr) {
+            *value_end = result_end;
+        }
+        return result;
+    }
+
+private:
+    static bool is_digit(char character) {
+        return character >= '0' && character <= '9';
+    }
+
+    static bool is_hex_digit(char character) {
+        return is_digit(character) ||
+               (character >= 'a' && character <= 'f') ||
+               (character >= 'A' && character <= 'F');
+    }
+
+    void skip_whitespace() {
+        while (position_ < json_.size() &&
+               (json_[position_] == ' ' || json_[position_] == '\t' ||
+                json_[position_] == '\r' || json_[position_] == '\n')) {
+            ++position_;
+        }
+    }
+
+    bool consume(char expected) {
+        if (position_ < json_.size() && json_[position_] == expected) {
+            ++position_;
+            return true;
+        }
+        return false;
+    }
+
+    void expect(char expected, const char* message) {
+        if (!consume(expected)) {
+            throw WorkerError(message);
+        }
+    }
+
+    void finish() {
+        skip_whitespace();
+        if (position_ != json_.size()) {
+            throw WorkerError("unexpected data after JSON request");
+        }
+    }
+
+    std::string parse_string(bool capture) {
+        expect('"', "JSON Object key must be a String");
+        std::string result;
+        while (position_ < json_.size()) {
+            const unsigned char character =
+                static_cast<unsigned char>(json_[position_++]);
+            if (character == '"') {
+                return result;
+            }
+            if (character < 0x20) {
+                throw WorkerError("unescaped control character in JSON String");
+            }
+            if (character == '\\') {
+                if (position_ >= json_.size()) {
+                    throw WorkerError("unfinished JSON String escape");
+                }
+                const char escaped = json_[position_++];
+                if (escaped == 'u') {
+                    if (json_.size() - position_ < 4) {
+                        throw WorkerError("unfinished JSON Unicode escape");
+                    }
+                    for (int index = 0; index < 4; ++index) {
+                        if (!is_hex_digit(json_[position_ + index])) {
+                            throw WorkerError("invalid JSON Unicode escape");
+                        }
+                    }
+                    position_ += 4;
+                    if (capture) {
+                        result.push_back('?');
+                    }
+                } else if (escaped == '"' || escaped == '\\' || escaped == '/' ||
+                           escaped == 'b' || escaped == 'f' || escaped == 'n' ||
+                           escaped == 'r' || escaped == 't') {
+                    if (capture) {
+                        result.push_back(escaped);
+                    }
+                } else {
+                    throw WorkerError("invalid JSON String escape");
+                }
+            } else if (capture) {
+                result.push_back(static_cast<char>(character));
+            }
+            if (capture && result.size() > 256) {
+                throw WorkerError("JSON Object key exceeds 256 bytes");
+            }
+        }
+        throw WorkerError("unterminated JSON String");
+    }
+
+    void skip_number() {
+        consume('-');
+        if (position_ >= json_.size()) {
+            throw WorkerError("unfinished JSON Number");
+        }
+        if (consume('0')) {
+            if (position_ < json_.size() && is_digit(json_[position_])) {
+                throw WorkerError("JSON Number has a leading zero");
+            }
+        } else {
+            if (json_[position_] < '1' || json_[position_] > '9') {
+                throw WorkerError("invalid JSON Number");
+            }
+            while (position_ < json_.size() && is_digit(json_[position_])) {
+                ++position_;
+            }
+        }
+        if (consume('.')) {
+            if (position_ >= json_.size() || !is_digit(json_[position_])) {
+                throw WorkerError("invalid JSON Number fraction");
+            }
+            while (position_ < json_.size() && is_digit(json_[position_])) {
+                ++position_;
+            }
+        }
+        if (position_ < json_.size() &&
+            (json_[position_] == 'e' || json_[position_] == 'E')) {
+            ++position_;
+            if (position_ < json_.size() &&
+                (json_[position_] == '+' || json_[position_] == '-')) {
+                ++position_;
+            }
+            if (position_ >= json_.size() || !is_digit(json_[position_])) {
+                throw WorkerError("invalid JSON Number exponent");
+            }
+            while (position_ < json_.size() && is_digit(json_[position_])) {
+                ++position_;
+            }
+        }
+    }
+
+    void skip_literal(const char* literal) {
+        const std::size_t length = std::strlen(literal);
+        if (json_.size() - position_ < length ||
+            json_.compare(position_, length, literal) != 0) {
+            throw WorkerError("invalid JSON value");
+        }
+        position_ += length;
+    }
+
+    void skip_value(std::size_t depth) {
+        if (depth > 64) {
+            throw WorkerError("JSON nesting exceeds 64 levels");
+        }
+        skip_whitespace();
+        if (position_ >= json_.size()) {
+            throw WorkerError("missing JSON value");
+        }
+        const char first = json_[position_];
+        if (first == '"') {
+            parse_string(false);
+        } else if (first == '{') {
+            ++position_;
+            skip_whitespace();
+            if (consume('}')) {
+                return;
+            }
+            while (true) {
+                parse_string(false);
+                skip_whitespace();
+                expect(':', "JSON Object key has no value");
+                skip_value(depth + 1);
+                skip_whitespace();
+                if (consume('}')) {
+                    return;
+                }
+                expect(',', "expected comma or closing brace in JSON Object");
+                skip_whitespace();
+            }
+        } else if (first == '[') {
+            ++position_;
+            skip_whitespace();
+            if (consume(']')) {
+                return;
+            }
+            while (true) {
+                skip_value(depth + 1);
+                skip_whitespace();
+                if (consume(']')) {
+                    return;
+                }
+                expect(',', "expected comma or closing bracket in JSON Array");
+                skip_whitespace();
+            }
+        } else if (first == 't') {
+            skip_literal("true");
+        } else if (first == 'f') {
+            skip_literal("false");
+        } else if (first == 'n') {
+            skip_literal("null");
+        } else if (first == '-' || is_digit(first)) {
+            skip_number();
+        } else {
+            throw WorkerError("invalid JSON value");
+        }
+    }
+
+    const std::string& json_;
+    std::size_t position_;
+};
+
 std::size_t key_value_position(const std::string& json, const std::string& key) {
-    const std::string pattern = "\"" + key + "\"";
-    std::size_t position = json.find(pattern);
-    if (position == std::string::npos) {
-        throw WorkerError("request is missing key " + key);
+    JsonScanner scanner(json);
+    return scanner.top_level_value_position(key);
+}
+
+std::string object_value(const std::string& json, const std::string& key) {
+    JsonScanner scanner(json);
+    std::size_t end = 0;
+    const std::size_t start = scanner.top_level_value_position(key, &end);
+    if (start >= json.size() || json[start] != '{' || end <= start) {
+        throw WorkerError("request key " + key + " must be an Object");
     }
-    position = json.find(':', position + pattern.size());
-    if (position == std::string::npos) {
-        throw WorkerError("request key " + key + " has no value");
-    }
-    ++position;
-    while (position < json.size() &&
-           (json[position] == ' ' || json[position] == '\t' ||
-            json[position] == '\r' || json[position] == '\n')) {
-        ++position;
-    }
-    return position;
+    return json.substr(start, end - start);
 }
 
 std::string string_value(const std::string& json, const std::string& key) {
@@ -117,6 +368,9 @@ std::string string_value(const std::string& json, const std::string& key) {
             }
         } else {
             result.push_back(character);
+        }
+        if (result.size() > 256) {
+            throw WorkerError("request String value exceeds 256 bytes");
         }
     }
     throw WorkerError("unterminated String in request");
@@ -161,7 +415,7 @@ std::size_t size_argument(const char* text, const char* name) {
     errno = 0;
     unsigned long long value = std::strtoull(text, &stop, 10);
     if (stop == text || *stop != '\0' || errno == ERANGE ||
-        value > std::numeric_limits<std::size_t>::max()) {
+        value > std::numeric_limits<std::size_t>::max() || value > kMaxElements) {
         throw WorkerError(std::string("invalid binary ") + name);
     }
     return static_cast<std::size_t>(value);
@@ -200,6 +454,9 @@ std::vector<double> array_value(const std::string& json, const std::string& key)
             ++position;
             return values;
         }
+        if (values.size() >= kMaxJsonElements) {
+            throw WorkerError("request Array exceeds the 131072-element JSON limit");
+        }
         values.push_back(number_at(json, position));
         while (position < json.size() &&
                (json[position] == ' ' || json[position] == '\t' ||
@@ -231,6 +488,9 @@ void print_number(double value) {
 }
 
 void print_array(const std::vector<double>& values) {
+    if (values.size() > kMaxJsonElements) {
+        throw WorkerError("JSON response exceeds the secure element limit");
+    }
     std::cout << "{\"abi\":1,\"ok\":true,\"value\":[";
     for (std::size_t index = 0; index < values.size(); ++index) {
         if (index != 0) {
@@ -248,6 +508,10 @@ template <typename T>
 class DeviceBuffer {
 public:
     explicit DeviceBuffer(std::size_t count) : pointer_(nullptr), count_(count) {
+        if (count_ > kMaxElements ||
+            count_ > std::numeric_limits<std::size_t>::max() / sizeof(T)) {
+            throw WorkerError("CUDA buffer exceeds the secure element limit");
+        }
         if (count_ != 0) {
             cuda_check(cudaMalloc(reinterpret_cast<void**>(&pointer_), count_ * sizeof(T)),
                        "cudaMalloc");
@@ -440,6 +704,9 @@ void print_probe() {
 void print_devices() {
     int count = 0;
     cuda_check(cudaGetDeviceCount(&count), "cudaGetDeviceCount");
+    if (count < 0 || count > 256) {
+        throw WorkerError("CUDA device count exceeds the secure limit");
+    }
     int runtime_version = 0;
     int driver_version = 0;
     cuda_check(cudaRuntimeGetVersion(&runtime_version), "cudaRuntimeGetVersion");
@@ -561,7 +828,8 @@ std::size_t checked_product(std::size_t left, std::size_t right,
 
 std::vector<double> gpu_matmul(const std::vector<double>& left,
                                const std::vector<double>& right,
-                               int rows, int inner, int columns) {
+                               int rows, int inner, int columns,
+                               std::size_t element_limit = kMaxElements) {
     const std::size_t left_count =
         checked_product(static_cast<std::size_t>(rows),
                         static_cast<std::size_t>(inner), "left matrix");
@@ -571,6 +839,10 @@ std::vector<double> gpu_matmul(const std::vector<double>& left,
     const std::size_t output_count =
         checked_product(static_cast<std::size_t>(rows),
                         static_cast<std::size_t>(columns), "output matrix");
+    if (left_count > element_limit || right_count > element_limit ||
+        output_count > element_limit) {
+        throw WorkerError("cuda.matmul exceeds the secure element limit");
+    }
     if (left.size() != left_count || right.size() != right_count) {
         throw WorkerError("cuda.matmul array lengths do not match dimensions");
     }
@@ -607,41 +879,64 @@ std::vector<double> gpu_matmul(const std::vector<double>& left,
 }
 
 void run_request(const std::string& request) {
+    if (request.empty() || request.size() > kMaxJsonBytes ||
+        request.find('\0') != std::string::npos) {
+        throw WorkerError("JSON request must contain 1..4194304 bytes without NUL");
+    }
+    if (integer_value(request, "abi") != 1) {
+        throw WorkerError("CUDA request ABI version mismatch");
+    }
     const std::string operation = string_value(request, "operation");
+    const std::string payload = object_value(request, "payload");
     if (operation == "cuda.probe") {
         print_probe();
     } else if (operation == "cuda.devices") {
         print_devices();
     } else if (operation == "cuda.sum") {
-        print_number(gpu_reduce(array_value(request, "values"), nullptr));
+        print_number(gpu_reduce(array_value(payload, "values"), nullptr));
     } else if (operation == "cuda.dot") {
-        const std::vector<double> left = array_value(request, "left");
-        const std::vector<double> right = array_value(request, "right");
+        const std::vector<double> left = array_value(payload, "left");
+        const std::vector<double> right = array_value(payload, "right");
         if (left.size() != right.size()) {
             throw WorkerError("cuda.dot arrays have different lengths");
         }
         print_number(gpu_reduce(left, &right));
     } else if (operation == "cuda.axpy") {
-        const double alpha = number_value(request, "alpha");
-        const std::vector<double> x = array_value(request, "x");
-        const std::vector<double> y = array_value(request, "y");
+        const double alpha = number_value(payload, "alpha");
+        const std::vector<double> x = array_value(payload, "x");
+        const std::vector<double> y = array_value(payload, "y");
         print_array(gpu_axpy(alpha, x, y));
     } else if (operation == "cuda.matmul") {
-        const int rows = static_cast<int>(integer_value(request, "m"));
-        const int inner = static_cast<int>(integer_value(request, "k"));
-        const int columns = static_cast<int>(integer_value(request, "n"));
-        const std::vector<double> left = array_value(request, "left");
-        const std::vector<double> right = array_value(request, "right");
-        print_array(gpu_matmul(left, right, rows, inner, columns));
+        const int rows = static_cast<int>(integer_value(payload, "m"));
+        const int inner = static_cast<int>(integer_value(payload, "k"));
+        const int columns = static_cast<int>(integer_value(payload, "n"));
+        const std::vector<double> left = array_value(payload, "left");
+        const std::vector<double> right = array_value(payload, "right");
+        print_array(gpu_matmul(left, right, rows, inner, columns,
+                               kMaxJsonElements));
     } else {
         throw WorkerError("unsupported CUDA operation " + operation);
     }
 }
 
-std::string read_stdin() {
-    std::ostringstream input;
-    input << std::cin.rdbuf();
-    return input.str();
+std::string read_stdin(std::size_t limit) {
+    std::string input;
+    char buffer[65536];
+    while (std::cin.good()) {
+        std::cin.read(buffer, static_cast<std::streamsize>(sizeof(buffer)));
+        const std::streamsize received = std::cin.gcount();
+        if (received > 0) {
+            const std::size_t count = static_cast<std::size_t>(received);
+            if (input.size() > limit || count > limit - input.size()) {
+                throw WorkerError("worker stdin exceeds the secure size limit");
+            }
+            input.append(buffer, count);
+        }
+    }
+    if (std::cin.bad()) {
+        throw WorkerError("cannot read worker stdin");
+    }
+    return input;
 }
 
 std::vector<double> doubles_from_bytes(const std::string& bytes,
@@ -649,6 +944,9 @@ std::vector<double> doubles_from_bytes(const std::string& bytes,
                                        std::size_t count) {
     const std::size_t byte_count = checked_product(count, sizeof(double),
                                                    "binary FloatArray");
+    if (count > kMaxElements) {
+        throw WorkerError("binary FloatArray exceeds the secure element limit");
+    }
     if (offset > bytes.size() || byte_count > bytes.size() - offset) {
         throw WorkerError("binary CUDA payload is shorter than declared");
     }
@@ -660,6 +958,9 @@ std::vector<double> doubles_from_bytes(const std::string& bytes,
 }
 
 void write_doubles(const std::vector<double>& values) {
+    if (values.size() > kMaxElements) {
+        throw WorkerError("binary CUDA output exceeds the secure element limit");
+    }
     if (!values.empty()) {
         std::cout.write(reinterpret_cast<const char*>(values.data()),
                         static_cast<std::streamsize>(values.size() * sizeof(double)));
@@ -671,7 +972,7 @@ void run_binary(int argc, char** argv) {
         throw WorkerError("binary worker request has too few arguments");
     }
     const std::string operation = argv[2];
-    const std::string payload = read_stdin();
+    const std::string payload = read_stdin(kMaxBinaryBytes);
     if (operation == "sum") {
         if (argc != 4) {
             throw WorkerError("binary sum expects count");
@@ -758,7 +1059,7 @@ int main(int argc, char** argv) {
         } else if (argc == 2) {
             run_request(argv[1]);
         } else if (argc == 1) {
-            const std::string input = read_stdin();
+            const std::string input = read_stdin(kMaxJsonBytes);
             if (input.empty()) {
                 throw WorkerError("worker received no JSON request on stdin");
             }

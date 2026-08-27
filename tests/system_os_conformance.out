@@ -18,13 +18,13 @@ account --create-home|--shell|/bin/luxsh|--groups|developers|ada
 True
 account --remove|--|olduser
 file -p|--|/tmp
-file 0640|--|/tmp/lsl-system-managed-temp
-file -f|--|/tmp/lsl-system-managed-temp|/tmp/lsl-system-managed-file
+file 0640|--|/tmp/lsl-.system-managed-file.lux.ABC123/content
+file -f|--|/tmp/lsl-.system-managed-file.lux.ABC123/content|/tmp/lsl-system-managed-file
 True
 file -p|--|/tmp
-file 0600|--|/tmp/lsl-system-managed-temp
-file root:root|--|/tmp/lsl-system-managed-temp
-file -f|--|/tmp/lsl-system-managed-temp|/tmp/lsl-system-managed-file
+file 0600|--|/tmp/lsl-.system-managed-file.lux.ABC123/content
+file root:root|--|/tmp/lsl-.system-managed-file.lux.ABC123/content
+file -f|--|/tmp/lsl-.system-managed-file.lux.ABC123/content|/tmp/lsl-system-managed-file
 True
 file -p|--|/tmp/lsl-system-directory
 file 0750|--|/tmp/lsl-system-directory
@@ -41,7 +41,7 @@ generation: test-generation
 * test-generation
 lux rollback|test-generation
 lux rollback|test-generation|--dry-run
-ValueError: service name cannot contain whitespace
+ValueError: service name cannot contain whitespace or control characters
 service-failure True
 service-query-failure True
 ValueError: group name contains an invalid character

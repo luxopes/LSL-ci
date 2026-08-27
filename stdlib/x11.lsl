@@ -9,6 +9,11 @@
 load env
 load fd
 
+MAX_XAUTHORITY = 1048576
+MAX_X11_REPLY = 1048576
+MAX_X11_PENDING = 1048576
+MAX_X11_DIMENSION = 16384
+
 function pad4(count):
     return (4 - count % 4) % 4
 end
@@ -36,12 +41,18 @@ end
 function get16(data, offset):
     typed = ByteArray(data)
     start = Int(offset)
+    if start < 0 or start > len(typed) - 2:
+        Error(X11Error: "truncated 16-bit protocol field")
+    end
     return typed[start] + typed[start + 1] * 256
 end
 
 function get32(data, offset):
     typed = ByteArray(data)
     start = Int(offset)
+    if start < 0 or start > len(typed) - 4:
+        Error(X11Error: "truncated 32-bit protocol field")
+    end
     return typed[start] + typed[start + 1] * 256 + typed[start + 2] * 65536 + typed[start + 3] * 16777216
 end
 
@@ -49,6 +60,9 @@ end
 function get16be(data, offset):
     typed = ByteArray(data)
     start = Int(offset)
+    if start < 0 or start > len(typed) - 2:
+        Error(X11Error: "truncated big-endian protocol field")
+    end
     return typed[start] * 256 + typed[start + 1]
 end
 
@@ -59,6 +73,9 @@ end
 
 # Blocking read of exactly count bytes from a nonblocking socket.
 function read_exact(handle, count):
+    if type(count) != "Int" or count < 0 or count > MAX_X11_REPLY:
+        Error(X11Error: "X11 reply exceeds the secure limit")
+    end
     chunk = ByteArray()
     index = 0
     while index < count:
@@ -66,9 +83,14 @@ function read_exact(handle, count):
         index += 1
     end
     collected = ByteArray()
+    deadline = clock() + 10.0
     while len(collected) < count:
         got = fd.read(handle, chunk, count - len(collected))
         if got == fd.again:
+            if clock() >= deadline:
+                Error(X11Error: "timed out waiting for the X server")
+            end
+            call __lsl_sleep(0.001)
             continue
         end
         if got == 0:
@@ -96,7 +118,7 @@ function find_cookie(display):
     if not exists(path):
         return ByteArray()
     end
-    data = ByteArray(fd.read_all(path))
+    data = ByteArray(fd.read_all_limit(path, MAX_XAUTHORITY))
     total = len(data)
     offset = 0
     wanted = "MIT-MAGIC-COOKIE-1"
@@ -104,26 +126,43 @@ function find_cookie(display):
     while offset + 4 <= total:
         offset += 2
         address_length = get16be(data, offset)
-        offset += 2 + address_length
+        offset += 2
+        if address_length > total - offset:
+            return ByteArray()
+        end
+        offset += address_length
+        if offset > total - 2:
+            return ByteArray()
+        end
         number_length = get16be(data, offset)
-        number = ""
-        index = 0
-        while index < number_length:
-            number += chr(data[offset + 2 + index])
-            index += 1
+        offset += 2
+        if number_length > total - offset:
+            return ByteArray()
         end
-        offset += 2 + number_length
+        number = __lsl_text_from_bytes(data, offset, number_length)
+        offset += number_length
+        if offset > total - 2:
+            return ByteArray()
+        end
         name_length = get16be(data, offset)
-        name = ""
-        index = 0
-        while index < name_length:
-            name += chr(data[offset + 2 + index])
-            index += 1
+        offset += 2
+        if name_length > total - offset:
+            return ByteArray()
         end
-        offset += 2 + name_length
+        name = __lsl_text_from_bytes(data, offset, name_length)
+        offset += name_length
+        if offset > total - 2:
+            return ByteArray()
+        end
         data_length = get16be(data, offset)
         offset += 2
+        if data_length > total - offset:
+            return ByteArray()
+        end
         if name == wanted and (number == number_text or number == ""):
+            if data_length > 256:
+                return ByteArray()
+            end
             cookie = ByteArray()
             index = 0
             while index < data_length:
@@ -151,12 +190,28 @@ function display_number():
     if rest == "":
         return 0
     end
-    return Int(rest)
+    if len(rest) > 5:
+        Error(X11Error: "DISPLAY number is too long")
+    end
+    for character in rest:
+        code = ord(character)
+        if code < 48 or code > 57:
+            Error(X11Error: "DISPLAY must contain a numeric local display")
+        end
+    end
+    number = Int(rest)
+    if number < 0 or number > 65535:
+        Error(X11Error: "DISPLAY number is out of range")
+    end
+    return number
 end
 
 # One InternAtom round trip; events arriving meanwhile are ignored,
 # which is safe because the window is not mapped yet.
 function intern_atom(handle, name):
+    if type(name) != "String" or len(name) == 0 or len(name) > 255:
+        Error(X11Error: "X11 atom name has an invalid length")
+    end
     request = ByteArray()
     request.append(16)
     request.append(0)
@@ -173,7 +228,11 @@ function intern_atom(handle, name):
         index += 1
     end
     call send_bytes(handle, request)
+    deadline = clock() + 10.0
     loop:
+        if clock() >= deadline:
+            Error(X11Error: "timed out waiting for InternAtom")
+        end
         message = ByteArray(read_exact(handle, 32))
         kind = message[0]
         if kind == 1:
@@ -214,6 +273,9 @@ end
 function set_property_utf8(handle, window_id, property, kind, value):
     payload = ByteArray(utf8_bytes(value))
     count = len(payload)
+    if count > 262116:
+        Error(X11Error: "X11 property exceeds one protocol request")
+    end
     request = ByteArray()
     request.append(18)
     request.append(0)
@@ -261,6 +323,9 @@ end
 # WM_HINTS so the window manager gives the window keyboard focus.
 function set_property_words(handle, window_id, property, kind, words):
     count = len(words)
+    if count > 65529:
+        Error(X11Error: "X11 word property exceeds one protocol request")
+    end
     request = ByteArray()
     request.append(18)
     request.append(0)
@@ -282,6 +347,17 @@ end
 # Connect, authenticate and map one InputOutput window. Returns a
 # Dictionary of the raw connection state the caller must keep.
 function create_window(width, height, title):
+    window_width = Int(width)
+    window_height = Int(height)
+    if window_width <= 0 or window_width > MAX_X11_DIMENSION or window_height <= 0 or window_height > MAX_X11_DIMENSION:
+        Error(X11Error: "X11 window dimensions must be between 1 and 16384")
+    end
+    if type(title) != "String":
+        Error(X11Error: "X11 title must be a String")
+    end
+    if __lsl_text_byte_length(String(title)) > 262116 or chr(0) in title:
+        Error(X11Error: "X11 title is invalid or too long")
+    end
     number = display_number()
     handle = fd.connect_unix("/tmp/.X11-unix/X" + String(number))
 
@@ -322,7 +398,11 @@ function create_window(width, height, title):
 
     head = ByteArray(read_exact(handle, 8))
     status = head[0]
-    payload = ByteArray(read_exact(handle, get16(head, 6) * 4))
+    reply_size = get16(head, 6) * 4
+    if reply_size > MAX_X11_REPLY:
+        Error(X11Error: "X11 setup reply exceeds the secure limit")
+    end
+    payload = ByteArray(read_exact(handle, reply_size))
     if status != 1:
         reason = ""
         index = 0
@@ -332,11 +412,17 @@ function create_window(width, height, title):
         end
         Error(X11Error: "X server refused the connection: " + reason)
     end
+    if len(payload) < 40 or payload[20] < 1:
+        Error(X11Error: "X server returned a truncated setup reply")
+    end
 
     id_base = get32(payload, 4)
     vendor_length = get16(payload, 16)
     format_count = payload[21]
     screen = 32 + vendor_length + pad4(vendor_length) + format_count * 8
+    if screen < 32 or screen > len(payload) - 40:
+        Error(X11Error: "X server returned an invalid screen table")
+    end
     root = get32(payload, screen)
     root_visual = get32(payload, screen + 32)
     depth = payload[screen + 38]
@@ -356,8 +442,8 @@ function create_window(width, height, title):
     call put32(request, root)
     call put16(request, 0)
     call put16(request, 0)
-    call put16(request, Int(width))
-    call put16(request, Int(height))
+    call put16(request, window_width)
+    call put16(request, window_height)
     call put16(request, 0)
     call put16(request, 1)
     call put32(request, root_visual)
@@ -394,8 +480,8 @@ function create_window(width, height, title):
     info["gc_id"] = gc_id
     info["depth"] = depth
     info["wm_delete"] = wm_delete
-    info["width"] = Int(width)
-    info["height"] = Int(height)
+    info["width"] = window_width
+    info["height"] = window_height
     return info
 end
 
@@ -412,6 +498,13 @@ function put_image(handle, window_id, gc_id, depth, width, rows, packed, request
     wid = Int(window_id)
     gid = Int(gc_id)
     depth_value = Int(depth)
+    if window_width <= 0 or window_width > MAX_X11_DIMENSION or row_count < 0 or row_count > MAX_X11_DIMENSION:
+        Error(X11Error: "X11 image dimensions are out of range")
+    elif row_count > 0 and window_width > 1073741823 // row_count:
+        Error(X11Error: "X11 image dimensions overflow")
+    elif len(buffer) < window_width * row_count * 4 or len(out) < 24 + min(row_count, max(1, 16384 // window_width)) * window_width * 4:
+        Error(X11Error: "X11 image buffer is truncated")
+    end
     strip = 16384 // window_width
     if strip < 1:
         strip = 1
@@ -468,16 +561,24 @@ function read_events(handle, carry_bytes, wm_delete, scratch):
     chunk = ByteArray(scratch)
     pending = ByteArray(carry_bytes)
     closed = False
+    reads = 0
     loop:
+        if reads >= 256:
+            break
+        end
         got = fd.read(handle, chunk, 4096)
         if got == fd.again or got == 0:
             break
         end
         index = 0
         while index < got:
+            if len(pending) >= MAX_X11_PENDING:
+                Error(X11Error: "X11 pending event data exceeds 1 MiB")
+            end
             pending.append(chunk[index])
             index += 1
         end
+        reads += 1
     end
     offset = 0
     total = len(pending)
@@ -527,22 +628,33 @@ end
 # buffer. Returns the extended carry; poll() parses it next time.
 function drain(handle, carry_bytes):
     carry = ByteArray(carry_bytes)
+    if len(carry) > MAX_X11_PENDING:
+        Error(X11Error: "X11 pending data exceeds 1 MiB")
+    end
     chunk = ByteArray()
     index = 0
     while index < 4096:
         chunk.append(0)
         index += 1
     end
+    reads = 0
     loop:
+        if reads >= 256:
+            break
+        end
         got = fd.read(handle, chunk, 4096)
         if got == fd.again or got == 0:
             break
         end
         cursor = 0
         while cursor < got:
+            if len(carry) >= MAX_X11_PENDING:
+                Error(X11Error: "X11 pending data exceeds 1 MiB")
+            end
             carry.append(chunk[cursor])
             cursor += 1
         end
+        reads += 1
     end
     return carry
 end

@@ -4,8 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta name="description" content="LSL 0.6.7 — statické PIE a zpevněné HTTP, plugin a native integrační hranice.">
-<title>LSL 0.6.7 — integrační a bezpečnostní hardening</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="description" content="LSL 0.6.8 — bezpečnostní hardening compileru, runtime, procesů, native ABI a standardní knihovny.">
+<title>LSL 0.6.8 — bezpečnostní vydání</title>
 <style>
   :root {
     --bg: #0d1117;
@@ -415,12 +416,13 @@
 <button id="menu-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
 
 <nav id="sidebar">
-  <div class="logo">LSL <span>0.6.7</span></div>
-  <a href="./" data-home="home">🚀 Vydání 0.6.7</a>
+  <div class="logo">LSL <span>0.6.8</span></div>
+  <a href="./" data-home="home">🚀 Vydání 0.6.8</a>
   <a href="./#downloads" data-home="downloads">↓ Ke stažení</a>
   <a href="/releases/">◷ Historie vydání</a>
   <a href="#" data-page="CHANGELOG">✦ Changelog</a>
   <a href="#" data-page="README">📘 Přehled manuálu</a>
+  <a href="#" data-page="security">🛡 Bezpečnostní model</a>
   <div class="section">Základy</div>
   <a href="#" data-page="01-getting-started">1. Začínáme s LSL</a>
   <a href="#" data-page="02-language-basics">2. Základy jazyka</a>
@@ -444,40 +446,40 @@
 <main id="content">
   <div class="release-shell">
     <section class="welcome-hero">
-      <div class="release-kicker"><span class="release-version">0.6.7</span> Hardening integrací</div>
+      <div class="release-kicker"><span class="release-version">0.6.8</span> Bezpečnostní vydání</div>
       <h1>Lux Simple Lang</h1>
-      <p>Self-hosted LSL se statickými PIE, bezpečným HTTP/plugin stdin transportem, zpevněným native loaderem a paralelně izolovanými testy.</p>
+      <p>Self-hosted LSL se zpevněným compilerem a runtime, omezenými vstupy, bezpečnějšími procesními hranicemi a fork-isolated native voláním.</p>
       <div class="release-actions">
-        <a class="release-button primary" href="downloads/lsl-0.6.7-linux-x86_64.tar.gz" download>Stáhnout pro Linux x86_64</a>
+        <a class="release-button primary" href="downloads/lsl-0.6.8-linux-x86_64.tar.gz" download>Stáhnout pro Linux x86_64</a>
         <a class="release-button" href="#README" data-page="README">Otevřít manuál</a>
         <a class="release-button" href="/releases/">Historie verzí</a>
         <a class="release-button" href="#CHANGELOG" data-page="CHANGELOG">Co se změnilo</a>
       </div>
-      <div class="release-command"><span class="prompt">$</span> tar -xzf lsl-0.6.7-linux-x86_64.tar.gz
-<span class="prompt">$</span> ./lsl-0.6.7/bin/lsl version
-0.6.7</div>
+      <div class="release-command"><span class="prompt">$</span> tar -xzf lsl-0.6.8-linux-x86_64.tar.gz
+<span class="prompt">$</span> ./lsl-0.6.8/bin/lsl version
+0.6.8</div>
     </section>
 
     <section class="release-section" id="downloads">
       <h2>Ke stažení</h2>
       <p class="release-lead">Vydání obsahuje bootstrapping binárky, úplný zdrojový strom a aktualizovaný živý český manuál.</p>
       <div class="download-grid">
-        <a class="download-card" href="downloads/lsl-0.6.7-linux-x86_64.tar.gz" download>
+        <a class="download-card" href="downloads/lsl-0.6.8-linux-x86_64.tar.gz" download>
           <span class="download-icon">⬡</span>
           <h3>Binární balík</h3>
           <p>Spustitelné <code>lsl</code>, <code>lslc</code>, nástroje, CUDA worker a kompletní standardní knihovna.</p>
           <span class="download-meta">Linux · x86_64 · tar.gz ↓</span>
         </a>
-        <a class="download-card" href="downloads/lsl-0.6.7-source.tar.gz" download>
+        <a class="download-card" href="downloads/lsl-0.6.8-source.tar.gz" download>
           <span class="download-icon">⌘</span>
           <h3>Repozitář</h3>
           <p>Zdroj compileru, runtime, stdlib, testy, příklady a auditovatelný binary seed.</p>
-          <span class="download-meta">LSL 0.6.7 · source · tar.gz ↓</span>
+          <span class="download-meta">LSL 0.6.8 · source · tar.gz ↓</span>
         </a>
         <a class="download-card" href="#README" data-page="README">
           <span class="download-icon">▤</span>
           <h3>Aktuální manuál</h3>
-          <p>Všech 12 kapitol a reference doplněná o bezpečné integrační hranice 0.6.7.</p>
+          <p>Všech 12 kapitol, reference a výslovný bezpečnostní model LSL 0.6.8.</p>
           <span class="download-meta">Čeština · online manuál →</span>
         </a>
       </div>
@@ -487,7 +489,7 @@
     <div class="release-facts">
       <div class="release-fact"><strong>Self-hosted</strong><span>Compiler překládá sám sebe bitově shodně.</span></div>
       <div class="release-fact"><strong>Statický PIE</strong><span>ASLR, RX image, RW non-executable stack, bez interpreteru.</span></div>
-      <div class="release-fact"><strong>Izolované ABI</strong><span>Secrets a payloady přes stdin; nedůvěryhodný native kód do workeru.</span></div>
+      <div class="release-fact"><strong>Zpevněné hranice</strong><span>Omezené vstupy, čisté procesy a native volání v seccomp child procesu.</span></div>
     </div>
 
     <section class="release-section" id="manual">
@@ -501,7 +503,7 @@
       <div class="welcome-grid" id="welcome-grid"></div>
     </section>
 
-    <footer class="release-footer">LSL 0.6.7 · Integrační hardening · Linux x86_64 · MIT License</footer>
+    <footer class="release-footer">LSL 0.6.8 · Bezpečnostní hardening · Linux x86_64 · MIT License</footer>
   </div>
 </main>
 
@@ -516,6 +518,7 @@ function guidePageName(href) {
     '../configuration.md': '08-configuration-system',
     '../ai.md': '10-ai-applications',
     '../cuda.md': '11-performance-and-optimization',
+    '../release-0.6.8.md': 'README',
     '../release-0.6.7.md': 'README',
     '../release-0.6.6.md': 'README',
     '../release-0.6.5.md': 'README',
@@ -529,7 +532,7 @@ function guidePageName(href) {
   let match = href.match(/^([A-Za-z0-9-]+)\.md$/);
   if (!match) return null;
   let name = match[1];
-  if (name === 'README' || name === 'CHANGELOG' || name === 'reference' || /^\d\d-[a-z0-9-]+$/.test(name)) {
+  if (name === 'README' || name === 'CHANGELOG' || name === 'reference' || name === 'security' || /^\d\d-[a-z0-9-]+$/.test(name)) {
     return name;
   }
   return null;
@@ -820,7 +823,7 @@ function showRelease(section = '', updateHistory = true) {
 function routeFromLocation() {
   let page = location.hash.slice(1);
   if (page.endsWith('.md')) page = page.slice(0, -3);
-  if (/^\d\d-/.test(page) || page === 'README' || page === 'CHANGELOG' || page === 'reference') {
+  if (/^\d\d-/.test(page) || page === 'README' || page === 'CHANGELOG' || page === 'reference' || page === 'security') {
     loadPage(page, false);
   } else if (page === 'downloads' || page === 'manual') {
     showRelease(page, false);

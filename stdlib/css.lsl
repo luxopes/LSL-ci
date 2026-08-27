@@ -9,6 +9,10 @@
 
 load gfx
 
+MAX_CSS_BYTES = 1048576
+MAX_CSS_BLOCKS = 4096
+MAX_CSS_DECLARATIONS = 65536
+
 function hex_digit(character):
     code = ord(character)
     if code >= 48 and code <= 57:
@@ -20,7 +24,7 @@ function hex_digit(character):
     if code >= 65 and code <= 70:
         return code - 55
     end
-    return 0
+    return -1
 end
 
 function parse_hex_color(text):
@@ -28,15 +32,26 @@ function parse_hex_color(text):
     if body.startswith("#"):
         body = body[1:len(body)]
     end
+    if len(body) != 3 and len(body) != 6:
+        Error(CSSError: "hex color must contain three or six digits")
+    end
+    digits = []
+    for character in body:
+        digit = hex_digit(character)
+        if digit < 0:
+            Error(CSSError: "hex color contains a non-hexadecimal digit")
+        end
+        digits.append(digit)
+    end
     if len(body) == 3:
-        r = hex_digit(body[0:1]) * 17
-        g = hex_digit(body[1:2]) * 17
-        b = hex_digit(body[2:3]) * 17
+        r = digits[0] * 17
+        g = digits[1] * 17
+        b = digits[2] * 17
         return gfx.rgb(r, g, b)
     end
-    r = hex_digit(body[0:1]) * 16 + hex_digit(body[1:2])
-    g = hex_digit(body[2:3]) * 16 + hex_digit(body[3:4])
-    b = hex_digit(body[4:5]) * 16 + hex_digit(body[5:6])
+    r = digits[0] * 16 + digits[1]
+    g = digits[2] * 16 + digits[3]
+    b = digits[4] * 16 + digits[5]
     return gfx.rgb(r, g, b)
 end
 
@@ -60,24 +75,47 @@ end
 
 # Interpret any single color token to a 0xRRGGBB Int.
 function color(text):
+    if type(text) != "String" or len(text) > 256:
+        Error(CSSError: "color must be a short String")
+    end
     value = text.strip()
     if value.startswith("#"):
         return parse_hex_color(value)
     end
     if value.startswith("rgb"):
         parts = split_args(value)
-        return gfx.rgb(Int(parts[0]), Int(parts[1]), Int(parts[2]))
+        if len(parts) != 3 and len(parts) != 4:
+            Error(CSSError: "rgb color needs three components")
+        end
+        components = []
+        index = 0
+        while index < 3:
+            component = Int(parts[index])
+            if component < 0 or component > 255:
+                Error(CSSError: "rgb component is outside 0..255")
+            end
+            components.append(component)
+            index += 1
+        end
+        return gfx.rgb(components[0], components[1], components[2])
     end
     return 0
 end
 
 # Alpha 0..255 for an rgba() token; opaque otherwise.
 function alpha(text):
+    if type(text) != "String" or len(text) > 256:
+        Error(CSSError: "alpha color must be a short String")
+    end
     value = text.strip()
     if value.startswith("rgba"):
         parts = split_args(value)
         if len(parts) >= 4:
-            return Int(Float(parts[3]) * 255.0)
+            value = Float(parts[3])
+            if value != value or value < 0.0 or value > 1.0:
+                Error(CSSError: "rgba alpha is outside 0..1")
+            end
+            return Int(value * 255.0)
         end
     end
     return 255
@@ -111,15 +149,35 @@ end
 
 # Parse a stylesheet String into selector -> {property: value}.
 function parse(text):
+    if type(text) != "String":
+        Error(TypeError: "css.parse expects a String")
+    elif __lsl_text_byte_length(String(text)) > MAX_CSS_BYTES:
+        Error(CSSError: "stylesheet exceeds 1 MiB")
+    end
     sheet = {}
+    block_count = 0
+    declaration_count = 0
     for block in text.split("}"):
         brace = block.find("{")
         if brace < 0:
             continue
         end
+        block_count += 1
+        if block_count > MAX_CSS_BLOCKS:
+            Error(CSSError: "stylesheet has too many blocks")
+        end
         selector = block[0:brace].strip()
         if selector.startswith("."):
             selector = selector[1:len(selector)]
+        end
+        if len(selector) == 0 or len(selector) > 256:
+            Error(CSSError: "selector has an invalid length")
+        end
+        for character in selector:
+            code = ord(character)
+            if not ((code >= 48 and code <= 57) or (code >= 65 and code <= 90) or (code >= 97 and code <= 122) or character == "-" or character == "_"):
+                Error(CSSError: "selector contains an invalid character")
+            end
         end
         body = block[brace + 1:len(block)]
         rules = {}
@@ -128,8 +186,22 @@ function parse(text):
             if colon < 0:
                 continue
             end
+            declaration_count += 1
+            if declaration_count > MAX_CSS_DECLARATIONS:
+                Error(CSSError: "stylesheet has too many declarations")
+            end
             key = declaration[0:colon].strip()
-            rules[key] = declaration[colon + 1:len(declaration)].strip()
+            property_value = declaration[colon + 1:len(declaration)].strip()
+            if len(key) == 0 or len(key) > 128 or len(property_value) > 4096:
+                Error(CSSError: "CSS declaration has an invalid length")
+            end
+            for character in key:
+                code = ord(character)
+                if not ((code >= 65 and code <= 90) or (code >= 97 and code <= 122) or character == "-"):
+                    Error(CSSError: "CSS property contains an invalid character")
+                end
+            end
+            rules[key] = property_value
         end
         sheet[selector] = rules
     end

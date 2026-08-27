@@ -381,6 +381,13 @@ Oddělený `lsl config` režim staticky odmítá ambientní I/O, síť,
 environment a process capabilities — je to čistý evaluator pro
 reprodukovatelnou konfiguraci.
 
+Privátní builtiny začínající `__lsl_` zpřístupňují stdlib přímé syscalls,
+adresy a raw memory operace. Nejsou bezpečným aplikačním API a mohou obejít
+kontroly veřejných modulů. `native.call` chrání integritu rodiče krátkodobým
+strict-seccomp child procesem, ale fork snapshot není hranicí důvěrnosti.
+Nedůvěryhodný kód proto patří do externího `exec` workeru bez secrets a do OS
+sandboxu; podrobnosti jsou v [bezpečnostním modelu](security.md).
+
 ## Kam dál
 
 - [Kompletní reference](reference.md) — funkce, typy, metody a moduly.

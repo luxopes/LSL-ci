@@ -28,7 +28,7 @@ repeat = 2
 event_size = 24
 
 function keyboard_device():
-    listing = fd.read_text("/proc/bus/input/devices")
+    listing = fd.read_text_limit("/proc/bus/input/devices", 1048576)
     for block in listing.split("\n\n"):
         if block.find("Handlers=") < 0:
             continue
@@ -37,7 +37,21 @@ function keyboard_device():
             if line.startswith("H: ") and line.find("kbd") >= 0:
                 for token in line.split(" "):
                     if token.startswith("event"):
-                        return "/dev/input/" + token.strip()
+                        name = token.strip()
+                        suffix = name[5:len(name)]
+                        if suffix == "" or len(suffix) > 6:
+                            continue
+                        end
+                        valid = True
+                        for character in suffix:
+                            code = ord(character)
+                            if code < 48 or code > 57:
+                                valid = False
+                            end
+                        end
+                        if valid:
+                            return "/dev/input/" + name
+                        end
                     end
                 end
             end
@@ -61,7 +75,11 @@ function read_key_events(handle):
         buffer.append(0)
         index += 1
     end
+    reads = 0
     loop:
+        if reads >= 256 or len(events) >= 4096:
+            break
+        end
         count = fd.read(handle, buffer, event_size * 64)
         if count == fd.again or count == 0:
             break
@@ -76,6 +94,7 @@ function read_key_events(handle):
             end
             offset += event_size
         end
+        reads += 1
     end
     return events
 end

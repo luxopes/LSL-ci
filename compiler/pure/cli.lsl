@@ -5,7 +5,7 @@ load linker
 load package
 load parser
 
-VERSION = "0.6.7"
+VERSION = "0.6.8"
 
 function print_help():
     print "Lux Simple Lang (LSL) " + VERSION
@@ -26,10 +26,11 @@ function print_help():
 end
 
 function compile_source(source_path, source, output_path):
-    stdlib_path = resource_path("compiler/pure/dynamic_stdlib.lsl")
+    stdlib_name = "compiler/pure/dynamic_stdlib.lsl"
+    stdlib_path = resource_path(stdlib_name)
     stdlib_source = readfile(stdlib_path)
-    program = parser.parse(stdlib_path, stdlib_source)
-    call linker.annotate_statements(program, stdlib_path)
+    program = parser.parse(stdlib_name, stdlib_source)
+    call linker.annotate_statements(program, stdlib_name)
     program.extend(linker.link(source_path, source))
     call writebytes(output_path, codegen.generate(source_path, source, program))
 end
@@ -56,11 +57,9 @@ function dirname(path):
 end
 
 function resource_path(path):
-    if exists(path):
-        return path
-    end
     executable = executable_path()
-    root_candidate = dirname(executable) + "/" + path
+    binary_directory = dirname(executable)
+    root_candidate = binary_directory + "/" + path
     if exists(root_candidate):
         return root_candidate
     end
@@ -68,15 +67,45 @@ function resource_path(path):
     if exists(root_candidate):
         return root_candidate
     end
-    prefix = dirname(dirname(executable))
-    return prefix + "/lib/lsl/" + path
+    prefix = dirname(binary_directory)
+    prefix_bin = prefix + "/bin"
+    if prefix == "/":
+        prefix_bin = "/bin"
+    end
+    if binary_directory == prefix_bin:
+        return prefix + "/lib/lsl/" + path
+    end
+    # Repository fallback is last so an attacker-controlled working directory
+    # cannot shadow resources beside an installed executable.
+    return path
 end
 
 function tool_path(repository_path, installed_name):
-    if exists(repository_path):
-        return repository_path
+    binary_directory = dirname(executable_path())
+    adjacent = binary_directory + "/" + installed_name
+    if exists(adjacent):
+        return adjacent
     end
-    return dirname(executable_path()) + "/" + installed_name
+    prefix = dirname(binary_directory)
+    prefix_bin = prefix + "/bin"
+    if prefix == "/":
+        prefix_bin = "/bin"
+    end
+    if binary_directory == prefix_bin:
+        # An incomplete installation must not execute a same-named tool from
+        # the caller's working directory.
+        return adjacent
+    end
+    return repository_path
+end
+
+function required_system_tool(primary, fallback, label):
+    if exists(primary):
+        return primary
+    elif exists(fallback):
+        return fallback
+    end
+    Error(ProcessError: "trusted " + label + " executable is required")
 end
 
 function registry_server():
@@ -95,23 +124,13 @@ function user_home():
     return home
 end
 
-# Scratch path for a compiled program. Include the process id so concurrent
-# CLI invocations never overwrite or execute each other's partially written
-# ELF. Prefer a private per-user cache; without HOME, claim a private /tmp
-# directory atomically instead of following a predictable file or symlink.
+# Scratch path for a compiled program. Atomic 0700 mkdir prevents other users
+# from replacing the ELF between compilation and execution.
 function scratch_program_path():
     process = String(__lsl_syscall(39, 0, 0, 0, 0))
-    home = __lsl_getenv("HOME")
-    if home != None and home != "":
-        directory = home + "/.cache/lsl"
-        status = __lsl_run("/bin/mkdir", ["-p", directory])
-        if status == 0:
-            return directory + "/program-" + process
-        end
-    end
     attempt = 0
     directory = "/tmp/lsl-program-" + process
-    while mkdir(directory) != 0:
+    while __lsl_mkdir_private(directory) != 0:
         attempt += 1
         if attempt > 100:
             Error(FileError: "cannot create a private CLI scratch directory")
@@ -121,8 +140,22 @@ function scratch_program_path():
     return directory + "/program"
 end
 
+function cleanup_program(path):
+    call unlink(path)
+    call rmdir(dirname(path))
+end
+
+function cleanup_config_snapshots(directory):
+    index = 0
+    while index < 256:
+        call unlink(directory + "/lsl_config_snapshot_" + String(index) + ".lsl")
+        index += 1
+    end
+end
+
 function read_stdin_source():
     lines = []
+    total = 0
     terminal = __lsl_isatty(0)
     if terminal:
         print "Lux Simple Lang " + VERSION + " interactive source mode"
@@ -139,6 +172,10 @@ function read_stdin_source():
             break
         elif eof and line == "":
             break
+        end
+        total += __lsl_text_byte_length(String(line)) + 1
+        if total > 4194304:
+            Error(CompileError: "stdin source exceeds the 4 MiB compiler limit")
         end
         lines.append(line)
         if eof:
@@ -160,7 +197,7 @@ if command == None:
     scratch = scratch_program_path()
     call compile_source("<stdin>", source, scratch)
     status = run(scratch, [])
-    call unlink(scratch)
+    call cleanup_program(scratch)
     exit(status)
 end
 
@@ -185,16 +222,37 @@ elif command == "config":
         print "usage: lsl config ENTRY"
         exit(2)
     end
-    wrapper = dirname(entry) + "/.lsl-config-evaluator-" + String(__lsl_syscall(39, 0, 0, 0, 0)) + ".lsl"
-    status = run(tool_path("./compiler/pure/lsl-configure", "lsl-configure"), [entry, wrapper])
+    evaluator = scratch_program_path()
+    snapshot_directory = dirname(evaluator)
+    wrapper = capture_clean(tool_path("./compiler/pure/lsl-configure", "lsl-configure"), [entry, "-", snapshot_directory])
+    status = capture_status()
     if status != 0:
+        if wrapper != "":
+            print wrapper
+        end
+        detail = capture_stderr()
+        if detail != "":
+            print detail
+        end
+        call cleanup_config_snapshots(snapshot_directory)
+        call cleanup_program(evaluator)
         exit(status)
     end
-    evaluator = scratch_program_path() + "-config"
-    call compile_file(wrapper, evaluator)
-    call unlink(wrapper)
-    status = run(evaluator, [])
-    call unlink(evaluator)
+    synthetic_path = snapshot_directory + "/lsl_config_wrapper.lsl"
+    call compile_source(synthetic_path, wrapper, evaluator)
+    # Even lexically pure configuration may contain an infinite loop or an
+    # allocation bomb. Evaluate it in a clean subprocess with wall-clock, CPU,
+    # address-space, file-size and descriptor limits.
+    timeout = required_system_tool("/usr/bin/timeout", "/bin/timeout", "timeout")
+    prlimit = required_system_tool("/usr/bin/prlimit", "/bin/prlimit", "prlimit")
+    limits = [
+        "--signal=TERM", "--kill-after=1s", "--", "30s", prlimit,
+        "--as=1073741824", "--cpu=30", "--fsize=16777216",
+        "--nofile=64", "--nproc=32", "--", evaluator
+    ]
+    status = run_clean(timeout, limits)
+    call cleanup_config_snapshots(snapshot_directory)
+    call cleanup_program(evaluator)
     exit(status)
 elif command == "install":
     name = arg(2)
@@ -233,5 +291,5 @@ while index < arg_count():
     index += 1
 end
 status = run(scratch, arguments)
-call unlink(scratch)
+call cleanup_program(scratch)
 exit(status)

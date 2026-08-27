@@ -31,23 +31,13 @@ end
 
 function module_path_with_home(name, owner_path, home):
     relative_name = name.replace(".", "/") + ".lsl"
-    local_path = dirname(owner_path) + "/" + relative_name
-    if exists(local_path):
-        return local_path
-    end
-    # Compiler-focused tests live under tests/, while implementation modules stay
-    # exclusively in compiler/pure/. Allow those modules without test copies.
-    compiler_path = "compiler/pure/" + relative_name
-    test_owner = owner_path.startswith("tests/") or owner_path.find("/tests/") >= 0
-    if test_owner and exists(compiler_path):
-        return compiler_path
-    end
     standard_path = "stdlib/" + relative_name
-    if exists(standard_path):
-        return standard_path
-    end
     executable = executable_path()
-    root_candidate = dirname(executable) + "/" + standard_path
+    binary_directory = dirname(executable)
+    # Installed/repository resources adjacent to the compiler are trusted ahead
+    # of the source directory, so local json.lsl/config.lsl files cannot shadow
+    # security-critical built-in modules.
+    root_candidate = binary_directory + "/" + standard_path
     if exists(root_candidate):
         return root_candidate
     end
@@ -55,10 +45,41 @@ function module_path_with_home(name, owner_path, home):
     if exists(root_candidate):
         return root_candidate
     end
-    prefix = dirname(dirname(executable))
+    prefix = dirname(binary_directory)
+    prefix_bin = prefix + "/bin"
+    if prefix == "/":
+        prefix_bin = "/bin"
+    end
+    installed_layout = binary_directory == prefix_bin
     installed_path = prefix + "/lib/lsl/" + standard_path
-    if exists(installed_path):
-        return installed_path
+    if installed_layout:
+        builtins = "|ai|bigint|config|configure|css|cuda|display|env|fd|gfx|http|input|json|lconf|lux|luxos|math|native|os|plugin|process|system|tensor|time|tui|ui|unixsock|wayland|x11|"
+        marker = "|" + name + "|"
+        if exists(installed_path) or marker in builtins:
+            # A missing built-in fails at its trusted prefix path. Local/user
+            # modules remain available for names outside the built-in set.
+            return installed_path
+        end
+    end
+    local_path = dirname(owner_path) + "/" + relative_name
+    if exists(local_path):
+        return local_path
+    end
+    # Compiler-focused tests live under tests/, while implementation modules stay
+    # exclusively in compiler/pure/. Prefer a path rooted beside the compiler.
+    test_owner = owner_path.startswith("tests/") or owner_path.find("/tests/") >= 0
+    compiler_path = dirname(dirname(dirname(executable))) + "/compiler/pure/" + relative_name
+    if test_owner and exists(compiler_path):
+        return compiler_path
+    end
+    compiler_path = "compiler/pure/" + relative_name
+    if test_owner and exists(compiler_path):
+        return compiler_path
+    end
+    # Development compiler copied outside the tree: cwd is an explicit fallback,
+    # never a precedence path for installed binaries.
+    if exists(standard_path):
+        return standard_path
     end
     # Registry libraries are user-owned and never shadow built-in modules.
     if home != None and home != "":
@@ -68,7 +89,10 @@ function module_path_with_home(name, owner_path, home):
         end
     end
     # Preserve the deterministic missing-file diagnostic path.
-    return installed_path
+    if installed_layout:
+        return installed_path
+    end
+    return standard_path
 end
 
 function module_path(name, owner_path):
@@ -343,12 +367,20 @@ function transform_statements(statements, own_functions, imported_names, namespa
     end
 end
 
-function collect_module(name, owner_path, cache, output):
+function collect_module(name, owner_path, cache, output, source_budget):
     if name in cache:
         return cache[name]
     end
+    if len(cache) >= 256:
+        Error(CompileError: "module graph exceeds 256 modules")
+    end
     path = module_path(name, owner_path)
     source = readfile(path)
+    source_bytes = __lsl_text_byte_length(source)
+    if source_bytes > 16777216 - source_budget[0]:
+        Error(CompileError: "linked source exceeds the 16 MiB compiler limit: " + path)
+    end
+    source_budget[0] += source_bytes
     program = parser.parse(path, source)
     call annotate_statements(program, path)
     prefix = module_prefix(name)
@@ -359,7 +391,7 @@ function collect_module(name, owner_path, cache, output):
     for statement in program:
         if statement["kind"] == "load":
             dependency = statement["module"]
-            dependency_prefix = collect_module(dependency, path, cache, output)
+            dependency_prefix = collect_module(dependency, path, cache, output, source_budget)
             if statement["symbol"] == None:
                 namespaces[statement["alias"]] = dependency_prefix
             else:
@@ -390,16 +422,23 @@ function collect_module(name, owner_path, cache, output):
 end
 
 function link(path, source):
-    program = parser.parse(path, source)
+    checked_source = String(source)
+    source_bytes = __lsl_text_byte_length(checked_source)
+    if source_bytes > 16777216:
+        Error(CompileError: "linked source exceeds the 16 MiB compiler limit: " + path)
+    end
+    program = parser.parse(path, checked_source)
     call annotate_statements(program, path)
     cache = {}
     linked = []
     namespaces = {}
     imported_names = {}
+    source_budget = IntArray()
+    source_budget.append(source_bytes)
     for statement in program:
         if statement["kind"] == "load":
             dependency = statement["module"]
-            prefix = collect_module(dependency, path, cache, linked)
+            prefix = collect_module(dependency, path, cache, linked, source_budget)
             if statement["symbol"] == None:
                 namespaces[statement["alias"]] = prefix
             else:

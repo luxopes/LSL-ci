@@ -1,6 +1,12 @@
 42
 NativeError: native symbol not found: missing
+0 0
+NativeError: native close requires an open library
 NativeError: native library is closed
+42
+True
+True True True
 NativeError: native ABI does not accept relocations or dynamic sections
 NativeError: invalid ELF section table
+NativeError: ELF section has a negative range
 NativeError: cannot map valid Linux x86_64 ET_DYN image

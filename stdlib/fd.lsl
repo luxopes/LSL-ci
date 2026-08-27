@@ -17,6 +17,32 @@ again = -11
 af_unix = 1
 sock_stream = 1
 
+function checked_path(path):
+    p = String(path)
+    if len(p) == 0 or __lsl_text_byte_length(p) > 4095:
+        Error(ValueError: "file path must contain 1..4095 bytes")
+    end
+    for character in p:
+        if ord(character) == 0:
+            Error(ValueError: "file path must not contain NUL")
+        end
+    end
+    return p
+end
+
+function checked_unix_path(path):
+    p = checked_path(path)
+    if len(p) > 107:
+        Error(ValueError: "unix socket path exceeds 107 bytes")
+    end
+    for character in p:
+        if ord(character) > 127:
+            Error(ValueError: "unix socket path must use ASCII")
+        end
+    end
+    return p
+end
+
 function socket(domain, kind):
     handle = __lsl_fd_socket(domain, kind)
     if handle < 0:
@@ -27,11 +53,12 @@ end
 
 # Connect to a unix stream socket path; returns a nonblocking handle.
 function connect_unix(path):
+    p = checked_unix_path(path)
     handle = socket(af_unix, sock_stream + nonblock)
     address = ByteArray()
     address.append(af_unix)
     address.append(0)
-    for character in path:
+    for character in p:
         address.append(ord(character))
     end
     address.append(0)
@@ -40,15 +67,16 @@ function connect_unix(path):
     # even though the socket is usable immediately.
     if result < 0 and result != -115:
         call close(handle)
-        Error(FileError: "cannot connect " + path + " (" + String(result) + ")")
+        Error(FileError: "cannot connect " + p + " (" + String(result) + ")")
     end
     return handle
 end
 
 function open(path, flags):
-    handle = __lsl_fd_open(path, flags)
+    p = checked_path(path)
+    handle = __lsl_fd_open(p, flags)
     if handle < 0:
-        Error(FileError: "cannot open " + path + " (" + String(handle) + ")")
+        Error(FileError: "cannot open " + p + " (" + String(handle) + ")")
     end
     return handle
 end
@@ -56,7 +84,14 @@ end
 # Returns the byte count, 0 on end of file, or fd.again for an empty
 # nonblocking read. The runtime clamps count to the buffer length.
 function read(handle, buffer, count):
-    result = __lsl_fd_read(handle, buffer, count)
+    if type(buffer) != "ByteArray":
+        Error(TypeError: "read buffer must be a ByteArray")
+    end
+    amount = Int(count)
+    if amount < 0:
+        Error(ValueError: "read count must be non-negative")
+    end
+    result = __lsl_fd_read(handle, buffer, amount)
     if result == again or result == -4:
         return again
     end
@@ -67,7 +102,14 @@ function read(handle, buffer, count):
 end
 
 function write(handle, buffer, count):
-    result = __lsl_fd_write(handle, buffer, count)
+    if type(buffer) != "ByteArray":
+        Error(TypeError: "write buffer must be a ByteArray")
+    end
+    amount = Int(count)
+    if amount < 0:
+        Error(ValueError: "write count must be non-negative")
+    end
+    result = __lsl_fd_write(handle, buffer, amount)
     if result < 0:
         Error(FileError: "write failed (" + String(result) + ")")
     end
@@ -91,6 +133,9 @@ end
 # writes them in place); an empty buffer passes NULL. Returns the raw
 # result, negative errno included — device control flows branch on it.
 function ioctl(handle, request, buffer):
+    if type(buffer) != "ByteArray":
+        return -22
+    end
     return __lsl_fd_ioctl(handle, buffer, request)
 end
 
@@ -98,15 +143,25 @@ end
 # the descriptor at `offset` and returns the raw address (negative errno
 # on failure). Pair with __lsl_mem_pack to write pixels into the mapping.
 function mmap(handle, length, offset):
-    return __lsl_fd_mmap(handle, length, offset)
+    amount = Int(length)
+    start = Int(offset)
+    if amount <= 0 or amount > 1099511627776 or start < 0:
+        return -22
+    end
+    return __lsl_fd_mmap(handle, amount, start)
 end
 
-# Read a whole file through the descriptor path. Unlike readfile this
-# also works for procfs/sysfs and device nodes whose stat size is zero.
-function read_all(path):
+# Read a bounded file through the descriptor path. Unlike readfile this also
+# works for procfs/sysfs and device nodes whose stat size is zero.
+function read_all_limit(path, limit):
+    maximum = Int(limit)
+    if maximum < 0 or maximum > 268435456:
+        Error(ValueError: "descriptor read limit must be between 0 and 256 MiB")
+    end
     handle = open(path, read_only)
     chunk = __lsl_byte_zeros(4096)
-    collected = __lsl_byte_zeros(0)
+    capacity = min(4096, maximum)
+    collected = __lsl_byte_zeros(capacity)
     total = 0
     loop:
         count = read(handle, chunk, 4096)
@@ -116,21 +171,42 @@ function read_all(path):
         if count == 0:
             break
         end
-        # Grow-by-copy through the native kernel: appending byte by byte
-        # cost ~700 ns per byte, which dominated every /proc sample.
-        grown = __lsl_byte_zeros(total + count)
-        call __lsl_byte_copy(grown, collected, 0, 0, total)
-        call __lsl_byte_copy(grown, chunk, total, 0, count)
-        collected = grown
+        if count > maximum - total:
+            call close(handle)
+            Error(FileError: "descriptor input exceeds the configured limit")
+        end
+        required = total + count
+        if required > capacity:
+            next_capacity = max(1, capacity)
+            while next_capacity < required:
+                next_capacity = min(maximum, next_capacity * 2)
+            end
+            grown = __lsl_byte_zeros(next_capacity)
+            call __lsl_byte_copy(grown, collected, 0, 0, total)
+            collected = grown
+            capacity = next_capacity
+        end
+        call __lsl_byte_copy(collected, chunk, total, 0, count)
         total = total + count
     end
     call close(handle)
-    return collected
+    exact = __lsl_byte_zeros(total)
+    call __lsl_byte_copy(exact, collected, 0, 0, total)
+    return exact
+end
+
+function read_all(path):
+    return read_all_limit(path, 268435456)
 end
 
 function read_text(path):
     # One native copy instead of a string per byte: with chr()+join this
     # cost hundreds of milliseconds per second of Monitor sampling.
     data = read_all(path)
+    return __lsl_text_from_bytes(data, 0, len(data))
+end
+
+function read_text_limit(path, limit):
+    data = read_all_limit(path, limit)
     return __lsl_text_from_bytes(data, 0, len(data))
 end

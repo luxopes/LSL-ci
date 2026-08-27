@@ -18,5 +18,5 @@ lux-failure True True
 manager-failure True
 ValueError: package name cannot start with '-'
 ValueError: package name cannot be empty
-ValueError: package name cannot contain whitespace
+ValueError: package name contains an invalid character
 TypeError: package name must be a String

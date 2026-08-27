@@ -6,15 +6,54 @@ load json
 function response(output):
     if len(output) == 0:
         Error(PluginError: "plugin returned no JSON response")
+    elif __lsl_text_byte_length(String(output)) > 4194304:
+        Error(PluginError: "plugin response exceeds 4 MiB")
     end
     value = json.decode(output)
+    if type(value) != "Dictionary":
+        Error(PluginError: "plugin response must be a JSON object")
+    end
     if value.get("abi", 0) != 1:
         Error(PluginError: "plugin ABI version mismatch")
     end
     if not value.get("ok", False):
-        Error(PluginError: value.get("error", "plugin failed"))
+        detail = String(value.get("error", "plugin failed"))
+        if len(detail) > 4096:
+            detail = detail[0:4096]
+        end
+        Error(PluginError: detail)
     end
     return value.get("value", None)
+end
+
+function timeout_tool():
+    if exists("/usr/bin/timeout"):
+        return "/usr/bin/timeout"
+    elif exists("/bin/timeout"):
+        return "/bin/timeout"
+    end
+    Error(PluginError: "a trusted timeout executable is required for plugin isolation")
+    return ""
+end
+
+function checked_timeout(seconds):
+    value = Int(seconds)
+    if value < 1 or value > 3600:
+        Error(PluginError: "plugin timeout must be between 1 and 3600 seconds")
+    end
+    return value
+end
+
+function capture_with_timeout(executable, arguments, input_text, seconds):
+    if type(arguments) != "List" or len(arguments) > 4096:
+        Error(PluginError: "plugin arguments must be a bounded List")
+    end
+    timeout = checked_timeout(seconds)
+    wrapped = ["--signal=TERM", "--kill-after=1s", "--", String(timeout) + "s", String(executable)]
+    for argument in arguments:
+        wrapped.append(String(argument))
+    end
+    return capture_input_clean(timeout_tool(), wrapped, String(input_text))
 end
 
 function checked_response(output):
@@ -29,10 +68,33 @@ function checked_response(output):
     return response(output)
 end
 
-function request(executable, operation, payload):
-    envelope = {"abi": 1, "operation": operation, "payload": payload}
-    output = capture_input(executable, [], json.encode(envelope))
+function operation_name(operation):
+    action = String(operation)
+    if len(action) == 0 or len(action) > 256:
+        Error(PluginError: "plugin operation must contain 1..256 characters")
+    end
+    for character in action:
+        code = ord(character)
+        if code < 32 or code == 127:
+            Error(PluginError: "plugin operation contains a control character")
+        end
+    end
+    return action
+end
+
+function request_with_timeout(executable, operation, payload, seconds):
+    action = operation_name(operation)
+    envelope = {"abi": 1, "operation": action, "payload": payload}
+    encoded = json.encode(envelope)
+    if __lsl_text_byte_length(String(encoded)) > 4194304:
+        Error(PluginError: "plugin request exceeds 4 MiB")
+    end
+    output = capture_with_timeout(executable, [], encoded, seconds)
     return checked_response(output)
+end
+
+function request(executable, operation, payload):
+    return request_with_timeout(executable, operation, payload, 30)
 end
 
 # Compatibility alias retained for callers that already selected stdin.
@@ -43,7 +105,12 @@ end
 # Explicit legacy transport for old workers. It is unsafe for secrets and
 # bounded by Linux MAX_ARG_STRLEN; new integrations must use request().
 function request_argv(executable, operation, payload):
-    envelope = {"abi": 1, "operation": operation, "payload": payload}
-    output = capture(executable, [json.encode(envelope)])
+    envelope = {"abi": 1, "operation": operation_name(operation), "payload": payload}
+    encoded = json.encode(envelope)
+    if __lsl_text_byte_length(String(encoded)) > 131071:
+        Error(PluginError: "legacy argv plugin request exceeds Linux MAX_ARG_STRLEN")
+    end
+    wrapped = ["--signal=TERM", "--kill-after=1s", "--", "30s", String(executable), encoded]
+    output = capture_clean(timeout_tool(), wrapped)
     return checked_response(output)
 end

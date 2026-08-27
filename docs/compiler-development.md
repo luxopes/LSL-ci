@@ -20,11 +20,17 @@ součástí self-host řetězce. Každá změna musí zachovat:
 5. veřejný tagged Any ABI a raw-Int/live-pointer collision bezpečnost;
 6. původní source path, řádek a sloupec v diagnostice.
 
-Dlouhé buildy spouštějte sériově s limitem 1 GiB:
+Dlouhé fixed-point buildy compileru a běžné nástroje spouštějte sériově s
+limitem 1,5 GiB:
 
 ```text
-ulimit -v 1048576
+ulimit -v 1572864
 ```
+
+Compiler i kořenové CLI při release buildu 0.6.8 dosahují přibližně 1,25 GiB
+peak virtual/RSS kvůli skokovému růstu objektového registru. Generujte každý
+artefakt samostatně; limit 1,5 GiB ponechává rezervu, ale stále ukončí
+nekontrolovaný růst.
 
 ## Mapa implementace
 

@@ -5,6 +5,37 @@
 load env
 load plugin
 
+MAX_CUDA_BINARY_ELEMENTS = 2000000
+
+function checked_worker(worker):
+    if worker == None:
+        return None
+    end
+    path = String(worker)
+    if len(path) == 0:
+        return ""
+    elif __lsl_text_byte_length(path) > 4095 or chr(0) in path:
+        Error(CudaConfigurationError: "CUDA worker path is invalid")
+    end
+    return path
+end
+
+function checked_dimensions(m, k, n):
+    rows = Int(m)
+    inner = Int(k)
+    columns = Int(n)
+    if rows < 0 or inner < 0 or columns < 0:
+        Error(CudaShapeError: "CUDA dimensions cannot be negative")
+    elif inner > 0 and rows > MAX_CUDA_BINARY_ELEMENTS // inner:
+        Error(CudaShapeError: "CUDA left matrix exceeds the secure element limit")
+    elif columns > 0 and inner > MAX_CUDA_BINARY_ELEMENTS // columns:
+        Error(CudaShapeError: "CUDA right matrix exceeds the secure element limit")
+    elif columns > 0 and rows > MAX_CUDA_BINARY_ELEMENTS // columns:
+        Error(CudaShapeError: "CUDA result exceeds the secure element limit")
+    end
+    return [rows, inner, columns]
+end
+
 class Settings(True):
     ctype Private
     function init(self):
@@ -19,9 +50,16 @@ end
 settings = Settings()
 
 function configure(worker, policy, min_elements):
-    settings.worker = worker
-    settings.policy = policy
-    settings.min_elements = Int(min_elements)
+    checked_policy = String(policy).lower()
+    threshold = Int(min_elements)
+    if checked_policy != "auto" and checked_policy != "required" and checked_policy != "off":
+        Error(CudaConfigurationError: "CUDA policy must be auto, required or off")
+    elif threshold < 0:
+        Error(CudaConfigurationError: "CUDA minimum element count cannot be negative")
+    end
+    settings.worker = checked_worker(worker)
+    settings.policy = checked_policy
+    settings.min_elements = threshold
     settings.probe_worker = None
     settings.probe_value = None
 end
@@ -48,13 +86,11 @@ function worker_path():
         if String(settings.worker) == "":
             return None
         end
-        return String(settings.worker)
+        return checked_worker(settings.worker)
     end
     worker = env.get("LSL_CUDA_WORKER", "")
     if worker != "":
-        return worker
-    elif exists("cuda/lsl-cuda-worker"):
-        return "cuda/lsl-cuda-worker"
+        return checked_worker(worker)
     end
     executable_directory = dirname(executable_path())
     if exists(executable_directory + "/lsl-cuda-worker"):
@@ -174,6 +210,15 @@ function to_float_array(values):
 end
 
 function accelerated(size):
+    amount = Int(size)
+    if amount < 0:
+        Error(CudaShapeError: "CUDA work size cannot be negative")
+    elif amount > MAX_CUDA_BINARY_ELEMENTS:
+        if policy() == "required":
+            Error(CudaShapeError: "CUDA request exceeds the secure binary transport limit")
+        end
+        return False
+    end
     if policy() == "off":
         return False
     end
@@ -190,7 +235,7 @@ function accelerated(size):
         end
         return True
     end
-    return size >= minimum_elements() and probe() != None
+    return amount >= minimum_elements() and probe() != None
 end
 
 function request(operation, payload):
@@ -208,7 +253,7 @@ function request(operation, payload):
 end
 
 function binary_request(arguments, payload):
-    output = capture_input(worker_path(), arguments, payload)
+    output = plugin.capture_with_timeout(worker_path(), arguments, payload, 120)
     if capture_status() == 0:
         return output
     end
@@ -289,9 +334,10 @@ end
 function matmul_data(left, right, m, k, n):
     left_data = FloatArray(left)
     right_data = FloatArray(right)
-    rows = Int(m)
-    inner = Int(k)
-    columns = Int(n)
+    dimensions = checked_dimensions(m, k, n)
+    rows = Int(dimensions[0])
+    inner = Int(dimensions[1])
+    columns = Int(dimensions[2])
     if len(left_data) != rows * inner or len(right_data) != inner * columns:
         Error(CudaShapeError: "matmul array lengths do not match dimensions")
     end

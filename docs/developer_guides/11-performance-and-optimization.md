@@ -16,7 +16,7 @@ který funguje. Teprve potom ho zrychlujte — a po každé změně ověřte,
 
 ## Co compiler optimalizuje automaticky
 
-Codegen LSL 0.6.7 bezpečně provádí tyto optimalizace (žádná nemění
+Codegen LSL 0.6.8 bezpečně provádí tyto optimalizace (žádná nemění
 pozorovatelnou sémantiku):
 
 ### 1. Constant folding (skládání konstant)
@@ -288,8 +288,8 @@ Změna dat přes view je okamžitě viditelná ve všech ostatních views.
 
 ## Plugin ABI
 
-LSL podporuje dvě plugin hranice: izolovanou procesní (JSON) a rychlou
-in-process (ET_DYN).
+LSL podporuje dvě plugin hranice: procesní (JSON přes nový `exec`) a omezenou
+fork-isolated (ET_DYN).
 
 ### Procesní plugin ABI (doporučeno)
 

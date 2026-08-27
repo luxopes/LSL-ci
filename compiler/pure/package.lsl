@@ -22,7 +22,9 @@ function valid_name(name):
 end
 
 function localhost_http(server):
-    prefixes = ["http://127.0.0.1", "http://localhost"]
+    # Numeric loopback only: a mutable hosts/NSS configuration must not turn a
+    # development-only plain-HTTP exception into a remote cleartext request.
+    prefixes = ["http://127.0.0.1"]
     for prefix in prefixes:
         if server.startswith(prefix):
             if len(server) == len(prefix):
@@ -44,17 +46,57 @@ function normalize_server(server):
     while len(server) > 0 and server[len(server) - 1] == "/":
         server = server[0:len(server) - 1]
     end
-    if len(server) == 0:
+    if len(server) == 0 or len(server) > 2048:
         Error(PackageError: "registry URL is empty")
     end
     for character in server:
         code = ord(character)
-        if code <= 32 or code == 127 or character == "?" or character == "#":
+        if code <= 32 or code == 127 or code > 127 or character == "?" or character == "#" or character == chr(92) or character == "@":
             Error(PackageError: "registry URL contains an unsafe character")
         end
     end
     if not server.startswith("https://") and not localhost_http(server):
         Error(PackageError: "registry must use HTTPS (localhost HTTP is allowed for tests)")
+    end
+    scheme_length = 8
+    if server.startswith("http://"):
+        scheme_length = 7
+    end
+    remainder = server[scheme_length:len(server)]
+    slash = remainder.find("/")
+    if slash < 0:
+        slash = len(remainder)
+    end
+    authority = remainder[0:slash]
+    if authority == "":
+        Error(PackageError: "registry URL has an empty authority")
+    end
+    colon = authority.find(":")
+    host = authority
+    if colon >= 0:
+        host = authority[0:colon]
+        port = authority[colon + 1:len(authority)]
+        if len(port) == 0 or len(port) > 5:
+            Error(PackageError: "registry URL has an invalid port")
+        end
+        for character in port:
+            code = ord(character)
+            if code < 48 or code > 57:
+                Error(PackageError: "registry URL has a non-numeric port")
+            end
+        end
+        if Int(port) <= 0 or Int(port) > 65535:
+            Error(PackageError: "registry URL port is out of range")
+        end
+    end
+    if host == "":
+        Error(PackageError: "registry URL host is empty")
+    end
+    for character in host:
+        code = ord(character)
+        if not ((code >= 65 and code <= 90) or (code >= 97 and code <= 122) or (code >= 48 and code <= 57) or character == "." or character == "-" or character == "_"):
+            Error(PackageError: "registry URL has an invalid host")
+        end
     end
     return server
 end
@@ -65,9 +107,14 @@ function remove_if_exists(path):
     end
 end
 
-function fail_after_cleanup(message, stage, check_path):
+function cleanup_work(work, stage, check_path):
     call remove_if_exists(stage)
     call remove_if_exists(check_path)
+    call rmdir(work)
+end
+
+function fail_after_cleanup(message, work, stage, check_path):
+    call cleanup_work(work, stage, check_path)
     Error(PackageError: message)
 end
 
@@ -78,22 +125,21 @@ function fetch(curl_path, server, url):
             protocols = "=http,https"
         end
         arguments = [
+            "-q",
             "--fail",
             "--show-error",
             "--silent",
-            "--location",
             "--max-time", "120",
             "--max-filesize", "1048576",
             "--proto", protocols,
-            "--proto-redir", protocols,
             url
         ]
-        output = capture(curl_path, arguments)
+        output = capture_clean(curl_path, arguments)
         tool = "curl"
     elif server == "https://luxos-registry-temp-2026.netlify.app/lsl" and exists("/bin/wget"):
         # The diskless image has pinned BusyBox and CA roots but intentionally
         # omits curl. Keep this fallback scoped to the temporary HTTPS origin.
-        output = capture("/bin/wget", ["-q", "-T", "120", "-O", "-", url])
+        output = capture_clean("/bin/wget", ["-q", "-T", "120", "-O", "-", url])
         tool = "wget"
     else:
         Error(PackageError: "curl is required for this registry")
@@ -105,7 +151,7 @@ function fetch(curl_path, server, url):
             detail = tool + " exited with status " + String(status)
         end
         Error(PackageError: "download failed: " + detail)
-    elif len(output) > 1048576:
+    elif __lsl_text_byte_length(output) > 1048576:
         Error(PackageError: "download exceeds 1 MiB")
     end
     return output
@@ -134,8 +180,19 @@ function ensure_directory(path):
 end
 
 function user_directory(home):
-    if type(home) != "String" or len(home) == 0 or home[0] != "/":
+    if type(home) != "String" or len(home) == 0 or __lsl_text_byte_length(String(home)) > 4095 or home[0] != "/":
         Error(PackageError: "HOME must be an absolute path")
+    end
+    for character in home:
+        code = ord(character)
+        if code == 0 or code < 32 or code == 127:
+            Error(PackageError: "HOME contains a control character")
+        end
+    end
+    for component in home.split("/"):
+        if component == "..":
+            Error(PackageError: "HOME must not contain parent traversal")
+        end
     end
     base = home + "/.local"
     call ensure_directory(base)
@@ -148,12 +205,25 @@ function user_directory(home):
     return directory
 end
 
+function work_directory(directory, name):
+    process = __lsl_syscall(39, 0, 0, 0, 0)
+    attempt = 0
+    while attempt < 128:
+        path = directory + "/." + name + ".install-" + String(process) + "-" + String(attempt)
+        if __lsl_mkdir_private(path) == 0:
+            return path
+        end
+        attempt += 1
+    end
+    Error(PackageError: "cannot create a private package staging directory")
+end
+
 function config_names(path):
     if type(path) != "String" or len(path) == 0 or not exists(path):
         Error(PackageError: "package config does not exist: " + String(path))
     end
     content = readfile(path)
-    if len(content) == 0 or len(content) > 65536:
+    if len(content) == 0 or __lsl_text_byte_length(String(content)) > 65536:
         Error(PackageError: "package config has an invalid size")
     end
     for character in content:
@@ -198,7 +268,7 @@ function install(name, home, server, curl_path, sha256_path, move_path, chmod_pa
     print "Fetching", source_url
     source = fetch(curl_path, server, source_url)
     expected = fetch(curl_path, server, hash_url).strip()
-    if len(source) == 0:
+    if __lsl_text_byte_length(source) == 0:
         Error(PackageError: "downloaded library is empty")
     elif chr(0) in source:
         Error(PackageError: "downloaded library contains a NUL byte")
@@ -207,33 +277,33 @@ function install(name, home, server, curl_path, sha256_path, move_path, chmod_pa
     end
 
     destination = directory + "/" + name + ".lsl"
-    # Content-addressed staging prevents different concurrent downloads of the
-    # same name from modifying a file after another process verified its hash.
-    stage = directory + "/." + name + "." + expected + ".new"
-    check_path = directory + "/." + name + "." + expected + ".check"
-    call remove_if_exists(stage)
-    call remove_if_exists(check_path)
+    # Atomic mkdir gives every invocation a private 0700 staging boundary.
+    # Other local users cannot replace a verified file between hash and rename.
+    work = work_directory(directory, name)
+    stage = work + "/source.lsl"
+    check_path = work + "/compiled-check"
     call writefile(stage, source)
 
-    hash_output = capture(sha256_path, [stage])
+    hash_output = capture_clean(sha256_path, [stage])
     hash_status = capture_status()
     if hash_status != 0 or len(hash_output) < 64:
-        call fail_after_cleanup("cannot calculate downloaded SHA-256", stage, check_path)
+        call fail_after_cleanup("cannot calculate downloaded SHA-256", work, stage, check_path)
     end
     actual = hash_output[0:64]
     if not valid_hash(actual) or actual != expected:
-        call fail_after_cleanup("SHA-256 mismatch for " + name, stage, check_path)
+        call fail_after_cleanup("SHA-256 mismatch for " + name, work, stage, check_path)
     end
-    if run(chmod_path, ["0644", "--", stage]) != 0:
-        call fail_after_cleanup("cannot set safe library permissions", stage, check_path)
+    if run_clean(chmod_path, ["0644", "--", stage]) != 0:
+        call fail_after_cleanup("cannot set safe library permissions", work, stage, check_path)
     end
-    if run(lsl_path, ["compile", stage, check_path]) != 0:
-        call fail_after_cleanup("downloaded library does not compile", stage, check_path)
+    if run_clean(lsl_path, ["compile", stage, check_path]) != 0:
+        call fail_after_cleanup("downloaded library does not compile", work, stage, check_path)
     end
     call remove_if_exists(check_path)
-    if run(move_path, ["-f", "--", stage, destination]) != 0:
-        call fail_after_cleanup("atomic library installation failed", stage, check_path)
+    if run_clean(move_path, ["-f", "--", stage, destination]) != 0:
+        call fail_after_cleanup("atomic library installation failed", work, stage, check_path)
     end
+    call rmdir(work)
     print "Installed", name, "into", destination + "."
 end
 

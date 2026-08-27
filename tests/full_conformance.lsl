@@ -4,6 +4,7 @@ load boxed_int_infrastructure_conformance
 load pointer_collision_conformance
 load tagged_function_conformance
 load runtime_error_conformance
+load security_runtime_conformance
 load io_error_conformance
 load io_conformance
 load time_conformance

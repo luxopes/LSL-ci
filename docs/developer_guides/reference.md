@@ -1,6 +1,6 @@
 # 📋 Referenční příručka všech funkcí LSL
 
-Kompletní seznam všech funkcí, metod a built-in příkazů jazyka LSL 0.6.7.
+Kompletní seznam všech funkcí, metod a built-in příkazů jazyka LSL 0.6.8.
 Každá položka obsahuje název, signaturu a stručný popis.
 
 ---
@@ -595,13 +595,13 @@ print number.power(2).text()
 | `fd.read_all(path)` | Přečte celý soubor jako ByteArray. |
 | `fd.read_text(path)` | Přečte celý soubor jako String. |
 
-### <span class="badge badge-module">native</span> native — in-process ET_DYN ABI
+### <span class="badge badge-module">native</span> native — fork-isolated ET_DYN ABI
 
 | Funkce | Popis |
 |---|---|
 | `native.open(path)` | Načte důvěryhodný self-contained ET_DYN image, vrátí handle. |
 | `native.symbol(library, name)` | Vyhledá symbol v SHT_DYNSYM, vrátí opaque Function. |
-| `native.call(func, [args...])` | Zavolá nativní funkci s max 6 Int argumenty, vrátí Int. |
+| `native.call(func, [args...])` | Zavolá funkci v krátkodobém strict-seccomp child procesu s max 6 Int argumenty, vrátí Int. |
 | `native.close(library)` | Uvolní nativní knihovnu. |
 
 ### <span class="badge badge-module">plugin</span> plugin — procesní plugin ABI

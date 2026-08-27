@@ -2,6 +2,31 @@ load native
 
 test_root = arg(1)
 
+race_target = None
+race_started = IntArray()
+race_started.append(0)
+race_outcome = IntArray()
+race_outcome.append(0)
+
+function native_race_worker():
+    call atomic_xchg(race_started, 0, 1)
+    outcome = 0
+    try:
+        if native.call(race_target, [1, 2]) == 3:
+            outcome = 1
+        end
+    else:
+        outcome = 2
+    end
+    call atomic_xchg(race_outcome, 0, outcome)
+    return None
+end
+
+function native_function_without_library(path):
+    temporary_library = native.open(path)
+    return native.symbol(temporary_library, "add")
+end
+
 function little(value, width):
     result = []
     index = 0
@@ -19,6 +44,23 @@ function put(image, offset, values):
         image[offset + index] = values[index]
         index += 1
     end
+end
+
+function sandbox_rejects(base_image, code, path):
+    candidate = base_image[0:len(base_image)]
+    call put(candidate, 64, [144, 144, 144, 144, 144, 144, 144])
+    call put(candidate, 64, code)
+    call writebytes(path, candidate)
+    library = native.open(path)
+    target = native.symbol(library, "add")
+    rejected = False
+    try:
+        call native.call(target, [1, 2])
+    else:
+        rejected = True
+    end
+    call native.close(library)
+    return rejected
 end
 
 image = []
@@ -71,12 +113,52 @@ else:
 end
 print caught
 call native.close(library)
+print native_size(library), native_u64(library, 0)
+try:
+    call native.close(library)
+else:
+    caught = last_error()
+end
+print caught
 try:
     call native.call(addition, [1, 2])
 else:
     caught = last_error()
 end
 print caught
+
+# NativeFunction keeps its library alive across gc(), while close racing a
+# call either lets the forked call finish or reports a controlled close error.
+owned_function = native_function_without_library(valid_path)
+call gc()
+print native.call(owned_function, [20, 22])
+owned_function = None
+call gc()
+
+race_safe = True
+iteration = 0
+while iteration < 16:
+    race_library = native.open(valid_path)
+    race_target = native.symbol(race_library, "add")
+    call atomic_xchg(race_started, 0, 0)
+    call atomic_xchg(race_outcome, 0, 0)
+    race_thread = thread_spawn(native_race_worker)
+    while race_started[0] == 0:
+        call atomic_pause()
+    end
+    call native.close(race_library)
+    call thread_join(race_thread)
+    if race_outcome[0] != 1 and race_outcome[0] != 2:
+        race_safe = False
+    end
+    iteration += 1
+end
+print race_safe
+
+crash_rejected = sandbox_rejects(image, [72, 49, 192, 72, 139, 0, 195], test_root + "/native-crash.so")
+syscall_rejected = sandbox_rejects(image, [106, 39, 88, 15, 5, 195], test_root + "/native-syscall.so")
+hang_rejected = sandbox_rejects(image, [235, 254], test_root + "/native-hang.so")
+print crash_rejected, syscall_rejected, hang_rejected
 
 relocation_image = image[0:len(image)]
 call put(relocation_image, 196, little(4, 4))
@@ -103,6 +185,19 @@ else:
 end
 print caught
 call native.close(truncated_library)
+
+negative_image = image[0:len(image)]
+call put(negative_image, 216, [0, 0, 0, 0, 0, 0, 0, 128])
+negative_path = test_root + "/native-negative-offset.so"
+call writebytes(negative_path, negative_image)
+negative_library = native.open(negative_path)
+try:
+    call native.symbol(negative_library, "add")
+else:
+    caught = last_error()
+end
+print caught
+call native.close(negative_library)
 
 invalid_path = test_root + "/native-invalid.so"
 call writebytes(invalid_path, [0])

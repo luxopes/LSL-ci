@@ -621,16 +621,20 @@ class Surface(True):
     ctype Public
 
     function init(self, width, height):
-        if width <= 0 or height <= 0:
+        w = Int(width)
+        h = Int(height)
+        if w <= 0 or h <= 0:
             Error(GfxError: "surface dimensions must be positive")
+        elif w > 16384 or h > 16384 or w > 16777216 // h:
+            Error(GfxError: "surface exceeds the secure 16-million-pixel limit")
         end
-        self.width = Int(width)
-        self.height = Int(height)
+        self.width = w
+        self.height = h
         # Bulk-allocate the pixel buffer in one shot. Building it with a
         # per-element append registers one object per element, which blows
         # the object table up to millions of slots (tens of MB) for a large
         # surface; __lsl_int_zeros allocates the whole buffer at once.
-        self.pixels = __lsl_int_zeros(Int(width) * Int(height))
+        self.pixels = __lsl_int_zeros(w * h)
     end
 
     function clear(self, color):

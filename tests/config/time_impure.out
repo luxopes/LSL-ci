@@ -1,1 +1,1 @@
-Impure configuration feature load time in tests/config/time_impure.lsl
+Configuration may load only the config module in tests/config/time_impure.lsl at 1

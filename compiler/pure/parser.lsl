@@ -4,9 +4,15 @@ load diagnostics
 load lexer
 
 function state(path, source):
+    return state_with_interpolation(path, source, 0)
+end
+
+function state_with_interpolation(path, source, interpolation_depth):
     # Keep the source compact on successful parses; line materialization is only
     # needed when producing a parser diagnostic.
-    return [lexer.tokenize(path, source), 0, path, source]
+    # Slots 4/5 bound recursive unary/block parsing. Slots 6/7 bound the token
+    # complexity of one expression, and slot 8 follows nested Lux Strings.
+    return [lexer.tokenize(path, source), 0, path, source, 0, 0, 0, 0, interpolation_depth]
 end
 
 function current(parser):
@@ -116,22 +122,26 @@ function interpolation_literal(token, value):
     return result
 end
 
-function interpolation_value(path, value, token):
+function interpolation_value(parser, value, token):
+    path = parser[2]
     parts = []
-    literal = ""
+    literal = []
     index = 0
     while index < len(value):
         character = value[index]
         if character == "{" and index + 1 < len(value) and value[index + 1] == "{":
-            literal += "{"
+            literal.append("{")
             index += 2
         elif character == "}" and index + 1 < len(value) and value[index + 1] == "}":
-            literal += "}"
+            literal.append("}")
             index += 2
         elif character == "{":
+            if len(parts) >= 1024:
+                call diagnostics.fail(path, token["line"], token["column"], max(1, token["end_column"] - token["column"]), value, "E1116", "Lux String contains too many interpolations", "use at most 1024 interpolated fields")
+            end
             if len(literal) > 0:
-                parts.append(interpolation_literal(token, literal))
-                literal = ""
+                parts.append(interpolation_literal(token, "".join(literal)))
+                literal = []
             end
             closing = index + 1
             depth = 1
@@ -158,7 +168,10 @@ function interpolation_value(path, value, token):
             if len(expression_source.strip()) == 0:
                 call diagnostics.fail(path, token["line"], token["column"], max(1, token["end_column"] - token["column"]), value, "E1113", "empty Lux String interpolation", "put an expression between the braces")
             end
-            expression_parser = state(path, expression_source)
+            if parser[8] >= 64:
+                call diagnostics.fail(path, token["line"], token["column"], max(1, token["end_column"] - token["column"]), value, "E1117", "Lux String interpolation nesting exceeds 64 levels", "split the expression into intermediate values")
+            end
+            expression_parser = state_with_interpolation(path, expression_source, parser[8] + 1)
             expression = parse_expression(expression_parser)
             if not check_kind(expression_parser, "eof"):
                 call fail_at(expression_parser, current(expression_parser), "E1114", "unexpected token in Lux String interpolation", "use one expression between the braces")
@@ -172,12 +185,12 @@ function interpolation_value(path, value, token):
         elif character == "}":
             call diagnostics.fail(path, token["line"], token["column"], max(1, token["end_column"] - token["column"]), value, "E1115", "unexpected closing brace in Lux String", "use }} for a literal closing brace")
         else:
-            literal += character
+            literal.append(character)
             index += 1
         end
     end
     if len(literal) > 0 or len(parts) == 0:
-        parts.append(interpolation_literal(token, literal))
+        parts.append(interpolation_literal(token, "".join(literal)))
     end
 
     # A balanced concatenation tree avoids quadratic copying for templates with
@@ -203,7 +216,7 @@ function parse_primary(parser):
     kind = token["kind"]
     value = token["value"]
     if kind == "lux_string":
-        result = interpolation_value(parser[2], value, token)
+        result = interpolation_value(parser, value, token)
     elif kind == "string" or kind == "number":
         result = node("literal", token)
         result["literal_kind"] = kind
@@ -353,9 +366,14 @@ end
 function parse_unary(parser):
     token = current(parser)
     if match(parser, "not") or match(parser, "-") or match(parser, "+") or match(parser, "~"):
+        parser[4] += 1
+        if parser[4] > 256:
+            call fail_at(parser, token, "E1111", "unary nesting exceeds 256 levels", "split the expression into smaller statements")
+        end
         result = node("unary", token)
         result["operator"] = token["value"]
         result["operand"] = parse_unary(parser)
+        parser[4] -= 1
         return finish_node(result, parser)
     elif match(parser, "!"):
         call expect(parser, "[", "E1109", "expected List literal after !")
@@ -387,7 +405,13 @@ end
 function parse_power(parser):
     left = parse_unary(parser)
     if match(parser, "^"):
-        return binary_node("^", left, parse_power(parser))
+        parser[4] += 1
+        if parser[4] > 256:
+            call fail_at(parser, current(parser), "E1112", "power nesting exceeds 256 levels", "split the expression into smaller statements")
+        end
+        right = parse_power(parser)
+        parser[4] -= 1
+        return binary_node("^", left, right)
     end
     return left
 end
@@ -499,7 +523,17 @@ function parse_or(parser):
 end
 
 function parse_expression(parser):
-    return parse_or(parser)
+    outer = parser[6] == 0
+    if outer:
+        parser[7] = parser[1]
+    end
+    parser[6] += 1
+    result = parse_or(parser)
+    parser[6] -= 1
+    if outer and parser[1] - parser[7] > 1024:
+        call fail_at(parser, current(parser), "E1118", "expression exceeds the 1024-token complexity limit", "split the expression into intermediate values")
+    end
+    return result
 end
 
 function consume_line_end(parser):
@@ -519,6 +553,10 @@ function consume_colon_line(parser):
 end
 
 function block(parser, terminators):
+    parser[5] += 1
+    if parser[5] > 256:
+        call fail_at(parser, current(parser), "E1200", "block nesting exceeds 256 levels", "split the program into functions")
+    end
     statements = []
     call skip_newlines(parser)
     while not check_kind(parser, "eof"):
@@ -528,6 +566,7 @@ function block(parser, terminators):
         statements.append(parse_statement(parser))
         call skip_newlines(parser)
     end
+    parser[5] -= 1
     return statements
 end
 
@@ -539,6 +578,9 @@ function parse_function(parser, opening):
         loop:
             parameter = expect_kind(parser, "name", "E1205", "expected parameter name")
             parameters.append(parameter["value"])
+            if len(parameters) > 256:
+                call fail_at(parser, parameter, "E1233", "function has more than 256 parameters", "split the interface into structured values")
+            end
             if match(parser, ")"):
                 break
             end
@@ -688,13 +730,16 @@ function parse_statement(parser):
         if not check_kind(parser, "newline") and not check_kind(parser, "eof"):
             loop:
                 expressions.append(parse_expression(parser))
+                if len(expressions) > 1024:
+                    call fail_at(parser, current(parser), "E1234", "print statement has more than 1024 values", "split the output into multiple statements")
+                end
                 if not match(parser, ","):
                     break
                 end
             end
         end
         if formatted and len(expressions) == 1 and expressions[0]["kind"] == "literal" and expressions[0]["literal_kind"] == "string":
-            expressions[0] = interpolation_value(parser[2], expressions[0]["value"], expressions[0])
+            expressions[0] = interpolation_value(parser, expressions[0]["value"], expressions[0])
             formatted = False
         end
         call consume_line_end(parser)
@@ -717,8 +762,13 @@ function parse_statement(parser):
     elif match(parser, "load"):
         module = expect_kind(parser, "name", "E1215", "expected module name")
         name = module["value"]
+        components = 1
         while match(parser, "."):
             name += "." + expect_kind(parser, "name", "E1216", "expected module path component")["value"]
+            components += 1
+            if components > 64 or len(name) > 1024:
+                call fail_at(parser, current(parser), "E1235", "module path is too long", "use at most 64 components and 1024 characters")
+            end
         end
         module_parts = name.split(".")
         alias = module_parts[len(module_parts) - 1]
@@ -734,8 +784,13 @@ function parse_statement(parser):
     elif match(parser, "from"):
         module = expect_kind(parser, "name", "E1217", "expected module name")
         name = module["value"]
+        components = 1
         while match(parser, "."):
             name += "." + expect_kind(parser, "name", "E1218", "expected module path component")["value"]
+            components += 1
+            if components > 64 or len(name) > 1024:
+                call fail_at(parser, current(parser), "E1235", "module path is too long", "use at most 64 components and 1024 characters")
+            end
         end
         call expect(parser, "load", "E1219", "expected load in selective import")
         symbol = expect_kind(parser, "name", "E1220", "expected imported symbol")

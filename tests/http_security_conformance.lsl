@@ -9,12 +9,13 @@ request = json.decode(result["text"])
 argv = chr(0).join(request["arguments"])
 config = request["config"]
 print result["status"], result["ok"]
-print request["arguments"] == ["--config", "-"]
+print request["arguments"] == ["-q", "--config", "-"]
 print secret not in argv, body not in argv
 print "Authorization: " + secret in config
 escaped_body = "data-raw = " + chr(34) + "quoted " + chr(92) + chr(34) + "value" + chr(92) + chr(34) + chr(92) + "nback" + chr(92) + chr(92) + "slash" + chr(34)
 print escaped_body in config
 print "url = \"https://api.example.test/v1\"" in config
+print "location" not in config, "proto-redir" not in config
 
 chunks = []
 function receive(chunk):
@@ -25,6 +26,16 @@ print streamed["status"], streamed["ok"], len(chunks) > 0
 
 try:
     call http.get_with(transport, "http://example.test/plain")
+else:
+    print last_error()
+end
+try:
+    call http.get_with(transport, "https://user:secret@example.test/")
+else:
+    print last_error()
+end
+try:
+    call http.get_with(transport, "https://example.test/#fragment")
 else:
     print last_error()
 end

@@ -85,16 +85,19 @@ function decode_escape(path, lines, line, column, escaped):
 end
 
 function join_chars(chars, start, stop):
-    result = ""
+    result = []
     index = start
     while index < stop:
-        result += chars[index]
+        result.append(chars[index])
         index += 1
     end
-    return result
+    return "".join(result)
 end
 
 function tokenize(path, source):
+    if __lsl_text_byte_length(String(source)) > 4194304:
+        Error(CompileError: "source exceeds the 4 MiB compiler limit: " + path)
+    end
     result = []
     chars = __lsl_string_chars(source)
     count = len(chars)
@@ -126,7 +129,7 @@ function tokenize(path, source):
             lux_string = character == "l"
             start_line = line
             start_column = column
-            value = ""
+            value_chars = []
             if lux_string:
                 index += 1
                 column += 1
@@ -148,20 +151,24 @@ function tokenize(path, source):
                         call diagnostics.fail(path, line, column, 1, source_line(lines, line), "E0002", "unfinished escape sequence", "add a character after the backslash")
                     end
                     escaped = chars[index + 1]
-                    value += decode_escape(path, lines, line, column, escaped)
+                    value_chars.append(decode_escape(path, lines, line, column, escaped))
                     index += 2
                     column += 2
                 elif character == newline:
                     call diagnostics.fail(path, start_line, start_column, max(1, column - start_column), source_line(lines, start_line), "E0001", "unterminated String literal", "close the String before the end of the line")
                 else:
-                    value += character
+                    value_chars.append(character)
                     index += 1
                     column += 1
+                end
+                if len(value_chars) > 1048576:
+                    call diagnostics.fail(path, start_line, start_column, max(1, column - start_column), source_line(lines, start_line), "E0010", "String literal exceeds 1 MiB", "load large data from a file at runtime")
                 end
             end
             if not closed:
                 call diagnostics.fail(path, start_line, start_column, max(1, column - start_column), source_line(lines, start_line), "E0001", "unterminated String literal", "add the matching quote")
             end
+            value = "".join(value_chars)
             kind = "string"
             if lux_string:
                 kind = "lux_string"
@@ -180,7 +187,16 @@ function tokenize(path, source):
             column += 2
             digits_start = index
             value = "0"
+            digit_limit = 16
+            if base == 2:
+                digit_limit = 64
+            elif base == 8:
+                digit_limit = 22
+            end
             while index < count and (is_alpha(chars[index]) or is_digit(chars[index])):
+                if index - digits_start >= digit_limit:
+                    call diagnostics.fail(path, line, start_column, max(1, column - start_column), source_line(lines, line), "E0011", "based numeric literal exceeds the Int64 width", "use at most " + String(digit_limit) + " digits for this base")
+                end
                 digit = digit_value(chars[index])
                 if digit < 0 or digit >= base:
                     call diagnostics.fail(path, line, column, 1, source_line(lines, line), "E0008", "digit is out of range for the literal base", "use only digits the 0b, 0o, or 0x prefix allows")
@@ -221,6 +237,9 @@ function tokenize(path, source):
                 end
             end
             value = join_chars(chars, start, index)
+            if len(value) > 4096:
+                call diagnostics.fail(path, line, start_column, len(value), source_line(lines, line), "E0011", "numeric literal is too long", "use at most 4096 digits")
+            end
             if dots > 1:
                 call diagnostics.fail(path, line, start_column, len(value), source_line(lines, line), "E0004", "invalid numeric literal", "a Float may contain only one decimal point")
             end
@@ -231,6 +250,9 @@ function tokenize(path, source):
             while index < count and (is_alpha(chars[index]) or is_digit(chars[index])):
                 index += 1
                 column += 1
+                if index - start > 255:
+                    call diagnostics.fail(path, line, start_column, max(1, column - start_column), source_line(lines, line), "E0013", "identifier exceeds 255 characters", "use a shorter identifier")
+                end
             end
             result.append(token("name", join_chars(chars, start, index), line, start_column, column))
         else:
@@ -260,6 +282,9 @@ function tokenize(path, source):
             end
             if value == "(" or value == "[" or value == "{":
                 depth += 1
+                if depth > 256:
+                    call diagnostics.fail(path, line, start_column, len(value), source_line(lines, line), "E0012", "delimiter nesting exceeds 256 levels", "split the expression into smaller statements")
+                end
             elif value == ")" or value == "]" or value == "}":
                 depth -= 1
                 if depth < 0:
@@ -269,6 +294,9 @@ function tokenize(path, source):
                 call diagnostics.fail(path, line, start_column, len(value), source_line(lines, line), "E0006", "unexpected character", "remove the character or put it inside a String")
             end
             result.append(token("symbol", value, line, start_column, column))
+        end
+        if len(result) > 500000:
+            Error(CompileError: "source exceeds the 500000-token compiler limit: " + path)
         end
     end
     if depth != 0:

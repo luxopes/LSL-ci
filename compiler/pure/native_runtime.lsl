@@ -586,45 +586,6 @@ function emit_print_scalar_names(output):
     call assembler.emit(output, [78, 111, 110, 101])
 end
 
-function emit_print_any(output):
-    call assembler.label(output, "runtime_print_any")
-    call assembler.emit(output, x86_64.move_reg_reg(7, 0))
-    call assembler.relative(output, [232], "runtime_is_heap_object")
-    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
-    call assembler.relative(output, [15, 132], "print_any_int_raw")
-    call assembler.emit(output, x86_64.move_reg_reg(0, 7))
-    call assembler.emit(output, x86_64.load_memory(1, 0, 0))
-    call assembler.emit(output, x86_64.cmp_reg_imm8(1, 4))
-    call assembler.relative(output, [15, 132], "print_any_bool")
-    call assembler.emit(output, x86_64.cmp_reg_imm8(1, 5))
-    call assembler.relative(output, [15, 132], "runtime_print_none")
-    call assembler.emit(output, x86_64.cmp_reg_imm8(1, 6))
-    call assembler.relative(output, [15, 132], "print_any_float")
-    call assembler.emit(output, x86_64.cmp_reg_imm8(1, 9))
-    call assembler.relative(output, [15, 132], "print_any_boxed_int")
-    call assembler.emit(output, x86_64.cmp_reg_imm8(1, 1))
-    call assembler.relative(output, [15, 133], "print_any_int")
-    call assembler.emit(output, x86_64.move_reg_reg(7, 0))
-    call assembler.relative(output, [232], "runtime_print_string")
-    call assembler.emit(output, x86_64.ret())
-    call assembler.label(output, "print_any_float")
-    call assembler.emit(output, x86_64.move_reg_reg(7, 0))
-    call assembler.relative(output, [233], "runtime_print_float")
-    call assembler.label(output, "print_any_boxed_int")
-    call assembler.emit(output, x86_64.load_memory(0, 0, 8))
-    call assembler.relative(output, [233], "print_any_int")
-    call assembler.label(output, "print_any_bool")
-    call assembler.emit(output, x86_64.load_memory(1, 0, 8))
-    call assembler.emit(output, x86_64.cmp_reg_imm8(1, 0))
-    call assembler.relative(output, [15, 132], "runtime_print_false")
-    call assembler.relative(output, [233], "runtime_print_true")
-    call assembler.label(output, "print_any_int_raw")
-    call assembler.emit(output, x86_64.move_reg_reg(0, 7))
-    call assembler.label(output, "print_any_int")
-    call assembler.relative(output, [232], "runtime_print_int")
-    call assembler.emit(output, x86_64.ret())
-end
-
 function emit_all(output):
     call heap_runtime.emit_all(output)
     call io_runtime.emit_all(output)
@@ -640,7 +601,6 @@ function emit_all(output):
     call emit_clock(output)
     call emit_sleep(output)
     call emit_print_scalar_names(output)
-    call emit_print_any(output)
 end
 
 function print_int():

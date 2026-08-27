@@ -91,6 +91,13 @@ WL_SHM_FORMAT_XRGB8888 = 1
 MAX_CLIENTS = 32
 MAX_OBJECTS = 4096
 OUT_LIMIT = 4194304
+MAX_SHM_POOL = 268435456
+MAX_SHM_PER_CLIENT = 536870912
+MAX_POOLS_PER_CLIENT = 16
+MAX_BUFFER_BYTES = 67108864
+MAX_BUFFER_DIMENSION = 16384
+MAX_WIRE_STRING = 4096
+MAX_MIME_OFFERS = 64
 
 # ---------------------------------------------------------------------------
 # Little-endian helpers over ByteArrays.
@@ -105,8 +112,15 @@ function w_put32(buffer, offset, value):
 end
 
 function w_get32(buffer, offset):
+    if type(buffer) != "ByteArray":
+        return 0
+    end
     b = ByteArray(buffer)
-    return Int(b[offset]) + Int(b[offset + 1]) * 256 + Int(b[offset + 2]) * 65536 + Int(b[offset + 3]) * 16777216
+    start = Int(offset)
+    if start < 0 or start > len(b) - 4:
+        return 0
+    end
+    return Int(b[start]) + Int(b[start + 1]) * 256 + Int(b[start + 2]) * 65536 + Int(b[start + 3]) * 16777216
 end
 
 # Signed 32-bit read (positions and dimensions can be negative).
@@ -130,11 +144,15 @@ end
 # A protocol string: length including the NUL, the bytes, NUL padding to 4.
 function w_append_string(out, text):
     t = String(text)
-    n = len(t) + 1
+    count = __lsl_text_byte_length(t)
+    if count > MAX_WIRE_STRING:
+        count = MAX_WIRE_STRING
+    end
+    n = count + 1
     call w_append32(out, n)
     i = 0
-    while i < len(t):
-        call out.append(ord(t[i]))
+    while i < count:
+        call out.append(__lsl_text_byte(t, i))
         i = i + 1
     end
     call out.append(0)
@@ -148,21 +166,49 @@ function w_append_string(out, text):
 end
 
 function w_read_string(buffer, offset):
-    n = Int(w_get32(buffer, offset))
+    if type(buffer) != "ByteArray":
+        return ""
+    end
     b = ByteArray(buffer)
-    out = ""
+    start = Int(offset)
+    if start < 0 or start > len(b) - 4:
+        return ""
+    end
+    n = Int(w_get32(b, start))
+    if n < 1 or n > MAX_WIRE_STRING + 1 or n > len(b) - start - 4:
+        return ""
+    end
+    if Int(b[start + 4 + n - 1]) != 0:
+        return ""
+    end
+    out = __lsl_byte_zeros(n - 1)
     i = 0
     while i + 1 < n:
-        out = out + chr(b[offset + 4 + i])
+        if Int(b[start + 4 + i]) == 0:
+            return ""
+        end
+        out[i] = b[start + 4 + i]
         i = i + 1
     end
-    return out
+    return __lsl_text_from_bytes(out, 0, n - 1)
 end
 
 # String length on the wire (4 + padded payload).
 function w_string_size(buffer, offset):
+    if type(buffer) != "ByteArray":
+        return 0
+    end
+    b = ByteArray(buffer)
+    start = Int(offset)
+    if start < 0 or start > len(b) - 4:
+        return 0
+    end
     n = Int(w_get32(buffer, offset))
-    return 4 + (n + 3) // 4 * 4
+    padded = (n + 3) // 4 * 4
+    if n < 1 or n > MAX_WIRE_STRING + 1 or padded > len(b) - start - 4:
+        return 0
+    end
+    return 4 + padded
 end
 
 # ---------------------------------------------------------------------------
@@ -308,6 +354,20 @@ function cl_set_kind(ci, oid, kind):
         end
     end
     return None
+end
+
+function cl_new_id_valid(ci, oid):
+    c = Int(ci)
+    i = Int(oid)
+    return c >= 0 and c < len(CL_KIND) and i > 1 and i < MAX_OBJECTS and cl_kind(c, i) == WO_NONE
+end
+
+function cl_create_kind(ci, oid, kind):
+    if not cl_new_id_valid(ci, oid):
+        return False
+    end
+    call cl_set_kind(ci, oid, kind)
+    return True
 end
 
 # Queue one event into the client's outbound buffer: object id, opcode and
@@ -484,6 +544,19 @@ PL_DEAD = []
 PL_CI = []
 
 function wl_pool_new(ci, handle, address, size):
+    index = 0
+    while index < len(PL_ADDR):
+        if Int(PL_ADDR[index]) == 0:
+            PL_FD[index] = Int(handle)
+            PL_ADDR[index] = Int(address)
+            PL_SIZE[index] = Int(size)
+            PL_LIVE[index] = 0
+            PL_DEAD[index] = 0
+            PL_CI[index] = Int(ci)
+            return index
+        end
+        index += 1
+    end
     call PL_FD.append(Int(handle))
     call PL_ADDR.append(Int(address))
     call PL_SIZE.append(Int(size))
@@ -491,6 +564,71 @@ function wl_pool_new(ci, handle, address, size):
     call PL_DEAD.append(0)
     call PL_CI.append(Int(ci))
     return len(PL_FD) - 1
+end
+
+function wl_buffer_range_valid(ci, pool, offset, width, height, stride, format):
+    c = Int(ci)
+    h = Int(pool)
+    off = Int(offset)
+    w = Int(width)
+    rows = Int(height)
+    pitch = Int(stride)
+    fmt = Int(format)
+    if h < 0 or h >= len(PL_ADDR) or Int(PL_CI[h]) != c or Int(PL_ADDR[h]) <= 0:
+        return False
+    end
+    size = Int(PL_SIZE[h])
+    if size <= 0 or size > MAX_SHM_POOL or off < 0 or off > size:
+        return False
+    end
+    if w <= 0 or w > MAX_BUFFER_DIMENSION or rows <= 0 or rows > MAX_BUFFER_DIMENSION:
+        return False
+    end
+    if fmt != WL_SHM_FORMAT_ARGB8888 and fmt != WL_SHM_FORMAT_XRGB8888:
+        return False
+    end
+    row_bytes = w * 4
+    if pitch < row_bytes or pitch > MAX_SHM_POOL or row_bytes > size - off:
+        return False
+    end
+    if rows > 1 and pitch > (size - off - row_bytes) // (rows - 1):
+        return False
+    end
+    span = (rows - 1) * pitch + row_bytes
+    if span <= 0 or span > MAX_BUFFER_BYTES:
+        return False
+    end
+    return True
+end
+
+function wl_buffer_valid(ci, buffer):
+    c = Int(ci)
+    b = Int(buffer)
+    if cl_kind(c, b) != WO_BUFFER:
+        return False
+    end
+    return wl_buffer_range_valid(c, Int(IntArray(CL_A[c])[b]), Int(IntArray(CL_B[c])[b]), Int(IntArray(CL_C[c])[b]), Int(IntArray(CL_D[c])[b]), Int(IntArray(CL_E[c])[b]), Int(IntArray(CL_F[c])[b]))
+end
+
+function wl_buffer_snapshot(ci, buffer):
+    c = Int(ci)
+    b = Int(buffer)
+    if not wl_buffer_valid(c, b):
+        return -22
+    end
+    pool = Int(IntArray(CL_A[c])[b])
+    offset = Int(IntArray(CL_B[c])[b])
+    width = Int(IntArray(CL_C[c])[b])
+    height = Int(IntArray(CL_D[c])[b])
+    stride = Int(IntArray(CL_E[c])[b])
+    span = (height - 1) * stride + width * 4
+    address = __lsl_fd_snapshot(Int(PL_FD[pool]), offset, span)
+    if address >= 0:
+        call REAP_ADDR.append(address)
+        call REAP_SIZE.append(span)
+        call REAP_FD.append(0 - 1)
+    end
+    return address
 end
 
 # A client is gone (EOF, send error, flooded buffer): release everything it
@@ -587,7 +725,9 @@ end
 
 function wl_reap():
     while len(REAP_ADDR) > 0:
-        call unixsock.munmap(Int(REAP_ADDR[0]), Int(REAP_SIZE[0]))
+        if Int(REAP_ADDR[0]) > 4096:
+            call unixsock.munmap(Int(REAP_ADDR[0]), Int(REAP_SIZE[0]))
+        end
         if Int(REAP_FD[0]) >= 0:
             call unixsock.close_fd(Int(REAP_FD[0]))
         end
@@ -686,15 +826,11 @@ function wl_bind_window(client_index, surface_id, window_id):
     sid = Int(surface_id)
     IntArray(CL_A[ci])[sid] = Int(window_id)
     buf = Int(IntArray(CL_C[ci])[sid])
-    if buf > 0 and cl_kind(ci, buf) == WO_BUFFER:
+    if buf > 0 and wl_buffer_valid(ci, buf):
         pool = Int(IntArray(CL_A[ci])[buf])
-        base = 0
-        if pool >= 0 and pool < len(PL_ADDR):
-            base = Int(PL_ADDR[pool])
-        end
-        offset = Int(IntArray(CL_B[ci])[buf])
-        if base > 0:
-            call wl_emit(2, Int(window_id), base + offset, Int(IntArray(CL_C[ci])[buf]), Int(IntArray(CL_D[ci])[buf]), Int(IntArray(CL_E[ci])[buf]), Int(IntArray(CL_F[ci])[buf]), "")
+        snapshot = wl_buffer_snapshot(ci, buf)
+        if snapshot > 0:
+            call wl_emit(2, Int(window_id), snapshot, Int(IntArray(CL_C[ci])[buf]), Int(IntArray(CL_D[ci])[buf]), Int(IntArray(CL_E[ci])[buf]), Int(IntArray(CL_F[ci])[buf]), "")
         end
     end
     return None
@@ -761,6 +897,24 @@ function wl_socket_path():
     return dir + "/" + name
 end
 
+function wl_numeric_identity(text):
+    value = String(text)
+    if len(value) == 0 or len(value) > 10:
+        return -1
+    end
+    for character in value:
+        code = ord(character)
+        if code < 48 or code > 57:
+            return -1
+        end
+    end
+    parsed = Int(value)
+    if parsed < 0 or parsed > 2147483647:
+        return -1
+    end
+    return parsed
+end
+
 function wl_start():
     path = wl_socket_path()
     s = unixsock.listen_unix(path, 16)
@@ -770,9 +924,16 @@ function wl_start():
     end
     WL_SERVER[0] = s
     WL_SOCKET_PATH[0] = path
-    # The compositor runs as root, its clients as the session user, and
-    # connecting to a socket needs write permission on it.
-    call unixsock.chmod_path(path, 511)
+    # Never expose the compositor control socket to every local user. A root
+    # compositor may explicitly hand ownership to its session uid/gid.
+    session_uid = env.get("LUXOS_SESSION_UID", "")
+    session_gid = env.get("LUXOS_SESSION_GID", "")
+    session_uid = wl_numeric_identity(session_uid)
+    session_gid = wl_numeric_identity(session_gid)
+    if session_uid >= 0 and session_gid >= 0:
+        call unixsock.chown_path(path, session_uid, session_gid)
+    end
+    call unixsock.chmod_path(path, 432)
     call wl_log("listening on " + path)
     return s
 end
@@ -1288,6 +1449,9 @@ function wl_display_request(cli, oid, opcode, body):
     if opcode == 0:
         # sync(new_id callback): answer done(serial) and destroy it.
         cb = Int(w_get32(body, 0))
+        if not cl_new_id_valid(ci, cb):
+            return None
+        end
         args = ByteArray()
         call w_append32(args, wl_next_serial())
         call cl_post(ci, cb, 0, args)
@@ -1297,7 +1461,9 @@ function wl_display_request(cli, oid, opcode, body):
     elif opcode == 1:
         # get_registry(new_id registry): advertise every global.
         reg = Int(w_get32(body, 0))
-        call cl_set_kind(ci, reg, WO_REGISTRY)
+        if not cl_create_kind(ci, reg, WO_REGISTRY):
+            return None
+        end
         i = 0
         while i < len(GLOBAL_NAMES):
             args = ByteArray()
@@ -1323,9 +1489,11 @@ function wl_registry_request(cli, oid, opcode, body):
     version = Int(w_get32(body, after))
     newid = Int(w_get32(body, after + 4))
     if iface == "wl_compositor":
-        call cl_set_kind(ci, newid, WO_COMPOSITOR)
+        call cl_create_kind(ci, newid, WO_COMPOSITOR)
     elif iface == "wl_shm":
-        call cl_set_kind(ci, newid, WO_SHM)
+        if not cl_create_kind(ci, newid, WO_SHM):
+            return None
+        end
         # Advertise the pixel formats we can composite.
         args = ByteArray()
         call w_append32(args, WL_SHM_FORMAT_ARGB8888)
@@ -1334,9 +1502,11 @@ function wl_registry_request(cli, oid, opcode, body):
         call w_append32(args2, WL_SHM_FORMAT_XRGB8888)
         call cl_post(ci, newid, 0, args2)
     elif iface == "xdg_wm_base":
-        call cl_set_kind(ci, newid, WO_XDG_WM_BASE)
+        call cl_create_kind(ci, newid, WO_XDG_WM_BASE)
     elif iface == "wl_seat":
-        call cl_set_kind(ci, newid, WO_SEAT)
+        if not cl_create_kind(ci, newid, WO_SEAT):
+            return None
+        end
         if version < 5:
             CL_SEATV[ci] = version
         else:
@@ -1351,13 +1521,15 @@ function wl_registry_request(cli, oid, opcode, body):
             call cl_post(ci, newid, 1, nm)
         end
     elif iface == "wl_output":
-        call cl_set_kind(ci, newid, WO_OUTPUT)
+        if not cl_create_kind(ci, newid, WO_OUTPUT):
+            return None
+        end
         CL_OUTID[ci] = newid
         call wl_send_output(cli, newid)
     elif iface == "wl_subcompositor":
-        call cl_set_kind(ci, newid, WO_SUBCOMPOSITOR)
+        call cl_create_kind(ci, newid, WO_SUBCOMPOSITOR)
     elif iface == "wl_data_device_manager":
-        call cl_set_kind(ci, newid, WO_DDM)
+        call cl_create_kind(ci, newid, WO_DDM)
     end
     call wl_log("bind " + iface + " v" + String(version) + " -> " + String(newid))
     return None
@@ -1396,7 +1568,9 @@ function wl_compositor_request(cli, oid, opcode, body):
     ci = Int(cli)
     newid = Int(w_get32(body, 0))
     if opcode == 0:
-        call cl_set_kind(ci, newid, WO_SURFACE)
+        if not cl_create_kind(ci, newid, WO_SURFACE):
+            return None
+        end
         IntArray(CL_A[ci])[newid] = 0 - 1
         IntArray(CL_B[ci])[newid] = 0
         IntArray(CL_C[ci])[newid] = 0
@@ -1404,7 +1578,7 @@ function wl_compositor_request(cli, oid, opcode, body):
         IntArray(CL_E[ci])[newid] = 0
         IntArray(CL_F[ci])[newid] = ROLE_NONE
     elif opcode == 1:
-        call cl_set_kind(ci, newid, WO_REGION)
+        call cl_create_kind(ci, newid, WO_REGION)
     end
     return None
 end
@@ -1423,14 +1597,32 @@ function wl_shm_request(cli, oid, opcode, body, fds):
     end
     pfd = Int(fds[0])
     call fds.pop(0)
-    addr = fd.mmap(pfd, size, 0)
-    if addr < 0:
-        call wl_log("pool mmap failed " + String(addr))
+    if size <= 0 or size > MAX_SHM_POOL or not cl_new_id_valid(ci, pool):
         call unixsock.close_fd(pfd)
         return None
     end
-    call cl_set_kind(ci, pool, WO_SHM_POOL)
-    IntArray(CL_A[ci])[pool] = Int(wl_pool_new(ci, pfd, addr, size))
+    pool_count = 0
+    pool_bytes = 0
+    index = 0
+    while index < len(PL_ADDR):
+        if Int(PL_ADDR[index]) > 0 and Int(PL_CI[index]) == ci:
+            pool_count += 1
+            pool_bytes += Int(PL_SIZE[index])
+        end
+        index += 1
+    end
+    if pool_count >= MAX_POOLS_PER_CLIENT or pool_bytes > MAX_SHM_PER_CLIENT - size:
+        call unixsock.close_fd(pfd)
+        return None
+    end
+    if not cl_create_kind(ci, pool, WO_SHM_POOL):
+        call unixsock.close_fd(pfd)
+        return None
+    end
+    # Keep the descriptor, not a client-controlled file mapping. Each commit
+    # is copied with bounded pread into anonymous memory, so later truncate()
+    # cannot deliver SIGBUS to the compositor.
+    IntArray(CL_A[ci])[pool] = Int(wl_pool_new(ci, pfd, 1, size))
     call wl_log("pool " + String(pool) + " size " + String(size))
     return None
 end
@@ -1441,13 +1633,20 @@ function wl_shm_pool_request(cli, oid, opcode, body):
     if opcode == 0:
         # create_buffer(new_id, offset, width, height, stride, format)
         buf = Int(w_get32(body, 0))
-        call cl_set_kind(ci, buf, WO_BUFFER)
+        offset = Int(w_get32(body, 4))
+        width = Int(w_get32(body, 8))
+        height = Int(w_get32(body, 12))
+        stride = Int(w_get32(body, 16))
+        format = Int(w_get32(body, 20))
+        if not wl_buffer_range_valid(ci, h, offset, width, height, stride, format) or not cl_create_kind(ci, buf, WO_BUFFER):
+            return None
+        end
         IntArray(CL_A[ci])[buf] = h
-        IntArray(CL_B[ci])[buf] = Int(w_get32(body, 4))
-        IntArray(CL_C[ci])[buf] = Int(w_get32(body, 8))
-        IntArray(CL_D[ci])[buf] = Int(w_get32(body, 12))
-        IntArray(CL_E[ci])[buf] = Int(w_get32(body, 16))
-        IntArray(CL_F[ci])[buf] = Int(w_get32(body, 20))
+        IntArray(CL_B[ci])[buf] = offset
+        IntArray(CL_C[ci])[buf] = width
+        IntArray(CL_D[ci])[buf] = height
+        IntArray(CL_E[ci])[buf] = stride
+        IntArray(CL_F[ci])[buf] = format
         if h >= 0 and h < len(PL_LIVE):
             PL_LIVE[h] = Int(PL_LIVE[h]) + 1
         end
@@ -1462,19 +1661,16 @@ function wl_shm_pool_request(cli, oid, opcode, body):
         # resize(size): remap at the new length; the old mapping goes to
         # the reaper in case a queued commit still reads from it.
         size = Int(w_get32(body, 0))
-        if h >= 0 and h < len(PL_FD):
-            addr = fd.mmap(Int(PL_FD[h]), size, 0)
-            if addr >= 0:
-                oldaddr = Int(PL_ADDR[h])
-                oldsize = Int(PL_SIZE[h])
-                PL_ADDR[h] = addr
-                PL_SIZE[h] = size
-                if oldaddr > 0 and oldaddr != addr:
-                    call REAP_ADDR.append(oldaddr)
-                    call REAP_SIZE.append(oldsize)
-                    call REAP_FD.append(0 - 1)
-                end
+        other_bytes = 0
+        index = 0
+        while index < len(PL_ADDR):
+            if index != h and Int(PL_ADDR[index]) > 0 and Int(PL_CI[index]) == ci:
+                other_bytes += Int(PL_SIZE[index])
             end
+            index += 1
+        end
+        if size > 0 and size <= MAX_SHM_POOL and other_bytes <= MAX_SHM_PER_CLIENT - size and h >= 0 and h < len(PL_FD) and Int(PL_CI[h]) == ci and Int(PL_ADDR[h]) > 0:
+            PL_SIZE[h] = size
         end
     end
     return None
@@ -1555,7 +1751,9 @@ function wl_surface_request(cli, oid, opcode, body):
     elif opcode == 3:
         # frame(new_id callback): remembered until this surface is drawn.
         cb = Int(w_get32(body, 0))
-        call cl_set_kind(ci, cb, WO_CALLBACK)
+        if not cl_create_kind(ci, cb, WO_CALLBACK):
+            return None
+        end
         IntArray(CL_D[ci])[sid] = cb
     elif opcode == 6:
         # commit: apply pending state atomically. This is the moment a
@@ -1591,21 +1789,13 @@ function wl_surface_commit(cli, sid):
         # State-only commit (initial xdg commit, damage bookkeeping).
         return None
     end
-    if cl_kind(ci, buf) != WO_BUFFER:
+    if not wl_buffer_valid(ci, buf):
+        IntArray(CL_B[ci])[sid] = 0
         return None
     end
     IntArray(CL_B[ci])[sid] = 0
     IntArray(CL_C[ci])[sid] = buf
     pool = Int(IntArray(CL_A[ci])[buf])
-    base = 0
-    if pool >= 0 and pool < len(PL_ADDR):
-        base = Int(PL_ADDR[pool])
-    end
-    if base <= 0:
-        call cl_post(ci, buf, 0, ByteArray())
-        return None
-    end
-    offset = Int(IntArray(CL_B[ci])[buf])
     width = Int(IntArray(CL_C[ci])[buf])
     height = Int(IntArray(CL_D[ci])[buf])
     stride = Int(IntArray(CL_E[ci])[buf])
@@ -1621,14 +1811,20 @@ function wl_surface_commit(cli, sid):
             win = Int(IntArray(CL_A[ci])[parent])
         end
         if win >= 0:
-            call wl_emit(12, win, base + offset, width, height, stride, Int(IntArray(CL_G[ci])[sid]), "")
+            snapshot = wl_buffer_snapshot(ci, buf)
+            if snapshot > 0:
+                call wl_emit(12, win, snapshot, width, height, stride, Int(IntArray(CL_G[ci])[sid]), "")
+            end
         end
         call cl_post(ci, buf, 0, ByteArray())
         return None
     end
     win = Int(IntArray(CL_A[ci])[sid])
     if win >= 0:
-        call wl_emit(2, win, base + offset, width, height, stride, format, "")
+        snapshot = wl_buffer_snapshot(ci, buf)
+        if snapshot > 0:
+            call wl_emit(2, win, snapshot, width, height, stride, format, "")
+        end
     end
     # release(buffer): the client may reuse it now that we have taken the
     # pixels. It only learns of this after the frame's flush, which is
@@ -1644,7 +1840,9 @@ function wl_xdg_wm_base_request(cli, oid, opcode, body):
     elif opcode == 1:
         # create_positioner(new_id)
         pos = Int(w_get32(body, 0))
-        call cl_set_kind(ci, pos, WO_POSITIONER)
+        if not cl_create_kind(ci, pos, WO_POSITIONER):
+            return None
+        end
         IntArray(CL_A[ci])[pos] = 0
         IntArray(CL_B[ci])[pos] = 0
         IntArray(CL_C[ci])[pos] = 0
@@ -1657,7 +1855,9 @@ function wl_xdg_wm_base_request(cli, oid, opcode, body):
         # get_xdg_surface(new_id, surface)
         xs = Int(w_get32(body, 0))
         surf = Int(w_get32(body, 4))
-        call cl_set_kind(ci, xs, WO_XDG_SURFACE)
+        if cl_kind(ci, surf) != WO_SURFACE or not cl_create_kind(ci, xs, WO_XDG_SURFACE):
+            return None
+        end
         IntArray(CL_A[ci])[xs] = surf
         IntArray(CL_B[ci])[xs] = 0
         IntArray(CL_C[ci])[xs] = 0
@@ -1759,7 +1959,9 @@ function wl_xdg_surface_request(cli, oid, opcode, body):
         # get_toplevel(new_id): a real window. Configure it right away with
         # our size, then xdg_surface.configure so the client can commit.
         top = Int(w_get32(body, 0))
-        call cl_set_kind(ci, top, WO_XDG_TOPLEVEL)
+        if not cl_create_kind(ci, top, WO_XDG_TOPLEVEL):
+            return None
+        end
         IntArray(CL_A[ci])[top] = xs
         IntArray(CL_B[ci])[xs] = top
         surf = Int(IntArray(CL_A[ci])[xs])
@@ -1784,7 +1986,9 @@ function wl_xdg_surface_request(cli, oid, opcode, body):
         pop = Int(w_get32(body, 0))
         parent = Int(w_get32(body, 4))
         pos = Int(w_get32(body, 8))
-        call cl_set_kind(ci, pop, WO_XDG_POPUP)
+        if cl_kind(ci, pos) != WO_POSITIONER or (parent != 0 and cl_kind(ci, parent) != WO_XDG_SURFACE) or not cl_create_kind(ci, pop, WO_XDG_POPUP):
+            return None
+        end
         IntArray(CL_A[ci])[pop] = xs
         IntArray(CL_B[ci])[pop] = parent
         IntArray(CL_B[ci])[xs] = pop
@@ -1936,14 +2140,18 @@ function wl_seat_request(cli, oid, opcode, body):
     end
     newid = Int(w_get32(body, 0))
     if opcode == 0:
-        call cl_set_kind(ci, newid, WO_POINTER)
+        if not cl_create_kind(ci, newid, WO_POINTER):
+            return None
+        end
         call CL_PTRL[ci].append(newid)
     elif opcode == 1:
-        call cl_set_kind(ci, newid, WO_KEYBOARD)
+        if not cl_create_kind(ci, newid, WO_KEYBOARD):
+            return None
+        end
         call CL_KBDL[ci].append(newid)
         call wl_send_keymap(ci, newid)
     elif opcode == 2:
-        call cl_set_kind(ci, newid, WO_TOUCH)
+        call cl_create_kind(ci, newid, WO_TOUCH)
     end
     return None
 end
@@ -1998,7 +2206,9 @@ function wl_subcompositor_request(cli, oid, opcode, body):
         sub = Int(w_get32(body, 0))
         surf = Int(w_get32(body, 4))
         parent = Int(w_get32(body, 8))
-        call cl_set_kind(ci, sub, WO_SUBSURFACE)
+        if cl_kind(ci, surf) != WO_SURFACE or cl_kind(ci, parent) != WO_SURFACE or not cl_create_kind(ci, sub, WO_SUBSURFACE):
+            return None
+        end
         IntArray(CL_A[ci])[sub] = surf
         IntArray(CL_B[ci])[sub] = parent
         IntArray(CL_F[ci])[surf] = ROLE_SUBSURFACE
@@ -2058,7 +2268,7 @@ DS_ID = []
 DS_MIME = []
 # In-flight read of a client-owned selection into WL_CLIP.
 CLIP_FD = [0 - 1]
-CLIP_BUF = [""]
+CLIP_BUF = [ByteArray()]
 CLIP_NEW = [0]
 
 # Server-allocated ids must start at exactly 0xff000000 and climb by one:
@@ -2127,7 +2337,11 @@ function wl_set_clipboard(text):
         # cancelled: the previous owner must drop its source.
         call cl_post(Int(SEL_OWNER[0]), Int(SEL_SRC[0]), 1, ByteArray())
     end
-    WL_CLIP[0] = String(text)
+    value = String(text)
+    if __lsl_text_byte_length(value) > 262144:
+        return None
+    end
+    WL_CLIP[0] = value
     SEL_OWNER[0] = 0 - 2
     SEL_SRC[0] = 0
     while len(SEL_MIMES) > 0:
@@ -2173,7 +2387,7 @@ function wl_clip_pull():
     call w_append_string(body, want)
     call cl_post_fd(ci, Int(SEL_SRC[0]), 1, body, Int(p[1]), 0)
     CLIP_FD[0] = Int(p[0])
-    CLIP_BUF[0] = ""
+    CLIP_BUF[0] = ByteArray()
     return None
 end
 
@@ -2193,19 +2407,23 @@ function wl_clip_tick():
             n = fd.read(h, cb, 4096)
         end
         if n > 0:
-            out = String(CLIP_BUF[0])
+            out = ByteArray(CLIP_BUF[0])
             i = 0
             while i < n:
-                out = out + chr(cb[i])
+                call out.append(cb[i])
                 i = i + 1
             end
             CLIP_BUF[0] = out
             if len(out) > 262144:
-                n = 0
+                call unixsock.close_fd(h)
+                CLIP_FD[0] = 0 - 1
+                CLIP_BUF[0] = ByteArray()
+                return None
             end
         end
         if n == 0:
-            WL_CLIP[0] = String(CLIP_BUF[0])
+            completed = ByteArray(CLIP_BUF[0])
+            WL_CLIP[0] = __lsl_text_from_bytes(completed, 0, len(completed))
             CLIP_NEW[0] = 1
             call unixsock.close_fd(h)
             CLIP_FD[0] = 0 - 1
@@ -2222,9 +2440,11 @@ function wl_ddm_request(cli, oid, opcode, body):
     ci = Int(cli)
     newid = Int(w_get32(body, 0))
     if opcode == 0:
-        call cl_set_kind(ci, newid, WO_DATA_SOURCE)
+        call cl_create_kind(ci, newid, WO_DATA_SOURCE)
     elif opcode == 1:
-        call cl_set_kind(ci, newid, WO_DATA_DEVICE)
+        if not cl_create_kind(ci, newid, WO_DATA_DEVICE):
+            return None
+        end
         CL_DDEV[ci] = newid
         # A client that connects after a copy still learns about it.
         call wl_send_offer(ci)
@@ -2244,6 +2464,11 @@ function wl_data_device_request(cli, oid, opcode, body):
             call SEL_MIMES.pop(len(SEL_MIMES) - 1)
         end
         if src == 0:
+            SEL_OWNER[0] = 0 - 1
+            SEL_SRC[0] = 0
+            return None
+        end
+        if cl_kind(ci, src) != WO_DATA_SOURCE:
             SEL_OWNER[0] = 0 - 1
             SEL_SRC[0] = 0
             return None
@@ -2269,13 +2494,45 @@ function wl_data_device_request(cli, oid, opcode, body):
     return None
 end
 
+function wl_valid_mime(value):
+    text = String(value)
+    count = __lsl_text_byte_length(text)
+    if count == 0 or count > 255:
+        return False
+    end
+    index = 0
+    while index < count:
+        code = __lsl_text_byte(text, index)
+        if code < 33 or code > 126:
+            return False
+        end
+        index += 1
+    end
+    return True
+end
+
 function wl_data_source_request(cli, oid, opcode, body):
     ci = Int(cli)
     if opcode == 0:
         # offer(mime_type)
+        mime = w_read_string(body, 0)
+        if not wl_valid_mime(mime):
+            return None
+        end
+        count = 0
+        index = 0
+        while index < len(DS_CI):
+            if Int(DS_CI[index]) == ci:
+                count += 1
+            end
+            index += 1
+        end
+        if count >= MAX_MIME_OFFERS or len(DS_CI) >= MAX_CLIENTS * MAX_MIME_OFFERS:
+            return None
+        end
         call DS_CI.append(ci)
         call DS_ID.append(Int(oid))
-        call DS_MIME.append(w_read_string(body, 0))
+        call DS_MIME.append(mime)
     elif opcode == 1:
         call wl_destroy_object(ci, Int(oid))
         di = 0
@@ -2307,27 +2564,19 @@ function wl_data_offer_request(cli, oid, opcode, body, fds):
         pfd = Int(fds[0])
         call fds.pop(0)
         mime = w_read_string(body, 0)
+        if Int(oid) != Int(CL_OFFER[ci]) or not wl_valid_mime(mime):
+            call unixsock.close_fd(pfd)
+            return None
+        end
         owner = Int(SEL_OWNER[0])
         if owner == 0 - 2:
             # The desktop owns it: write the text and close.
             text = String(WL_CLIP[0])
-            data = ByteArray()
+            count = __lsl_text_byte_length(text)
+            data = __lsl_byte_zeros(count)
             i = 0
-            while i < len(text):
-                c = ord(text[i])
-                if c < 256:
-                    call data.append(c)
-                else:
-                    # UTF-8 for the codepoints a terminal can produce.
-                    if c < 2048:
-                        call data.append(192 + c // 64)
-                        call data.append(128 + c % 64)
-                    else:
-                        call data.append(224 + c // 4096)
-                        call data.append(128 + c // 64 % 64)
-                        call data.append(128 + c % 64)
-                    end
-                end
+            while i < count:
+                data[i] = __lsl_text_byte(text, i)
                 i = i + 1
             end
             if len(data) > 0:
@@ -2438,6 +2687,10 @@ function wl_parse_stream(index, data, limit):
     ci = Int(index)
     buf = ByteArray(data)
     lim = Int(limit)
+    if lim < 0 or lim > len(buf):
+        call wl_client_drop(ci)
+        return 0
+    end
     pos = 0
     msgs = 0
     run = 1
@@ -2448,7 +2701,10 @@ function wl_parse_stream(index, data, limit):
         head = Int(buf[pos + 4]) + Int(buf[pos + 5]) * 256 + Int(buf[pos + 6]) * 65536 + Int(buf[pos + 7]) * 16777216
         size = head // 65536
         opcode = head % 65536
-        if size < 8 or lim - pos < size:
+        if size < 8 or size % 4 != 0 or oid == 0 or (oid < SERVER_ID_BASE and oid >= MAX_OBJECTS):
+            call wl_client_drop(ci)
+            return lim
+        elif lim - pos < size:
             run = 0
         else:
             body = __lsl_byte_zeros(size - 8)
@@ -2499,6 +2755,10 @@ function wl_read_client(index):
                     k = k + 1
                 end
             else:
+                if len(pend) > 65536 - n:
+                    call wl_client_drop(ci)
+                    return None
+                end
                 i = 0
                 while i < n:
                     call pend.append(data[i])
@@ -2528,8 +2788,10 @@ function wl_poll():
     call wl_accept()
     i = 0
     while i < len(CL_FD):
-        safe:
+        try:
             call wl_read_client(i)
+        else:
+            call wl_client_drop(i)
         end
         i = i + 1
     end

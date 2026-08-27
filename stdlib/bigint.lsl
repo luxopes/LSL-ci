@@ -2,6 +2,9 @@
 # digits. BigInt deliberately lives in the standard library so normal Int64
 # arithmetic keeps its compact native representation and speed.
 
+MAX_BIGINT_DIGITS = 1000000
+MAX_BIGINT_QUADRATIC_WORK = 50000000
+
 function _strip_leading_zeros(digits):
     index = 0
     while index + 1 < len(digits) and digits[index] == "0":
@@ -11,6 +14,11 @@ function _strip_leading_zeros(digits):
 end
 
 function _validated_parts(text):
+    if type(text) != "String":
+        Error(TypeError: "BigInt text must be a String")
+    elif len(text) > MAX_BIGINT_DIGITS + 2:
+        Error(ValueError: "BigInt exceeds one million decimal digits")
+    end
     value = text.strip()
     if len(value) == 0:
         Error(ValueError: "BigInt requires at least one decimal digit")
@@ -26,23 +34,47 @@ function _validated_parts(text):
     end
     if start >= len(value):
         Error(ValueError: "BigInt sign must be followed by decimal digits")
+    elif len(value) - start > MAX_BIGINT_DIGITS:
+        Error(ValueError: "BigInt exceeds one million decimal digits")
     end
 
-    digits = ""
     index = start
     while index < len(value):
         code = ord(value[index])
         if code < 48 or code > 57:
             Error(ValueError: "BigInt accepts decimal digits only")
         end
-        digits += value[index]
         index += 1
     end
+    digits = value[start:len(value)]
     digits = _strip_leading_zeros(digits)
     if digits == "0":
         sign = 0
     end
     return [sign, digits]
+end
+
+function _validated_digits(text):
+    if type(text) != "String" or len(text) == 0 or len(text) > MAX_BIGINT_DIGITS:
+        Error(ValueError: "invalid BigInt digit storage")
+    end
+    for character in text:
+        code = ord(character)
+        if code < 48 or code > 57:
+            Error(ValueError: "invalid BigInt digit storage")
+        end
+    end
+    return _strip_leading_zeros(text)
+end
+
+function _check_quadratic_work(left, right, operation):
+    left_size = len(left)
+    right_size = len(right)
+    if left_size > MAX_BIGINT_DIGITS or right_size > MAX_BIGINT_DIGITS:
+        Error(ValueError: operation + " exceeds the BigInt digit limit")
+    elif right_size > 0 and left_size > MAX_BIGINT_QUADRATIC_WORK // right_size:
+        Error(ValueError: operation + " exceeds the BigInt work limit")
+    end
 end
 
 function _parts(value):
@@ -51,7 +83,7 @@ function _parts(value):
         return _validated_parts(String(value))
     elif value_type == "Dictionary" or value_type == "Instance":
         sign = Int(value["sign"])
-        digits = String(value["digits"])
+        digits = _validated_digits(String(value["digits"]))
         if sign < -1 or sign > 1:
             Error(ValueError: "invalid BigInt sign")
         end
@@ -100,7 +132,9 @@ function _add_magnitude(left, right):
     a_index = len(left) - 1
     b_index = len(right) - 1
     carry = 0
-    result = ""
+    capacity = max(len(left), len(right)) + 1
+    result = __lsl_byte_zeros(capacity)
+    position = capacity
     while a_index >= 0 or b_index >= 0 or carry > 0:
         a_digit = 0
         b_digit = 0
@@ -111,12 +145,13 @@ function _add_magnitude(left, right):
             b_digit = ord(right[b_index]) - 48
         end
         total = a_digit + b_digit + carry
-        result = chr(48 + total % 10) + result
+        position -= 1
+        result[position] = 48 + total % 10
         carry = total // 10
         a_index -= 1
         b_index -= 1
     end
-    return _strip_leading_zeros(result)
+    return _strip_leading_zeros(__lsl_text_from_bytes(result, position, capacity - position))
 end
 
 function _subtract_magnitude(left, right):
@@ -124,7 +159,8 @@ function _subtract_magnitude(left, right):
     a_index = len(left) - 1
     b_index = len(right) - 1
     borrow = 0
-    result = ""
+    result = __lsl_byte_zeros(len(left))
+    position = len(left)
     while a_index >= 0:
         a_digit = ord(left[a_index]) - 48 - borrow
         b_digit = 0
@@ -137,16 +173,21 @@ function _subtract_magnitude(left, right):
         else:
             borrow = 0
         end
-        result = chr(48 + a_digit - b_digit) + result
+        position -= 1
+        result[position] = 48 + a_digit - b_digit
         a_index -= 1
         b_index -= 1
     end
-    return _strip_leading_zeros(result)
+    return _strip_leading_zeros(__lsl_text_from_bytes(result, position, len(left) - position))
 end
 
 function _multiply_magnitude(left, right):
     if left == "0" or right == "0":
         return "0"
+    end
+    call _check_quadratic_work(left, right, "BigInt multiplication")
+    if len(left) > MAX_BIGINT_DIGITS - len(right):
+        Error(ValueError: "BigInt multiplication result exceeds the digit limit")
     end
     digits = __lsl_int_zeros(len(left) + len(right))
     left_index = len(left) - 1
@@ -164,13 +205,13 @@ function _multiply_magnitude(left, right):
         left_index -= 1
     end
 
-    result = ""
+    result = __lsl_byte_zeros(len(digits))
     index = 0
     while index < len(digits):
-        result += chr(48 + digits[index])
+        result[index] = 48 + digits[index]
         index += 1
     end
-    return _strip_leading_zeros(result)
+    return _strip_leading_zeros(__lsl_text_from_bytes(result, 0, len(result)))
 end
 
 function _divmod_magnitude(dividend, divisor):
@@ -180,8 +221,9 @@ function _divmod_magnitude(dividend, divisor):
     if _compare_magnitude(dividend, divisor) < 0:
         return ["0", _strip_leading_zeros(dividend)]
     end
+    call _check_quadratic_work(dividend, divisor, "BigInt division")
 
-    quotient = ""
+    quotient = __lsl_byte_zeros(len(dividend))
     remainder = "0"
     index = 0
     while index < len(dividend):
@@ -191,10 +233,10 @@ function _divmod_magnitude(dividend, divisor):
             remainder = _subtract_magnitude(remainder, divisor)
             quotient_digit += 1
         end
-        quotient += chr(48 + quotient_digit)
+        quotient[index] = 48 + quotient_digit
         index += 1
     end
-    return [_strip_leading_zeros(quotient), _strip_leading_zeros(remainder)]
+    return [_strip_leading_zeros(__lsl_text_from_bytes(quotient, 0, len(quotient))), _strip_leading_zeros(remainder)]
 end
 
 function _add_signed(left_sign, left_digits, right_sign, right_digits):

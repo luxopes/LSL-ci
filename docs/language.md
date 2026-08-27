@@ -357,4 +357,4 @@ Int constant folding používá stejné modulo `2^64` a floor `//`/`%` chování
 
 ## Bezpečnost
 
-Běžný programovací režim není bezpečnostní sandbox. LSL program může číst a zapisovat soubory, spouštět procesy nebo přes modul `system` měnit balíčky s právy aktuálního procesu. Oddělený `lsl config` režim staticky odmítá ambientní I/O, síť, environment a process capabilities.
+Běžný programovací režim není bezpečnostní sandbox. LSL program může číst a zapisovat soubory, spouštět procesy nebo přes modul `system` měnit balíčky s právy aktuálního procesu. Oddělený `lsl config` režim staticky odmítá ambientní I/O, síť, environment a process capabilities. Privátní `__lsl_*` builtiny jsou privilegované interní ABI; úplné hranice důvěry popisuje [bezpečnostní model](security.md).

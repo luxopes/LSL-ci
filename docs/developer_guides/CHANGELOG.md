@@ -4,6 +4,46 @@ Na této stránce jsou uživatelsky významné změny vydaných verzí. Stabiln�
 manuály a soubory ke stažení zůstávají dostupné v
 [historii vydání](/releases/).
 
+## 0.6.8 — 27. 8. 2026
+
+Čistě bezpečnostní vydání bez změny syntaxe jazyka.
+
+- Heap, kolekce, I/O a raw memory hranice validují typy, živé handly, rozsahy
+  i násobení velikostí; GC a rekurzivní equality mají fail-safe depth limit.
+- Worker vlákna dostala guard page a fail-closed inicializaci. Dynamické
+  callbacky musí být živé Function objekty a tisk Function už nezveřejňuje
+  adresu kódu.
+- Native ET_DYN volání běží v krátkodobém child procesu s uzavřenými file
+  descriptory, alarmem, `no_new_privs` a strict seccomp. Loader používá W^X,
+  serializuje `symbol`/`call`/`close` a GC zachovává ownership knihovny.
+- Process/capture hranice validují argv, zavírají zděděné descriptory, omezují
+  stdout/stderr a mají clean-environment varianty. Kontrolované endpointy
+  zachovají fd 0/1/2 přes `execve` i po vstupu se zavřeným stdio. Zápis souborů blokuje
+  symlink targety; fd, mmap a Unix socket API kontrolují typy a délky.
+- HTTP nepoužívá ambientní curl config ani redirecty, omezuje URL, hlavičky,
+  tělo a odpověď; plain HTTP přijímá jen `127.0.0.1` a `[::1]`. JSON, config,
+  BigInt, lexer, parser, linker a package manager mají pevné, pro zdroje
+  byte-přesné resource limity; stejně se počítají argv, cesty a integrační
+  payloady, takže UTF-8 nemůže deklarované limity obejít. Config omezuje i celý
+  importní graf.
+- Dictionary používá per-process seed proti předpočítanému collision DoS.
+  Celočíselná mocnina je logaritmická a dynamický záporný exponent končí
+  řízenou chybou.
+- CUDA worker validuje celý JSON objekt a ABI, odmítá duplicity a omezuje
+  vstup, hloubku, pole i device buffery. Release worker má PIE, full RELRO,
+  NOW binding, stack protector a neproveditelný stack.
+- Resource resolver používá `prefix/lib/lsl` jen pro skutečný `prefix/bin`
+  install. Dočasný compiler už nemůže potichu načíst starý `/lib/lsl` a
+  kanonické source jméno drží fixed point nezávislý na cestě executable.
+- Odstraněn nepoužívaný historický soubor `-o`, starý ET_EXEC artefakt mimo
+  aktuální PIE toolchain.
+- Přibyl výslovný [bezpečnostní model](security.md): běžný LSL a privátní
+  `__lsl_*` ABI nejsou sandbox; nedůvěryhodný native kód patří do externího
+  `exec` workeru bez secrets.
+- Fixed point, fast/full suite, instalovaný compiler a audit statických PIE
+  artefaktů prošly. Nové regrese pokrývají overflow alokací, deep GC/equality,
+  native race, dědění descriptorů, symlinky a vstupní resource limity.
+
 ## 0.6.7 — 26. 8. 2026
 
 Integrační a bezpečnostní hardening bez změny syntaxe jazyka.
@@ -254,7 +294,7 @@ První veřejné self-hosted vydání LSL.
 
 ## Odkazy na stabilní manuály
 
-- LSL 0.6.7 aktualizuje živý manuál; 0.6.5 zůstává poslední neměnný snapshot.
+- LSL 0.6.8 aktualizuje živý manuál; 0.6.5 zůstává poslední neměnný snapshot.
 - LSL 0.6.6 používá [manuál 0.6.5](/releases/0.6.5/).
 - [LSL 0.6.5 — manuál a soubory ke stažení](/releases/0.6.5/)
 - [LSL 0.6 — manuál a soubory ke stažení](/releases/0.6/)

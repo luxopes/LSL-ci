@@ -1,1 +1,1 @@
-Impure configuration feature load os in tests/config/os_impure.lsl
+Configuration may load only the config module in tests/config/os_impure.lsl at 1

@@ -24,8 +24,11 @@ end
 function parse(text, path):
     if type(text) != "String" or type(path) != "String":
         Error(TypeError: "lconf.parse expects (String, String)")
+    elif __lsl_text_byte_length(String(text)) > 1048576:
+        Error(LConfError: path + ": manifest exceeds 1 MiB")
     end
     result = {"apt": [], "lux": [], "lsl": []}
+    dependency_count = 0
     line_number = 0
     for physical_line in text.split(chr(10)):
         line_number += 1
@@ -51,6 +54,10 @@ function parse(text, path):
             elif dependency in result[source]:
                 call manifest_error(path, line_number, "duplicate " + source + " dependency: " + dependency)
             end
+            dependency_count += 1
+            if dependency_count > 4096:
+                call manifest_error(path, line_number, "manifest has more than 4096 dependencies")
+            end
             result[source].append(dependency)
         end
     end
@@ -65,7 +72,8 @@ function encode(manifest):
     if type(manifest) != "Dictionary":
         Error(TypeError: "lconf.encode expects a Dictionary")
     end
-    output = ""
+    pieces = []
+    dependency_count = 0
     for source in ["apt", "lux", "lsl"]:
         if source not in manifest or type(manifest[source]) != "List":
             Error(TypeError: "lconf manifest requires List key: " + source)
@@ -78,8 +86,12 @@ function encode(manifest):
                 Error(ValueError: "duplicate " + source + " dependency: " + dependency)
             end
             seen.append(dependency)
-            output += source + ": " + dependency + chr(10)
+            dependency_count += 1
+            if dependency_count > 4096:
+                Error(ValueError: "lconf manifest has more than 4096 dependencies")
+            end
+            pieces.append(source + ": " + dependency + chr(10))
         end
     end
-    return output
+    return "".join(pieces)
 end

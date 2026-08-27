@@ -3,11 +3,24 @@
 
 load json
 
+function byte_text_slice(source, start, stop):
+    count = stop - start
+    output = __lsl_byte_zeros(count)
+    index = 0
+    while index < count:
+        output[index] = __lsl_text_byte(source, start + index)
+        index += 1
+    end
+    return __lsl_text_from_bytes(output, 0, count)
+end
+
 function response(output):
+    source = String(output)
+    count = __lsl_text_byte_length(source)
     split = -1
     index = 0
-    while index < len(output):
-        if output[index] == chr(10):
+    while index < count:
+        if __lsl_text_byte(source, index) == 10:
             split = index
         end
         index += 1
@@ -15,18 +28,20 @@ function response(output):
     if split < 0:
         return {"status": 0, "text": output, "ok": False}
     end
-    status_text = output[split + 1:len(output)].strip()
-    if len(status_text) != 3:
+    if count - split - 1 != 3:
         return {"status": 0, "text": output, "ok": False}
     end
-    for character in status_text:
-        code = ord(character)
+    status = 0
+    index = split + 1
+    while index < count:
+        code = __lsl_text_byte(source, index)
         if code < 48 or code > 57:
             return {"status": 0, "text": output, "ok": False}
         end
+        status = status * 10 + code - 48
+        index += 1
     end
-    status = Int(status_text)
-    body = output[0:split]
+    body = byte_text_slice(source, 0, split)
     return {"status": status, "text": body, "ok": status >= 200 and status < 300}
 end
 
@@ -36,51 +51,155 @@ function transport_response(output):
         message = capture_stderr()
         if len(message) == 0:
             message = "curl exited with status " + String(status)
+        elif len(message) > 4096:
+            message = message[0:4096]
         end
         return {"status": 0, "text": message, "ok": False}
     end
     return response(output)
 end
 
+function url_port(text):
+    if len(text) == 0 or len(text) > 5:
+        Error(HTTPError: "HTTP URL has an invalid port")
+    end
+    for character in text:
+        code = ord(character)
+        if code < 48 or code > 57:
+            Error(HTTPError: "HTTP URL has a non-numeric port")
+        end
+    end
+    port = Int(text)
+    if port <= 0 or port > 65535:
+        Error(HTTPError: "HTTP URL port is out of range")
+    end
+    return port
+end
+
 function validate_url(url):
     value = String(url)
-    if __lsl_text_byte_length(String(value)) > 8192:
-        Error(HTTPError: "HTTP URL is too long")
+    byte_length = __lsl_text_byte_length(value)
+    if byte_length == 0 or byte_length > 8192:
+        Error(HTTPError: "HTTP URL must contain 1..8192 bytes")
+    end
+    for character in value:
+        code = ord(character)
+        if code <= 32 or code == 127 or code > 127 or character == chr(92) or character == "#":
+            Error(HTTPError: "HTTP URL contains an unsafe character")
+        end
     end
     if value.startswith("https://"):
-        return value
+        scheme_length = 8
+        secure = True
+    elif value.startswith("http://"):
+        scheme_length = 7
+        secure = False
+    else:
+        Error(HTTPError: "HTTP transport requires HTTPS or a loopback HTTP URL")
     end
-    loopback = value == "http://127.0.0.1" or value.startswith("http://127.0.0.1/") or value.startswith("http://127.0.0.1:")
-    loopback = loopback or value == "http://localhost" or value.startswith("http://localhost/") or value.startswith("http://localhost:")
-    loopback = loopback or value == "http://[::1]" or value.startswith("http://[::1]/") or value.startswith("http://[::1]:")
-    if loopback:
-        return value
+    remainder = value[scheme_length:len(value)]
+    authority_end = len(remainder)
+    slash = remainder.find("/")
+    query = remainder.find("?")
+    if slash >= 0 and slash < authority_end:
+        authority_end = slash
     end
-    Error(HTTPError: "HTTP transport requires HTTPS or a loopback URL")
+    if query >= 0 and query < authority_end:
+        authority_end = query
+    end
+    authority = remainder[0:authority_end]
+    if len(authority) == 0 or authority.find("@") >= 0:
+        Error(HTTPError: "HTTP URL authority is empty or contains user information")
+    end
+    host = authority
+    port_text = ""
+    if authority.startswith("["):
+        close = authority.find("]")
+        if close <= 1:
+            Error(HTTPError: "HTTP URL has an invalid IPv6 authority")
+        end
+        host = authority[0:close + 1]
+        suffix = authority[close + 1:len(authority)]
+        if suffix != "":
+            if not suffix.startswith(":"):
+                Error(HTTPError: "HTTP URL has data after its IPv6 host")
+            end
+            port_text = suffix[1:len(suffix)]
+        end
+        for character in host[1:len(host) - 1]:
+            if character not in "0123456789abcdefABCDEF:.":
+                Error(HTTPError: "HTTP URL has an invalid IPv6 host")
+            end
+        end
+    else:
+        colon = authority.find(":")
+        if colon >= 0:
+            host = authority[0:colon]
+            port_text = authority[colon + 1:len(authority)]
+            if port_text.find(":") >= 0:
+                Error(HTTPError: "HTTP URL has an invalid authority")
+            end
+        end
+        if len(host) == 0:
+            Error(HTTPError: "HTTP URL host is empty")
+        end
+        for character in host:
+            if character not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_":
+                Error(HTTPError: "HTTP URL has an invalid host")
+            end
+        end
+    end
+    if port_text != "":
+        call url_port(port_text)
+    elif authority.endswith(":"):
+        Error(HTTPError: "HTTP URL port is empty")
+    end
+    if not secure and host != "127.0.0.1" and host != "[::1]":
+        Error(HTTPError: "plain HTTP is restricted to numeric loopback hosts")
+    end
+    return value
 end
 
 function config_quote(value):
     text = String(value)
-    result = chr(34)
-    for character in text:
-        code = ord(character)
+    count = __lsl_text_byte_length(text)
+    if count > 4000000:
+        Error(HTTPError: "curl config value exceeds 4 MB")
+    end
+    # Curl config escaping is byte-oriented. A growing String copied the whole
+    # request body on every character and allowed a trivial CPU/memory DoS.
+    result = __lsl_byte_zeros(0)
+    result.append(34)
+    index = 0
+    while index < count:
+        code = __lsl_text_byte(text, index)
         if code == 34 or code == 92:
-            result += chr(92) + character
+            result.append(92)
+            result.append(code)
         elif code == 9:
-            result += chr(92) + "t"
+            result.append(92)
+            result.append(116)
         elif code == 10:
-            result += chr(92) + "n"
+            result.append(92)
+            result.append(110)
         elif code == 11:
-            result += chr(92) + "v"
+            result.append(92)
+            result.append(118)
         elif code == 13:
-            result += chr(92) + "r"
+            result.append(92)
+            result.append(114)
         elif code < 32 or code == 127:
             Error(HTTPError: "curl config value contains an unsupported control character")
         else:
-            result += character
+            result.append(code)
         end
+        if len(result) > 8000001:
+            Error(HTTPError: "escaped curl config value exceeds 8 MB")
+        end
+        index += 1
     end
-    return result + chr(34)
+    result.append(34)
+    return __lsl_text_from_bytes(result, 0, len(result))
 end
 
 function header_name(name):
@@ -122,19 +241,23 @@ function common_config(url, timeout, streaming):
     if timeout <= 0 or timeout > 3600:
         Error(HTTPError: "HTTP timeout must be between 1 and 3600 seconds")
     end
+    checked_url = validate_url(url)
     result = "silent" + chr(10)
     result += "show-error" + chr(10)
     result += "globoff" + chr(10)
-    result += "location" + chr(10)
     if streaming:
         result += "no-buffer" + chr(10)
     end
     result += config_line("max-time", String(timeout))
-    result += config_line("max-redirs", "5")
-    result += config_line("proto", "=https,http")
-    result += config_line("proto-redir", "=https")
+    result += config_line("max-filesize", "16777216")
+    if checked_url.startswith("https://"):
+        result += config_line("proto", "=https")
+        result += "tlsv1.2" + chr(10)
+    else:
+        result += config_line("proto", "=http")
+    end
     result += config_line("write-out", chr(10) + "%{http_code}")
-    result += config_line("url", validate_url(url))
+    result += config_line("url", checked_url)
     return result
 end
 
@@ -155,31 +278,31 @@ function post_config(url, body, headers, timeout, streaming):
     if __lsl_type_code(headers) != 3 or len(headers) > 256:
         Error(HTTPError: "HTTP headers must be a Dictionary with at most 256 entries")
     end
-    result = common_config(url, timeout, streaming)
-    result += config_line("request", "POST")
-    result += config_line("data-raw", encoded_body)
+    pieces = [common_config(url, timeout, streaming)]
+    pieces.append(config_line("request", "POST"))
+    pieces.append(config_line("data-raw", encoded_body))
     for key in headers:
-        result += config_line("header", header_name(key) + ": " + header_value(headers[key]))
+        pieces.append(config_line("header", header_name(key) + ": " + header_value(headers[key])))
     end
-    return result
+    return "".join(pieces)
 end
 
 # Transport-injection helpers keep conformance hermetic. Production callers
 # normally use get/post/post_stream below with /usr/bin/curl.
 function get_with(curl_path, url):
-    output = capture_input(curl_path, ["--config", "-"], get_config(url))
+    output = capture_input_clean(curl_path, ["-q", "--config", "-"], get_config(url))
     return transport_response(output)
 end
 
 function post_with(curl_path, url, body, headers, timeout):
     config = post_config(url, body, headers, timeout, False)
-    output = capture_input(curl_path, ["--config", "-"], config)
+    output = capture_input_clean(curl_path, ["-q", "--config", "-"], config)
     return transport_response(output)
 end
 
 function post_stream_with(curl_path, url, body, headers, timeout, on_chunk):
     config = post_config(url, body, headers, timeout, True)
-    output = capture_input_stream(curl_path, ["--config", "-"], config, on_chunk)
+    output = capture_input_stream_clean(curl_path, ["-q", "--config", "-"], config, on_chunk)
     return transport_response(output)
 end
 

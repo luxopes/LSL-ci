@@ -982,6 +982,32 @@ Compiler fixed point je
 hash je
 `305f1a00d50566a76422e2a8388a4f31d6eb9619c9f94a0fd8efac44efa93e1a`.
 
+Vydání 0.6.8 je čistě bezpečnostní hardening. Alokátor, kolekce a všechny raw
+I/O/memory hranice kontrolují overflow, typy, životnost objektů a rozsahy;
+GC/equality mají fail-safe depth limity a worker stacky guard page. Process
+helpery validují argv, zavírají zděděné deskriptory, omezují výstupy a umějí
+prázdné prostředí; řízené capture endpointy si zachovají 0/1/2 přes `execve`
+i když rodič vstoupil se zavřenými standardními deskriptory. HTTP vypíná
+ambientní curl config i redirecty, omezuje
+velikosti a dovoluje plain HTTP jen na numeric loopback. JSON, config, BigInt,
+lexer, parser, linker a package vstupy mají resource limity. Dictionary hash
+je per-process seedovaný. Native loader používá W^X, ownership přes GC a
+serializovaný close/call; samotný kód běží v krátkodobém child procesu s
+uzavřenými deskriptory, alarmem, `no_new_privs` a strict seccomp. Threat model
+výslovně uvádí, že běžný LSL ani `__lsl_*` ABI nejsou sandbox a fork izolace
+není confidentiality boundary. Resource resolver navíc odmítá stale
+`prefix/lib` mimo skutečný `prefix/bin` install a používá kanonická source
+jména, takže fixed point nezávisí na cestě executable. CUDA worker navíc
+validuje celý JSON protokol a ABI, omezuje stdin, nesting, pole a device
+buffery a je sestavený jako hardened PIE s full RELRO/NOW. Fast i full suite,
+tři self-host stage, instalovaný fixed point a ELF audit prošly. Finální
+compiler fixed point je
+`8dcb2f2ec042f755413b3cc8c7c33a72726b5d073ea48b4bf498795feafe8d8a` a CLI
+hash je
+`c6af0ad2fa9058b38d6bbfbd7328a36275ac434fc76f96e8f4131fcd8e63ac00`;
+stripped CUDA worker má SHA-256
+`56334b8eee4363f1886bb5f0e66fcbcfbb86ef5ab2c0ca23dd35358629ef7114`.
+
 ## Roadmap k "kompletní 1" (17 okruhů)
 Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,
 collections, GC robustnost, syscall I/O, native/tensor ABI, AI vrstva,

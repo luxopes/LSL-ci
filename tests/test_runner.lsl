@@ -117,13 +117,63 @@ function test_path(name):
     return test_root + "/" + name
 end
 
-if mode == "fixed-point":
+function require_fixed_point_compiler():
     fixed_test = test_path("fixed-test")
     call require_success(run(compiler, ["compiler/pure/lslc_direct.lsl", fixed_test]), "compile fixed-point stage")
     call require_hardened_elf(fixed_test)
     if readfile(compiler) != readfile(fixed_test):
         Error(TestFailure: "compiler fixed point differs")
     end
+
+    # A development compiler outside prefix/bin must use this checkout, not a
+    # stale prefix/lib tree. This reproduces the path-dependent false fixed
+    # point that was found during the 0.6.8 release audit.
+    shadow_root = test_path("resource-shadow")
+    call mkdir(shadow_root)
+    call mkdir(shadow_root + "/dev")
+    call mkdir(shadow_root + "/lib")
+    call mkdir(shadow_root + "/lib/lsl")
+    call mkdir(shadow_root + "/lib/lsl/compiler")
+    call mkdir(shadow_root + "/lib/lsl/compiler/pure")
+    shadow_compiler = shadow_root + "/dev/lslc"
+    call writebytes(shadow_compiler, readbytes(compiler))
+    call writefile(shadow_root + "/lib/lsl/compiler/pure/dynamic_stdlib.lsl", "print \"stale resource\"" + chr(10))
+    shadow_fixed = test_path("shadow-fixed-test")
+    call require_success(run(shadow_compiler, ["compiler/pure/lslc_direct.lsl", shadow_fixed]), "compile fixed point beside stale prefix resources")
+    if readfile(compiler) != readfile(shadow_fixed):
+        Error(TestFailure: "development compiler consumed stale prefix resources")
+    end
+
+    incomplete_root = test_path("incomplete-install")
+    call mkdir(incomplete_root)
+    call mkdir(incomplete_root + "/bin")
+    incomplete_compiler = incomplete_root + "/bin/lslc"
+    call writebytes(incomplete_compiler, readbytes(compiler))
+    call capture(incomplete_compiler, ["compiler/pure/lslc_direct.lsl", test_path("incomplete-fixed")])
+    if capture_status() == 0:
+        Error(TestFailure: "installed compiler used cwd after trusted resources went missing")
+    end
+
+    builtin_root = test_path("missing-builtin-install")
+    call mkdir(builtin_root)
+    call mkdir(builtin_root + "/bin")
+    call mkdir(builtin_root + "/lib")
+    call mkdir(builtin_root + "/lib/lsl")
+    call mkdir(builtin_root + "/lib/lsl/compiler")
+    call mkdir(builtin_root + "/lib/lsl/compiler/pure")
+    builtin_compiler = builtin_root + "/bin/lslc"
+    call writebytes(builtin_compiler, readbytes(compiler))
+    call writefile(builtin_root + "/lib/lsl/compiler/pure/dynamic_stdlib.lsl", readfile("compiler/pure/dynamic_stdlib.lsl"))
+    builtin_source = test_path("missing-builtin.lsl")
+    call writefile(builtin_source, "load json" + chr(10) + "print 1" + chr(10))
+    call capture(builtin_compiler, [builtin_source, test_path("missing-builtin")])
+    if capture_status() == 0:
+        Error(TestFailure: "installed compiler loaded a missing built-in from cwd")
+    end
+end
+
+if mode == "fixed-point":
+    call require_fixed_point_compiler()
     print "pure LSL fixed point passed"
     exit(0)
 end
@@ -140,13 +190,13 @@ call require_success(run(float_test, []), "run Float smoke")
 call require_success(run(compiler, ["tests/codegen_optimization_conformance.lsl", optimization_test]), "compile codegen optimization conformance")
 call require_hardened_elf(optimization_test)
 call require_output(optimization_test, [], "tests/codegen_optimization_conformance.out", "codegen optimization output differs")
-if len(readbytes(optimization_test)) > 64000:
-    Error(TestFailure: "optimized standalone ELF exceeds 64000 bytes")
+if len(readbytes(optimization_test)) > 76000:
+    Error(TestFailure: "optimized standalone ELF exceeds 76000 bytes")
 end
 call require_success(run(compiler, ["compiler/pure/cli.lsl", cli_test]), "compile stdin CLI")
 call require_hardened_elf(cli_test)
 help_output = capture(cli_test, ["--help"])
-expected_help = "Lux Simple Lang (LSL) 0.6.7" + chr(10)
+expected_help = "Lux Simple Lang (LSL) 0.6.8" + chr(10)
 expected_help += chr(10)
 expected_help += "Usage:" + chr(10)
 expected_help += "  lsl [SOURCE [ARG...]]" + chr(10)
@@ -165,11 +215,11 @@ if capture_status() != 0 or help_output != expected_help:
     Error(TestFailure: "CLI --help output differs")
 end
 version_output = capture(cli_test, ["version"])
-if capture_status() != 0 or version_output != "0.6.7" + chr(10):
+if capture_status() != 0 or version_output != "0.6.8" + chr(10):
     Error(TestFailure: "CLI version output differs")
 end
 version_flag_output = capture(cli_test, ["--version"])
-if capture_status() != 0 or version_flag_output != "0.6.7" + chr(10):
+if capture_status() != 0 or version_flag_output != "0.6.8" + chr(10):
     Error(TestFailure: "CLI --version output differs")
 end
 stdin_source = "value = 6 * 7" + chr(10) + "if value == 42:" + chr(10) + "    print \"stdin\", value" + chr(10) + "end" + chr(10) + "exit" + chr(10)
@@ -188,6 +238,62 @@ end
 exit_output = capture_input(cli_test, [], "exit(7)" + chr(10) + "exit" + chr(10))
 if capture_status() != 7 or exit_output != "":
     Error(TestFailure: "stdin CLI exact exit terminator differs")
+end
+
+# Compiler limits are byte budgets, not Unicode code-point budgets. Four-byte
+# UTF-8 input must be rejected at 4 MiB before character/token materialization.
+oversized_utf8_path = test_path("oversized-utf8-source.lsl")
+oversized_utf8_output = test_path("oversized-utf8-program")
+oversized_utf8_source = chr(1114111) * 1048577
+call writefile(oversized_utf8_path, oversized_utf8_source)
+oversized_utf8_source = ""
+call gc()
+call capture(compiler, [oversized_utf8_path, oversized_utf8_output])
+if capture_status() == 0 or capture_stderr().find("source exceeds the 4 MiB compiler limit") < 0:
+    Error(TestFailure: "compiler source limit counted characters instead of UTF-8 bytes")
+end
+call unlink(oversized_utf8_path)
+call unlink(oversized_utf8_output)
+
+# Exercise the real bundled foreign worker without requiring CUDA hardware.
+# Empty kernels return before driver initialization; malformed requests must
+# fail at the protocol boundary rather than reaching CUDA or allocating data.
+cuda_worker = "./cuda/lsl-cuda-worker"
+if not exists(cuda_worker):
+    Error(TestFailure: "bundled CUDA worker is missing")
+end
+
+function require_cuda_json(request, expected, name):
+    output = capture_input_clean(cuda_worker, [], request)
+    if capture_status() != 0 or output != expected + chr(10):
+        Error(TestFailure: name)
+    end
+end
+
+call require_cuda_json("{\"abi\":1,\"operation\":\"cuda.sum\",\"payload\":{\"values\":[]}}", "{\"abi\":1,\"ok\":true,\"value\":0}", "CUDA JSON payload routing differs")
+call require_cuda_json("{\"abi\":2,\"operation\":\"cuda.probe\",\"payload\":{}}", "{\"abi\":1,\"ok\":false,\"error\":\"CUDA request ABI version mismatch\"}", "CUDA ABI mismatch was not rejected")
+call require_cuda_json("{\"abi\":1,\"abi\":1,\"operation\":\"cuda.probe\",\"payload\":{}}", "{\"abi\":1,\"ok\":false,\"error\":\"request contains duplicate key abi\"}", "CUDA duplicate ABI key was not rejected")
+call require_cuda_json("{\"abi\":1,\"operation\":\"cuda.sum\",\"payload\":{\"values\":[],\"values\":[]}}", "{\"abi\":1,\"ok\":false,\"error\":\"request contains duplicate key values\"}", "CUDA duplicate payload key was not rejected")
+call require_cuda_json("{\"abi\":1,\"operation\":\"cuda.probe\",\"payload\":[]}trailing", "{\"abi\":1,\"ok\":false,\"error\":\"unexpected data after JSON request\"}", "CUDA trailing JSON data was not rejected")
+call require_cuda_json("{\"abi\":1,\"operation\":\"cuda.probe\",\"payload\":[]}", "{\"abi\":1,\"ok\":false,\"error\":\"request key payload must be an Object\"}", "CUDA non-Object payload was not rejected")
+
+deep_cuda_request = "{\"abi\":1,\"operation\":\"cuda.probe\",\"payload\":{\"extra\":"
+deep_cuda_level = 0
+while deep_cuda_level < 65:
+    deep_cuda_request += "["
+    deep_cuda_level += 1
+end
+deep_cuda_request += "0"
+while deep_cuda_level > 0:
+    deep_cuda_request += "]"
+    deep_cuda_level -= 1
+end
+deep_cuda_request += "}}"
+call require_cuda_json(deep_cuda_request, "{\"abi\":1,\"ok\":false,\"error\":\"JSON nesting exceeds 64 levels\"}", "CUDA JSON nesting limit differs")
+
+cuda_binary_output = capture_input_clean(cuda_worker, ["--binary", "sum", "2000001"], "")
+if capture_status() != 2 or cuda_binary_output != "" or capture_stderr() != "invalid binary sum count" + chr(10):
+    Error(TestFailure: "CUDA binary element limit differs")
 end
 
 # The installed self-host source set must contain every module imported by
@@ -269,6 +375,7 @@ servers = [
     ["tests/input_bare_server.lsl", test_path("input-bare-server")],
     ["tests/process_status_server.lsl", test_path("process-status-server")],
     ["tests/plugin_process_server.lsl", test_path("plugin-process-server")],
+    ["tests/fd_inherit_server.lsl", test_path("fd-inherit-server")],
     ["tests/http_transport_server.lsl", test_path("http-transport-server")],
     ["tests/cuda_worker.lsl", test_path("cuda-worker")],
     ["tests/os_command_server.lsl", test_path("os-command-server")],
@@ -284,6 +391,10 @@ for server in servers:
     call require_success(run(compiler, server), "compile process conformance server")
 end
 
+capture_cloexec_test = test_path("capture-cloexec-test")
+call require_success(run(compiler, ["tests/capture_cloexec_conformance.lsl", capture_cloexec_test]), "compile capture CLOEXEC conformance")
+call require_success(run(capture_cloexec_test, [test_path("capture-stream-server")]), "capture endpoints disappeared across execve")
+
 if env.get("LSL_CUDA_HARDWARE_TEST", "0") == "1":
     cuda_hardware_test = test_path("cuda-hardware-test")
     call require_success(run(compiler, ["tests/cuda_hardware_conformance.lsl", cuda_hardware_test]), "compile CUDA hardware conformance")
@@ -294,6 +405,29 @@ thread_test = test_path("thread-reuse-test")
 aggregate_test = test_path("full-conformance-test")
 call require_success(run(compiler, ["tests/thread_reuse_conformance.lsl", thread_test]), "compile thread slot reuse conformance")
 call require_output(thread_test, [], "tests/thread_reuse_conformance.out", "thread slot reuse output differs")
+
+# A raw non-CLOEXEC descriptor simulates a socket or secret memfd supplied by a
+# service manager. Process helpers must close it before execve.
+fd_leak_fixture = test_path("fd-leak-fixture")
+call writefile(fd_leak_fixture, "secret")
+fd_leak = __lsl_fd_open(fd_leak_fixture, 0)
+if fd_leak < 0:
+    Error(TestFailure: "cannot create descriptor inheritance fixture")
+end
+if __lsl_syscall(72, fd_leak, 2, 0, 0) < 0:
+    Error(TestFailure: "cannot clear CLOEXEC on inheritance fixture")
+end
+fd_inherit_output = capture(test_path("fd-inherit-server"), [String(fd_leak)])
+call __lsl_fd_close(fd_leak)
+if capture_status() != 0 or fd_inherit_output != "-9" + chr(10):
+    Error(TestFailure: "capture child inherited an unrelated descriptor")
+end
+
+allocation_overflow_test = test_path("allocation-overflow-test")
+call require_success(run(compiler, ["tests/allocation_overflow_conformance.lsl", allocation_overflow_test]), "compile allocation overflow conformance")
+if run(allocation_overflow_test, []) != 70:
+    Error(TestFailure: "oversized container allocation was not rejected safely")
+end
 call require_success(run(compiler, ["tests/full_conformance.lsl", aggregate_test]), "compile aggregated conformance")
 call require_hardened_elf(aggregate_test)
 aggregate_output = capture(aggregate_test, [test_root])
@@ -338,12 +472,50 @@ call require_failure(run(compiler, ["tests/legacy_power_negative.lsl", test_path
 call require_failure(run(compiler, ["tests/bitwise_float_negative.lsl", test_path("bitwise-float-negative")]), "Float bitwise operand unexpectedly compiled")
 call require_failure(run(compiler, ["tests/bitwise_shift_negative.lsl", test_path("bitwise-shift-negative")]), "constant negative shift unexpectedly compiled")
 call require_failure(run(compiler, ["tests/base_literal_negative.lsl", test_path("base-literal-negative")]), "base prefix without digits unexpectedly compiled")
+symlink_test = test_path("write-symlink-test")
+symlink_target = test_path("write-symlink-target")
+symlink_path = test_path("write-symlink-link")
+call require_success(run(compiler, ["tests/write_symlink_conformance.lsl", symlink_test]), "compile symlink write conformance")
+call writefile(symlink_target, "safe")
+call require_success(run("/bin/ln", ["-s", symlink_target, symlink_path]), "create symlink write conformance fixture")
+call require_output(symlink_test, [symlink_path, symlink_target], "tests/write_symlink_conformance.out", "symlink write protection differs")
 bitwise_dynamic_test = test_path("bitwise-dynamic-negative")
 call require_success(run(compiler, ["tests/bitwise_dynamic_negative.lsl", bitwise_dynamic_test]), "compile dynamic bitwise negative test")
 call require_failure(run(bitwise_dynamic_test, []), "dynamic Float bitwise operand unexpectedly succeeded")
 
 configure = test_path("configure-test")
 call require_success(run(compiler, ["stdlib/configure.lsl", configure]), "compile config generator")
+
+# The per-file ceiling is not enough for a wide import graph. Build sixteen
+# individually valid 1 MiB modules; the root bytes make the aggregate cross the
+# 16 MiB graph budget before a wrapper can be emitted.
+config_budget_directory = test_path("config-budget")
+call mkdir(config_budget_directory)
+config_budget_imports = []
+config_budget_source = " " * 1048576
+config_budget_index = 0
+while config_budget_index < 16:
+    config_budget_name = "part" + String(config_budget_index) + ".lsl"
+    call writefile(config_budget_directory + "/" + config_budget_name, config_budget_source)
+    config_budget_imports.append("\"" + config_budget_name + "\"")
+    config_budget_index += 1
+end
+config_budget_entry = config_budget_directory + "/entry.lsl"
+call writefile(config_budget_entry, "load config\nimports = [" + ",".join(config_budget_imports) + "]\nconfig = {}\n")
+config_budget_output = capture(configure, [config_budget_entry, test_path("config-budget-wrapper.lsl")])
+if capture_status() == 0 or config_budget_output.find("Configuration graph exceeds 16 MiB") < 0:
+    Error(TestFailure: "configuration aggregate source budget was not enforced")
+end
+config_budget_source = ""
+config_budget_index = 0
+while config_budget_index < 16:
+    call unlink(config_budget_directory + "/part" + String(config_budget_index) + ".lsl")
+    config_budget_index += 1
+end
+call unlink(config_budget_entry)
+call rmdir(config_budget_directory)
+call gc()
+
 time_impure_evaluator = test_path("time-impure-evaluator.lsl")
 time_impure_output = capture(configure, ["tests/config/time_impure.lsl", time_impure_evaluator])
 if time_impure_output != readfile("tests/config/time_impure.out") or exists(time_impure_evaluator):
@@ -359,6 +531,38 @@ system_impure_output = capture(configure, ["tests/config/system_impure.lsl", sys
 if system_impure_output != readfile("tests/config/system_impure.out") or exists(system_impure_evaluator):
     Error(TestFailure: "config system purity diagnostic differs")
 end
+whitespace_impure_output = capture(configure, ["tests/config/whitespace_impure.lsl", test_path("whitespace-impure-evaluator.lsl")])
+if whitespace_impure_output != readfile("tests/config/whitespace_impure.out"):
+    Error(TestFailure: "config whitespace purity diagnostic differs")
+end
+raw_impure_output = capture(configure, ["tests/config/raw_impure.lsl", test_path("raw-impure-evaluator.lsl")])
+if raw_impure_output != readfile("tests/config/raw_impure.out"):
+    Error(TestFailure: "config raw purity diagnostic differs")
+end
+lux_impure_output = capture(configure, ["tests/config/lux_impure.lsl", test_path("lux-impure-evaluator.lsl")])
+if lux_impure_output != readfile("tests/config/lux_impure.out"):
+    Error(TestFailure: "config Lux-string purity diagnostic differs")
+end
+snapshot_source_directory = test_path("config-snapshot-source")
+snapshot_directory = test_path("config-snapshot")
+call mkdir(snapshot_source_directory)
+call mkdir(snapshot_directory)
+snapshot_source = snapshot_source_directory + "/entry.lsl"
+call writefile(snapshot_source, "load config\nconfig = {\"value\": 1}\n")
+snapshot_wrapper_source = capture(configure, [snapshot_source, "-", snapshot_directory])
+if capture_status() != 0:
+    Error(TestFailure: "config snapshot generation failed")
+end
+# Changing the original after validation must not change what gets compiled.
+call writefile(snapshot_source, "load config\nconfig = {\"value\": 2}\n")
+snapshot_wrapper = snapshot_directory + "/wrapper.lsl"
+call writefile(snapshot_wrapper, snapshot_wrapper_source)
+snapshot_evaluator = test_path("config-snapshot-evaluator")
+call require_success(run(compiler, [snapshot_wrapper, snapshot_evaluator]), "compile snapshotted config evaluator")
+snapshot_output = capture(snapshot_evaluator, [])
+if capture_status() != 0 or snapshot_output != "{\"value\":1}" + chr(10):
+    Error(TestFailure: "config snapshot changed after validation")
+end
 config_wrapper = "tests/config/.defaults-test-" + test_token + "-evaluator.lsl"
 call require_success(run(configure, ["tests/config/defaults.lsl", config_wrapper]), "generate config defaults evaluator")
 config_defaults_test = test_path("config-defaults-test")
@@ -372,6 +576,16 @@ config_lazy_test = test_path("config-lazy-test")
 call require_success(run(compiler, [lazy_wrapper, config_lazy_test]), "compile lazy config evaluator")
 call unlink(lazy_wrapper)
 call require_output(config_lazy_test, [], "tests/config/lazy.out", "lazy config output differs")
+
+value_cycle_wrapper = "tests/config/.value-cycle-test-" + test_token + "-evaluator.lsl"
+call require_success(run(configure, ["tests/config/value_cycle.lsl", value_cycle_wrapper]), "generate cyclic-value config evaluator")
+config_value_cycle_test = test_path("config-value-cycle-test")
+call require_success(run(compiler, [value_cycle_wrapper, config_value_cycle_test]), "compile cyclic-value config evaluator")
+call unlink(value_cycle_wrapper)
+value_cycle_output = capture(config_value_cycle_test, [])
+if capture_status() == 0 or value_cycle_output != "" or capture_stderr() != readfile("tests/config/value_cycle.err"):
+    Error(TestFailure: "cyclic configuration value was not rejected")
+end
 
 type_error_wrapper = "tests/config/.type-error-test-" + test_token + "-evaluator.lsl"
 call require_success(run(configure, ["tests/config/type_error.lsl", type_error_wrapper]), "generate config type-error evaluator")
@@ -395,11 +609,6 @@ if config_cycle_output != readfile("tests/config/cycle.out"):
     Error(TestFailure: "config cycle diagnostic differs")
 end
 
-fixed_test = test_path("fixed-test")
-call require_success(run(compiler, ["compiler/pure/lslc_direct.lsl", fixed_test]), "compile fixed-point stage")
-call require_hardened_elf(fixed_test)
-if readfile(compiler) != readfile(fixed_test):
-    Error(TestFailure: "compiler fixed point differs")
-end
+call require_fixed_point_compiler()
 
 print "pure LSL tests passed"

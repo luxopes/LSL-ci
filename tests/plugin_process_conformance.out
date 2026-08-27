@@ -1,4 +1,5 @@
 {"text":"pure","count":3}
-0
+{"arguments":0,"clean_environment":true}
 PluginError: unknown operation
 PluginError: plugin exited with status 9
+PluginError: plugin exited with status 124

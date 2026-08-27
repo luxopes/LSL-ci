@@ -2,6 +2,7 @@
 # stop-the-world gc() support and join. Pure syscalls only.
 #
 # State block (RBX) words used by threads:
+#   +88  native-library mapping mutex
 #   +96  heap mutex word (runtime_alloc / gc() serialization)
 #  +104  thread-table mutex word
 #  +112  thread table pointer (two anonymous mmap pages, 8192 bytes)
@@ -85,6 +86,7 @@ end
 function emit_mutex(output):
     call assembler.label(output, "thread_ret")
     call assembler.emit(output, x86_64.ret())
+    call emit_mutex_pair(output, "runtime_native_lock", "native_mutex_wait", "runtime_native_unlock", 88, False)
     call emit_mutex_pair(output, "runtime_mutex_lock", "mutex_wait", "runtime_mutex_unlock", 96, True)
     call emit_mutex_pair(output, "runtime_table_lock", "table_wait", "runtime_table_unlock", 104, False)
 end
@@ -130,6 +132,19 @@ function emit_spawn(output):
     call assembler.label(output, "runtime_thread_spawn")
     call assembler.emit(output, x86_64.function_prologue(64))
     call assembler.emit(output, x86_64.store_stack(-8, 7))
+    # Public callers must supply a live tagged Function.  Treating an arbitrary
+    # scalar as a raw code pointer would let thread_spawn(0) terminate the whole
+    # process because clone workers share the signal group.
+    call assembler.relative(output, [232], "runtime_is_heap_object")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+    call assembler.relative(output, [15, 132], "spawn_invalid_function")
+    call assembler.emit(output, x86_64.load_stack(7, -8))
+    call assembler.emit(output, x86_64.load_memory(0, 7, 0))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 10))
+    call assembler.relative(output, [15, 133], "spawn_invalid_function")
+    call assembler.emit(output, x86_64.load_memory(0, 7, 8))
+    call assembler.emit(output, x86_64.test_reg_reg(0, 0))
+    call assembler.relative(output, [15, 132], "spawn_invalid_function")
     # Enable heap locking before a second thread can exist.
     call assembler.emit(output, x86_64.store_memory_imm32(3, 136, 1))
     call assembler.relative(output, [232], "runtime_table_lock")
@@ -180,10 +195,11 @@ function emit_spawn(output):
     call assembler.emit(output, x86_64.load_stack(10, -24))
     call assembler.emit(output, x86_64.cmp_reg_imm8(10, 0))
     call assembler.relative(output, [15, 133], "spawn_stack_ready")
-    # mmap a fresh 8 MiB stack (MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK).
+    # mmap a fresh 8 MiB stack plus a bottom guard page
+    # (MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK).
     call assembler.emit(output, x86_64.mov_imm64(0, 9))
     call assembler.emit(output, x86_64.xor_reg_reg(7, 7))
-    call assembler.emit(output, x86_64.mov_imm64(6, 8388608))
+    call assembler.emit(output, x86_64.mov_imm64(6, 8392704))
     call assembler.emit(output, x86_64.mov_imm64(2, 3))
     call assembler.emit(output, x86_64.mov_imm64(10, 131106))
     call assembler.emit(output, x86_64.mov_imm64(8, -1))
@@ -191,8 +207,24 @@ function emit_spawn(output):
     call assembler.emit(output, x86_64.syscall())
     call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
     call assembler.relative(output, [15, 140], "spawn_stack_failed")
-    call assembler.emit(output, x86_64.add_reg_imm32(0, 8388608))
+    call assembler.emit(output, x86_64.store_stack(-32, 0))
+    call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+    call assembler.emit(output, x86_64.mov_imm64(6, 4096))
+    call assembler.emit(output, x86_64.xor_reg_reg(2, 2))
+    call assembler.emit(output, x86_64.mov_imm64(0, 10))
+    call assembler.emit(output, x86_64.syscall())
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+    call assembler.relative(output, [15, 133], "spawn_stack_guard_failed")
+    call assembler.emit(output, x86_64.load_stack(0, -32))
+    call assembler.emit(output, x86_64.add_reg_imm32(0, 8392704))
     call assembler.emit(output, x86_64.store_stack(-24, 0))
+    call assembler.relative(output, [233], "spawn_stack_ready")
+    call assembler.label(output, "spawn_stack_guard_failed")
+    call assembler.emit(output, x86_64.load_stack(7, -32))
+    call assembler.emit(output, x86_64.mov_imm64(6, 8392704))
+    call assembler.emit(output, x86_64.mov_imm64(0, 11))
+    call assembler.emit(output, x86_64.syscall())
+    call assembler.relative(output, [233], "spawn_stack_failed")
     call assembler.label(output, "spawn_stack_ready")
     # The child finds its entry and Function at the top of its stack.
     call assembler.emit(output, x86_64.load_stack(10, -24))
@@ -247,6 +279,9 @@ function emit_spawn(output):
     call assembler.emit(output, x86_64.store_memory_imm32(9, 16, 0))
     call assembler.label(output, "spawn_no_slot")
     call assembler.relative(output, [232], "runtime_table_unlock")
+    call assembler.emit(output, x86_64.mov_imm64(0, -1))
+    call assembler.emit(output, x86_64.function_epilogue())
+    call assembler.label(output, "spawn_invalid_function")
     call assembler.emit(output, x86_64.mov_imm64(0, -1))
     call assembler.emit(output, x86_64.function_epilogue())
 end

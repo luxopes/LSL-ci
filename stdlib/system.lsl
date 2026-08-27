@@ -7,14 +7,17 @@ function validate_package(package):
         Error(TypeError: "package name must be a String")
     elif package.strip() == "":
         Error(ValueError: "package name cannot be empty")
+    elif len(package) > 255:
+        Error(ValueError: "package name is longer than 255 characters")
     elif package.startswith("-"):
         Error(ValueError: "package name cannot start with '-'")
     elif chr(0) in package:
         Error(ValueError: "package name cannot contain NUL")
     end
     for character in package:
-        if character in " \t\r\n":
-            Error(ValueError: "package name cannot contain whitespace")
+        code = ord(character)
+        if not ((code >= 48 and code <= 57) or (code >= 65 and code <= 90) or (code >= 97 and code <= 122) or character in "+-._:@"):
+            Error(ValueError: "package name contains an invalid character")
         end
     end
 end
@@ -24,6 +27,8 @@ function validate_tool(tool, name):
         Error(TypeError: name + " command must be a String or None")
     elif tool != None and tool == "":
         Error(ValueError: name + " command cannot be empty")
+    elif tool != None and __lsl_text_byte_length(String(tool)) > 4095:
+        Error(ValueError: name + " command is too long")
     elif tool != None and chr(0) in tool:
         Error(ValueError: name + " command cannot contain NUL")
     end
@@ -47,7 +52,7 @@ function package_action_with(action, package, lux_command, apt_command):
     call validate_tool(apt_command, "apt")
     lux_status = -1
     if lux_command != None:
-        lux_status = os.run_argv(lux_command, [action, package])
+        lux_status = os.run_argv_clean(lux_command, [action, package])
         if lux_status == 0:
             return "lux"
         end
@@ -58,7 +63,7 @@ function package_action_with(action, package, lux_command, apt_command):
         end
         Error(PackageError: "no Lux or apt package manager found")
     end
-    apt_status = os.run_argv(apt_command, apt_arguments(action, package))
+    apt_status = os.run_argv_clean(apt_command, apt_arguments(action, package))
     if apt_status != 0:
         Error(PackageError: "apt " + action + " failed for " + package + " with status " + String(apt_status))
     end
@@ -66,13 +71,13 @@ function package_action_with(action, package, lux_command, apt_command):
 end
 
 function detected_lux():
-    return os.which("lux")
+    return os.which_trusted("lux")
 end
 
 function detected_apt():
-    command = os.which("apt")
+    command = os.which_trusted("apt")
     if command == None:
-        command = os.which("apt-get")
+        command = os.which_trusted("apt-get")
     end
     return command
 end
@@ -102,7 +107,7 @@ function remove(package):
 end
 
 function required_tool(name):
-    command = os.which(name)
+    command = os.which_trusted(name)
     if command == None:
         Error(SystemError: "required command is not available: " + name)
     end
@@ -114,7 +119,7 @@ function run_checked(program, arguments, operation):
     if program == None:
         Error(SystemError: "required command is not available: " + operation)
     end
-    status = os.run_argv(program, arguments)
+    status = os.run_argv_clean(program, arguments)
     if status != 0:
         Error(SystemError: operation + " failed with status " + String(status))
     end
@@ -125,7 +130,7 @@ function capture_checked(program, arguments, operation):
     if program == None:
         Error(SystemError: "required command is not available: " + operation)
     end
-    output = os.capture_argv(program, arguments)
+    output = os.capture_argv_clean(program, arguments)
     status = capture_status()
     if status != 0:
         Error(SystemError: operation + " failed with status " + String(status) + ": " + String(capture_stderr()))
@@ -138,12 +143,15 @@ function validate_name(value, label):
         Error(ValueError: label + " must be a non-empty String")
     elif value.startswith("-"):
         Error(ValueError: label + " cannot start with '-'")
+    elif len(value) > 1024:
+        Error(ValueError: label + " is too long")
     elif chr(0) in value:
         Error(ValueError: label + " cannot contain NUL")
     end
     for character in value:
-        if character in " \t\r\n":
-            Error(ValueError: label + " cannot contain whitespace")
+        code = ord(character)
+        if code <= 32 or code == 127:
+            Error(ValueError: label + " cannot contain whitespace or control characters")
         end
     end
 end
@@ -199,12 +207,18 @@ function validate_mode(mode):
 end
 
 function validate_absolute_path(path, label, allow_root):
-    if type(path) != "String" or not path.startswith("/"):
+    if type(path) != "String" or len(path) == 0 or __lsl_text_byte_length(String(path)) > 4095 or not path.startswith("/"):
         Error(ValueError: label + " must be an absolute path")
     elif not allow_root and path == "/":
         Error(ValueError: label + " cannot be /")
     elif chr(0) in path:
         Error(ValueError: label + " cannot contain NUL")
+    end
+    for character in path:
+        code = ord(character)
+        if code < 32 or code == 127:
+            Error(ValueError: label + " cannot contain control characters")
+        end
     end
     for part in path.split("/"):
         if part == "..":
@@ -274,7 +288,7 @@ function service_active_with(name, systemctl_command):
     if systemctl_command == None:
         Error(SystemError: "required command is not available: systemctl")
     end
-    status = os.run_argv(systemctl_command, ["is-active", "--quiet", name])
+    status = os.run_argv_clean(systemctl_command, ["is-active", "--quiet", name])
     if status == 0:
         return True
     elif status == 3:
@@ -332,7 +346,7 @@ function group_exists_with(name, getent_command):
     if getent_command == None:
         Error(SystemError: "required command is not available: getent")
     end
-    call os.capture_argv(getent_command, ["group", name])
+    call os.capture_argv_clean(getent_command, ["group", name])
     status = capture_status()
     if status == 0:
         return True
@@ -369,7 +383,7 @@ function user_exists_with(name, id_command):
     if id_command == None:
         Error(SystemError: "required command is not available: id")
     end
-    call os.capture_argv(id_command, ["-u", name])
+    call os.capture_argv_clean(id_command, ["-u", name])
     status = capture_status()
     if status == 0:
         return True
@@ -450,8 +464,8 @@ function write_file_with(path, content, mode, owner, group, tools):
     end
     call validate_mode(mode)
     if owner != None:
-        call validate_name(owner, "file owner")
-        call validate_name(group, "file group")
+        call validate_account_name(owner, "file owner")
+        call validate_account_name(group, "file group")
     elif group != None:
         Error(ValueError: "file group requires an owner")
     end
@@ -459,25 +473,47 @@ function write_file_with(path, content, mode, owner, group, tools):
     directory = path_directory(path)
     call run_checked(tools["mkdir"], ["-p", "--", directory], "create parent directory " + directory)
     template = directory + "/." + path_name(path) + ".lux.XXXXXX"
-    temporary = capture_checked(tools["mktemp"], [template], "create temporary file").strip()
-    call validate_absolute_path(temporary, "temporary file", False)
+    temporary_directory = capture_checked(tools["mktemp"], ["-d", template], "create private temporary directory").strip()
+    call validate_absolute_path(temporary_directory, "temporary directory", False)
+    expected_prefix = directory + "/." + path_name(path) + ".lux."
+    suffix = ""
+    if temporary_directory.startswith(expected_prefix):
+        suffix = temporary_directory[len(expected_prefix):len(temporary_directory)]
+    end
+    if suffix == "" or "/" in suffix or not exists(temporary_directory):
+        Error(SystemError: "mktemp returned a path outside the requested directory")
+    end
+    # The file is created inside a mode-0700 directory. Reopening a pathname
+    # returned by plain mktemp left a window in which another user could swap
+    # the inode between creation and writefile().
+    temporary = temporary_directory + "/content"
+    if exists(temporary):
+        call rmdir(temporary_directory)
+        Error(SystemError: "private temporary directory is not empty")
+    end
     call writefile(temporary, content)
-    status = os.run_argv(tools["chmod"], [mode, "--", temporary])
+    status = os.run_argv_clean(tools["chmod"], [mode, "--", temporary])
     if status != 0:
         call unlink(temporary)
+        call rmdir(temporary_directory)
         Error(SystemError: "chmod temporary file failed with status " + String(status))
     end
     if owner != None:
-        status = os.run_argv(tools["chown"], [owner + ":" + group, "--", temporary])
+        status = os.run_argv_clean(tools["chown"], [owner + ":" + group, "--", temporary])
         if status != 0:
             call unlink(temporary)
+            call rmdir(temporary_directory)
             Error(SystemError: "chown temporary file failed with status " + String(status))
         end
     end
-    status = os.run_argv(tools["mv"], ["-f", "--", temporary, path])
+    status = os.run_argv_clean(tools["mv"], ["-f", "--", temporary, path])
     if status != 0:
         call unlink(temporary)
+        call rmdir(temporary_directory)
         Error(SystemError: "atomic file rename failed with status " + String(status))
+    end
+    if rmdir(temporary_directory) != 0:
+        Error(SystemError: "cannot remove private temporary directory")
     end
 end
 
@@ -523,7 +559,7 @@ function ensure_mount_with(device, target, filesystem, options, mountpoint_comma
     if mountpoint_command == None:
         Error(SystemError: "required command is not available: mountpoint")
     end
-    status = os.run_argv(mountpoint_command, ["-q", "--", target])
+    status = os.run_argv_clean(mountpoint_command, ["-q", "--", target])
     if status == 0:
         return False
     elif status != 1:

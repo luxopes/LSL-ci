@@ -4,8 +4,11 @@ True True
 True
 True
 True
+True True
 200 True True
-HTTPError: HTTP transport requires HTTPS or a loopback URL
+HTTPError: plain HTTP is restricted to numeric loopback hosts
+HTTPError: HTTP URL authority is empty or contains user information
+HTTPError: HTTP URL contains an unsafe character
 HTTPError: invalid HTTP header name: Good
 Injected
 HTTPError: HTTP header value contains a control character

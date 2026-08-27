@@ -71,13 +71,13 @@ skutečný device test `tests/cuda_hardware_conformance.lsl`.
 
 `stdlib/tensor.lsl` poskytuje dense `Tensor` nad sdíleným `RealArray` nebo raw contiguous `FloatArray`: shape, strides, offset, dtype, bounds-checked get/set, reshape a explicitní zero-copy views. FloatArray cesta přidává syscall-only nativní Float64 kernely `float_sum`, `float_dot`, `float_axpy` a `float_matmul`; modul je exportuje také jako `dot_data`, `axpy_data` a `matmul_data`. V 0.6 tyto vstupy automaticky procházejí volitelným CUDA dispatcherem a zachovávají CPU fallback. Více Tensor objektů může sdílet stejný mutable data owner; změna přes view je okamžitě viditelná ostatním views.
 
-## Podporované: omezené in-process CPU ET_DYN ABI v1
+## Podporované: omezené fork-isolated CPU ET_DYN ABI v1
 
 `stdlib/native.lsl` mapuje self-contained Linux x86_64 `ET_DYN` image přímo
 přes syscalls, validuje ELF class/type/machine a všechny section/symbol/string
 bounds, vyhledá symbol v `SHT_DYNSYM`, vytvoří opaque native Function a zavolá
-ji s nejvýše šesti signed Int argumenty. Image se explicitně uvolní
-`native.close`.
+ji s nejvýše šesti signed Int argumenty. Samotné volání proběhne v krátkodobém
+fork child procesu a image se explicitně uvolní `native.close`.
 
 ```lsl
 load native
@@ -93,17 +93,28 @@ relocations, dynamic sections, external symbols, libc a constructors;
 `SHT_PROGBITS`. Vstup i výstup jsou Int64. Loader nepředává pluginu LSL heap
 pointery. Malformed ELF, chybějící/undefined symbol, špatná architektura a
 příliš široké/non-Int volání jsou odmítnuté. Conformance zahrnuje i poškozenou
-section tabulku a zakázanou relocation sekci.
+section tabulku, zakázanou relocation sekci, ownership přes GC a souběžný
+`close` proti `call`.
 
-Bohatší CPU ABI může v další verzi přidat explicitně povolené `R_X86_64_RELATIVE` relocations a opaque Tensor descriptors. Přímý in-process GPU/device ABI není součástí aktuálního scope; podporovaná CUDA hranice je izolovaný worker výše.
+Před skokem do kódu child ponechá jen fixní result pipe descriptor, zavře
+stdin/stdout/stderr i ostatní deskriptory, nastaví dvousekundový alarm,
+`no_new_privs` a Linux strict seccomp. Native kód pak může jen počítat, vrátit
+Int64 a použít syscalls povolené strict režimem; rodič kontroluje přesně osm
+bytů výsledku i exit status. Mapování je nejprve RW pro načtení a potom RX,
+nikdy RWX. `symbol`, `call` a `close` jsou vůči sobě serializované a Function
+objekt drží knihovnu živou přes GC.
 
-Process JSON ABI zůstává doporučená izolovaná hranice pro obecné pluginy;
-omezený ET_DYN ABI je rychlá in-process CPU hranice pouze pro důvěryhodné
-self-contained kernely. Loader umí odmítnout vadnou strukturu souboru, ale
-nemůže zabránit memory-corruption chybě uvnitř už spuštěného C/C++ kódu. Pro
-nedůvěryhodný nebo složitý native kód použijte krátkodobý worker omezený na
-úrovni hostitele (namespaces/seccomp/cgroup, bez secrets a s minimálními
-filesystem/network oprávněními).
+Bohatší CPU ABI může v další verzi přidat explicitně povolené
+`R_X86_64_RELATIVE` relocations a opaque Tensor descriptors. Přímý GPU/device
+ABI není součástí aktuálního scope; podporovaná CUDA hranice je izolovaný
+worker výše.
+
+Process JSON ABI zůstává doporučená hranice pro obecné pluginy. Omezený ET_DYN
+ABI izoluje memory-corruption a nekonečnou smyčku od rodiče, ale není hranicí
+důvěrnosti: fork child zdědí čitelný snapshot rodičovského adresního prostoru.
+Úmyslně nedůvěryhodný nebo složitý native kód proto spusťte jako nový `exec`
+worker bez secrets, omezený na úrovni hostitele
+(namespaces/seccomp/cgroup a minimální filesystem/network oprávnění).
 
 ## Hranice control plane
 
@@ -113,3 +124,6 @@ TLS/OAuth/OIDC ani telemetry ekosystém. Bezpečnostní kořen služby proto dr�
 hostitelském runtime s auditovanými knihovnami; LSL i C++/CUDA používejte jako
 oddělené krátkodobé workery. Statické PIE bez interpreteru je pro tuto roli
 výhoda, ne důvod přesunout do LSL celý control plane.
+
+Úplný threat model včetně privátního `__lsl_*` ABI je v
+[bezpečnostním modelu](security.md).

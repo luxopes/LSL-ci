@@ -3,12 +3,21 @@
 
 load cuda
 
+MAX_TENSOR_RANK = 32
+MAX_TENSOR_ELEMENTS = 67108864
+
 function element_count(shape):
+    if type(shape) != "List" or len(shape) > MAX_TENSOR_RANK:
+        Error(TensorShapeError: "tensor shape must be a List with at most 32 dimensions")
+    end
     count = 1
     for dimension in shape:
         size = Int(dimension)
         if size < 0:
             Error(TensorShapeError: "negative tensor dimension")
+        end
+        if size > 0 and count > MAX_TENSOR_ELEMENTS // size:
+            Error(TensorShapeError: "tensor exceeds 67108864 elements")
         end
         count *= size
     end
@@ -16,6 +25,7 @@ function element_count(shape):
 end
 
 function contiguous_strides(shape):
+    call element_count(shape)
     strides = []
     stride = 1
     index = len(shape) - 1
@@ -30,10 +40,41 @@ end
 class Tensor(True):
     ctype Public
     function init(self, data, shape, strides, offset, dtype):
+        dimensions = List(shape)
+        layout = List(strides)
+        if len(dimensions) != len(layout):
+            Error(TensorLayoutError: "tensor shape and stride ranks differ")
+        end
+        count = element_count(dimensions)
+        start = Int(offset)
+        if start < 0 or start > len(data):
+            Error(TensorLayoutError: "tensor offset is out of range")
+        end
+        maximum = start
+        axis = 0
+        while axis < len(dimensions):
+            stride = Int(layout[axis])
+            dimension = Int(dimensions[axis])
+            if stride < 0:
+                Error(TensorLayoutError: "negative tensor strides are not supported")
+            end
+            if dimension > 0:
+                steps = dimension - 1
+                if steps > 0 and stride > (len(data) - maximum) // steps:
+                    Error(TensorLayoutError: "tensor view exceeds its data")
+                end
+                distance = steps * stride
+                maximum += distance
+            end
+            axis += 1
+        end
+        if count > 0 and maximum >= len(data):
+            Error(TensorLayoutError: "tensor view exceeds its data")
+        end
         self.data = data
-        self.shape = shape
-        self.strides = strides
-        self.offset = offset
+        self.shape = dimensions
+        self.strides = layout
+        self.offset = start
         self.dtype = dtype
     end
 
@@ -46,7 +87,7 @@ class Tensor(True):
     end
 
     function position(self, indices):
-        if len(indices) != len(self.shape):
+        if type(indices) != "List" or len(indices) != len(self.shape):
             Error(TensorIndexError: "tensor index rank mismatch")
         end
         position = self.offset
@@ -86,6 +127,7 @@ class Tensor(True):
     end
 
     function reshape(self, shape):
+        call self.require_contiguous()
         if element_count(shape) != self.size():
             Error(TensorShapeError: "reshape changes tensor element count")
         end
@@ -138,6 +180,9 @@ class Tensor(True):
 end
 
 function from_values(values, shape):
+    if type(values) != "List" and type(values) != "FloatArray" and type(values) != "RealArray":
+        Error(TypeError: "tensor values must be an array or List")
+    end
     if len(values) != element_count(shape):
         Error(TensorShapeError: "tensor data length does not match shape")
     end
