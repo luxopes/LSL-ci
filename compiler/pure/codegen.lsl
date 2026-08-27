@@ -156,7 +156,7 @@ function infer_expression_type(syntax, types, function_returns):
                 return "Any"
             end
         elif syntax["operator"] == "*":
-            if (left == "String" and right == "Int") or (left == "Int" and right == "String"):
+            if (left == "String" and (right == "Int" or right == "Bool")) or ((left == "Int" or left == "Bool") and right == "String"):
                 return "String"
             elif left == "Float" or right == "Float":
                 return "Float"
@@ -222,7 +222,7 @@ function infer_expression_type(syntax, types, function_returns):
             if name == "sum":
                 return "Any"
             end
-            if name == "len" or name == "Int" or name == "ord" or name == "arg_count" or name == "run" or name == "__lsl_run" or name == "run_clean" or name == "__lsl_run_clean" or name == "capture_status" or name == "native_u64" or name == "native_size" or name == "native_call" or name == "native_close" or name == "__lsl_type_code" or name == "__lsl_raw_equal" or name == "__lsl_float_bits" or name == "__lsl_float_to_int" or name == "__lsl_unbox_int" or name == "__lsl_raw_int" or name == "__lsl_typed_int" or name == "__lsl_parse_literal_int" or name == "__lsl_test_fd_fault" or name == "__lsl_address" or name == "__lsl_object_table_mask" or name == "__lsl_intern_table_mask" or name == "__lsl_fd_open" or name == "__lsl_fd_read" or name == "__lsl_fd_write" or name == "__lsl_fd_seek" or name == "__lsl_fd_close" or name == "__lsl_fd_socket" or name == "__lsl_fd_connect" or name == "__lsl_raster_pack" or name == "__lsl_raster_copy" or name == "__lsl_raster_fill" or name == "__lsl_fd_ioctl" or name == "__lsl_fd_mmap" or name == "__lsl_mem_pack" or name == "__lsl_data_address" or name == "__lsl_syscall" or name == "__lsl_mem_unpack" or name == "__lsl_byte_copy" or name == "__lsl_text_byte" or name == "__lsl_text_byte_length" or name == "atomic_add" or name == "atomic_xchg" or name == "atomic_cas" or name == "thread_spawn" or name == "thread_join" or name == "cpu_count" or name == "popcount" or name == "trailing_zeros":
+            if name == "len" or name == "Int" or name == "ord" or name == "arg_count" or name == "run" or name == "__lsl_run" or name == "run_clean" or name == "__lsl_run_clean" or name == "capture_status" or name == "native_u64" or name == "native_size" or name == "native_call" or name == "native_close" or name == "__lsl_type_code" or name == "__lsl_raw_equal" or name == "__lsl_float_bits" or name == "__lsl_float_to_int" or name == "__lsl_unbox_int" or name == "__lsl_raw_int" or name == "__lsl_typed_int" or name == "__lsl_checked_index" or name == "__lsl_parse_literal_int" or name == "__lsl_test_fd_fault" or name == "__lsl_address" or name == "__lsl_object_table_mask" or name == "__lsl_intern_table_mask" or name == "__lsl_fd_open" or name == "__lsl_fd_read" or name == "__lsl_fd_write" or name == "__lsl_fd_seek" or name == "__lsl_fd_close" or name == "__lsl_fd_socket" or name == "__lsl_fd_connect" or name == "__lsl_raster_pack" or name == "__lsl_raster_copy" or name == "__lsl_raster_fill" or name == "__lsl_fd_ioctl" or name == "__lsl_fd_mmap" or name == "__lsl_mem_pack" or name == "__lsl_data_address" or name == "__lsl_syscall" or name == "__lsl_mem_unpack" or name == "__lsl_byte_copy" or name == "__lsl_text_byte" or name == "__lsl_text_byte_length" or name == "atomic_add" or name == "atomic_xchg" or name == "atomic_cas" or name == "thread_spawn" or name == "thread_join" or name == "cpu_count" or name == "popcount" or name == "trailing_zeros":
                 return "Int"
             elif name == "Float" or name == "sqrt" or name == "__lsl_float_from_bits" or name == "float_sum" or name == "float_dot" or name == "__lsl_wall_time":
                 return "Float"
@@ -422,6 +422,41 @@ function method_function(name):
         return "__lsl_dict_items"
     end
     return ""
+end
+
+function is_sequence_type(value_type):
+    return value_type == "String" or value_type == "List" or value_type == "Tuple" or value_type == "RealArray" or value_type == "IntArray" or value_type == "FloatArray" or value_type == "ByteArray"
+end
+
+function is_sized_type(value_type):
+    return is_sequence_type(value_type) or value_type == "Dictionary"
+end
+
+function is_mutable_index_type(value_type):
+    return value_type == "List" or value_type == "RealArray" or value_type == "IntArray" or value_type == "FloatArray" or value_type == "ByteArray" or value_type == "Dictionary"
+end
+
+function is_numeric_type(value_type):
+    return value_type == "Int" or value_type == "Bool" or value_type == "Float" or value_type == "Any"
+end
+
+function method_supported(receiver_type, name):
+    if receiver_type == "Any":
+        return method_function(name) != "" or name == "append" or name == "clear" or name == "pop" or name == "keys" or name == "index"
+    elif receiver_type == "String":
+        return name == "strip" or name == "lstrip" or name == "rstrip" or name == "lower" or name == "upper" or name == "title" or name == "capitalize" or name == "startswith" or name == "endswith" or name == "find" or name == "index" or name == "count" or name == "split" or name == "join" or name == "replace"
+    elif receiver_type == "List":
+        return name == "append" or name == "extend" or name == "insert" or name == "pop" or name == "remove" or name == "clear" or name == "index" or name == "count" or name == "sort" or name == "reverse" or name == "copy"
+    elif receiver_type == "Dictionary":
+        return name == "get" or name == "keys" or name == "values" or name == "items" or name == "update" or name == "pop" or name == "clear" or name == "setdefault" or name == "copy"
+    elif receiver_type == "Tuple":
+        return name == "index" or name == "count"
+    elif receiver_type == "RealArray":
+        return name == "index" or name == "count" or name == "copy"
+    elif receiver_type == "IntArray" or receiver_type == "FloatArray" or receiver_type == "ByteArray":
+        return name == "append" or name == "clear"
+    end
+    return False
 end
 
 function comparison_opcode(operator):
@@ -1691,6 +1726,82 @@ function emit_runtime_raise(generator, message):
     end
 end
 
+function emit_dynamic_numeric_value_guard(generator, int_only):
+    # rax contains the public Any value. The shared runtime returns it unchanged
+    # or records a catchable TypeError before an arithmetic helper sees it.
+    call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
+    if int_only:
+        call assembler.emit(generator["builder"], x86_64.mov_imm64(6, 1))
+    else:
+        call assembler.emit(generator["builder"], x86_64.mov_imm64(6, 0))
+    end
+    call assembler.relative(generator["builder"], [232], "runtime_require_numeric_value")
+    call emit_pending_error(generator)
+end
+
+function emit_dynamic_numeric_pair_guard(generator, mode):
+    # rdi/rsi contain the original operands. Mode 1 also permits String+String;
+    # mode 2 restricts the right operand to Int/Bool (for exponentiation).
+    call assembler.emit(generator["builder"], x86_64.mov_imm64(2, mode))
+    call assembler.relative(generator["builder"], [232], "runtime_require_numeric_pair")
+    call emit_pending_error(generator)
+end
+
+function checked_index_node(generator, syntax):
+    if syntax != None and infer_expression_type(syntax, generator["types"], generator["function_returns"]) == "Any" and not generator["internal_abi"] and not generator.get("current_internal_function", False):
+        return {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_checked_index"}, "arguments": [syntax]}
+    end
+    return syntax
+end
+
+function checked_string_node(generator, syntax):
+    value_type = infer_expression_type(syntax, generator["types"], generator["function_returns"])
+    if value_type != "String" and value_type != "Any":
+        call unsupported(generator["path"], generator["lines"], syntax, "value must be a String", "convert the value with String(...)")
+    end
+    if value_type == "Any" and not generator["internal_abi"] and not generator.get("current_internal_function", False):
+        return {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_require_string_value"}, "arguments": [syntax]}
+    end
+    return syntax
+end
+
+function checked_list_node(generator, syntax):
+    value_type = infer_expression_type(syntax, generator["types"], generator["function_returns"])
+    if value_type != "List" and value_type != "Any":
+        call unsupported(generator["path"], generator["lines"], syntax, "value must be a List", "pass a List value")
+    end
+    if value_type == "Any" and not generator["internal_abi"] and not generator.get("current_internal_function", False):
+        return {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_require_list"}, "arguments": [syntax]}
+    end
+    return syntax
+end
+
+function checked_byte_sequence_node(generator, syntax):
+    value_type = infer_expression_type(syntax, generator["types"], generator["function_returns"])
+    if value_type != "ByteArray" and value_type != "List" and value_type != "Any":
+        call unsupported(generator["path"], generator["lines"], syntax, "binary data must be a ByteArray or List", "pass a ByteArray value")
+    end
+    if value_type == "Any" and not generator["internal_abi"] and not generator.get("current_internal_function", False):
+        return {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_require_byte_sequence"}, "arguments": [syntax]}
+    end
+    return syntax
+end
+
+function emit_checked_int_expression(generator, syntax, purpose):
+    value_type = infer_expression_type(syntax, generator["types"], generator["function_returns"])
+    if value_type != "Int" and value_type != "Bool" and value_type != "Any":
+        call unsupported(generator["path"], generator["lines"], syntax, purpose + " must be an Int", "convert the value with Int(...)")
+    end
+    call emit_expression(generator, syntax)
+    if value_type == "Any":
+        if not generator["internal_abi"] and not generator.get("current_internal_function", False):
+            call emit_dynamic_numeric_value_guard(generator, True)
+        end
+        call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
+        call assembler.relative(generator["builder"], [232], "runtime_unbox_dynamic_int")
+    end
+end
+
 function emit_bounds_check(generator, syntax, target_type, force):
     if not force and target_type == "IntArray" and generator.get("unchecked_intarray", False):
         return
@@ -1727,6 +1838,9 @@ function emit_float_expression(generator, syntax):
     call emit_expression(generator, syntax)
     value_type = infer_expression_type(syntax, generator["types"], generator["function_returns"])
     if value_type == "Any":
+        if not generator["internal_abi"] and not generator.get("current_internal_function", False):
+            call emit_dynamic_numeric_value_guard(generator, False)
+        end
         call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
         call assembler.relative(generator["builder"], [232], "runtime_coerce_float")
     elif value_type != "Float":
@@ -1966,27 +2080,40 @@ function emit_expression(generator, syntax):
         end
     elif kind == "slice":
         target_slice_type = infer_expression_type(syntax["target"], generator["types"], generator["function_returns"])
-        if target_slice_type == "ByteArray":
-            call unsupported(generator["path"], generator["lines"], syntax, "ByteArray slicing is not implemented", "copy bytes with indexed access")
+        if target_slice_type != "Any" and not is_sequence_type(target_slice_type):
+            call unsupported(generator["path"], generator["lines"], syntax, "value of type " + target_slice_type + " does not support slicing", "slice a String, collection, or typed array")
         end
-        if syntax.get("step", None) != None:
+        for slice_bound in [syntax["start"], syntax["stop"], syntax.get("step", None)]:
+            if slice_bound != None:
+                bound_type = infer_expression_type(slice_bound, generator["types"], generator["function_returns"])
+                if bound_type != "Int" and bound_type != "Bool" and bound_type != "Any":
+                    call unsupported(generator["path"], generator["lines"], slice_bound, "slice bounds must be Int", "convert the bound with Int(...)")
+                end
+            end
+        end
+        if syntax.get("step", None) != None or target_slice_type == "ByteArray" or (target_slice_type == "Any" and not generator["internal_abi"]):
             # Strided slice via pure-LSL helper (Python step semantics).
             zero_literal = {"kind": "literal", "literal_kind": "number", "value": "0", "integer_value": 0, "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]}
+            one_literal = {"kind": "literal", "literal_kind": "number", "value": "1", "integer_value": 1, "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]}
             true_literal = {"kind": "literal", "literal_kind": "name", "value": "True", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]}
             false_literal = {"kind": "literal", "literal_kind": "name", "value": "False", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]}
             start_arg = zero_literal
             has_start = false_literal
             if syntax["start"] != None:
-                start_arg = syntax["start"]
+                start_arg = checked_index_node(generator, syntax["start"])
                 has_start = true_literal
             end
             stop_arg = zero_literal
             has_stop = false_literal
             if syntax["stop"] != None:
-                stop_arg = syntax["stop"]
+                stop_arg = checked_index_node(generator, syntax["stop"])
                 has_stop = true_literal
             end
-            slice_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_slice3"}, "arguments": [syntax["target"], start_arg, has_start, stop_arg, has_stop, syntax["step"]]}
+            step_arg = one_literal
+            if syntax.get("step", None) != None:
+                step_arg = checked_index_node(generator, syntax["step"])
+            end
+            slice_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_slice3"}, "arguments": [syntax["target"], start_arg, has_start, stop_arg, has_stop, step_arg]}
             call emit_expression(generator, slice_call)
             target_slice_type = infer_expression_type(syntax["target"], generator["types"], generator["function_returns"])
             if target_slice_type == "Tuple":
@@ -2008,7 +2135,12 @@ function emit_expression(generator, syntax):
             call emit_expression(generator, syntax["start"])
             if infer_expression_type(syntax["start"], generator["types"], generator["function_returns"]) == "Any":
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
-                call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+                if not generator["internal_abi"] and not generator.get("current_internal_function", False):
+                    call assembler.relative(output, [232], "runtime_checked_index")
+                    call emit_pending_error(generator)
+                else:
+                    call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+                end
             end
         end
         call assembler.emit(output, x86_64.push(0))
@@ -2019,7 +2151,12 @@ function emit_expression(generator, syntax):
             call emit_expression(generator, syntax["stop"])
             if infer_expression_type(syntax["stop"], generator["types"], generator["function_returns"]) == "Any":
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
-                call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+                if not generator["internal_abi"] and not generator.get("current_internal_function", False):
+                    call assembler.relative(output, [232], "runtime_checked_index")
+                    call emit_pending_error(generator)
+                else:
+                    call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+                end
             end
         end
         call assembler.emit(output, x86_64.move_reg_reg(2, 0))
@@ -2038,6 +2175,12 @@ function emit_expression(generator, syntax):
         end
     elif kind == "index":
         target_type = infer_expression_type(syntax["target"], generator["types"], generator["function_returns"])
+        index_type = infer_expression_type(syntax["index"], generator["types"], generator["function_returns"])
+        if target_type != "Any" and target_type != "Dictionary" and not is_sequence_type(target_type):
+            call unsupported(generator["path"], generator["lines"], syntax, "value of type " + target_type + " is not indexable", "index a String, collection, typed array, or Dictionary")
+        elif is_sequence_type(target_type) and index_type != "Int" and index_type != "Bool" and index_type != "Any":
+            call unsupported(generator["path"], generator["lines"], syntax["index"], "sequence index must be Int", "convert the index with Int(...)")
+        end
         if target_type == "IntArray" and generator.get("unchecked_intarray", False) and is_fast_int_index(generator, syntax["index"]):
             # The unchecked numeric hot path can keep both operands in their
             # final ABI registers. A leaf index cannot call or clobber rdi, so
@@ -2064,11 +2207,16 @@ function emit_expression(generator, syntax):
         call emit_expression(generator, syntax["target"])
         call assembler.emit(output, x86_64.push(0))
         call emit_expression(generator, syntax["index"])
-        if target_type == "Dictionary":
+        if target_type == "Dictionary" or (target_type == "Any" and not generator["internal_abi"]):
             call emit_dictionary_key_box(generator, syntax["index"])
-        elif infer_expression_type(syntax["index"], generator["types"], generator["function_returns"]) == "Any":
+        elif index_type == "Any":
             call assembler.emit(output, x86_64.move_reg_reg(7, 0))
-            call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+            if not generator["internal_abi"] and not generator.get("current_internal_function", False):
+                call assembler.relative(output, [232], "runtime_checked_index")
+                call emit_pending_error(generator)
+            else:
+                call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+            end
         end
         call assembler.emit(output, x86_64.move_reg_reg(6, 0))
         call assembler.emit(output, x86_64.pop(7))
@@ -2093,7 +2241,11 @@ function emit_expression(generator, syntax):
                     call assembler.relative(output, [232], "runtime_float_new")
                 end
             else:
-                call assembler.relative(output, [232], "runtime_get")
+                if target_type == "Any" and not generator["internal_abi"]:
+                    call assembler.relative(output, [232], "runtime_dynamic_get")
+                else:
+                    call assembler.relative(output, [232], "runtime_get")
+                end
             end
         end
         call emit_pending_error(generator)
@@ -2103,15 +2255,21 @@ function emit_expression(generator, syntax):
             call assembler.emit(output, x86_64.not_reg(0))
             return
         end
+        operand_type = infer_expression_type(syntax["operand"], generator["types"], generator["function_returns"])
+        if syntax["operator"] == "-" and not is_numeric_type(operand_type):
+            call unsupported(generator["path"], generator["lines"], syntax, "unary - requires a numeric operand", "pass an Int, Bool, or Float value")
+        end
         call emit_expression(generator, syntax["operand"])
         if syntax["operator"] == "-":
-            operand_type = infer_expression_type(syntax["operand"], generator["types"], generator["function_returns"])
             if operand_type == "Float":
                 call assembler.emit(output, x86_64.load_memory(7, 0, 8))
                 call assembler.emit(output, x86_64.mov_imm64(1, -9223372036854775808))
                 call assembler.emit(output, x86_64.add_reg_reg(7, 1))
                 call assembler.relative(output, [232], "runtime_float_new")
             elif operand_type == "Any":
+                if not generator["internal_abi"] and not generator.get("current_internal_function", False):
+                    call emit_dynamic_numeric_value_guard(generator, False)
+                end
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 call assembler.relative(output, [232], dynamic_numeric_runtime(generator, "runtime_neg_any"))
             else:
@@ -2125,19 +2283,54 @@ function emit_expression(generator, syntax):
     elif kind == "binary":
         operator = syntax["operator"]
         expression_type = infer_expression_type(syntax, generator["types"], generator["function_returns"])
+        binary_left_type = infer_expression_type(syntax["left"], generator["types"], generator["function_returns"])
+        binary_right_type = infer_expression_type(syntax["right"], generator["types"], generator["function_returns"])
+        if operator == "+":
+            valid_add = binary_left_type == "Any" or binary_right_type == "Any" or (is_numeric_type(binary_left_type) and is_numeric_type(binary_right_type)) or (binary_left_type == "String" and binary_right_type == "String") or (binary_left_type == "List" and binary_right_type == "List")
+            if not valid_add:
+                call unsupported(generator["path"], generator["lines"], syntax, "+ requires two numbers, two Strings, or two Lists", "use matching operand types or convert explicitly")
+            end
+        elif operator == "*":
+            valid_multiply = binary_left_type == "Any" or binary_right_type == "Any" or (is_numeric_type(binary_left_type) and is_numeric_type(binary_right_type)) or (binary_left_type == "String" and (binary_right_type == "Int" or binary_right_type == "Bool")) or (binary_right_type == "String" and (binary_left_type == "Int" or binary_left_type == "Bool"))
+            if not valid_multiply:
+                call unsupported(generator["path"], generator["lines"], syntax, "* requires numeric operands or a String and Int", "use numeric values or String * Int")
+            end
+        elif operator == "-" or operator == "/" or operator == "//" or operator == "%":
+            if not is_numeric_type(binary_left_type) or not is_numeric_type(binary_right_type):
+                call unsupported(generator["path"], generator["lines"], syntax, "operator " + operator + " requires numeric operands", "pass Int, Bool, or Float values")
+            end
+        elif operator == "^":
+            valid_exponent = binary_right_type == "Int" or binary_right_type == "Bool" or binary_right_type == "Any"
+            if not is_numeric_type(binary_left_type) or not valid_exponent:
+                call unsupported(generator["path"], generator["lines"], syntax, "^ requires a numeric base and Int exponent", "use an Int exponent such as x ^ 3")
+            end
+        end
         if (operator == "//" or operator == "%") and (expression_type == "Float" or expression_type == "Any"):
             # Float floor-division/modulo, or dynamic Int/Float dispatch when both
             # operands are Any. Must precede the Float +-*/ block (which rejects
             # // and %).
+            floor_left_type = infer_expression_type(syntax["left"], generator["types"], generator["function_returns"])
+            floor_right_type = infer_expression_type(syntax["right"], generator["types"], generator["function_returns"])
+            floor_left_numeric = floor_left_type == "Int" or floor_left_type == "Bool" or floor_left_type == "Float" or floor_left_type == "Any"
+            floor_right_numeric = floor_right_type == "Int" or floor_right_type == "Bool" or floor_right_type == "Float" or floor_right_type == "Any"
+            if not floor_left_numeric or not floor_right_numeric:
+                call unsupported(generator["path"], generator["lines"], syntax, "operator " + operator + " requires numeric operands", "pass Int, Bool, or Float values")
+            end
             if operator == "%":
                 floor_target = "__lsl_fmod"
                 if expression_type == "Any":
                     floor_target = "__lsl_mod_dyn"
+                    if not generator["internal_abi"] and not generator.get("current_internal_function", False):
+                        floor_target = "__lsl_public_mod_dyn"
+                    end
                 end
             else:
                 floor_target = "__lsl_ffloordiv"
                 if expression_type == "Any":
                     floor_target = "__lsl_floordiv_dyn"
+                    if not generator["internal_abi"] and not generator.get("current_internal_function", False):
+                        floor_target = "__lsl_public_floordiv_dyn"
+                    end
                 end
             end
             floor_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": floor_target}, "arguments": [syntax["left"], syntax["right"]]}
@@ -2147,7 +2340,7 @@ function emit_expression(generator, syntax):
         if expression_type == "Float":
             if operator == "^":
                 exponent_type = infer_expression_type(syntax["right"], generator["types"], generator["function_returns"])
-                if exponent_type != "Int" and exponent_type != "Any":
+                if exponent_type != "Int" and exponent_type != "Bool" and exponent_type != "Any":
                     call unsupported(generator["path"], generator["lines"], syntax, "Float ^ requires an Int exponent", "use an Int exponent such as x ^ 3")
                 end
                 call emit_float_expression(generator, syntax["left"])
@@ -2155,7 +2348,12 @@ function emit_expression(generator, syntax):
                 call emit_expression(generator, syntax["right"])
                 if exponent_type == "Any":
                     call assembler.emit(output, x86_64.move_reg_reg(7, 0))
-                    call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+                    if not generator["internal_abi"] and not generator.get("current_internal_function", False):
+                        call assembler.relative(output, [232], "runtime_checked_index")
+                        call emit_pending_error(generator)
+                    else:
+                        call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+                    end
                 end
                 call assembler.emit(output, x86_64.move_reg_reg(6, 0))
                 call assembler.emit(output, x86_64.pop(7))
@@ -2193,25 +2391,39 @@ function emit_expression(generator, syntax):
             call emit_expression(generator, repeat_call)
             return
         elif operator == "+" and (expression_type == "String" or expression_type == "Any"):
+            if expression_type == "Any" and not generator["internal_abi"] and not generator.get("current_internal_function", False):
+                public_add_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_public_add"}, "arguments": [syntax["left"], syntax["right"]]}
+                call emit_expression(generator, public_add_call)
+                return
+            end
+            public_dynamic_add = (binary_left_type == "Any" or binary_right_type == "Any") and not generator["internal_abi"] and not generator.get("current_internal_function", False)
             call emit_expression(generator, syntax["left"])
-            if expression_type == "Any":
+            if expression_type == "Any" or public_dynamic_add:
                 call emit_dynamic_boundary_box(generator, syntax["left"])
             end
             call assembler.emit(output, x86_64.push(0))
             call emit_expression(generator, syntax["right"])
-            if expression_type == "Any":
+            if expression_type == "Any" or public_dynamic_add:
                 call emit_dynamic_boundary_box(generator, syntax["right"])
             end
             call assembler.emit(output, x86_64.move_reg_reg(6, 0))
             call assembler.emit(output, x86_64.pop(7))
-            if expression_type == "String":
+            if expression_type == "String" and not public_dynamic_add:
                 call assembler.relative(output, [232], "runtime_string_concat")
             else:
+                if not generator["internal_abi"] and not generator.get("current_internal_function", False):
+                    call emit_dynamic_numeric_pair_guard(generator, 1)
+                end
                 call assembler.relative(output, [232], dynamic_numeric_runtime(generator, "runtime_add_any"))
             end
             return
         elif (operator == "-" or operator == "*") and expression_type == "Any":
             # Dynamic - / * : dispatch Int vs boxed Float at runtime.
+            if operator == "*" and not generator["internal_abi"] and not generator.get("current_internal_function", False):
+                public_multiply_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_public_multiply"}, "arguments": [syntax["left"], syntax["right"]]}
+                call emit_expression(generator, public_multiply_call)
+                return
+            end
             call emit_expression(generator, syntax["left"])
             call emit_dynamic_boundary_box(generator, syntax["left"])
             call assembler.emit(output, x86_64.push(0))
@@ -2220,15 +2432,21 @@ function emit_expression(generator, syntax):
             call assembler.emit(output, x86_64.move_reg_reg(6, 0))
             call assembler.emit(output, x86_64.pop(7))
             if operator == "-":
+                if not generator["internal_abi"] and not generator.get("current_internal_function", False):
+                    call emit_dynamic_numeric_pair_guard(generator, 0)
+                end
                 call assembler.relative(output, [232], dynamic_numeric_runtime(generator, "runtime_sub_any"))
             else:
+                if not generator["internal_abi"] and not generator.get("current_internal_function", False):
+                    call emit_dynamic_numeric_pair_guard(generator, 0)
+                end
                 call assembler.relative(output, [232], dynamic_numeric_runtime(generator, "runtime_mul_any"))
             end
             return
         elif operator == "^" and expression_type == "Any":
             # Dynamic ^ : base may be boxed Float or raw Int; Int exponent.
             any_exp_type = infer_expression_type(syntax["right"], generator["types"], generator["function_returns"])
-            if any_exp_type != "Int" and any_exp_type != "Any":
+            if any_exp_type != "Int" and any_exp_type != "Bool" and any_exp_type != "Any":
                 call unsupported(generator["path"], generator["lines"], syntax, "^ requires an Int exponent", "use an Int exponent such as x ^ 3")
             end
             call emit_expression(generator, syntax["left"])
@@ -2238,6 +2456,9 @@ function emit_expression(generator, syntax):
             call emit_dynamic_boundary_box(generator, syntax["right"])
             call assembler.emit(output, x86_64.move_reg_reg(6, 0))
             call assembler.emit(output, x86_64.pop(7))
+            if not generator["internal_abi"] and not generator.get("current_internal_function", False):
+                call emit_dynamic_numeric_pair_guard(generator, 2)
+            end
             call assembler.relative(output, [232], dynamic_numeric_runtime(generator, "runtime_pow_any"))
             call emit_pending_error(generator)
             return
@@ -2459,9 +2680,38 @@ function emit_expression(generator, syntax):
     elif kind == "call":
         target = syntax["target"]
         if target["kind"] == "name":
-            builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "Dictionary": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sqrt": 1, "sum": 1, "float_zeros": 1, "float_fill": 2, "float_sum": 1, "float_dot": 2, "float_axpy": 3, "float_matmul": 5, "type": 1, "exit": 1, "input": 1, "readfile": 1, "readbytes": 1, "__lsl_getenv": 1, "mkdir": 1, "unlink": 1, "rmdir": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "help": 0, "run": 2, "run_clean": 2, "capture": 2, "capture_clean": 2, "capture_stream": 3, "capture_stream_clean": 3, "capture_input": 3, "capture_input_clean": 3, "capture_input_stream": 4, "capture_input_stream_clean": 4, "capture_status": 0, "capture_stderr": 0, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2, "native_open": 1, "native_size": 1, "native_u64": 2, "native_name_equal": 3, "native_function": 2, "native_call": 2, "native_close": 1, "__lsl_test_small_tables": 0, "__lsl_test_fd_fault": 1, "__lsl_object_table_mask": 0, "__lsl_intern_table_mask": 0, "__lsl_wall_time": 0, "__lsl_sleep": 1, "__lsl_isatty": 1, "__lsl_stdin_eof": 0, "__lsl_run": 2, "__lsl_run_clean": 2, "__lsl_capture": 2, "__lsl_capture_clean": 2, "__lsl_fd_open": 2, "__lsl_fd_read": 3, "__lsl_fd_write": 3, "__lsl_fd_seek": 2, "__lsl_fd_close": 1, "__lsl_fd_socket": 2, "__lsl_fd_connect": 3, "__lsl_int_zeros": 1, "__lsl_byte_zeros": 1, "__lsl_raster_pack": 5, "__lsl_raster_copy": 5, "__lsl_raster_fill": 4, "__lsl_fd_ioctl": 3, "__lsl_fd_mmap": 3, "__lsl_mem_pack": 5, "__lsl_data_address": 1, "__lsl_syscall": 5, "__lsl_mem_unpack": 4, "__lsl_text_from_bytes": 3, "__lsl_byte_copy": 5, "__lsl_text_byte": 2, "__lsl_text_byte_length": 1, "__lsl_floatarray_bytes": 1, "__lsl_floatarray_from_bytes": 1, "atomic_add": 3, "atomic_xchg": 3, "atomic_cas": 4, "atomic_pause": 0, "thread_spawn": 1, "thread_join": 1, "cpu_count": 0, "popcount": 1, "trailing_zeros": 1}
+            builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "Dictionary": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sqrt": 1, "sum": 1, "float_zeros": 1, "float_fill": 2, "float_sum": 1, "float_dot": 2, "float_axpy": 3, "float_matmul": 5, "type": 1, "exit": 1, "input": 1, "readfile": 1, "readbytes": 1, "__lsl_getenv": 1, "mkdir": 1, "unlink": 1, "rmdir": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "help": 0, "run": 2, "run_clean": 2, "capture": 2, "capture_clean": 2, "capture_stream": 3, "capture_stream_clean": 3, "capture_input": 3, "capture_input_clean": 3, "capture_input_stream": 4, "capture_input_stream_clean": 4, "capture_status": 0, "capture_stderr": 0, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2, "native_open": 1, "native_size": 1, "native_u64": 2, "native_name_equal": 3, "native_function": 2, "native_call": 2, "native_close": 1, "__lsl_test_small_tables": 0, "__lsl_test_fd_fault": 1, "__lsl_object_table_mask": 0, "__lsl_intern_table_mask": 0, "__lsl_wall_time": 0, "__lsl_sleep": 1, "__lsl_isatty": 1, "__lsl_stdin_eof": 0, "__lsl_run": 2, "__lsl_run_clean": 2, "__lsl_capture": 2, "__lsl_capture_clean": 2, "__lsl_fd_open": 2, "__lsl_fd_read": 3, "__lsl_fd_write": 3, "__lsl_fd_seek": 2, "__lsl_fd_close": 1, "__lsl_fd_socket": 2, "__lsl_fd_connect": 3, "__lsl_checked_index": 1, "__lsl_int_zeros": 1, "__lsl_byte_zeros": 1, "__lsl_raster_pack": 5, "__lsl_raster_copy": 5, "__lsl_raster_fill": 4, "__lsl_fd_ioctl": 3, "__lsl_fd_mmap": 3, "__lsl_mem_pack": 5, "__lsl_data_address": 1, "__lsl_syscall": 5, "__lsl_mem_unpack": 4, "__lsl_text_from_bytes": 3, "__lsl_byte_copy": 5, "__lsl_text_byte": 2, "__lsl_text_byte_length": 1, "__lsl_floatarray_bytes": 1, "__lsl_floatarray_from_bytes": 1, "atomic_add": 3, "atomic_xchg": 3, "atomic_cas": 4, "atomic_pause": 0, "thread_spawn": 1, "thread_join": 1, "cpu_count": 0, "popcount": 1, "trailing_zeros": 1}
             builtin_arity["__lsl_mkdir_private"] = 1
             builtin_arity["__lsl_fd_snapshot"] = 3
+            builtin_arity["arg"] = 1
+            builtin_arity["__lsl_address"] = 1
+            builtin_arity["__lsl_box_bool"] = 1
+            builtin_arity["__lsl_box_function"] = 1
+            builtin_arity["__lsl_box_int"] = 1
+            builtin_arity["__lsl_box_none"] = 0
+            builtin_arity["__lsl_ffloordiv"] = 2
+            builtin_arity["__lsl_float_accumulate"] = 2
+            builtin_arity["__lsl_float_bits"] = 1
+            builtin_arity["__lsl_float_candidate_bits"] = 3
+            builtin_arity["__lsl_float_from_bits"] = 1
+            builtin_arity["__lsl_float_from_int"] = 1
+            builtin_arity["__lsl_float_string"] = 1
+            builtin_arity["__lsl_float_to_int"] = 1
+            builtin_arity["__lsl_floordiv_dyn"] = 2
+            builtin_arity["__lsl_fmod"] = 2
+            builtin_arity["__lsl_is_heap"] = 1
+            builtin_arity["__lsl_mod_dyn"] = 2
+            builtin_arity["__lsl_parse_literal_int"] = 1
+            builtin_arity["__lsl_pop_last"] = 1
+            builtin_arity["__lsl_public_floordiv_dyn"] = 2
+            builtin_arity["__lsl_public_mod_dyn"] = 2
+            builtin_arity["__lsl_raw_equal"] = 2
+            builtin_arity["__lsl_raw_int"] = 1
+            builtin_arity["__lsl_string_chars"] = 1
+            builtin_arity["__lsl_type_code"] = 1
+            builtin_arity["__lsl_typed_int"] = 1
+            builtin_arity["__lsl_unbox_bool"] = 1
+            builtin_arity["__lsl_unbox_int"] = 1
             if target["name"] in builtin_arity:
                 expected_builtin = builtin_arity[target["name"]]
                 if len(syntax["arguments"]) != expected_builtin:
@@ -2761,12 +3011,12 @@ function emit_expression(generator, syntax):
                 call emit_expression(generator, dictionary_call)
                 return
             elif target["name"] == "sum":
-                sum_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_sum"}, "arguments": syntax["arguments"]}
-                call emit_expression(generator, sum_call)
-                if generator["path"].find("compiler/pure/") < 0:
-                    call assembler.emit(output, x86_64.move_reg_reg(7, 0))
-                    call assembler.relative(output, [232], "runtime_box_dynamic_int")
+                sum_target = "__lsl_sum"
+                if not generator["internal_abi"] and not generator.get("current_internal_function", False):
+                    sum_target = "__lsl_public_sum"
                 end
+                sum_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": sum_target}, "arguments": syntax["arguments"]}
+                call emit_expression(generator, sum_call)
                 return
             elif target["name"] == "__lsl_float_accumulate":
                 call emit_expression(generator, syntax["arguments"][0])
@@ -2861,6 +3111,12 @@ function emit_expression(generator, syntax):
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
                 return
+            elif target["name"] == "__lsl_checked_index":
+                call emit_expression(generator, syntax["arguments"][0])
+                call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                call assembler.relative(output, [232], "runtime_checked_index")
+                call emit_pending_error(generator)
+                return
             elif target["name"] == "__lsl_parse_literal_int":
                 call emit_expression(generator, syntax["arguments"][0])
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
@@ -2911,9 +3167,18 @@ function emit_expression(generator, syntax):
                 call assembler.relative(output, [232], "runtime_list_pop_last")
                 return
             elif target["name"] == "len":
+                length_type = infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"])
+                if length_type != "Any" and not is_sized_type(length_type):
+                    call unsupported(generator["path"], generator["lines"], syntax["arguments"][0], "value of type " + length_type + " has no length", "pass a String, collection, typed array, or Dictionary")
+                end
                 call emit_expression(generator, syntax["arguments"][0])
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
-                call assembler.relative(output, [232], "runtime_length")
+                if length_type == "Any" and not generator["internal_abi"]:
+                    call assembler.relative(output, [232], "runtime_dynamic_length")
+                    call emit_pending_error(generator)
+                else:
+                    call assembler.relative(output, [232], "runtime_length")
+                end
                 return
             elif target["name"] == "Int":
                 argument_type = infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"])
@@ -2980,27 +3245,19 @@ function emit_expression(generator, syntax):
                 end
                 return
             elif target["name"] == "chr":
-                call emit_expression(generator, syntax["arguments"][0])
-                if infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"]) == "Any":
-                    call assembler.emit(output, x86_64.move_reg_reg(7, 0))
-                    call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
-                end
+                call emit_checked_int_expression(generator, syntax["arguments"][0], "chr argument")
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 call assembler.relative(output, [232], "runtime_chr")
                 return
             elif target["name"] == "ord":
-                call emit_expression(generator, syntax["arguments"][0])
+                call emit_expression(generator, checked_string_node(generator, syntax["arguments"][0]))
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 call assembler.relative(output, [232], "runtime_ord")
                 return
             elif target["name"] == "arg":
                 argument_missing = label_name(generator, "argument_missing")
                 argument_done = label_name(generator, "argument_done")
-                call emit_expression(generator, syntax["arguments"][0])
-                if infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"]) == "Any":
-                    call assembler.emit(output, x86_64.move_reg_reg(7, 0))
-                    call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
-                end
+                call emit_checked_int_expression(generator, syntax["arguments"][0], "arg index")
                 call assembler.emit(output, x86_64.move_reg_reg(6, 0))
                 call assembler.emit(output, x86_64.cmp_reg_imm8(6, 0))
                 call assembler.relative(output, [15, 140], argument_missing)
@@ -3143,7 +3400,7 @@ function emit_expression(generator, syntax):
                 return
             elif target["name"] == "thread_join":
                 # Block until the worker with this logical tid exits.
-                call emit_expression(generator, syntax["arguments"][0])
+                call emit_checked_int_expression(generator, syntax["arguments"][0], "thread_join tid")
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 call assembler.relative(output, [232], "runtime_thread_join")
                 return
@@ -3157,12 +3414,12 @@ function emit_expression(generator, syntax):
                 call assembler.relative(output, [232], "runtime_getenv")
                 return
             elif target["name"] == "run" or target["name"] == "__lsl_run" or target["name"] == "run_clean" or target["name"] == "__lsl_run_clean" or target["name"] == "capture" or target["name"] == "__lsl_capture" or target["name"] == "capture_clean" or target["name"] == "__lsl_capture_clean" or target["name"] == "capture_stream" or target["name"] == "capture_stream_clean" or target["name"] == "capture_input" or target["name"] == "capture_input_clean" or target["name"] == "capture_input_stream" or target["name"] == "capture_input_stream_clean":
-                call emit_expression(generator, syntax["arguments"][0])
+                call emit_expression(generator, checked_string_node(generator, syntax["arguments"][0]))
                 call assembler.emit(output, x86_64.push(0))
-                call emit_expression(generator, syntax["arguments"][1])
+                call emit_expression(generator, checked_list_node(generator, syntax["arguments"][1]))
                 call assembler.emit(output, x86_64.push(0))
                 if target["name"] == "capture_input_stream" or target["name"] == "capture_input_stream_clean":
-                    call emit_expression(generator, syntax["arguments"][2])
+                    call emit_expression(generator, checked_string_node(generator, syntax["arguments"][2]))
                     call assembler.emit(output, x86_64.push(0))
                     call emit_expression(generator, syntax["arguments"][3])
                     call emit_collection_box(generator, syntax["arguments"][3])
@@ -3174,7 +3431,7 @@ function emit_expression(generator, syntax):
                     call assembler.emit(output, x86_64.move_reg_reg(2, 0))
                     call assembler.emit(output, x86_64.xor_reg_reg(1, 1))
                 elif target["name"] == "capture_input" or target["name"] == "capture_input_clean":
-                    call emit_expression(generator, syntax["arguments"][2])
+                    call emit_expression(generator, checked_string_node(generator, syntax["arguments"][2]))
                     call assembler.emit(output, x86_64.move_reg_reg(1, 0))
                     call assembler.emit(output, x86_64.xor_reg_reg(2, 2))
                 else:
@@ -3196,7 +3453,7 @@ function emit_expression(generator, syntax):
                 end
                 return
             elif target["name"] == "native_open":
-                call emit_expression(generator, syntax["arguments"][0])
+                call emit_expression(generator, checked_string_node(generator, syntax["arguments"][0]))
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 call assembler.relative(output, [232], "runtime_native_open")
                 return
@@ -3449,7 +3706,7 @@ function emit_expression(generator, syntax):
                 call assembler.relative(output, [232], "runtime_capture_stderr")
                 return
             elif target["name"] == "input":
-                call emit_expression(generator, syntax["arguments"][0])
+                call emit_expression(generator, checked_string_node(generator, syntax["arguments"][0]))
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 call assembler.relative(output, [232], "runtime_input")
                 call emit_pending_error(generator)
@@ -3468,11 +3725,7 @@ function emit_expression(generator, syntax):
                 call emit_pending_error(generator)
                 return
             elif target["name"] == "__lsl_isatty":
-                call emit_expression(generator, syntax["arguments"][0])
-                if infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"]) == "Any":
-                    call assembler.emit(output, x86_64.move_reg_reg(7, 0))
-                    call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
-                end
+                call emit_checked_int_expression(generator, syntax["arguments"][0], "file descriptor")
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 call assembler.relative(output, [232], "runtime_isatty")
                 return
@@ -3480,7 +3733,7 @@ function emit_expression(generator, syntax):
                 call assembler.relative(output, [232], "runtime_stdin_eof")
                 return
             elif target["name"] == "readfile" or target["name"] == "readbytes":
-                call emit_expression(generator, syntax["arguments"][0])
+                call emit_expression(generator, checked_string_node(generator, syntax["arguments"][0]))
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 if target["name"] == "readbytes":
                     call assembler.relative(output, [232], "runtime_readbytes")
@@ -3498,13 +3751,21 @@ function emit_expression(generator, syntax):
                 end
                 return
             elif target["name"] == "writefile" or target["name"] == "appendfile" or target["name"] == "writebytes":
-                call emit_expression(generator, syntax["arguments"][0])
+                call emit_expression(generator, checked_string_node(generator, syntax["arguments"][0]))
                 call assembler.emit(output, x86_64.push(0))
-                call emit_expression(generator, syntax["arguments"][1])
+                if target["name"] == "writebytes":
+                    call emit_expression(generator, checked_byte_sequence_node(generator, syntax["arguments"][1]))
+                else:
+                    call emit_expression(generator, checked_string_node(generator, syntax["arguments"][1]))
+                end
                 call assembler.emit(output, x86_64.move_reg_reg(6, 0))
                 call assembler.emit(output, x86_64.pop(7))
                 if target["name"] == "writebytes":
-                    call assembler.relative(output, [232], "runtime_writebytes")
+                    if generator["internal_abi"] or generator.get("current_internal_function", False):
+                        call assembler.relative(output, [232], "runtime_writebytes_raw")
+                    else:
+                        call assembler.relative(output, [232], "runtime_writebytes")
+                    end
                 elif target["name"] == "appendfile":
                     call assembler.relative(output, [232], "runtime_appendfile")
                 else:
@@ -3540,7 +3801,7 @@ function emit_expression(generator, syntax):
                 call emit_string_pointer(generator, value_type)
                 return
             elif target["name"] == "mkdir" or target["name"] == "__lsl_mkdir_private" or target["name"] == "unlink" or target["name"] == "rmdir":
-                call emit_expression(generator, syntax["arguments"][0])
+                call emit_expression(generator, checked_string_node(generator, syntax["arguments"][0]))
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 if target["name"] == "__lsl_mkdir_private":
                     call assembler.relative(output, [232], "runtime_mkdir_private")
@@ -3553,7 +3814,7 @@ function emit_expression(generator, syntax):
                 end
                 return
             elif target["name"] == "exists":
-                call emit_expression(generator, syntax["arguments"][0])
+                call emit_expression(generator, checked_string_node(generator, syntax["arguments"][0]))
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 call assembler.relative(output, [232], "runtime_exists")
                 return
@@ -3572,6 +3833,11 @@ function emit_expression(generator, syntax):
                 end
                 minmax_left_type = infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"])
                 minmax_right_type = infer_expression_type(syntax["arguments"][1], generator["types"], generator["function_returns"])
+                minmax_left_numeric = minmax_left_type == "Int" or minmax_left_type == "Bool" or minmax_left_type == "Float" or minmax_left_type == "Any"
+                minmax_right_numeric = minmax_right_type == "Int" or minmax_right_type == "Bool" or minmax_right_type == "Float" or minmax_right_type == "Any"
+                if not minmax_left_numeric or not minmax_right_numeric:
+                    call unsupported(generator["path"], generator["lines"], syntax, "builtin " + target["name"] + " expects numeric values", "pass Int, Bool, or Float values")
+                end
                 minmax_dynamic = minmax_left_type == "Float" or minmax_right_type == "Float" or minmax_left_type == "Any" or minmax_right_type == "Any"
                 call emit_expression(generator, syntax["arguments"][0])
                 if minmax_dynamic:
@@ -3587,9 +3853,13 @@ function emit_expression(generator, syntax):
                     # Dispatch Int/Float; keep the original boxed value.
                     call assembler.emit(output, x86_64.move_reg_reg(6, 0))
                     call assembler.emit(output, x86_64.pop(0))
+                    call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                    if (minmax_left_type == "Any" or minmax_right_type == "Any") and not generator["internal_abi"] and not generator.get("current_internal_function", False):
+                        call emit_dynamic_numeric_pair_guard(generator, 0)
+                    end
+                    call assembler.emit(output, x86_64.move_reg_reg(0, 7))
                     call assembler.emit(output, x86_64.push(0))
                     call assembler.emit(output, x86_64.push(6))
-                    call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                     call assembler.relative(output, [232], "runtime_compare_any")
                     call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
                     call assembler.emit(output, x86_64.pop(1))
@@ -3615,11 +3885,14 @@ function emit_expression(generator, syntax):
                 call assembler.label(output, done_label)
                 return
             elif target["name"] == "help":
-                call emit_static_write(generator, "Lux Simple Lang (LSL) 0.6.8" + chr(10) + "functions: print printl input for loop safe if elif else try class ctype function type del len abs sqrt help" + chr(10) + "types: Bool Int Float String List Tuple RealArray IntArray FloatArray ByteArray Dictionary" + chr(10) + "modules: os time json process config ai tensor cuda native math bigint" + chr(10) + "docs: see README.md and docs/" + chr(10))
+                call emit_static_write(generator, "Lux Simple Lang (LSL) 0.6.9" + chr(10) + "functions: print printl input for loop safe if elif else try class ctype function type del len abs sqrt help" + chr(10) + "types: Bool Int Float String List Tuple RealArray IntArray FloatArray ByteArray Dictionary" + chr(10) + "modules: os time json process config ai tensor cuda native math bigint" + chr(10) + "docs: see README.md and docs/" + chr(10))
                 call assembler.emit(output, x86_64.mov_imm64(0, 0))
                 return
             elif target["name"] == "abs":
                 abs_arg_type = infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"])
+                if not is_numeric_type(abs_arg_type):
+                    call unsupported(generator["path"], generator["lines"], syntax, "abs requires a numeric operand", "pass an Int, Bool, or Float value")
+                end
                 call emit_expression(generator, syntax["arguments"][0])
                 if abs_arg_type == "Float":
                     # Clear the IEEE-754 sign bit of the boxed double and rebox.
@@ -3628,6 +3901,9 @@ function emit_expression(generator, syntax):
                     call assembler.emit(output, x86_64.and_reg_reg(7, 1))
                     call assembler.relative(output, [232], "runtime_float_new")
                 elif abs_arg_type == "Any":
+                    if not generator["internal_abi"] and not generator.get("current_internal_function", False):
+                        call emit_dynamic_numeric_value_guard(generator, False)
+                    end
                     call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                     call assembler.relative(output, [232], dynamic_numeric_runtime(generator, "runtime_abs_any"))
                 else:
@@ -3639,6 +3915,10 @@ function emit_expression(generator, syntax):
                 end
                 return
             elif target["name"] == "sqrt":
+                sqrt_arg_type = infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"])
+                if not is_numeric_type(sqrt_arg_type):
+                    call unsupported(generator["path"], generator["lines"], syntax, "sqrt requires a numeric operand", "pass an Int, Bool, or Float value")
+                end
                 call emit_float_expression(generator, syntax["arguments"][0])
                 # Float objects store the raw IEEE-754 bits at offset 8.
                 call assembler.emit(output, x86_64.load_memory(7, 0, 8))
@@ -3660,7 +3940,7 @@ function emit_expression(generator, syntax):
                 call assembler.relative(output, [232], "runtime_float_new")
                 return
             elif target["name"] == "exit":
-                call emit_expression(generator, syntax["arguments"][0])
+                call emit_checked_int_expression(generator, syntax["arguments"][0], "exit status")
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 call assembler.emit(output, x86_64.mov_imm64(0, 231))
                 call assembler.emit(output, x86_64.syscall())
@@ -3689,21 +3969,40 @@ function emit_expression(generator, syntax):
                 return
             end
             receiver_type = infer_expression_type(target["target"], generator["types"], generator["function_returns"])
+            if not receiver_type.startswith("Class:") and not receiver_type.startswith("Instance:") and not method_supported(receiver_type, target["name"]):
+                call unsupported(generator["path"], generator["lines"], syntax, "type " + receiver_type + " has no method " + target["name"], "use a method documented for " + receiver_type)
+            end
             method_arity = {"strip": 0, "lstrip": 0, "rstrip": 0, "lower": 0, "upper": 0, "title": 0, "capitalize": 0, "sort": 0, "reverse": 0, "copy": 0, "keys": 0, "values": 0, "items": 0, "clear": 0, "append": 1, "startswith": 1, "endswith": 1, "find": 1, "count": 1, "split": 1, "join": 1, "extend": 1, "remove": 1, "index": 1, "update": 1, "replace": 2, "insert": 2}
             if target["name"] in method_arity and not receiver_type.startswith("Class:") and not receiver_type.startswith("Instance:"):
                 expected_method = method_arity[target["name"]]
                 if len(syntax["arguments"]) != expected_method:
                     call unsupported(generator["path"], generator["lines"], syntax, "method " + target["name"] + " expects " + String(expected_method) + " argument(s), got " + String(len(syntax["arguments"])), "pass exactly " + String(expected_method) + " argument(s)")
                 end
+            elif target["name"] == "get":
+                if len(syntax["arguments"]) != 1 and len(syntax["arguments"]) != 2:
+                    call unsupported(generator["path"], generator["lines"], syntax, "method get expects one or two arguments", "use dictionary.get(key[, default])")
+                end
+            elif target["name"] == "setdefault":
+                if len(syntax["arguments"]) != 2:
+                    call unsupported(generator["path"], generator["lines"], syntax, "method setdefault expects two arguments", "use dictionary.setdefault(key, default)")
+                end
             elif target["name"] == "pop":
                 pop_arity_valid = False
                 if receiver_type == "Dictionary":
                     pop_arity_valid = len(syntax["arguments"]) == 1 or len(syntax["arguments"]) == 2
+                elif receiver_type == "Any":
+                    pop_arity_valid = len(syntax["arguments"]) >= 0 and len(syntax["arguments"]) <= 2
                 else:
                     pop_arity_valid = len(syntax["arguments"]) == 0 or len(syntax["arguments"]) == 1
                 end
                 if not pop_arity_valid:
                     call unsupported(generator["path"], generator["lines"], syntax, "invalid pop argument count", "use list.pop([index]) or dictionary.pop(key[, default])")
+                end
+            end
+            if target["name"] == "insert" or (target["name"] == "pop" and receiver_type != "Dictionary" and receiver_type != "Any" and len(syntax["arguments"]) == 1):
+                method_index_type = infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"])
+                if method_index_type != "Int" and method_index_type != "Bool" and method_index_type != "Any":
+                    call unsupported(generator["path"], generator["lines"], syntax["arguments"][0], "sequence index must be Int", "convert the index with Int(...)")
                 end
             end
             if receiver_type.startswith("Class:") or receiver_type.startswith("Instance:"):
@@ -3769,6 +4068,9 @@ function emit_expression(generator, syntax):
                 call assembler.emit(output, x86_64.pop(7))
                 if receiver_type == "ByteArray":
                     call assembler.relative(output, [232], "runtime_byte_array_append")
+                elif receiver_type == "Any" and not generator["internal_abi"]:
+                    call assembler.relative(output, [232], "runtime_dynamic_append")
+                    call emit_pending_error(generator)
                 else:
                     call assembler.relative(output, [232], "runtime_list_append")
                 end
@@ -3782,7 +4084,12 @@ function emit_expression(generator, syntax):
                 else:
                     call emit_expression(generator, target["target"])
                     call assembler.emit(output, x86_64.move_reg_reg(7, 0))
-                    call assembler.relative(output, [232], "runtime_list_clear")
+                    if receiver_type == "Any" and not generator["internal_abi"]:
+                        call assembler.relative(output, [232], "runtime_dynamic_clear")
+                        call emit_pending_error(generator)
+                    else:
+                        call assembler.relative(output, [232], "runtime_list_clear")
+                    end
                 end
                 return
             elif target["name"] == "pop":
@@ -3791,7 +4098,10 @@ function emit_expression(generator, syntax):
                 end
                 pop_target = "__lsl_pop"
                 pop_arguments = [target["target"]]
-                if receiver_type == "Dictionary":
+                if receiver_type == "Any" and not generator["internal_abi"]:
+                    pop_target = "__lsl_dynamic_pop" + String(len(syntax["arguments"]))
+                    pop_arguments.extend(syntax["arguments"])
+                elif receiver_type == "Dictionary":
                     if len(syntax["arguments"]) == 1:
                         pop_target = "__lsl_dict_pop"
                     else:
@@ -3800,7 +4110,7 @@ function emit_expression(generator, syntax):
                     pop_arguments.extend(syntax["arguments"])
                 elif len(syntax["arguments"]) == 1:
                     pop_target = "__lsl_pop_at"
-                    pop_arguments.extend(syntax["arguments"])
+                    pop_arguments.append(checked_index_node(generator, syntax["arguments"][0]))
                 end
                 pop_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": pop_target}, "arguments": pop_arguments}
                 call emit_expression(generator, pop_call)
@@ -3808,10 +4118,35 @@ function emit_expression(generator, syntax):
             elif target["name"] == "keys":
                 call emit_expression(generator, target["target"])
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
-                call assembler.relative(output, [232], "runtime_dict_keys")
+                if receiver_type == "Any" and not generator["internal_abi"]:
+                    call assembler.relative(output, [232], "runtime_dynamic_dict_keys")
+                    call emit_pending_error(generator)
+                else:
+                    call assembler.relative(output, [232], "runtime_dict_keys")
+                end
                 return
             else:
                 method_target = method_function(target["name"])
+                method_receiver = target["target"]
+                if receiver_type == "Any" and not generator["internal_abi"]:
+                    receiver_guard = ""
+                    if target["name"] == "count":
+                        method_target = "__lsl_dynamic_count"
+                    elif target["name"] == "index":
+                        method_target = "__lsl_dynamic_index"
+                    elif target["name"] == "copy":
+                        method_target = "__lsl_dynamic_copy"
+                    elif target["name"] == "extend" or target["name"] == "insert" or target["name"] == "remove" or target["name"] == "sort" or target["name"] == "reverse":
+                        receiver_guard = "__lsl_require_list"
+                    elif target["name"] == "get" or target["name"] == "setdefault" or target["name"] == "update" or target["name"] == "values" or target["name"] == "items":
+                        receiver_guard = "__lsl_require_dictionary"
+                    else:
+                        receiver_guard = "__lsl_require_string"
+                    end
+                    if receiver_guard != "":
+                        method_receiver = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": receiver_guard}, "arguments": [target["target"]]}
+                    end
+                end
                 if receiver_type == "Tuple" or receiver_type == "RealArray":
                     if target["name"] == "insert" or target["name"] == "remove" or target["name"] == "extend" or target["name"] == "sort" or target["name"] == "clear" or target["name"] == "pop":
                         call unsupported(generator["path"], generator["lines"], syntax, "fixed collection does not support " + target["name"], "convert it with List(value) before changing its length")
@@ -3829,8 +4164,13 @@ function emit_expression(generator, syntax):
                     method_target = "__lsl_dict_copy"
                 end
                 if method_target != "":
-                    combined_arguments = [target["target"]]
-                    combined_arguments.extend(syntax["arguments"])
+                    combined_arguments = [method_receiver]
+                    if target["name"] == "insert":
+                        combined_arguments.append(checked_index_node(generator, syntax["arguments"][0]))
+                        combined_arguments.append(syntax["arguments"][1])
+                    else:
+                        combined_arguments.extend(syntax["arguments"])
+                    end
                     if target["name"] == "get" and len(syntax["arguments"]) == 1:
                         combined_arguments.append({"kind": "literal", "literal_kind": "name", "value": "None", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]})
                     end
@@ -3953,6 +4293,17 @@ function emit_expression(generator, syntax):
             call assembler.emit(output, x86_64.pop(__lsl_typed_int(argument_registers[index])))
             index += 1
         end
+        if not indirect_call and (target["name"] == "__lsl_floordiv_dyn" or target["name"] == "__lsl_mod_dyn" or target["name"] == "__lsl_public_floordiv_dyn" or target["name"] == "__lsl_public_mod_dyn" or target["name"] == "__lsl_ffloordiv" or target["name"] == "__lsl_fmod") and not generator["internal_abi"] and not generator.get("current_internal_function", False):
+            checked_floor_any = False
+            for checked_floor_argument in arguments:
+                if infer_expression_type(checked_floor_argument, generator["types"], generator["function_returns"]) == "Any":
+                    checked_floor_any = True
+                end
+            end
+            if checked_floor_any:
+                call emit_dynamic_numeric_pair_guard(generator, 0)
+            end
+        end
         if indirect_call:
             call emit_load_local(generator, 0, target["name"])
             # Callable classification uses rdi and may clobber caller-saved
@@ -4051,15 +4402,29 @@ function emit_expression(generator, syntax):
         operator = syntax["operators"][0]
         if operator == "in" or operator == "not in":
             container_type = infer_expression_type(right, generator["types"], generator["function_returns"])
-            call emit_expression(generator, right)
-            call assembler.emit(output, x86_64.push(0))
-            call emit_expression(generator, left)
-            call assembler.emit(output, x86_64.move_reg_reg(6, 0))
-            call assembler.emit(output, x86_64.pop(7))
-            if container_type == "String":
-                call assembler.relative(output, [232], "runtime_string_contains")
+            member_type = infer_expression_type(left, generator["types"], generator["function_returns"])
+            if container_type != "Any" and not is_sized_type(container_type):
+                call unsupported(generator["path"], generator["lines"], right, "right operand of in has type " + container_type + ", not a collection", "use a String, collection, typed array, or Dictionary")
+            elif container_type == "String" and member_type != "String" and member_type != "Any":
+                call unsupported(generator["path"], generator["lines"], left, "String membership requires a String value", "convert the searched value with String(...)")
+            end
+            if (container_type == "Any" and not generator["internal_abi"]) or container_type == "IntArray" or container_type == "FloatArray" or container_type == "ByteArray" or (container_type == "String" and member_type == "Any" and not generator["internal_abi"]):
+                contains_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_dynamic_contains"}, "arguments": [right, left]}
+                call emit_expression(generator, contains_call)
             else:
-                call assembler.relative(output, [232], "runtime_contains")
+                call emit_expression(generator, right)
+                call assembler.emit(output, x86_64.push(0))
+                call emit_expression(generator, left)
+                if container_type == "Dictionary":
+                    call emit_dictionary_key_box(generator, left)
+                end
+                call assembler.emit(output, x86_64.move_reg_reg(6, 0))
+                call assembler.emit(output, x86_64.pop(7))
+                if container_type == "String":
+                    call assembler.relative(output, [232], "runtime_string_contains")
+                else:
+                    call assembler.relative(output, [232], "runtime_contains")
+                end
             end
             if operator == "not in":
                 call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
@@ -4073,6 +4438,10 @@ function emit_expression(generator, syntax):
         end
         left_type = infer_expression_type(left, generator["types"], generator["function_returns"])
         right_type = infer_expression_type(right, generator["types"], generator["function_returns"])
+        ordered_comparison = operator == "<" or operator == "<=" or operator == ">" or operator == ">="
+        if ordered_comparison and (not is_numeric_type(left_type) or not is_numeric_type(right_type)):
+            call unsupported(generator["path"], generator["lines"], syntax, "ordered comparison requires numeric operands", "compare Int, Bool, or Float values")
+        end
         if left_type == "Float" or right_type == "Float":
             call emit_float_expression(generator, left)
             call assembler.emit(output, x86_64.push(0))
@@ -4153,6 +4522,9 @@ function emit_expression(generator, syntax):
             call emit_dynamic_boundary_box(generator, right)
             call assembler.emit(output, x86_64.move_reg_reg(6, 0))
             call assembler.emit(output, x86_64.pop(7))
+            if not generator["internal_abi"] and not generator.get("current_internal_function", False):
+                call emit_dynamic_numeric_pair_guard(generator, 0)
+            end
             call assembler.relative(output, [232], "runtime_compare_any")
             call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
             call assembler.emit(output, x86_64.set_condition(opcode))
@@ -4284,7 +4656,13 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 end
                 if statement["operator"] == "=":
                     call emit_expression(generator, statement["value"])
-                    if infer_expression_type(statement["value"], generator["types"], generator["function_returns"]) == "Function":
+                    if generator["types"].get(target["name"], "Any") == "Any" and not generator["internal_abi"]:
+                        # Public Any locals use the same tagged representation
+                        # as parameters, returns and collection slots. Keeping a
+                        # raw scalar here made later dynamic dispatch ambiguous
+                        # with a live heap address.
+                        call emit_collection_box(generator, statement["value"])
+                    elif infer_expression_type(statement["value"], generator["types"], generator["function_returns"]) == "Function":
                         call emit_collection_box(generator, statement["value"])
                     end
                 else:
@@ -4293,6 +4671,12 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 call emit_store_local(generator, target["name"], 0)
             elif target["kind"] == "index":
                 target_type = infer_expression_type(target["target"], generator["types"], generator["function_returns"])
+                index_type = infer_expression_type(target["index"], generator["types"], generator["function_returns"])
+                if target_type != "Any" and not is_mutable_index_type(target_type):
+                    call unsupported(generator["path"], generator["lines"], statement, "value of type " + target_type + " does not support indexed assignment", "assign through a mutable collection or Dictionary")
+                elif target_type != "Dictionary" and target_type != "Any" and index_type != "Int" and index_type != "Bool" and index_type != "Any":
+                    call unsupported(generator["path"], generator["lines"], target["index"], "sequence index must be Int", "convert the index with Int(...)")
+                end
                 fast_value = statement["value"]
                 if statement["operator"] != "=":
                     fast_operator = statement["operator"][0:len(statement["operator"]) - 1]
@@ -4366,11 +4750,16 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 call emit_expression(generator, target["target"])
                 call assembler.emit(generator["builder"], x86_64.push(0))
                 call emit_expression(generator, target["index"])
-                if target_type == "Dictionary":
+                if target_type == "Dictionary" or (target_type == "Any" and not generator["internal_abi"]):
                     call emit_dictionary_key_box(generator, target["index"])
-                elif infer_expression_type(target["index"], generator["types"], generator["function_returns"]) == "Any":
+                elif index_type == "Any":
                     call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
-                    call assembler.relative(generator["builder"], [232], "runtime_unbox_dynamic_int")
+                    if not generator["internal_abi"] and not generator.get("current_internal_function", False):
+                        call assembler.relative(generator["builder"], [232], "runtime_checked_index")
+                        call emit_pending_error(generator)
+                    else:
+                        call assembler.relative(generator["builder"], [232], "runtime_unbox_dynamic_int")
+                    end
                 end
                 call assembler.emit(generator["builder"], x86_64.push(0))
                 if statement["operator"] == "=":
@@ -4460,7 +4849,12 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                         call assembler.relative(generator["builder"], [232], "runtime_list_set")
                     end
                 else:
-                    call assembler.relative(generator["builder"], [232], "runtime_set")
+                    if target_type == "Any" and not generator["internal_abi"]:
+                        call assembler.relative(generator["builder"], [232], "runtime_dynamic_set")
+                        call emit_pending_error(generator)
+                    else:
+                        call assembler.relative(generator["builder"], [232], "runtime_set")
+                    end
                 end
             elif target["kind"] == "member":
                 target_type = infer_expression_type(target["target"], generator["types"], generator["function_returns"])
@@ -4561,6 +4955,9 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 value_name = statement["name"]
                 call emit_expression(generator, iterable)
                 iterable_type = infer_expression_type(iterable, generator["types"], generator["function_returns"])
+                if iterable_type != "Any" and iterable_type != "Dictionary" and not is_sequence_type(iterable_type):
+                    call unsupported(generator["path"], generator["lines"], iterable, "value of type " + iterable_type + " is not iterable", "iterate a String, collection, typed array, or Dictionary")
+                end
                 if iterable_type == "Dictionary":
                     call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
                     call assembler.relative(generator["builder"], [232], "runtime_dict_keys")
@@ -4587,13 +4984,25 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 end_label = label_name(generator, "iter_end")
                 call assembler.label(generator["builder"], start_label)
                 call emit_load_local(generator, 7, iterator_name)
-                call assembler.relative(generator["builder"], [232], "runtime_length")
+                if iterable_type == "Any" and not generator["internal_abi"]:
+                    call assembler.relative(generator["builder"], [232], "runtime_dynamic_length")
+                    call emit_pending_error(generator)
+                else:
+                    call assembler.relative(generator["builder"], [232], "runtime_length")
+                end
                 call assembler.emit(generator["builder"], x86_64.move_reg_reg(1, 0))
                 call emit_load_local(generator, 0, index_name)
                 call assembler.emit(generator["builder"], x86_64.cmp_reg_reg(0, 1))
                 call assembler.relative(generator["builder"], [15, 141], end_label)
-                call emit_load_local(generator, 7, iterator_name)
-                call emit_load_local(generator, 6, index_name)
+                if iterable_type == "Any" and not generator["internal_abi"]:
+                    call emit_load_local(generator, 7, index_name)
+                    call assembler.relative(generator["builder"], [232], "runtime_box_int")
+                    call assembler.emit(generator["builder"], x86_64.move_reg_reg(6, 0))
+                    call emit_load_local(generator, 7, iterator_name)
+                else:
+                    call emit_load_local(generator, 7, iterator_name)
+                    call emit_load_local(generator, 6, index_name)
+                end
                 if iterable_type == "ByteArray":
                     call assembler.relative(generator["builder"], [232], "runtime_byte_array_get")
                 elif iterable_type == "IntArray":
@@ -4606,7 +5015,12 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                         call assembler.relative(generator["builder"], [232], "runtime_float_new")
                     end
                 else:
-                    call assembler.relative(generator["builder"], [232], "runtime_get")
+                    if iterable_type == "Any" and not generator["internal_abi"]:
+                        call assembler.relative(generator["builder"], [232], "runtime_dynamic_get")
+                        call emit_pending_error(generator)
+                    else:
+                        call assembler.relative(generator["builder"], [232], "runtime_get")
+                    end
                 end
                 call emit_store_local(generator, value_name, 0)
                 call emit_statements(generator, statement["body"], end_label, continue_target, return_label)
@@ -4632,17 +5046,9 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             loop_name = statement["name"]
             stop_name = statement["iterator_name"]
             step_name = statement["index_name"]
-            call emit_expression(generator, start_expression)
-            if infer_expression_type(start_expression, generator["types"], generator["function_returns"]) == "Any":
-                call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
-                call assembler.relative(generator["builder"], [232], "runtime_unbox_dynamic_int")
-            end
+            call emit_checked_int_expression(generator, start_expression, "rang start")
             call emit_store_local(generator, loop_name, 0)
-            call emit_expression(generator, stop_expression)
-            if infer_expression_type(stop_expression, generator["types"], generator["function_returns"]) == "Any":
-                call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
-                call assembler.relative(generator["builder"], [232], "runtime_unbox_dynamic_int")
-            end
+            call emit_checked_int_expression(generator, stop_expression, "rang stop")
             call emit_store_local(generator, stop_name, 0)
             explicit_step = len(arguments) == 3
             if explicit_step:
@@ -4775,15 +5181,27 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                     call unsupported(generator["path"], generator["lines"], statement, "ByteArray deletion is not implemented", "use clear or overwrite indexed bytes")
                 end
                 if target_type == "List" or target_type == "IntArray" or target_type == "FloatArray":
-                    delete_call = {"kind": "call", "line": statement["line"], "column": statement["column"], "end_column": statement["end_column"], "target": {"kind": "name", "name": "__lsl_delete_at"}, "arguments": [target["target"], target["index"]]}
+                    delete_index = checked_index_node(generator, target["index"])
+                    delete_call = {"kind": "call", "line": statement["line"], "column": statement["column"], "end_column": statement["end_column"], "target": {"kind": "name", "name": "__lsl_delete_at"}, "arguments": [target["target"], delete_index]}
                     call emit_expression(generator, delete_call)
-                else:
+                elif target_type == "Dictionary" or target_type == "Any":
                     call emit_expression(generator, target["target"])
                     call assembler.emit(generator["builder"], x86_64.push(0))
                     call emit_expression(generator, target["index"])
+                    if target_type == "Any" and not generator["internal_abi"]:
+                        call emit_dictionary_key_box(generator, target["index"])
+                    end
                     call assembler.emit(generator["builder"], x86_64.move_reg_reg(6, 0))
                     call assembler.emit(generator["builder"], x86_64.pop(7))
-                    call assembler.relative(generator["builder"], [232], "runtime_dict_delete")
+                    if target_type == "Any" and not generator["internal_abi"]:
+                        call assembler.relative(generator["builder"], [232], "runtime_dynamic_delete")
+                        call emit_pending_error(generator)
+                    else:
+                        call assembler.relative(generator["builder"], [232], "runtime_dict_delete")
+                        call emit_pending_error(generator)
+                    end
+                else:
+                    call unsupported(generator["path"], generator["lines"], statement, "value of type " + target_type + " does not support indexed deletion", "delete from a List, typed array, or Dictionary")
                 end
             elif target["kind"] == "name":
                 call assembler.emit(generator["builder"], x86_64.mov_imm64(0, 0))
@@ -4803,6 +5221,7 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 call assembler.emit(generator["builder"], x86_64.move_reg_reg(6, 0))
                 call assembler.emit(generator["builder"], x86_64.pop(7))
                 call assembler.relative(generator["builder"], [232], "runtime_dict_delete")
+                call emit_pending_error(generator)
             else:
                 call unsupported(generator["path"], generator["lines"], statement, "unsupported del target", "delete a name, mutable index, Dictionary key, or instance field")
             end

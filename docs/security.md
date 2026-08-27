@@ -1,6 +1,6 @@
 # Bezpečnostní model LSL
 
-LSL 0.6.8 zpevňuje compiler, generovaný runtime a integrační knihovny proti
+LSL 0.6.9 zpevňuje compiler, generovaný runtime a integrační knihovny proti
 poškozeným vstupům, přetečením, únikům deskriptorů a zneužití prostředků. Není
 to ale bezpečnostní sandbox. Běžný LSL program běží s právy svého procesu a
 může číst soubory, otevírat sockety a spouštět další programy.

@@ -2,6 +2,14 @@ function dynamic_identity(value):
     return value + 0
 end
 
+function dynamic_floor_identity(value):
+    return value // 1
+end
+
+function dynamic_mod_identity(value):
+    return value % (value + 1)
+end
+
 object = ["live"]
 address = __lsl_address(object)
 through_call = dynamic_identity(address)
@@ -11,6 +19,11 @@ print type(through_call), __lsl_type_code(through_call), through_call == address
 print type(through_list), __lsl_type_code(through_list), through_list == address
 print through_dict[address], type(through_dict.keys()[0]), through_dict["object"] == object
 print through_call == object, through_list == object
+through_sum = sum([address, 0])
+print type(through_sum), __lsl_type_code(through_sum), through_sum == address, through_sum == object
+through_floor = dynamic_floor_identity(address)
+through_mod = dynamic_mod_identity(address)
+print type(through_floor), through_floor == address, type(through_mod), through_mod == address
 call gc()
 print through_call == address, through_dict[address]
 

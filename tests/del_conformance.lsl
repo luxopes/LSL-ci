@@ -12,6 +12,11 @@ print z, len(z)
 d = {"a": 1, "b": 2}
 del(d["a"])
 print d
+try:
+    del(d["missing"])
+else:
+    print last_error()
+end
 safe:
     values = [1, 2]
     del(values[5])

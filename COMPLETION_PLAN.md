@@ -89,7 +89,7 @@ Feature scope 0.5 je uzavřený. Následující body nejsou release blockery:
 
 ## Provozní pravidla
 
-- Dlouhé buildy pouze sériově pod `ulimit -v 1048576`.
+- Dlouhé buildy pouze sériově pod `ulimit -v 1572864`.
 - Nepoužívat C/Python/assembler/linker ani jako dočasný backend.
 - Nespouštět síť bez výslovného požadavku.
 - Před změnou číst okolní kód; dělat nejmenší úplnou změnu.
@@ -101,7 +101,7 @@ Feature scope 0.5 je uzavřený. Následující body nejsou release blockery:
 ## Auditní příkazy
 
 ```text
-ulimit -v 1048576
+ulimit -v 1572864
 ./compiler/pure/lslc-direct compiler/pure/lslc_direct.lsl /tmp/lsl-next
 cmp compiler/pure/lslc-direct /tmp/lsl-next
 ./tests/lsl-test

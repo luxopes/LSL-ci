@@ -178,3 +178,12 @@ print "ab" * 3, "ab".replace("", "-")
 sortable = [5, 1, 4, 1, 3, 2]
 call sortable.sort()
 print sortable
+
+invalid_bytes_path = arg(1) + "/invalid-byte-list"
+invalid_bytes_rejected = False
+try:
+    call writebytes(invalid_bytes_path, [1, "not-a-byte"])
+else:
+    invalid_bytes_rejected = True
+end
+print invalid_bytes_rejected, exists(invalid_bytes_path)

@@ -185,8 +185,15 @@ Volání je **SysV-like** (Linux x86\_64):
 ### Boxovaný vs neboxovaný ABI
 
 - **Veřejné dynamické hranice** (callbacky, Any) boxují Int/Bool/None/Function.
+- Veřejná indexace, zápis, mazání, iterace a metody nejdřív ověří runtime typ
+  receiveru, indexu i hodnoty; typed arrays se převádějí mezi raw slotem a
+  tagovanou hodnotou jen v těchto kontrolovaných dispatcherech.
+- Veřejné dynamické `+`, `*`, `//`, `%`, `sum`, `min` a `max` vracejí vždy
+  tagovaný výsledek. Raw Int se nesmí klasifikovat podle shody s heap adresou.
 - **Staticky známá lokální aritmetika** a trusted self-host cesta mohou
   držet raw skaláry (Int64 přímo v registru, bez heap alokace).
+- `runtime_writebytes_raw` a ostatní raw vstupy jsou vyhrazené self-host
+  toolchainu; běžný program používá kontrolované veřejné entrypointy.
 
 ## Garbage collector
 
@@ -210,7 +217,7 @@ Heap typy:
 ### Třístupňový build
 
 ```bash
-ulimit -v 1048576
+ulimit -v 1572864
 
 # Stage 1 — přeloží předchozí compiler
 ./compiler/pure/lslc-direct compiler/pure/lslc_direct.lsl /tmp/lslc-s1

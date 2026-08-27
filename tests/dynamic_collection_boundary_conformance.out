@@ -1,0 +1,21 @@
+LSL
+3 {'name': 'LSL', 'count': 3}
+{'count': 3} {'count': 3}
+30
+25 [10, 25, 30]
+[25, 30] [25, 30]
+2 55
+5 7 IntArray([7, 5])
+1.5 3.5 FloatArray([1.5, 3.5])
+65 67 ByteArray([65, 67])
+True True True
+True True True
+ell [25, 30]
+IntArray FloatArray ByteArray
+IndexError: index out of range
+IndexError: index out of range
+TypeError: object has no length
+TypeError: object has no length
+TypeError: right operand of in is not a collection
+TypeError: method requires an indexable sequence
+TypeError: sequence index must be Int

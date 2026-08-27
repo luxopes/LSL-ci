@@ -18,6 +18,10 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktu�
 
 - okruh 2: validace `Int(String)` a dynamické `Int(Any)` konverze (dřív `Int("abc")` vracelo garbage);
 - okruh 2: oprava Float `**` mocniny (dřív `2.0 ** 53` vracelo `0`).
+- 0.6.9: kontrolované veřejné Any ABI pro kolekce, numeriku, konverze,
+  metody a I/O; typed arrays a ByteArray slicing mají samostatné boundary testy.
+- 0.6.9: odstraněny zbývající nalezené raw-Int/live-pointer kolize v
+  dynamických operátorech a redukcích; compiler hlásí chybnou aritu bez pádu.
 
 ## Aktivní plán
 
@@ -45,7 +49,8 @@ Feature scope je implementovaný: self-host compiler/runtime, jazyk a collection
 
 ## Zbývá hardening/bugfix/audit
 
-- další numerické edge cases; Int overflow má definovanou two's-complement modulo `2^64` sémantiku a conformance;
+- případná budoucí změna definované Int overflow sémantiky by byla samostatná
+  jazyková změna; současné two's-complement modulo `2^64` chování má conformance;
 - případná ABI v2 rozšíření nad hotovým self-contained CPU ET_DYN v1 (relocations/Tensor descriptors); GPU je mimo aktuální scope;
 - rozšířit negative corpus a benchmarky; další targety nejsou blocker 0.5;
 - [x] Přesunout veškeré testy/smoke fixtures a runner pod `tests/`; v `compiler/pure/` ponechat jen produkční funkcionalitu.

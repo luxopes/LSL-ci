@@ -265,7 +265,8 @@ Povolené metody:
 - Tuple/RealArray: `index`, `count`; RealArray navíc `copy`
 - IntArray: `append`, `clear`; dále indexace, indexové přiřazení, slicing, `len` a iterace
 - FloatArray: `append`, `clear`; dále indexace, indexové přiřazení, slicing, `len`, iterace a nativní Float kernely
-- ByteArray: `append`, `clear`; dále packed indexace, indexové přiřazení, `len`, iterace, `readbytes` a `writebytes`
+- ByteArray: `append`, `clear`; dále packed indexace, indexové přiřazení,
+  slicing, `len`, iterace, `readbytes` a `writebytes`
 
 Indexace a slicing (`value[start:stop]`) mají pravou mez exkluzivní a podporují záporné indexy. String indexy, `len`, slicing, iterace, `find` a `index` počítají validní Unicode code points, ne UTF-8 bajty.
 

@@ -3,6 +3,7 @@
 ['a', 'c']
 [] 0
 {'b': 2}
+KeyError: key not found
 survived
 42
 KeyError: key not found

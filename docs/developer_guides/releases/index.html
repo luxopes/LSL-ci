@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
-<meta name="description" content="Historie vydání Lux Simple Lang: stabilní manuály, binárky a zdrojové archivy LSL 0.5 až 0.6.8.">
+<meta name="description" content="Historie vydání Lux Simple Lang: stabilní manuály, binárky a zdrojové archivy LSL 0.5 až 0.6.9.">
 <title>LSL — Historie vydání</title>
 <style>
   :root {
@@ -126,7 +126,7 @@
     <nav>
       <a href="/">Nejnovější vydání</a>
       <a href="/#CHANGELOG">Changelog</a>
-      <a href="/downloads/lsl-0.6.8-source.tar.gz" download>Zdroj 0.6.8</a>
+      <a href="/downloads/lsl-0.6.9-source.tar.gz" download>Zdroj 0.6.9</a>
     </nav>
   </header>
 
@@ -135,16 +135,36 @@
       <div class="eyebrow">Stabilní archiv</div>
       <h1>Historie vydání</h1>
       <p>Každé vydání má binární balík pro Linux x86_64, zdrojový archiv a
-      SHA-256 součty. Vydání 0.6.8 aktualizuje živý manuál; neměnné historické
+      SHA-256 součty. Vydání 0.6.9 aktualizuje živý manuál; neměnné historické
       snapshoty zůstávají dostupné níže.</p>
     </section>
 
     <section class="release-list" aria-label="Vydání LSL">
       <article class="release latest">
         <div>
-          <div class="version">0.6.8</div>
+          <div class="version">0.6.9</div>
           <div class="date">27. 8. 2026</div>
           <span class="status">Nejnovější</span>
+        </div>
+        <div>
+          <h2>Dynamické ABI a produkční stabilizace</h2>
+          <p>Kontrolovaná Any indexace a numerika, korektní typed arrays,
+          bezpečné konverze kolekcí a úplnější diagnostika compileru.</p>
+          <div class="features">
+            <span>Any ABI</span><span>Typed collections</span><span>Diagnostics</span><span>Fixed point</span>
+          </div>
+        </div>
+        <div class="actions">
+          <a class="button primary" href="/">Aktuální manuál</a>
+          <a class="button" href="/downloads/lsl-0.6.9-linux-x86_64.tar.gz" download>Binárky</a>
+        </div>
+      </article>
+
+      <article class="release">
+        <div>
+          <div class="version">0.6.8</div>
+          <div class="date">27. 8. 2026</div>
+          <span class="status">Historická</span>
         </div>
         <div>
           <h2>Bezpečnostní hardening</h2>

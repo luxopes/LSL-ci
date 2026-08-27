@@ -29,7 +29,7 @@ constraint.
 
 - “As fast/lean as C” is a direction, not an honest pre-measured guarantee. Each
   optimization must report measured deltas against this baseline.
-- Long builds remain serial under `ulimit -v 1048576`.
+- Long builds remain serial under `ulimit -v 1572864`.
 - No C, Python, assembler, linker, shell launcher, or network dependency.
 - Preserve `examples/hello.lsl` as authored with bare input syntax.
 

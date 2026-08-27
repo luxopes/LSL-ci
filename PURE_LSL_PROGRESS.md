@@ -1008,19 +1008,27 @@ hash je
 stripped CUDA worker má SHA-256
 `56334b8eee4363f1886bb5f0e66fcbcfbb86ef5ab2c0ca23dd35358629ef7114`.
 
+Vydání 0.6.9 uzavírá audit veřejného dynamického ABI. Kolekce,
+typed arrays, numerika, konverze, metody a I/O kontrolují runtime typy na Any
+hranici; veřejné skalární výsledky se boxují bez odhadu podle heap adresy.
+Opravené pointer-collision případy zahrnují `+`, `*`, `//`, `%`, `sum`,
+`min` a `max`. `ByteArray` má slicing, Dictionary mazání chybějícího
+klíče vrací `KeyError` a compiler odmítá chybné receivery i aritu metod,
+`arg()` a privátních intrinsiců strukturovanou diagnostikou. Samostatné
+boundary testy brání vyčerpání objektové tabulky agregovaného corpusu.
+Tři self-host stage jsou bitově shodné; fixed-point, fast/full suite, config,
+čistá instalace a ELF audit prošly. Compiler fixed point je
+`f535e20469dd299bb05eee47020fd82d0c2298850816ddde502e627efa7564ce`, CLI
+hash je
+`957040c2a491918e7e08220a8d6996d5e8520ec112bbf8d152773a4b1fe6f69a`;
+CUDA worker zůstal bitově beze změny s hashem
+`56334b8eee4363f1886bb5f0e66fcbcfbb86ef5ab2c0ca23dd35358629ef7114`.
+
 ## Roadmap k "kompletní 1" (17 okruhů)
-Uživatel zadal 17 produkčních okruhů (tagged ABI, numerika, Tuple/RealArray,
-collections, GC robustnost, syscall I/O, native/tensor ABI, AI vrstva,
-NixOS config, arita/builtiny, fuzz/bench/determinismus/audit, cleanup, docs).
-Postup je inkrementální: každý krok = konkrétní defekt → oprava → nový
-conformance test → ověřený self-host fixed point. Hotovo z okruhu 2: validace
-`Int(String)` a dynamické `Int(Any)` konverze; opravená Float `**` mocnina;
-NaN/Infinity výpis a `String()`; IEEE-754 NaN comparisons; bezpečný
-`INT64_MIN // -1` / `% -1` (místo SIGFPE pádu). Z okruhu 6: partial-write smyčka
-(`runtime_write_all`) a CRLF strip v `input()`. Z okruhu 10: arita validace
-builtinů i metod (dříve compiler segfaultoval na `len()` / `list.append()`).
-Z okruhu 4: rekurzivní repr kolekcí v `print`/`String()` (dříve raw pointer);
-`List + List` concatenation a `String * Int` repetition (dříve garbage). Zbývá zbytek okruhu 2 (float
-round-trip formatting; obecný kontrolovaný integer overflow vyžaduje oddělit
-wrapping interní aritmetiku od checked uživatelské — větší sémantický zásah,
-protože `bytes.little` záměrně spoléhá na `*` wraparound) a okruhy 1, 3–17.
+
+Produkční okruhy (tagged ABI, numerika, kolekce, GC robustnost, syscall I/O,
+native/tensor ABI, AI vrstva, config, diagnostika, fuzz/bench/determinismus,
+cleanup a dokumentace) jsou pro aktuální Linux x86-64 scope uzavřené.
+Další targety, syntetická fault injection a případná změna definované
+two's-complement Int overflow sémantiky jsou navazující práce, ne známé
+blockery vydání 0.6.9. Aktuální seznam je v `TODO.md`.

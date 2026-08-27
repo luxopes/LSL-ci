@@ -1,6 +1,6 @@
 # Lux Simple Lang (LSL)
 
-LSL 0.6.8 je self-hostovaný jazyk pro běžné programování, deklarativní
+LSL 0.6.9 je self-hostovaný jazyk pro běžné programování, deklarativní
 konfiguraci, AI orchestrace a volitelné CUDA výpočty. Compiler i host runtime
 jsou pouze LSL: compiler přímo zapisuje statický Linux x86_64 ELF a runtime
 používá přímé syscalls, bez libc, assembleru, linkeru, Pythonu nebo shell
@@ -10,12 +10,14 @@ pure-LSL a Tensor používá CPU fallback.
 
 ## Self-hosted vydání
 
-LSL 0.6.8 je nejnovější vydání. Binární balík pro Linux x86_64, zdrojový
+LSL 0.6.9 je nejnovější vydání. Binární balík pro Linux x86_64, zdrojový
 archiv a aktualizovaný český manuál jsou na
 [lsl.lux-ai.cz](https://lsl.lux-ai.cz/). Stabilní manuály vydání jsou v
 [historii vydání](https://lsl.lux-ai.cz/releases/):
 
-- [LSL 0.6.8](https://lsl.lux-ai.cz/) — bezpečnostní hardening runtime,
+- [LSL 0.6.9](https://lsl.lux-ai.cz/) — opravy veřejného Any ABI,
+  dynamických kolekcí, numeriky, konverzí a diagnostiky compileru;
+- LSL 0.6.8 — bezpečnostní hardening runtime,
   procesů, native izolace, I/O, parseru a standardní knihovny;
 - LSL 0.6.7 — statické PIE s ASLR, bezpečnější HTTP
   a process plugin transport, zpevněný native loader a paralelně izolované
@@ -143,6 +145,7 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 - [Bezpečnostní model a hranice důvěry](docs/security.md)
 - [Native/plugin ABI](docs/native-plugins.md)
 - [CUDA backend a worker protokol](docs/cuda.md)
+- [Poznámky k lokálnímu vydání 0.6.9](docs/release-0.6.9.md)
 - [Poznámky k lokálnímu vydání 0.6.8](docs/release-0.6.8.md)
 - [Poznámky k lokálnímu vydání 0.6.7](docs/release-0.6.7.md)
 - [Poznámky k lokálnímu vydání 0.6.6](docs/release-0.6.6.md)

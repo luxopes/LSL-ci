@@ -4,6 +4,29 @@ Na této stránce jsou uživatelsky významné změny vydaných verzí. Stabiln�
 manuály a soubory ke stažení zůstávají dostupné v
 [historii vydání](/releases/).
 
+## 0.6.9 — 27. 8. 2026
+
+Stabilizační vydání veřejného dynamického ABI bez změny syntaxe.
+
+- Dynamická indexace, zápis, mazání, iterace a kolekční metody ověřují runtime
+  typ receiveru, indexu i hodnoty. Typed arrays a ByteArray se na Any hranici
+  správně boxují; ByteArray nově podporuje slicing.
+- Dynamické `+`, `*`, `//`, `%`, porovnání, `sum`, `min`, `max` a `sort`
+  kontrolují kompatibilitu typů a zachovávají tagovaný výsledek. Opravena je i
+  kolize Int výsledku s adresou živého heap objektu a Bool numerika.
+- `List + List`, `String * Int`, konverze kolekcí a metody nad uniklými
+  callbacky fungují stejně jako jejich staticky typované varianty; neplatné
+  vstupy vracejí zachytitelnou `TypeError`.
+- String, filesystem, process a binary-I/O builtiny kontrolují dynamické
+  argumenty. `writebytes(List)` validuje každý prvek a self-host writer používá
+  oddělený raw entrypoint.
+- Chybějící Dictionary klíč při `del` vrací `KeyError`. Compiler kontroluje
+  receivery i aritu metod, `arg()` a interních intrinsiců a zachovává source
+  span v diagnostice.
+- Přibyly boundary a negative regrese, pointer-collision testy i pevný limit
+  velikosti optimalizovaného ELF. Fixed point, fast/full suite, instalace a ELF
+  audit prošly.
+
 ## 0.6.8 — 27. 8. 2026
 
 Čistě bezpečnostní vydání bez změny syntaxe jazyka.
@@ -294,7 +317,7 @@ První veřejné self-hosted vydání LSL.
 
 ## Odkazy na stabilní manuály
 
-- LSL 0.6.8 aktualizuje živý manuál; 0.6.5 zůstává poslední neměnný snapshot.
+- LSL 0.6.9 aktualizuje živý manuál; 0.6.5 zůstává poslední neměnný snapshot.
 - LSL 0.6.6 používá [manuál 0.6.5](/releases/0.6.5/).
 - [LSL 0.6.5 — manuál a soubory ke stažení](/releases/0.6.5/)
 - [LSL 0.6 — manuál a soubory ke stažení](/releases/0.6/)

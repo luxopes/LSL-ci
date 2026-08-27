@@ -2,6 +2,8 @@ Int 9 True
 Int 9 True
 int Int True
 False False
+Int 9 True False
+Int True Int True
 True int
 True
 True

@@ -190,13 +190,16 @@ call require_success(run(float_test, []), "run Float smoke")
 call require_success(run(compiler, ["tests/codegen_optimization_conformance.lsl", optimization_test]), "compile codegen optimization conformance")
 call require_hardened_elf(optimization_test)
 call require_output(optimization_test, [], "tests/codegen_optimization_conformance.out", "codegen optimization output differs")
-if len(readbytes(optimization_test)) > 76000:
-    Error(TestFailure: "optimized standalone ELF exceeds 76000 bytes")
+# Checked public Any collection and numeric dispatchers added in 0.6.9 are
+# linked into standalone programs so callbacks cannot bypass validation. Keep
+# a tight ceiling around that intentional runtime growth.
+if len(readbytes(optimization_test)) > 97000:
+    Error(TestFailure: "optimized standalone ELF exceeds 97000 bytes")
 end
 call require_success(run(compiler, ["compiler/pure/cli.lsl", cli_test]), "compile stdin CLI")
 call require_hardened_elf(cli_test)
 help_output = capture(cli_test, ["--help"])
-expected_help = "Lux Simple Lang (LSL) 0.6.8" + chr(10)
+expected_help = "Lux Simple Lang (LSL) 0.6.9" + chr(10)
 expected_help += chr(10)
 expected_help += "Usage:" + chr(10)
 expected_help += "  lsl [SOURCE [ARG...]]" + chr(10)
@@ -215,11 +218,11 @@ if capture_status() != 0 or help_output != expected_help:
     Error(TestFailure: "CLI --help output differs")
 end
 version_output = capture(cli_test, ["version"])
-if capture_status() != 0 or version_output != "0.6.8" + chr(10):
+if capture_status() != 0 or version_output != "0.6.9" + chr(10):
     Error(TestFailure: "CLI version output differs")
 end
 version_flag_output = capture(cli_test, ["--version"])
-if capture_status() != 0 or version_flag_output != "0.6.8" + chr(10):
+if capture_status() != 0 or version_flag_output != "0.6.9" + chr(10):
     Error(TestFailure: "CLI --version output differs")
 end
 stdin_source = "value = 6 * 7" + chr(10) + "if value == 42:" + chr(10) + "    print \"stdin\", value" + chr(10) + "end" + chr(10) + "exit" + chr(10)
@@ -428,6 +431,23 @@ call require_success(run(compiler, ["tests/allocation_overflow_conformance.lsl",
 if run(allocation_overflow_test, []) != 70:
     Error(TestFailure: "oversized container allocation was not rejected safely")
 end
+
+# Public Any boundary tests intentionally retain escaped callbacks and several
+# typed collections. Run them in short-lived processes so their globals do not
+# consume the shared aggregate's object-table budget during later BigInt stress.
+boundary_tests = [
+    "bytearray_slice_conformance",
+    "dynamic_builtin_boundary_conformance",
+    "dynamic_collection_boundary_conformance",
+    "dynamic_method_boundary_conformance",
+    "dynamic_numeric_boundary_conformance"
+]
+for boundary_name in boundary_tests:
+    boundary_test = test_path(boundary_name)
+    call require_success(run(compiler, ["tests/" + boundary_name + ".lsl", boundary_test]), "compile " + boundary_name)
+    call require_output(boundary_test, [], "tests/" + boundary_name + ".out", boundary_name + " output differs")
+end
+
 call require_success(run(compiler, ["tests/full_conformance.lsl", aggregate_test]), "compile aggregated conformance")
 call require_hardened_elf(aggregate_test)
 aggregate_output = capture(aggregate_test, [test_root])
@@ -459,7 +479,17 @@ call require_output(process_fault_test, ["2", test_root], "tests/process_fault_m
 
 # Compile-time diagnostics must remain failures and retain original source spans.
 call require_failure(run(compiler, ["tests/builtin_arity_negative.lsl", test_path("arity-negative")]), "builtin arity mismatch unexpectedly compiled")
+call require_failure(run(compiler, ["tests/arg_arity_negative.lsl", test_path("arg-arity-negative")]), "arg arity mismatch unexpectedly compiled")
+call require_failure(run(compiler, ["tests/internal_builtin_arity_negative.lsl", test_path("internal-arity-negative")]), "internal builtin arity mismatch unexpectedly compiled")
 call require_failure(run(compiler, ["tests/method_arity_negative.lsl", test_path("method-negative")]), "method arity mismatch unexpectedly compiled")
+call require_failure(run(compiler, ["tests/dictionary_method_arity_negative.lsl", test_path("dictionary-method-negative")]), "Dictionary method arity mismatch unexpectedly compiled")
+call require_failure(run(compiler, ["tests/method_receiver_negative.lsl", test_path("method-receiver-negative")]), "invalid method receiver unexpectedly compiled")
+call require_failure(run(compiler, ["tests/scalar_length_negative.lsl", test_path("scalar-length-negative")]), "scalar len unexpectedly compiled")
+call require_failure(run(compiler, ["tests/sequence_index_type_negative.lsl", test_path("sequence-index-type-negative")]), "non-Int sequence index unexpectedly compiled")
+call require_failure(run(compiler, ["tests/arithmetic_operand_negative.lsl", test_path("arithmetic-operand-negative")]), "invalid arithmetic operand unexpectedly compiled")
+call require_failure(run(compiler, ["tests/unary_numeric_negative.lsl", test_path("unary-numeric-negative")]), "invalid unary numeric operand unexpectedly compiled")
+call require_failure(run(compiler, ["tests/ordered_comparison_negative.lsl", test_path("ordered-comparison-negative")]), "invalid ordered comparison unexpectedly compiled")
+call require_failure(run(compiler, ["tests/numeric_builtin_negative.lsl", test_path("numeric-builtin-negative")]), "invalid numeric builtin operand unexpectedly compiled")
 call require_failure(run(compiler, ["tests/inheritance_cycle_negative.lsl", test_path("inheritance-cycle-negative")]), "cyclic inheritance unexpectedly compiled")
 call require_failure(run(compiler, ["tests/origin_without_parent_negative.lsl", test_path("origin-negative")]), "origin without parent unexpectedly compiled")
 call require_failure(run(compiler, ["tests/fixed_collection_negative.lsl", test_path("fixed-negative")]), "fixed collection mutation unexpectedly compiled")

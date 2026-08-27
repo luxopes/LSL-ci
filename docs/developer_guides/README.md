@@ -1,12 +1,12 @@
 # LSL — Vývojářské příručky
 
-> **LSL 0.6.8 — bezpečnostní hardening compileru, runtime a stdlib.**
+> **LSL 0.6.9 — opravy dynamického ABI a produkční stabilizace.**
 > [Historie verzí](/releases/) · [Manuál 0.5](/releases/0.5/) ·
 > [Manuál 0.6](/releases/0.6/) · [Manuál 0.6.5](/releases/0.6.5/) ·
 > [Changelog](CHANGELOG.md)
 > [Stáhnout binárky nebo zdrojový kód](index.html#downloads).
 
-Podrobné průvodce jazykem LSL (Lux Simple Lang) 0.6.8. Každá kapitola
+Podrobné průvodce jazykem LSL (Lux Simple Lang) 0.6.9. Každá kapitola
 vysvětluje jednu oblast od základů — text předpokládá, že s programováním
 teprve začínáte. Všechny konstrukty jsou popsány srozumitelně: co dělají,
 k čemu slouží, jak se zapisují a jak fungují.

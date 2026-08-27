@@ -111,6 +111,8 @@ function __lsl_title(text):
 end
 
 function __lsl_startswith(text, prefix):
+    text = __lsl_require_string(text)
+    prefix = __lsl_require_string_value(prefix)
     if len(prefix) > len(text):
         return False
     end
@@ -125,6 +127,8 @@ function __lsl_startswith(text, prefix):
 end
 
 function __lsl_endswith(text, suffix):
+    text = __lsl_require_string(text)
+    suffix = __lsl_require_string_value(suffix)
     if len(suffix) > len(text):
         return False
     end
@@ -160,6 +164,8 @@ function __lsl_strip(text):
 end
 
 function __lsl_find(text, needle):
+    text = __lsl_require_string(text)
+    needle = __lsl_require_string_value(needle)
     if len(needle) == 0:
         return 0
     end
@@ -197,8 +203,8 @@ end
 function __lsl_split(text, separator):
     # Byte probes plus native slices: the char-list walk with `current +=`
     # was quadratic per piece and allocated a String per character.
-    s = "" + text
-    sep = "" + separator
+    s = __lsl_require_string(text)
+    sep = __lsl_require_string_value(separator)
     n = len(s)
     m = len(sep)
     result = []
@@ -242,6 +248,8 @@ function __lsl_join(separator, values):
     # Pairwise balanced merge: repeated `result += piece` is quadratic in
     # the total length, which made joining a few thousand one-character
     # strings (fd.read_text on /proc) cost hundreds of milliseconds.
+    separator = __lsl_require_string(separator)
+    values = __lsl_require_sequence(values)
     count = len(values)
     if count == 0:
         return ""
@@ -249,7 +257,7 @@ function __lsl_join(separator, values):
     work = []
     index = 0
     while index < count:
-        piece = "" + values[index]
+        piece = __lsl_require_string_value(values[index])
         if index > 0:
             piece = separator + piece
         end
@@ -273,32 +281,36 @@ function __lsl_join(separator, values):
 end
 
 function __lsl_extend(target, values):
+    # Normalize typed arrays to boxed List elements before the internal helper
+    # appends them to a public List.
+    values = __lsl_list(values)
     for value in values:
         call target.append(value)
     end
 end
 
 function __lsl_list(values):
+    values = __lsl_require_sequence(values)
     result = []
     value_code = __lsl_type_code(values)
     if value_code == 13:
         index = 0
         while index < len(values):
-            result.append(__lsl_raw_int(values[index]))
+            result.append(Int(values[index]))
             index += 1
         end
         return result
     elif value_code == 14:
         index = 0
         while index < len(values):
-            result.append(__lsl_float_from_bits(__lsl_raw_int(values[index])))
+            result.append(Float(values[index]))
             index += 1
         end
         return result
     elif value_code == 15:
         index = 0
         while index < len(values):
-            result.append(__lsl_raw_int(values[index]))
+            result.append(Int(values[index]))
             index += 1
         end
         return result
@@ -317,7 +329,134 @@ function __lsl_require_real(value):
     return value
 end
 
+function __lsl_require_string(value):
+    if __lsl_type_code(value) != 1:
+        Error(TypeError: "method requires a String receiver")
+    end
+    return value
+end
+
+function __lsl_require_string_value(value):
+    if __lsl_type_code(value) != 1:
+        Error(TypeError: "expected a String")
+    end
+    return value
+end
+
+function __lsl_require_list(value):
+    if __lsl_type_code(value) != 2:
+        Error(TypeError: "method requires a List receiver")
+    end
+    return value
+end
+
+function __lsl_require_dictionary(value):
+    if __lsl_type_code(value) != 3:
+        Error(TypeError: "method requires a Dictionary receiver")
+    end
+    return value
+end
+
+function __lsl_require_byte_sequence(value):
+    value_type = __lsl_type_code(value)
+    if value_type != 2 and value_type != 15:
+        Error(TypeError: "operation requires a ByteArray or List")
+    end
+    return value
+end
+
+function __lsl_require_sequence(value):
+    value_type = __lsl_type_code(value)
+    if value_type != 1 and value_type != 2 and value_type != 7 and value_type != 8 and value_type != 13 and value_type != 14 and value_type != 15:
+        Error(TypeError: "method requires an indexable sequence")
+    end
+    return value
+end
+
+function __lsl_dynamic_count(target, value):
+    target_type = __lsl_type_code(target)
+    if target_type == 1:
+        return __lsl_count(target, value)
+    elif target_type == 2 or target_type == 7 or target_type == 8:
+        return __lsl_list_count(target, value)
+    end
+    Error(TypeError: "count requires a String, List, Tuple, or RealArray")
+end
+
+function __lsl_dynamic_index(target, value):
+    target_type = __lsl_type_code(target)
+    if target_type == 1:
+        return __lsl_string_index(target, value)
+    elif target_type == 2 or target_type == 7 or target_type == 8:
+        return __lsl_list_index(target, value)
+    end
+    Error(TypeError: "index requires a String, List, Tuple, or RealArray")
+end
+
+function __lsl_dynamic_copy(target):
+    target_type = __lsl_type_code(target)
+    if target_type == 2:
+        return __lsl_copy(target)
+    elif target_type == 3:
+        return __lsl_dict_copy(target)
+    elif target_type == 8:
+        return RealArray(__lsl_copy(target))
+    end
+    Error(TypeError: "copy requires a List, Dictionary, or RealArray")
+end
+
+function __lsl_dynamic_pop0(target):
+    if __lsl_type_code(target) != 2:
+        Error(TypeError: "pop() without an argument requires a List")
+    end
+    return __lsl_pop(target)
+end
+
+function __lsl_dynamic_pop1(target, key):
+    target_type = __lsl_type_code(target)
+    if target_type == 2:
+        return __lsl_pop_at(target, __lsl_checked_index(key))
+    elif target_type == 3:
+        return __lsl_dict_pop(target, key)
+    end
+    Error(TypeError: "pop requires a List or Dictionary")
+end
+
+function __lsl_dynamic_pop2(target, key, default_value):
+    if __lsl_type_code(target) != 3:
+        Error(TypeError: "pop(key, default) requires a Dictionary")
+    end
+    return __lsl_dict_pop_default(target, key, default_value)
+end
+
+function __lsl_sequence_contains(target, value):
+    for item in target:
+        if item == value:
+            return True
+        end
+    end
+    return False
+end
+
+function __lsl_dynamic_contains(target, value):
+    target_type = __lsl_type_code(target)
+    if target_type == 1:
+        return __lsl_find(target, __lsl_require_string_value(value)) >= 0
+    elif target_type == 3:
+        for key in target.keys():
+            if key == value:
+                return True
+            end
+        end
+        return False
+    elif target_type == 2 or target_type == 7 or target_type == 8 or target_type == 13 or target_type == 14 or target_type == 15:
+        return __lsl_sequence_contains(target, value)
+    end
+    Error(TypeError: "right operand of in is not a collection")
+end
+
 function __lsl_real_array(values):
+    values = __lsl_list(values)
     result = []
     for value in values:
         result.append(__lsl_require_real(value))
@@ -325,12 +464,72 @@ function __lsl_real_array(values):
     return result
 end
 
-function __lsl_sum(values):
-    result = 0
-    for value in values:
-        result += value
+function __lsl_sum_values(values, box_integer):
+    values = __lsl_require_sequence(values)
+    values_type = __lsl_type_code(values)
+    if values_type == 13:
+        integer_values = IntArray(values)
+        integer_total = 0
+        for integer_value in integer_values:
+            integer_total += integer_value
+        end
+        if box_integer:
+            return __lsl_box_int(integer_total)
+        end
+        return integer_total
+    elif values_type == 14:
+        return float_sum(FloatArray(values))
+    elif values_type == 15:
+        byte_values = ByteArray(values)
+        byte_total = 0
+        for byte_value in byte_values:
+            byte_total += byte_value
+        end
+        if box_integer:
+            return __lsl_box_int(byte_total)
+        end
+        return byte_total
+    elif values_type == 1:
+        Error(TypeError: "sum values must be numeric")
     end
-    return result
+    integer_result = 0
+    float_result = 0.0
+    floating = False
+    for value in values:
+        value_type = __lsl_type_code(value)
+        if value_type == 6:
+            if not floating:
+                float_result = Float(integer_result)
+                floating = True
+            end
+            float_result += Float(value)
+        elif value_type == 9 or value_type == 4:
+            if floating:
+                float_result += Float(value)
+            else:
+                integer_result += Int(value)
+            end
+        else:
+            Error(TypeError: "sum values must be numeric")
+        end
+    end
+    if floating:
+        return float_result
+    end
+    if box_integer:
+        # The public result is Any. Box directly instead of probing the raw
+        # result: an Int can have the same bits as a live heap address.
+        return __lsl_box_int(integer_result)
+    end
+    return integer_result
+end
+
+function __lsl_sum(values):
+    return __lsl_sum_values(values, False)
+end
+
+function __lsl_public_sum(values):
+    return __lsl_sum_values(values, True)
 end
 
 function __lsl_float_accumulate(value, digit):
@@ -446,8 +645,10 @@ function __lsl_float_any(value):
         return __lsl_float_from_int(value)
     elif value_type == 9:
         return __lsl_float_from_int(__lsl_unbox_int(value))
+    elif value_type == 4:
+        return __lsl_float_from_int(__lsl_unbox_bool(value))
     end
-    Error(TypeError: "Float expects Int, Float, or String")
+    Error(TypeError: "Float expects Int, Bool, Float, or String")
 end
 
 function __lsl_float_candidate(significand, digit_count, exponent):
@@ -865,7 +1066,7 @@ function __lsl_render_seen(value, quote, active, depth):
             if index > 0:
                 result.append(", ")
             end
-            result.append(__lsl_int_to_string(__lsl_raw_int(value[index])))
+            result.append(__lsl_int_to_string(Int(value[index])))
             index += 1
         end
         result.append("])")
@@ -877,7 +1078,7 @@ function __lsl_render_seen(value, quote, active, depth):
             if index > 0:
                 result.append(", ")
             end
-            result.append(__lsl_format_float(__lsl_float_from_bits(__lsl_raw_int(value[index]))))
+            result.append(__lsl_format_float(Float(value[index])))
             index += 1
         end
         result.append("])")
@@ -889,7 +1090,7 @@ function __lsl_render_seen(value, quote, active, depth):
             if index > 0:
                 result.append(", ")
             end
-            result.append(__lsl_int_to_string(__lsl_raw_int(value[index])))
+            result.append(__lsl_int_to_string(Int(value[index])))
             index += 1
         end
         result.append("])")
@@ -975,6 +1176,56 @@ function __lsl_list_concat(left, right):
     return result
 end
 
+function __lsl_public_add(left, right):
+    left_type = __lsl_type_code(left)
+    right_type = __lsl_type_code(right)
+    if left_type == 2 or right_type == 2:
+        if left_type == 2 and right_type == 2:
+            return __lsl_list_concat(left, right)
+        end
+        Error(TypeError: "numeric operands required")
+    elif left_type == 1 or right_type == 1:
+        if left_type == 1 and right_type == 1:
+            return left + right
+        end
+        Error(TypeError: "numeric operands required")
+    end
+    left_numeric = left_type == 9 or left_type == 4 or left_type == 6
+    right_numeric = right_type == 9 or right_type == 4 or right_type == 6
+    if not left_numeric or not right_numeric:
+        Error(TypeError: "numeric operands required")
+    elif left_type == 6 or right_type == 6:
+        return Float(left) + Float(right)
+    end
+    # This helper crosses the public Any ABI. Keep integer results tagged just
+    # like the native dynamic arithmetic runtime does; returning the raw Int
+    # would make a following dynamic operation interpret its bits as a pointer.
+    return __lsl_box_int(Int(left) + Int(right))
+end
+
+function __lsl_public_multiply(left, right):
+    left_type = __lsl_type_code(left)
+    right_type = __lsl_type_code(right)
+    left_integer = left_type == 9 or left_type == 4
+    right_integer = right_type == 9 or right_type == 4
+    if left_type == 1 or right_type == 1:
+        if left_type == 1 and right_integer:
+            return __lsl_str_repeat(left, Int(right))
+        elif right_type == 1 and left_integer:
+            return __lsl_str_repeat(right, Int(left))
+        end
+        Error(TypeError: "numeric operands required")
+    end
+    left_numeric = left_integer or left_type == 6
+    right_numeric = right_integer or right_type == 6
+    if not left_numeric or not right_numeric:
+        Error(TypeError: "numeric operands required")
+    elif left_type == 6 or right_type == 6:
+        return Float(left) * Float(right)
+    end
+    return __lsl_box_int(Int(left) * Int(right))
+end
+
 function __lsl_float_floor(x):
     # floor of a Float, returned as Float. Int() truncates toward zero.
     truncated = Float(Int(x))
@@ -1012,11 +1263,11 @@ function __lsl_floordiv_dyn(a, b):
     end
     left = __lsl_raw_int(a)
     right = __lsl_raw_int(b)
-    if a_type == 9:
-        left = __lsl_unbox_int(a)
+    if a_type == 9 or a_type == 4:
+        left = Int(a)
     end
-    if b_type == 9:
-        right = __lsl_unbox_int(b)
+    if b_type == 9 or b_type == 4:
+        right = Int(b)
     end
     return left // right
 end
@@ -1029,19 +1280,38 @@ function __lsl_mod_dyn(a, b):
     end
     left = __lsl_raw_int(a)
     right = __lsl_raw_int(b)
-    if a_type == 9:
-        left = __lsl_unbox_int(a)
+    if a_type == 9 or a_type == 4:
+        left = Int(a)
     end
-    if b_type == 9:
-        right = __lsl_unbox_int(b)
+    if b_type == 9 or b_type == 4:
+        right = Int(b)
     end
     return left % right
+end
+
+function __lsl_public_floordiv_dyn(a, b):
+    a_type = __lsl_type_code(a)
+    b_type = __lsl_type_code(b)
+    if a_type == 6 or b_type == 6:
+        return __lsl_ffloordiv(a, b)
+    end
+    return __lsl_box_int(Int(a) // Int(b))
+end
+
+function __lsl_public_mod_dyn(a, b):
+    a_type = __lsl_type_code(a)
+    b_type = __lsl_type_code(b)
+    if a_type == 6 or b_type == 6:
+        return __lsl_fmod(a, b)
+    end
+    return __lsl_box_int(Int(a) % Int(b))
 end
 
 function __lsl_slice3(target, start, has_start, stop, has_stop, step):
     # General strided slice with Python semantics. step != 0. Negative step
     # flips the default bounds. Returns String for String targets, else List
     # (codegen retags Tuple/RealArray).
+    target = __lsl_require_sequence(target)
     if step == 0:
         Error(ValueError: "slice step cannot be zero")
     end
@@ -1094,8 +1364,16 @@ function __lsl_slice3(target, start, has_start, stop, has_stop, step):
             end
         end
     end
-    is_string = __lsl_type_code(target) == 1
+    target_type = __lsl_type_code(target)
+    is_string = target_type == 1
     parts = []
+    if target_type == 13:
+        parts = IntArray()
+    elif target_type == 14:
+        parts = FloatArray()
+    elif target_type == 15:
+        parts = ByteArray()
+    end
     index = start
     if step > 0:
         while index < stop:
@@ -1110,6 +1388,10 @@ function __lsl_slice3(target, start, has_start, stop, has_stop, step):
     end
     if is_string:
         return "".join(parts)
+    elif target_type == 7:
+        return Tuple(parts)
+    elif target_type == 8:
+        return RealArray(parts)
     end
     return parts
 end
@@ -1182,7 +1464,7 @@ function __lsl_equal_seen(left, right, seen_left, seen_right, depth):
         end
         index = 0
         while index < length:
-            if __lsl_raw_int(left[index]) != __lsl_raw_int(right[index]):
+            if Int(left[index]) != Int(right[index]):
                 return False
             end
             index += 1
@@ -1195,8 +1477,8 @@ function __lsl_equal_seen(left, right, seen_left, seen_right, depth):
         end
         index = 0
         while index < length:
-            left_value = __lsl_float_from_bits(__lsl_raw_int(left[index]))
-            right_value = __lsl_float_from_bits(__lsl_raw_int(right[index]))
+            left_value = Float(left[index])
+            right_value = Float(right[index])
             if left_value != right_value:
                 return False
             end
@@ -1210,7 +1492,7 @@ function __lsl_equal_seen(left, right, seen_left, seen_right, depth):
         end
         index = 0
         while index < length:
-            if __lsl_raw_int(left[index]) != __lsl_raw_int(right[index]):
+            if Int(left[index]) != Int(right[index]):
                 return False
             end
             index += 1
@@ -1248,11 +1530,80 @@ function __lsl_equal(left, right):
     return False
 end
 
+function __lsl_public_minmax_int_array(values, maximize):
+    typed_values = IntArray(values)
+    if len(typed_values) == 0:
+        if maximize:
+            Error(ValueError: "max of empty sequence")
+        end
+        Error(ValueError: "min of empty sequence")
+    end
+    result = typed_values[0]
+    index = 1
+    while index < len(typed_values):
+        value = typed_values[index]
+        if (maximize and value > result) or (not maximize and value < result):
+            result = value
+        end
+        index += 1
+    end
+    return __lsl_box_int(result)
+end
+
+function __lsl_public_minmax_float_array(values, maximize):
+    typed_values = FloatArray(values)
+    if len(typed_values) == 0:
+        if maximize:
+            Error(ValueError: "max of empty sequence")
+        end
+        Error(ValueError: "min of empty sequence")
+    end
+    result = typed_values[0]
+    index = 1
+    while index < len(typed_values):
+        value = typed_values[index]
+        if (maximize and value > result) or (not maximize and value < result):
+            result = value
+        end
+        index += 1
+    end
+    return result
+end
+
+function __lsl_public_minmax_byte_array(values, maximize):
+    typed_values = ByteArray(values)
+    if len(typed_values) == 0:
+        if maximize:
+            Error(ValueError: "max of empty sequence")
+        end
+        Error(ValueError: "min of empty sequence")
+    end
+    result = typed_values[0]
+    index = 1
+    while index < len(typed_values):
+        value = typed_values[index]
+        if (maximize and value > result) or (not maximize and value < result):
+            result = value
+        end
+        index += 1
+    end
+    return __lsl_box_int(result)
+end
+
 function __lsl_min(values):
+    values = __lsl_require_sequence(values)
+    values_type = __lsl_type_code(values)
+    if values_type == 13:
+        return __lsl_public_minmax_int_array(values, False)
+    elif values_type == 14:
+        return __lsl_public_minmax_float_array(values, False)
+    elif values_type == 15:
+        return __lsl_public_minmax_byte_array(values, False)
+    end
     first = True
     result = None
     for value in values:
-        if first or value < result:
+        if first or __lsl_public_compare(value, result) < 0:
             result = value
         end
         first = False
@@ -1264,10 +1615,19 @@ function __lsl_min(values):
 end
 
 function __lsl_max(values):
+    values = __lsl_require_sequence(values)
+    values_type = __lsl_type_code(values)
+    if values_type == 13:
+        return __lsl_public_minmax_int_array(values, True)
+    elif values_type == 14:
+        return __lsl_public_minmax_float_array(values, True)
+    elif values_type == 15:
+        return __lsl_public_minmax_byte_array(values, True)
+    end
     first = True
     result = None
     for value in values:
-        if first or value > result:
+        if first or __lsl_public_compare(value, result) > 0:
             result = value
         end
         first = False
@@ -1398,7 +1758,7 @@ function __lsl_sort(target):
             second = middle
             output = left
             while output < stop:
-                if first < middle and (second >= stop or source[first] <= source[second]):
+                if first < middle and (second >= stop or __lsl_public_compare(source[first], source[second]) <= 0):
                     destination[output] = source[first]
                     first += 1
                 else:
@@ -1423,6 +1783,57 @@ function __lsl_sort(target):
     end
 end
 
+function __lsl_public_compare(left, right):
+    left_type = __lsl_type_code(left)
+    right_type = __lsl_type_code(right)
+    if left_type == 1 or right_type == 1:
+        if left_type != 1 or right_type != 1:
+            Error(TypeError: "sort values must have compatible types")
+        end
+        limit = min(len(left), len(right))
+        index = 0
+        while index < limit:
+            left_code = ord(left[index])
+            right_code = ord(right[index])
+            if left_code < right_code:
+                return -1
+            elif left_code > right_code:
+                return 1
+            end
+            index += 1
+        end
+        if len(left) < len(right):
+            return -1
+        elif len(left) > len(right):
+            return 1
+        end
+        return 0
+    end
+    left_numeric = left_type == 9 or left_type == 4 or left_type == 6
+    right_numeric = right_type == 9 or right_type == 4 or right_type == 6
+    if not left_numeric or not right_numeric:
+        Error(TypeError: "sort values must be numeric or String")
+    end
+    if left_type == 6 or right_type == 6:
+        left_float = Float(left)
+        right_float = Float(right)
+        if left_float < right_float:
+            return -1
+        elif left_float > right_float:
+            return 1
+        end
+        return 0
+    end
+    left_int = Int(left)
+    right_int = Int(right)
+    if left_int < right_int:
+        return -1
+    elif left_int > right_int:
+        return 1
+    end
+    return 0
+end
+
 function __lsl_copy(target):
     return target[0:len(target)]
 end
@@ -1442,6 +1853,7 @@ function __lsl_setdefault(target, key, default_value):
 end
 
 function __lsl_update(target, values):
+    values = __lsl_require_dictionary(values)
     for key in values.keys():
         target[key] = values[key]
     end
@@ -1451,8 +1863,10 @@ function __lsl_dictionary(values):
     if __lsl_type_code(values) == 3:
         return __lsl_dict_copy(values)
     end
+    values = __lsl_list(values)
     result = {}
     for entry in values:
+        entry = __lsl_list(entry)
         if len(entry) != 2:
             Error(ValueError: "Dictionary entries must contain two values")
         end
@@ -1557,6 +1971,8 @@ function __lsl_replace(text, old_value, new_value):
 end
 
 function __lsl_count(text, needle):
+    text = __lsl_require_string(text)
+    needle = __lsl_require_string_value(needle)
     count = 0
     offset = 0
     while offset <= len(text) - len(needle):

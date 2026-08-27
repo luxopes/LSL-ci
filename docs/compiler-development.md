@@ -27,7 +27,7 @@ limitem 1,5 GiB:
 ulimit -v 1572864
 ```
 
-Compiler i kořenové CLI při release buildu 0.6.8 dosahují přibližně 1,25 GiB
+Compiler i kořenové CLI při release buildu 0.6.9 dosahují přibližně 1,25 GiB
 peak virtual/RSS kvůli skokovému růstu objektového registru. Generujte každý
 artefakt samostatně; limit 1,5 GiB ponechává rezervu, ale stále ukončí
 nekontrolovaný růst.
@@ -150,7 +150,7 @@ výkon uchovejte i checksum výsledku, aby benchmark neměřil odstraněnou prá
 ### 2. Stage build
 
 ```text
-ulimit -v 1048576
+ulimit -v 1572864
 ./compiler/pure/lslc-direct compiler/pure/lslc_direct.lsl /tmp/lslc-s1
 /tmp/lslc-s1 compiler/pure/lslc_direct.lsl /tmp/lslc-s2
 /tmp/lslc-s2 compiler/pure/lslc_direct.lsl /tmp/lslc-s3
