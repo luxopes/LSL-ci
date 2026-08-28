@@ -27,7 +27,7 @@ Bez argumentů se spustí interaktivní zápis jedné společné translation uni
 
 ```text
 $ ./lsl
-Lux Simple Lang 0.7.0 interactive source mode
+Lux Simple Lang 0.7.1 interactive source mode
 Enter code; type exit on its own line to compile and run.
 >>> value = 6 * 7
 >>> print value

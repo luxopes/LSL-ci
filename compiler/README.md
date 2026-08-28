@@ -9,6 +9,9 @@ generuje statický Linux x86_64 PIE ELF s ASLR a neproveditelným stackem:
 - `heap_runtime.lsl`, `io_runtime.lsl`, `process_runtime.lsl`, `native_runtime.lsl` — syscall-only runtime.
 
 Kanonický fixed-point ELF je `pure/lslc-direct`; veřejná kopie je `compiler/lslc`.
+Self-host vstupy `lslc_direct.lsl` a `cli.lsl` nesou explicitní první řádek
+`# lsl: internal-abi`. Direct compiler jej používá místo odhadu podle cesty;
+ostatní zdroje se vždy generují s veřejným tagged Any ABI.
 
 ```text
 ./compiler/lslc source.lsl output

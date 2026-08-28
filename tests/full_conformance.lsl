@@ -33,6 +33,9 @@ load float_floordiv_conformance
 load recursive_return_conformance
 load wide_class_abi_conformance
 load inheritance_conformance
+load origin_function_conformance
+load module_path_identity_conformance
+load path_public_abi_conformance
 load float_exponent_conformance
 load float_special_conformance
 load float_format_conformance

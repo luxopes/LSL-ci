@@ -24,4 +24,6 @@
 /manual/0.7/*                    /releases/0.7/:splat              301
 /manual/0.7.0                    /releases/0.7/                    301
 /manual/0.7.0/*                  /releases/0.7/:splat              301
+/manual/0.7.1                    /                                 301
+/manual/0.7.1/*                  /                                 301
 /changelog                       /#CHANGELOG                       301

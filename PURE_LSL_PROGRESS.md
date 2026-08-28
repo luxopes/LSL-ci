@@ -1054,6 +1054,30 @@ runner má
 Vydání obsahuje reprodukovatelné binární a zdrojové archivy, nový snapshot
 manuálu 0.7 a tag `v0.7.0`.
 
+Vývoj 0.7.1 stabilizuje hranice přidané v 0.7 bez nové syntaxe. Safe validator
+nově prochází i slice step; linker cachuje relativní moduly podle vyřešené
+cesty a používá nekolidující graph-order prefix. Modulová funkce `origin()` se
+už nezaměňuje za receiver `origin.method()`. Interní raw ABI je explicitní AST
+provenance z markeru `# lsl: internal-abi`, nikoli substring source path, takže
+uživatelský adresář `compiler/pure/` nemůže vypnout veřejné tagged kontroly.
+
+Package install/update a `lsl origin NAME` sdílejí per-package `flock`, lock
+odmítá symlink i special file a origin znovu ověřuje instalovaný SHA-256.
+HTTP přijímá přesně 64 polí, vyžaduje neprázdný Host, otevírá statické soubory
+nonblocking a po `fstat` odmítá FIFO/device/socket; chyba handleru se izoluje na
+500 a odpověď je omezená na 8 MiB. Config denylist doplnil `check` a `printl`.
+CLI materializuje dočasný ELF až po úspěšném codegenu a uklízí config/sandbox
+chybové cesty.
+
+Finální 0.7.1 fixed point, fast i full suite, čistá instalace, fixed point
+instalovaného compileru, config diff a ELF audit prošly. Compiler hash je
+`b907fc2b8d68b55ae94d2838531bf705e8ab663f0e22002695840ecec64eb899`, CLI
+hash `d11dc6cb2cd26273555c64d807d53e640588f3cd4d2720f2e89967b3f87fbb57` a
+test runner hash
+`43c012844351f5449e881ee3900c75c0aa5cc567916a3064b177480f939615fd`.
+Vydání obsahuje reprodukovatelné binární a zdrojové archivy a tag `v0.7.1`;
+živý manuál je aktualizovaný bez nového kopírovaného snapshotu.
+
 ## Roadmap k "kompletní 1" (17 okruhů)
 
 Produkční okruhy (tagged ABI, numerika, kolekce, GC robustnost, syscall I/O,

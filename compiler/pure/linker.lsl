@@ -25,8 +25,12 @@ function module_alias(name):
     return parts[len(parts) - 1]
 end
 
-function module_prefix(name):
-    return name.replace(".", "__") + "__"
+function module_prefix(index):
+    # Import names are relative to their owner. Two different directories may
+    # therefore both contain (for example) helper.lsl. A graph-order identity
+    # avoids symbol collisions between those distinct files as well as between
+    # dotted names and names containing underscores.
+    return "@lsl_module_" + String(index) + "@"
 end
 
 function builtin_module(name):
@@ -193,6 +197,7 @@ function annotate_expression(expression, path):
         call annotate_expression(expression["target"], path)
         call annotate_expression(expression["start"], path)
         call annotate_expression(expression["stop"], path)
+        call annotate_expression(expression.get("step", None), path)
     elif kind == "list" or kind == "tuple" or kind == "real_array":
         for item in expression["items"]:
             call annotate_expression(item, path)
@@ -271,6 +276,28 @@ function mark_trusted(statements, trusted):
     end
 end
 
+function mark_internal_abi(statements, internal):
+    for statement in statements:
+        statement["internal_abi"] = Bool(internal)
+        kind = statement["kind"]
+        if kind == "function" or kind == "loop" or kind == "safe" or kind == "unsafe":
+            call mark_internal_abi(statement["body"], internal)
+        elif kind == "while" or kind == "for":
+            call mark_internal_abi(statement["body"], internal)
+        elif kind == "try":
+            call mark_internal_abi(statement["body"], internal)
+            call mark_internal_abi(statement["otherwise"], internal)
+        elif kind == "if":
+            for branch in statement["branches"]:
+                call mark_internal_abi(branch[1], internal)
+            end
+            call mark_internal_abi(statement["otherwise"], internal)
+        elif kind == "class":
+            call mark_internal_abi(statement["body"], internal)
+        end
+    end
+end
+
 function unsafe_name(name):
     value = String(name)
     return value == "thread_spawn" or value.startswith("__lsl_") or value.startswith("native__") or value.startswith("native_")
@@ -317,6 +344,7 @@ function validate_safe_expression(expression, trusted, unsafe_context, sandbox_m
         call validate_safe_expression(expression["target"], trusted, unsafe_context, sandbox_mode)
         call validate_safe_expression(expression["start"], trusted, unsafe_context, sandbox_mode)
         call validate_safe_expression(expression["stop"], trusted, unsafe_context, sandbox_mode)
+        call validate_safe_expression(expression.get("step", None), trusted, unsafe_context, sandbox_mode)
     elif kind == "list" or kind == "tuple" or kind == "real_array":
         for item in expression["items"]:
             call validate_safe_expression(item, trusted, unsafe_context, sandbox_mode)
@@ -385,11 +413,7 @@ function transform_expression(expression, own_functions, imported_names, namespa
     kind = expression["kind"]
     if kind == "name":
         name = expression["name"]
-        # `origin` is the reserved immediate-parent receiver inside inherited
-        # methods. It must survive module namespace rewriting unchanged.
-        if name == "origin":
-            return None
-        elif name in imported_names:
+        if name in imported_names:
             expression["name"] = imported_names[name]
         elif name in own_functions:
             expression["name"] = own_functions[name]
@@ -398,7 +422,12 @@ function transform_expression(expression, own_functions, imported_names, namespa
         target = expression["target"]
         transformed_namespace = False
         if target["kind"] == "name":
-            if target["name"] in namespaces:
+            # `origin` is the reserved immediate-parent receiver only when it
+            # is used as `origin.method()`. A standalone function named
+            # `origin` remains a normal module symbol.
+            if target["name"] == "origin":
+                transformed_namespace = True
+            elif target["name"] in namespaces:
                 expression["kind"] = "name"
                 expression["name"] = namespaces[target["name"]] + expression["name"]
                 transformed_namespace = True
@@ -428,6 +457,7 @@ function transform_expression(expression, own_functions, imported_names, namespa
         call transform_expression(expression["target"], own_functions, imported_names, namespaces)
         call transform_expression(expression["start"], own_functions, imported_names, namespaces)
         call transform_expression(expression["stop"], own_functions, imported_names, namespaces)
+        call transform_expression(expression.get("step", None), own_functions, imported_names, namespaces)
     elif kind == "list" or kind == "tuple" or kind == "real_array":
         for item in expression["items"]:
             call transform_expression(item, own_functions, imported_names, namespaces)
@@ -499,14 +529,14 @@ function transform_statements(statements, own_functions, imported_names, namespa
     end
 end
 
-function collect_module(name, owner_path, cache, output, source_budget):
-    if name in cache:
-        return cache[name]
+function collect_module(name, owner_path, cache, output, source_budget, internal_graph):
+    path = module_path(name, owner_path)
+    if path in cache:
+        return cache[path]
     end
     if len(cache) >= 256:
         Error(CompileError: "module graph exceeds 256 modules")
     end
-    path = module_path(name, owner_path)
     source = readfile(path)
     source_bytes = __lsl_text_byte_length(source)
     if source_bytes > 16777216 - source_budget[0]:
@@ -516,15 +546,20 @@ function collect_module(name, owner_path, cache, output, source_budget):
     program = parser.parse(path, source)
     call annotate_statements(program, path)
     call mark_trusted(program, builtin_module(name))
-    prefix = module_prefix(name)
-    cache[name] = prefix
+    internal_module = False
+    if internal_graph:
+        internal_module = path.startswith("compiler/pure/") or path.find("/compiler/pure/") >= 0
+    end
+    call mark_internal_abi(program, internal_module)
+    prefix = module_prefix(len(cache))
+    cache[path] = prefix
     namespaces = {}
     imported_names = {}
 
     for statement in program:
         if statement["kind"] == "load":
             dependency = statement["module"]
-            dependency_prefix = collect_module(dependency, path, cache, output, source_budget)
+            dependency_prefix = collect_module(dependency, path, cache, output, source_budget, internal_graph)
             if statement["symbol"] == None:
                 namespaces[statement["alias"]] = dependency_prefix
             else:
@@ -554,7 +589,7 @@ function collect_module(name, owner_path, cache, output, source_budget):
     return prefix
 end
 
-function link_mode(path, source, safety_mode):
+function link_mode_options(path, source, safety_mode, internal_graph):
     checked_source = String(source)
     source_bytes = __lsl_text_byte_length(checked_source)
     if source_bytes > 16777216:
@@ -563,6 +598,7 @@ function link_mode(path, source, safety_mode):
     program = parser.parse(path, checked_source)
     call annotate_statements(program, path)
     call mark_trusted(program, False)
+    call mark_internal_abi(program, internal_graph)
     cache = {}
     linked = []
     namespaces = {}
@@ -572,7 +608,7 @@ function link_mode(path, source, safety_mode):
     for statement in program:
         if statement["kind"] == "load":
             dependency = statement["module"]
-            prefix = collect_module(dependency, path, cache, linked, source_budget)
+            prefix = collect_module(dependency, path, cache, linked, source_budget, internal_graph)
             if statement["symbol"] == None:
                 namespaces[statement["alias"]] = prefix
             else:
@@ -595,8 +631,17 @@ function link_mode(path, source, safety_mode):
     return linked
 end
 
+
+function link_mode(path, source, safety_mode):
+    return link_mode_options(path, source, safety_mode, False)
+end
+
 function link(path, source):
     return link_mode(path, source, 0)
+end
+
+function link_internal(path, source):
+    return link_mode_options(path, source, 0, True)
 end
 
 function link_checked(path, source, sandbox_mode):

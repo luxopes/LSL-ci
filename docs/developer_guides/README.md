@@ -1,6 +1,6 @@
 # LSL — Vývojářské příručky
 
-> **LSL 0.7.0 — server, capability sandbox a explicitní unsafe hranice.**
+> **LSL 0.7.1 — stabilizace serveru, provenance, linkeru a veřejného ABI.**
 > [Historie verzí](/releases/) · [Manuál 0.5](/releases/0.5/) ·
 > [Manuál 0.6](/releases/0.6/) · [Manuál 0.6.5](/releases/0.6.5/) ·
 > [Changelog](CHANGELOG.md)

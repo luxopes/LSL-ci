@@ -1,3 +1,4 @@
+# lsl: internal-abi
 # Public pure-LSL command frontend.
 
 load codegen
@@ -7,7 +8,7 @@ load package
 load parser
 load sandbox
 
-VERSION = "0.7.0"
+VERSION = "0.7.1"
 
 function print_help():
     print "Lux Simple Lang (LSL) " + VERSION
@@ -85,12 +86,13 @@ function decimal_option(value, minimum, maximum, label):
     return result
 end
 
-function compile_source_mode(source_path, source, output_path, safety_mode):
+function compile_image_mode(source_path, source, safety_mode):
     stdlib_name = "compiler/pure/dynamic_stdlib.lsl"
     stdlib_path = resource_path(stdlib_name)
     stdlib_source = readfile(stdlib_path)
     program = parser.parse(stdlib_name, stdlib_source)
     call linker.annotate_statements(program, stdlib_name)
+    call linker.mark_internal_abi(program, True)
     if safety_mode == 0:
         program.extend(linker.link(source_path, source))
     else:
@@ -99,7 +101,11 @@ function compile_source_mode(source_path, source, output_path, safety_mode):
         end
         program.extend(linker.link_checked(source_path, source, safety_mode == 2))
     end
-    call writebytes(output_path, codegen.generate(source_path, source, program))
+    return codegen.generate(source_path, source, program)
+end
+
+function compile_source_mode(source_path, source, output_path, safety_mode):
+    call writebytes(output_path, compile_image_mode(source_path, source, safety_mode))
 end
 
 function compile_source(source_path, source, output_path):
@@ -116,6 +122,10 @@ end
 
 function compile_file_sandbox(source_path, output_path):
     call compile_source_mode(source_path, readfile(source_path), output_path, 2)
+end
+
+function compile_file_image(source_path, safety_mode):
+    return compile_image_mode(source_path, readfile(source_path), safety_mode)
 end
 
 function dirname(path):
@@ -224,6 +234,21 @@ function cleanup_program(path):
     call rmdir(dirname(path))
 end
 
+function materialize_scratch(image):
+    path = scratch_program_path()
+    failure = None
+    try:
+        call writebytes(path, image)
+    else:
+        failure = last_error()
+    end
+    if failure != None:
+        call cleanup_program(path)
+        Error(FileError: failure)
+    end
+    return path
+end
+
 function cleanup_config_snapshots(directory):
     index = 0
     while index < 256:
@@ -273,8 +298,7 @@ if command == None:
     if source == "":
         exit(0)
     end
-    scratch = scratch_program_path()
-    call compile_source("<stdin>", source, scratch)
+    scratch = materialize_scratch(compile_image_mode("<stdin>", source, 1))
     status = run(scratch, [])
     call cleanup_program(scratch)
     exit(status)
@@ -335,20 +359,29 @@ elif command == "config":
     # Its generated evaluator intentionally uses private runtime helpers for
     # identity-safe merging, so compile this trusted synthetic source through
     # the compiler-internal path rather than treating it as user-authored code.
-    call compile_source_mode(synthetic_path, wrapper, evaluator, 0)
-    # Even lexically pure configuration may contain an infinite loop or an
-    # allocation bomb. Evaluate it in a clean subprocess with wall-clock, CPU,
-    # address-space, file-size and descriptor limits.
-    timeout = required_system_tool("/usr/bin/timeout", "/bin/timeout", "timeout")
-    prlimit = required_system_tool("/usr/bin/prlimit", "/bin/prlimit", "prlimit")
-    limits = [
-        "--signal=TERM", "--kill-after=1s", "--", "30s", prlimit,
-        "--as=1073741824", "--cpu=30", "--fsize=16777216",
-        "--nofile=64", "--nproc=32", "--", evaluator
-    ]
-    status = run_clean(timeout, limits)
+    failure = None
+    status = 70
+    try:
+        call compile_source_mode(synthetic_path, wrapper, evaluator, 0)
+        # Even lexically pure configuration may contain an infinite loop or an
+        # allocation bomb. Evaluate it in a clean subprocess with wall-clock,
+        # CPU, address-space, file-size and descriptor limits.
+        timeout = required_system_tool("/usr/bin/timeout", "/bin/timeout", "timeout")
+        prlimit = required_system_tool("/usr/bin/prlimit", "/bin/prlimit", "prlimit")
+        limits = [
+            "--signal=TERM", "--kill-after=1s", "--", "30s", prlimit,
+            "--as=1073741824", "--cpu=30", "--fsize=16777216",
+            "--nofile=64", "--nproc=32", "--", evaluator
+        ]
+        status = run_clean(timeout, limits)
+    else:
+        failure = last_error()
+    end
     call cleanup_config_snapshots(snapshot_directory)
     call cleanup_program(evaluator)
+    if failure != None:
+        Error(CliError: failure)
+    end
     exit(status)
 elif command == "install":
     name = arg(2)
@@ -378,7 +411,7 @@ elif command == "origin":
     if name == None:
         print registry_server()
     else:
-        provenance = package.origin(name, user_home())
+        provenance = package.verified_origin(name, user_home(), "/usr/bin/sha256sum")
         print "name", provenance["name"]
         print "origin", provenance["origin"]
         print "source", provenance["source"]
@@ -485,8 +518,6 @@ elif command == "sandbox":
     if not sandbox.available():
         Error(SandboxError: "lsl sandbox requires bubblewrap, systemd-run, timeout, prlimit, realpath and env")
     end
-    scratch = scratch_program_path()
-    call compile_file_sandbox(source_path, scratch)
     sandbox_arguments = []
     while option_index < arg_count():
         sandbox_arguments.append(arg(option_index))
@@ -499,19 +530,38 @@ elif command == "sandbox":
         "read": read_capabilities,
         "write": write_capabilities
     }
-    status = sandbox.run(scratch, sandbox_arguments, policy)
+    # Resolve and validate every caller-controlled capability before creating
+    # an executable scratch file.
+    call sandbox.checked_policy(policy)
+    call sandbox.checked_arguments(sandbox_arguments)
+    runtime_directory = __lsl_getenv("XDG_RUNTIME_DIR")
+    bus = __lsl_getenv("DBUS_SESSION_BUS_ADDRESS")
+    if runtime_directory == None or runtime_directory == "" or bus == None or bus == "":
+        Error(SandboxError: "a systemd user session is required for cgroup limits")
+    end
+    scratch = materialize_scratch(compile_file_image(source_path, 2))
+    failure = None
+    status = 70
+    try:
+        status = sandbox.run(scratch, sandbox_arguments, policy)
+    else:
+        failure = last_error()
+    end
     call cleanup_program(scratch)
+    if failure != None:
+        Error(SandboxError: failure)
+    end
     exit(status)
 end
 
-scratch = scratch_program_path()
-call compile_file(command, scratch)
+image = compile_file_image(command, 1)
 arguments = []
 index = 2
 while index < arg_count():
     arguments.append(arg(index))
     index += 1
 end
+scratch = materialize_scratch(image)
 status = run(scratch, arguments)
 call cleanup_program(scratch)
 exit(status)

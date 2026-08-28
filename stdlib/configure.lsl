@@ -182,7 +182,7 @@ function validate_pure(tokens, path):
         "input": True, "readfile": True, "readbytes": True,
         "writefile": True, "appendfile": True, "writebytes": True,
         "mkdir": True, "rmdir": True, "unlink": True, "exists": True,
-        "getenv": True, "run": True, "run_clean": True,
+        "getenv": True, "run": True, "run_clean": True, "check": True,
         "capture": True, "capture_clean": True, "capture_stream": True,
         "capture_stream_clean": True, "capture_input": True,
         "capture_input_clean": True, "capture_input_stream": True,
@@ -193,7 +193,7 @@ function validate_pure(tokens, path):
         "clock": True, "executable_path": True, "arg": True,
         "arg_count": True, "exit": True, "thread_spawn": True,
         "thread_join": True, "atomic_add": True, "atomic_xchg": True,
-        "atomic_cas": True, "print": True, "help": True
+        "atomic_cas": True, "print": True, "printl": True, "help": True
     }
     index = 0
     while index < len(tokens):

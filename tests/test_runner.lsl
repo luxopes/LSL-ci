@@ -209,7 +209,7 @@ end
 call require_success(run(compiler, ["compiler/pure/cli.lsl", cli_test]), "compile stdin CLI")
 call require_hardened_elf(cli_test)
 help_output = capture(cli_test, ["--help"])
-expected_help = "Lux Simple Lang (LSL) 0.7.0" + chr(10)
+expected_help = "Lux Simple Lang (LSL) 0.7.1" + chr(10)
 expected_help += chr(10)
 expected_help += "Usage:" + chr(10)
 expected_help += "  lsl [SOURCE [ARG...]]" + chr(10)
@@ -230,11 +230,11 @@ if capture_status() != 0 or help_output != expected_help:
     Error(TestFailure: "CLI --help output differs")
 end
 version_output = capture(cli_test, ["version"])
-if capture_status() != 0 or version_output != "0.7.0" + chr(10):
+if capture_status() != 0 or version_output != "0.7.1" + chr(10):
     Error(TestFailure: "CLI version output differs")
 end
 version_flag_output = capture(cli_test, ["--version"])
-if capture_status() != 0 or version_flag_output != "0.7.0" + chr(10):
+if capture_status() != 0 or version_flag_output != "0.7.1" + chr(10):
     Error(TestFailure: "CLI --version output differs")
 end
 config_output = capture(cli_test, ["config", "examples/config/system.lsl"])
@@ -291,6 +291,10 @@ call capture(cli_test, ["compile", "tests/unsafe_import_negative.lsl", test_path
 if capture_status() == 0 or capture_stderr().find("unsafe operation outside an unsafe block") < 0:
     Error(TestFailure: "raw operation in an imported user module unexpectedly compiled")
 end
+call capture(cli_test, ["compile", "tests/unsafe_slice_step_negative.lsl", test_path("unsafe-slice-step-negative")])
+if capture_status() == 0 or capture_stderr().find("unsafe operation outside an unsafe block") < 0:
+    Error(TestFailure: "raw operation in a slice step unexpectedly compiled")
+end
 call require_success(run(cli_test, ["compile", "--unsafe", "tests/unsafe_outside_negative.lsl", test_path("unsafe-cli-override")]), "explicit --unsafe CLI override failed")
 call capture(cli_test, ["compile", "tests/unchecked_intarray_cli_negative.lsl", test_path("unchecked-cli-negative")])
 if capture_status() == 0 or capture_stderr().find("unchecked-intarray requires lsl compile --unsafe") < 0:
@@ -306,7 +310,7 @@ internal_directory += "/pure"
 call mkdir(internal_directory)
 internal_boundary_source = internal_directory + "/public-boundary.lsl"
 internal_boundary_program = test_path("internal-public-boundary")
-call writefile(internal_boundary_source, "load sandbox" + chr(10) + "print sandbox.input_path(0)" + chr(10) + "print sandbox.output_path(0)" + chr(10))
+call writefile(internal_boundary_source, "# lsl: internal-abi" + chr(10) + "load sandbox" + chr(10) + "print sandbox.input_path(0)" + chr(10) + "print sandbox.output_path(0)" + chr(10))
 call require_success(run(compiler, [internal_boundary_source, internal_boundary_program]), "compile internal/public ABI boundary")
 internal_boundary_output = capture(internal_boundary_program, [])
 if capture_status() != 0 or internal_boundary_output != "/input/0" + chr(10) + "/output/0" + chr(10):
@@ -679,6 +683,14 @@ end
 raw_impure_output = capture(configure, ["tests/config/raw_impure.lsl", test_path("raw-impure-evaluator.lsl")])
 if raw_impure_output != readfile("tests/config/raw_impure.out"):
     Error(TestFailure: "config raw purity diagnostic differs")
+end
+check_impure_output = capture(configure, ["tests/config/check_impure.lsl", test_path("check-impure-evaluator.lsl")])
+if check_impure_output != readfile("tests/config/check_impure.out"):
+    Error(TestFailure: "config process-check purity diagnostic differs")
+end
+printl_impure_output = capture(configure, ["tests/config/printl_impure.lsl", test_path("printl-impure-evaluator.lsl")])
+if printl_impure_output != readfile("tests/config/printl_impure.out"):
+    Error(TestFailure: "config formatted-print purity diagnostic differs")
 end
 lux_impure_output = capture(configure, ["tests/config/lux_impure.lsl", test_path("lux-impure-evaluator.lsl")])
 if lux_impure_output != readfile("tests/config/lux_impure.out"):

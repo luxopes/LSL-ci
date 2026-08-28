@@ -19,12 +19,14 @@ Nativní LSL frontend záměrně implementuje malou podmnožinu HTTP/1.1:
 
 - přijímá pouze `GET` a `HEAD`, jedno spojení obslouží jeden požadavek;
 - omezuje hlavičku na 16 KiB, 64 polí a target na 2048 bytů;
-- vyžaduje `Host` v HTTP/1.1 a odmítá duplicate/folded hlavičky, request body
+- vyžaduje neprázdný `Host` v HTTP/1.1 a odmítá duplicate/folded hlavičky, request body
   i `Transfer-Encoding`;
 - nastavuje read/write timeout a odpovědi vždy zavírá;
 - root drží přes otevřený directory descriptor a soubory otevírá pomocí
   `openat2(RESOLVE_BENEATH | NO_MAGICLINKS | NO_SYMLINKS)`, takže `..`, symlink
   ani změna pracovního adresáře nemohou opustit document root;
+- po `fstat` obslouží jen běžný soubor; FIFO, socket ani device nemohou
+  zablokovat server při otevření;
 - jednotlivý soubor je omezen na 8 MiB.
 
 URL cesty používají úzkou ASCII podmnožinu. Percent-encoding, backslash,
@@ -69,6 +71,20 @@ call httpserver.serve(application, "127.0.0.1", 8080, 0)
 
 Handler dostane Dictionary s `method`, `target`, `version` a `headers`.
 Může vrátit String/ByteArray (status 200), nebo Dictionary s `status`,
-`reason`, `body` a `content_type`. Dynamický handler běží ve stejném procesu;
+`reason`, `body` a `content_type`. Odpověď handleru je omezená na 8 MiB a jeho
+zachytitelná chyba se změní na request-local 500; listener pak pokračuje.
+Dynamický handler běží ve stejném procesu;
 pro nedůvěryhodný kód nebo dostupnostně kritickou službu jej spusťte pomocí
 `lsl sandbox --profile server` a před něj postavte TLS reverse proxy.
+
+## Původ instalované knihovny
+
+```text
+lsl origin
+lsl origin textkit
+```
+
+První příkaz vypíše aktivní registry endpoint. Varianta se jménem vezme
+per-package lock, přísně načte `NAME.lsl.origin`, znovu spočítá SHA-256
+instalovaného `NAME.lsl` a metadata vypíše pouze při shodě. Nekontaktuje síť;
+ručně změněný zdroj nebo přerušený update skončí chybou integrity.

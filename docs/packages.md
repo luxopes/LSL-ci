@@ -35,12 +35,15 @@ Klient:
    neplatná knihovna se nenainstaluje;
 6. vytvoří přísně parsovaný `NAME.lsl.origin` sidecar se jménem, normalizovaným
    registry originem, přesnou source URL a ověřeným SHA-256;
-7. nastaví mód `0644` a atomickým `mv` nahradí zdroj i provenance metadata.
+7. nastaví mód `0644`, vezme per-package kernel lock a atomickým `mv` nahradí
+   provenance a zdroj; lock soubor nesmí být symlink ani speciální soubor.
 
-`lsl origin` bez jména vypíše aktivní registry URL. `lsl origin NAME` čte
-lokální sidecar a vypíše pole `name`, `origin`, `source` a `sha256`; síť přitom
-nekontaktuje. Balíček instalovaný starší verzí sidecar nemá a musí se nejdřív
-aktualizovat pomocí LSL 0.7.
+`lsl origin` bez jména vypíše aktivní registry URL. `lsl origin NAME` pod
+stejným zámkem přečte sidecar, znovu spočítá SHA-256 instalovaného zdroje a až
+po shodě vypíše pole `name`, `origin`, `source` a `sha256`; síť přitom
+nekontaktuje. Ruční změna zdroje nebo přerušený dvoufázový commit proto skončí
+chybou integrity. Balíček instalovaný starší verzí sidecar nemá a musí se
+nejdřív aktualizovat pomocí LSL 0.7.
 
 `lsl update NAME` nejdřív vyžaduje existující cílový modul a potom používá
 stejné ověření, zkušební překlad a atomickou náhradu jako instalace.

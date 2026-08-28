@@ -96,6 +96,12 @@ Zdrojový kód se rozdělí na tokeny (`lexer.lsl`) a ty se složí do AST
 - Detekuje cyklické importy (compile-time chyba).
 - Přidá deterministické namespace prefixy.
 
+Cache je klíčovaná vyřešenou cestou souboru, nikoli pouze textem v `load`.
+Relativní `helper.lsl` v různých adresářích jsou proto dvě různé jednotky.
+Prefix vychází z deterministického pořadí grafu a obsahuje interní oddělovač,
+který nelze zapsat jako zdrojový identifikátor; dotted názvy a podtržítka se
+tak nemohou slít do stejného symbolu.
+
 Linker zachovává `path` a `line`/`column`/`end_column` pro přesnou
 diagnostiku.
 
@@ -104,6 +110,13 @@ výrazy celého uživatelského importního grafu a odmítne privátní `__lsl_*
 native a thread operace mimo `unsafe:`. Sandbox režim odmítá i samotný unsafe
 blok. Přímý self-host `lslc` tento policy pass nepoužívá, protože je součástí
 explicitního trust core.
+
+Provenance interního ABI je samostatné pole AST. Produkční self-host vstupy
+`lslc_direct.lsl` a `cli.lsl` mají na prvním řádku
+`# lsl: internal-abi`; direct driver podle něj volí interní linker/codegen
+režim. Běžný zdroj i jeho importy dostanou `internal_abi = False` bez ohledu na
+název nebo umístění adresáře. Samotná cesta tedy nikdy nepovyšuje uživatelský
+kód do raw ABI.
 
 ### 4. Sestavení class/function tables
 
@@ -204,6 +217,8 @@ Volání je **SysV-like** (Linux x86\_64):
   přepíná argumentovou hranici zpět na veřejné tagování a její tělo se emituje
   s public kontrolami. Jinak by raw `0` mohl být v dynamickém parametru
   zaměněn za `None`.
+- Rozhodnutí je založeno na `internal_abi` provenance deklarace v AST, nikoli
+  na substringu source path. Každý nový AST lowering musí tuto značku zachovat.
 - `runtime_writebytes_raw` a ostatní raw vstupy jsou vyhrazené self-host
   toolchainu; běžný program používá kontrolované veřejné entrypointy.
 

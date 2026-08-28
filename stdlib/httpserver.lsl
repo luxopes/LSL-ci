@@ -7,6 +7,7 @@ load fd
 load time
 
 SYS_SOCKET = 41
+SYS_FSTAT = 5
 SYS_SENDTO = 44
 SYS_ACCEPT4 = 288
 SYS_BIND = 49
@@ -26,12 +27,15 @@ SO_SNDTIMEO = 21
 MSG_NOSIGNAL = 16384
 
 O_RDONLY = 0
+O_NONBLOCK = 2048
 O_DIRECTORY = 65536
 O_CLOEXEC = 524288
 O_NOFOLLOW = 131072
 RESOLVE_NO_MAGICLINKS = 2
 RESOLVE_NO_SYMLINKS = 4
 RESOLVE_BENEATH = 8
+S_IFMT = 61440
+S_IFREG = 32768
 
 MAX_HEADER_BYTES = 16384
 MAX_HEADER_COUNT = 64
@@ -47,6 +51,11 @@ function put_u32(buffer, offset, value):
     target[offset + 2] = number // 65536 % 256
     target[offset + 3] = number // 16777216 % 256
     return None
+end
+
+function get_u32(buffer, offset):
+    source = ByteArray(buffer)
+    return source[offset] + source[offset + 1] * 256 + source[offset + 2] * 65536 + source[offset + 3] * 16777216
 end
 
 function put_u64(buffer, offset, value):
@@ -239,9 +248,20 @@ end
 function open_static(root_handle, relative_path):
     path = cstring(relative_path)
     how = __lsl_byte_zeros(24)
-    call put_u64(how, 0, O_RDONLY + O_CLOEXEC + O_NOFOLLOW)
+    # O_NONBLOCK prevents a named pipe in an otherwise valid document root
+    # from hanging the single-threaded server before it can inspect the file.
+    call put_u64(how, 0, O_RDONLY + O_NONBLOCK + O_CLOEXEC + O_NOFOLLOW)
     call put_u64(how, 16, RESOLVE_NO_MAGICLINKS + RESOLVE_NO_SYMLINKS + RESOLVE_BENEATH)
-    return __lsl_syscall(SYS_OPENAT2, Int(root_handle), data_address(path), data_address(how), 24)
+    handle = __lsl_syscall(SYS_OPENAT2, Int(root_handle), data_address(path), data_address(how), 24)
+    if handle < 0:
+        return handle
+    end
+    metadata = __lsl_byte_zeros(144)
+    if __lsl_syscall(SYS_FSTAT, handle, data_address(metadata), 0, 0) < 0 or (get_u32(metadata, 24) & S_IFMT) != S_IFREG:
+        call fd.close(handle)
+        return -22
+    end
+    return handle
 end
 
 function read_handle_limit(handle, limit):
@@ -360,7 +380,9 @@ function read_request(client):
     end
     text = __lsl_text_from_bytes(collected, 0, finish)
     lines = text.split(chr(13) + chr(10))
-    if len(lines) < 3 or len(lines) > MAX_HEADER_COUNT + 2:
+    # split(CRLF) keeps the two empty entries after the terminating CRLFCRLF:
+    # request line + up to 64 fields + two terminators.
+    if len(lines) < 3 or len(lines) > MAX_HEADER_COUNT + 3:
         return error_request(400, "Bad Request", "request header has an invalid line count")
     end
     request_line = lines[0].split(" ")
@@ -399,8 +421,8 @@ function read_request(client):
         headers[name] = line[separator + 1:len(line)].strip()
         line_index += 1
     end
-    if version == "HTTP/1.1" and "host" not in headers:
-        return error_request(400, "Bad Request", "HTTP/1.1 requires Host")
+    if version == "HTTP/1.1" and ("host" not in headers or headers["host"] == ""):
+        return error_request(400, "Bad Request", "HTTP/1.1 requires a non-empty Host")
     elif "transfer-encoding" in headers:
         return error_request(400, "Bad Request", "Transfer-Encoding is not accepted")
     elif "content-length" in headers:
@@ -581,6 +603,10 @@ function normalize_app_response(value):
     mime = value.get("content_type", "text/plain; charset=utf-8")
     if type(reason) != "String" or not valid_content_type(reason) or type(mime) != "String" or not valid_content_type(mime):
         return {"status": 500, "reason": "Internal Server Error", "body": "500 Internal Server Error" + chr(10), "content_type": "text/plain; charset=utf-8"}
+    elif type(body) != "String" and type(body) != "ByteArray":
+        return {"status": 500, "reason": "Internal Server Error", "body": "500 Internal Server Error" + chr(10), "content_type": "text/plain; charset=utf-8"}
+    elif (type(body) == "String" and __lsl_text_byte_length(String(body)) > MAX_BODY_BYTES) or (type(body) == "ByteArray" and len(body) > MAX_BODY_BYTES):
+        return {"status": 500, "reason": "Internal Server Error", "body": "500 Internal Server Error" + chr(10), "content_type": "text/plain; charset=utf-8"}
     end
     return {"status": status, "reason": reason, "body": body, "content_type": mime}
 end
@@ -612,7 +638,17 @@ function serve_listener(listener, root_handle, handler, maximum_requests, announ
             if handler == None:
                 response = static_response(root_handle, request)
             else:
-                response = normalize_app_response(handler(request))
+                # Application failures are request-local. Always close the
+                # client and keep the bounded listener usable for later work.
+                handler_failed = False
+                try:
+                    response = normalize_app_response(handler(request))
+                else:
+                    handler_failed = True
+                end
+                if handler_failed:
+                    response = {"status": 500, "reason": "Internal Server Error", "body": "500 Internal Server Error" + chr(10), "content_type": "text/plain; charset=utf-8"}
+                end
             end
             head_only = request["method"] == "HEAD"
             call send_response(client, response["status"], response["reason"], response["body"], response["content_type"], head_only)

@@ -6,7 +6,23 @@ root_box = IntArray()
 port_box = IntArray()
 
 function server_worker():
-    call httpserver.serve_listener(listener_box[0], root_box[0], None, 7, False)
+    call httpserver.serve_listener(listener_box[0], root_box[0], None, 10, False)
+    return None
+end
+
+handler_calls = IntArray()
+handler_calls.append(0)
+
+function recovering_handler(request):
+    handler_calls[0] += 1
+    if handler_calls[0] == 1:
+        Error(TestHandlerError: "expected request-local failure")
+    end
+    return {"body": "recovered" + chr(10)}
+end
+
+function app_server_worker():
+    call httpserver.serve_listener(listener_box[0], -1, recovering_handler, 2, False)
     return None
 end
 
@@ -69,6 +85,11 @@ end
 
 escape_path = String(arg(1)) + "/escape"
 call unlink(escape_path)
+fifo_path = String(arg(1)) + "/blocked.pipe"
+call unlink(fifo_path)
+if run_clean("/usr/bin/mkfifo", [fifo_path]) != 0:
+    Error(TestFailure: "cannot create HTTP FIFO fixture")
+end
 escape_target = httpserver.cstring("/etc/passwd")
 escape_name = httpserver.cstring(escape_path)
 if __lsl_syscall(88, httpserver.data_address(escape_target), httpserver.data_address(escape_name), 0, 0) < 0:
@@ -102,9 +123,36 @@ call require(method_response.startswith("HTTP/1.1 405 Method Not Allowed"), "uns
 host_response = exchange("GET / HTTP/1.1" + separator + separator)
 call require(host_response.startswith("HTTP/1.1 400 Bad Request"), "missing Host was not rejected")
 
+empty_host_response = exchange("GET / HTTP/1.1" + separator + "Host:" + separator + separator)
+call require(empty_host_response.startswith("HTTP/1.1 400 Bad Request"), "empty Host was not rejected")
+
 symlink_response = exchange("GET /escape HTTP/1.1" + separator + "Host: localhost" + separator + separator)
 call require(symlink_response.startswith("HTTP/1.1 404 Not Found"), "symlink escape was not rejected")
 
+fifo_response = exchange("GET /blocked.pipe HTTP/1.1" + separator + "Host: localhost" + separator + separator)
+call require(fifo_response.startswith("HTTP/1.1 404 Not Found"), "non-regular static file was not rejected")
+
+maximum_headers_request = "GET / HTTP/1.1" + separator + "Host: localhost"
+header_index = 0
+while header_index < 63:
+    maximum_headers_request += separator + "X-LSL-" + String(header_index) + ": value"
+    header_index += 1
+end
+maximum_headers_response = exchange(maximum_headers_request + separator + separator)
+call require(maximum_headers_response.startswith("HTTP/1.1 200 OK"), "documented 64-header limit was rejected")
+
 call require(thread_join(worker) == 0, "HTTP server worker did not exit cleanly")
+
+app_listener = httpserver.listen_ipv4("127.0.0.1", 0, 16)
+listener_box[0] = app_listener
+port_box[0] = httpserver.local_port(app_listener)
+app_worker = thread_spawn(app_server_worker)
+failed_handler_response = exchange("GET / HTTP/1.1" + separator + "Host: localhost" + separator + separator)
+call require(failed_handler_response.startswith("HTTP/1.1 500 Internal Server Error"), "handler failure did not become an isolated 500 response")
+recovered_handler_response = exchange("GET / HTTP/1.1" + separator + "Host: localhost" + separator + separator)
+call require(recovered_handler_response.startswith("HTTP/1.1 200 OK") and recovered_handler_response.endswith("recovered" + chr(10)), "server did not recover after a handler failure")
+call require(thread_join(app_worker) == 0, "HTTP application server worker did not exit cleanly")
+
 call unlink(escape_path)
+call unlink(fifo_path)
 print "httpserver conformance ok"

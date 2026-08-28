@@ -2,6 +2,14 @@
 
 Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktuální handoff, pořadí blockerů a ověřovací příkazy jsou v `COMPLETION_PLAN.md`.
 
+## 0.7.1 — audit chyb a bezpečnostní hardening
+
+- [x] Auditovat nové hranice 0.7: HTTP/HTTPS, sandbox, provenance a safe/unsafe.
+- [x] Opravit nalezené chyby a ke každé přidat cílenou regresi.
+- [x] Znovu projít compiler/runtime, procesy, filesystem a paměťové ABI.
+- [x] Povýšit 0.7.1-dev na release; fixed point, full suite, čistá instalace,
+  installed fixed point, config a ELF audit už prošly.
+
 ## Hotovo
 
 - pure-LSL Linux x86_64 compiler, přímý machine code a ELF writer;

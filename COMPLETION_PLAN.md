@@ -1,4 +1,4 @@
-# LSL 0.7 release handoff
+# LSL 0.7.1 release handoff
 
 ## Cíl a aktuální stav
 
@@ -8,13 +8,13 @@ assembleru, linkeru, Pythonu nebo shell launcheru. Stage N reprodukuje stage
 N+1 bit po bitu.
 
 - Repo: `/home/antonin/lsl`
-- Větev: `complete-roadmap`
+- Větev vydání 0.7.1: `hardening-0.7.1`
 - Aktuální implementační milníky jsou v `git log`; handoff záměrně neukládá
   self-referenční hash vlastního dokumentačního commitu.
 - Aktuální fixed-point SHA-256:
-  `d19fbb95f937344a74118b4ab7dfc0a9c0d9c2398ede44705899757ea33094fa`
+  `b907fc2b8d68b55ae94d2838531bf705e8ab663f0e22002695840ecec64eb899`
 - Aktuální CLI SHA-256:
-  `942e5fc4dd93e492309cb1f4bffacdbdaef720ad2f80f73b497a139f7caf436b`
+  `d11dc6cb2cd26273555c64d807d53e640588f3cd4d2720f2e89967b3f87fbb57`
 - `compiler/pure/lslc-direct == compiler/lslc`
 - `compiler/pure/lsl-cli == lsl`
 - ELF: jediný RX `PT_LOAD`, bez `INTERP` a RWX
@@ -101,7 +101,7 @@ Implementační scope 0.7 je uzavřený. Následující body nejsou blockery vyd
 
 ## Provozní pravidla
 
-- Dlouhé buildy pouze sériově pod `ulimit -v 1572864`.
+- Dlouhé buildy pouze sériově pod `ulimit -v 2097152`.
 - Nepoužívat C/Python/assembler/linker ani jako dočasný backend.
 - Nespouštět síť bez výslovného požadavku.
 - Před změnou číst okolní kód; dělat nejmenší úplnou změnu.
@@ -113,7 +113,7 @@ Implementační scope 0.7 je uzavřený. Následující body nejsou blockery vyd
 ## Auditní příkazy
 
 ```text
-ulimit -v 1572864
+ulimit -v 2097152
 ./compiler/pure/lslc-direct compiler/pure/lslc_direct.lsl /tmp/lsl-next
 cmp compiler/pure/lslc-direct /tmp/lsl-next
 ./tests/lsl-test

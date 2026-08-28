@@ -21,15 +21,15 @@ součástí self-host řetězce. Každá změna musí zachovat:
 6. původní source path, řádek a sloupec v diagnostice.
 
 Dlouhé fixed-point buildy compileru a běžné nástroje spouštějte sériově s
-limitem 1,5 GiB:
+limitem 2 GiB:
 
 ```text
-ulimit -v 1572864
+ulimit -v 2097152
 ```
 
-Compiler i kořenové CLI při release buildu 0.6.9 dosahují přibližně 1,25 GiB
-peak virtual/RSS kvůli skokovému růstu objektového registru. Generujte každý
-artefakt samostatně; limit 1,5 GiB ponechává rezervu, ale stále ukončí
+Kořenové CLI při release buildu 0.7.1 už může překročit dřívější limit
+1,5 GiB kvůli velikosti propojeného compileru a standardní knihovny. Generujte
+každý artefakt samostatně; limit 2 GiB ponechává rezervu, ale stále ukončí
 nekontrolovaný růst.
 
 ## Mapa implementace
@@ -75,6 +75,15 @@ smoke drivery a fixtures patří do `tests/`.
 AST jsou Dictionary/List hodnoty se `kind`, source spanem a fields konkrétního
 uzlu. Linker zachovává `path`; codegen nesmí při syntetickém lowering zahodit
 `line`, `column` ani `end_column`.
+
+Linker cachuje moduly podle vyřešené cesty. Interní prefix je odvozený ze
+stabilního pořadí grafu a používá oddělovač, který zdrojový identifikátor
+nemůže obsahovat; dva relativní moduly stejného jména se proto neslijí.
+
+Raw self-host ABI je explicitní provenance, ne vlastnost cesty. Pouze vstupy s
+prvním řádkem `# lsl: internal-abi` zapnou v direct driveru interní režim;
+linker jej zapíše do AST deklarací compiler trust core. Veřejné zdroje zůstávají
+v tagged Any ABI i tehdy, když jejich cesta obsahuje `compiler/pure/`.
 
 ## Optimalizační model
 
@@ -135,6 +144,10 @@ Veřejné dynamické hranice boxují Int/Bool/None/Function; staticky známá lo
 aritmetika a trusted self-host cesta mohou držet raw skaláry. Heap type codes a
 layout jsou v [`compiler/runtime-abi.md`](../compiler/runtime-abi.md). Tento
 interní ABI není veřejné plugin ABI.
+
+Codegen smí volit raw/public hranici jen z `internal_abi` pole deklarace.
+Heuristika podle názvu souboru nebo adresáře je zakázaná; dovolila by obyčejné
+cestě nechtěně vypnout veřejné runtime kontroly.
 
 Assembler dnes používá rel32 call/jump fixups. Pokud přidáte branch relaxation,
 musíte současně přemapovat label offsets, fixups i codegen data relocations;

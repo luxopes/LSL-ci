@@ -1,3 +1,4 @@
+# lsl: internal-abi
 # Final direct compiler driver: LSL source -> executable ELF in one process.
 # No decimal byte specification and no external materializer.
 
@@ -67,6 +68,12 @@ stdlib_source = readfile(stdlib_path)
 # depend on the compiler executable's location.
 program = parser.parse(stdlib_name, stdlib_source)
 call linker.annotate_statements(program, stdlib_name)
-program.extend(linker.link(source_path, source))
-image = codegen.generate(source_path, source, program)
+call linker.mark_internal_abi(program, True)
+internal_abi = source.startswith("# lsl: internal-abi" + chr(10))
+if internal_abi:
+    program.extend(linker.link_internal(source_path, source))
+else:
+    program.extend(linker.link(source_path, source))
+end
+image = codegen.generate_mode(source_path, source, program, internal_abi)
 call writebytes(output_path, image)

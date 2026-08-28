@@ -2,6 +2,16 @@
 # validate a registry-published SHA-256, compile the source, and atomically move
 # it into the user module directory. No shell is involved.
 
+SYS_FLOCK = 73
+LOCK_EX = 2
+O_RDWR = 2
+O_CREAT = 64
+O_CLOEXEC = 524288
+O_NOFOLLOW = 131072
+SYS_FSTAT = 5
+S_IFMT = 61440
+S_IFREG = 32768
+
 function valid_name(name):
     if type(name) != "String" or len(name) == 0 or len(name) > 64:
         return False
@@ -119,6 +129,18 @@ function fail_after_cleanup(message, work, stage, check_path, origin_stage):
     Error(PackageError: message)
 end
 
+function write_stage(path, content, message, work, stage, check_path, origin_stage):
+    failed = False
+    try:
+        call writefile(path, content)
+    else:
+        failed = True
+    end
+    if failed:
+        call fail_after_cleanup(message, work, stage, check_path, origin_stage)
+    end
+end
+
 function provenance_text(name, server, source_url, hash):
     return "format=1" + chr(10) + "name=" + name + chr(10) + "origin=" + server + chr(10) + "source=" + source_url + chr(10) + "sha256=" + hash + chr(10)
 end
@@ -181,6 +203,58 @@ function origin(name, home):
         Error(PackageError: "library has no recorded origin; update it with LSL 0.7: " + name)
     end
     return parse_provenance(name, readfile(sidecar))
+end
+
+function acquire_package_lock(directory, name):
+    # Keep one persistent inode per package. flock is released by close or
+    # process exit, so a crash cannot leave a stale lock directory behind.
+    path = directory + "/." + name + ".lock"
+    handle = __lsl_fd_open(path, O_RDWR + O_CREAT + O_CLOEXEC + O_NOFOLLOW)
+    if handle < 0:
+        Error(PackageError: "cannot open package lock: " + name)
+    end
+    metadata = __lsl_byte_zeros(144)
+    if __lsl_syscall(SYS_FSTAT, handle, __lsl_data_address(metadata), 0, 0) < 0 or ((metadata[24] + metadata[25] * 256) & S_IFMT) != S_IFREG:
+        call __lsl_fd_close(handle)
+        Error(PackageError: "package lock is not a regular file: " + name)
+    end
+    if __lsl_syscall(SYS_FLOCK, handle, LOCK_EX, 0, 0) < 0:
+        call __lsl_fd_close(handle)
+        Error(PackageError: "cannot lock package: " + name)
+    end
+    return handle
+end
+
+function release_package_lock(handle):
+    call __lsl_fd_close(Int(handle))
+end
+
+function verified_origin(name, home, sha256_path):
+    if not valid_name(name):
+        Error(PackageError: "invalid library name: " + String(name))
+    end
+    directory = user_directory(home)
+    lock = acquire_package_lock(directory, name)
+    result = None
+    failure = None
+    try:
+        result = origin(name, home)
+        destination = directory + "/" + name + ".lsl"
+        hash_output = capture_clean(sha256_path, [destination])
+        hash_status = capture_status()
+        if hash_status != 0 or len(hash_output) < 64 or not valid_hash(hash_output[0:64]):
+            Error(PackageError: "cannot verify installed library SHA-256: " + name)
+        elif hash_output[0:64] != result["sha256"]:
+            Error(PackageError: "installed library differs from recorded provenance: " + name)
+        end
+    else:
+        failure = last_error()
+    end
+    call release_package_lock(lock)
+    if failure != None:
+        Error(PackageError: failure)
+    end
+    return result
 end
 
 function fetch(curl_path, server, url):
@@ -348,7 +422,7 @@ function install(name, home, server, curl_path, sha256_path, move_path, chmod_pa
     stage = work + "/source.lsl"
     check_path = work + "/compiled-check"
     origin_stage = work + "/source.origin"
-    call writefile(stage, source)
+    call write_stage(stage, source, "cannot write package staging source", work, stage, check_path, origin_stage)
 
     hash_output = capture_clean(sha256_path, [stage])
     hash_status = capture_status()
@@ -366,17 +440,34 @@ function install(name, home, server, curl_path, sha256_path, move_path, chmod_pa
         call fail_after_cleanup("downloaded library does not compile", work, stage, check_path, origin_stage)
     end
     call remove_if_exists(check_path)
-    call writefile(origin_stage, provenance_text(name, server, source_url, expected))
+    call write_stage(origin_stage, provenance_text(name, server, source_url, expected), "cannot write package provenance staging file", work, stage, check_path, origin_stage)
     if run_clean(chmod_path, ["0644", "--", origin_stage]) != 0:
         call fail_after_cleanup("cannot set safe provenance permissions", work, stage, check_path, origin_stage)
     end
-    if run_clean(move_path, ["-f", "--", stage, destination]) != 0:
-        call fail_after_cleanup("atomic library installation failed", work, stage, check_path, origin_stage)
+    lock = -1
+    lock_failure = None
+    try:
+        lock = acquire_package_lock(directory, name)
+    else:
+        lock_failure = last_error()
     end
-    if run_clean(move_path, ["-f", "--", origin_stage, destination + ".origin"]) != 0:
+    if lock_failure != None:
         call cleanup_work(work, stage, check_path, origin_stage)
-        Error(PackageError: "library installed but provenance update failed: " + name)
+        Error(PackageError: lock_failure)
     end
+    # Publish metadata first. If the source rename then fails, consumers keep
+    # executing the previous verified source and `lsl origin` detects the
+    # temporary mismatch instead of new code being paired with stale metadata.
+    if run_clean(move_path, ["-f", "--", origin_stage, destination + ".origin"]) != 0:
+        call release_package_lock(lock)
+        call fail_after_cleanup("atomic provenance installation failed", work, stage, check_path, origin_stage)
+    end
+    if run_clean(move_path, ["-f", "--", stage, destination]) != 0:
+        call release_package_lock(lock)
+        call cleanup_work(work, stage, check_path, origin_stage)
+        Error(PackageError: "provenance updated but library installation failed: " + name)
+    end
+    call release_package_lock(lock)
     call rmdir(work)
     print "Installed", name, "into", destination + "."
 end

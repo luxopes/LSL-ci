@@ -3929,7 +3929,7 @@ function emit_expression(generator, syntax):
                 call assembler.label(output, done_label)
                 return
             elif target["name"] == "help":
-                call emit_static_write(generator, "Lux Simple Lang (LSL) 0.7.0" + chr(10) + "functions: print printl input for loop safe unsafe if elif else try class ctype function type del len abs sqrt help" + chr(10) + "types: Bool Int Float String List Tuple RealArray IntArray FloatArray ByteArray Dictionary" + chr(10) + "modules: os time json process config ai tensor cuda native math bigint httpserver sandbox" + chr(10) + "docs: see README.md and docs/" + chr(10))
+                call emit_static_write(generator, "Lux Simple Lang (LSL) 0.7.1" + chr(10) + "functions: print printl input for loop safe unsafe if elif else try class ctype function type del len abs sqrt help" + chr(10) + "types: Bool Int Float String List Tuple RealArray IntArray FloatArray ByteArray Dictionary" + chr(10) + "modules: os time json process config ai tensor cuda native math bigint httpserver sandbox" + chr(10) + "docs: see README.md and docs/" + chr(10))
                 call assembler.emit(output, x86_64.mov_imm64(0, 0))
                 return
             elif target["name"] == "abs":
@@ -4309,7 +4309,7 @@ function emit_expression(generator, syntax):
             if len(arguments) != expected_arguments:
                 call unsupported(generator["path"], generator["lines"], syntax, "function argument count mismatch for " + target["name"], "pass exactly " + String(expected_arguments) + " arguments")
             end
-            public_callee = generator["functions"][target["name"]].get("path", generator["path"]).find("compiler/pure/") < 0
+            public_callee = not generator["functions"][target["name"]].get("internal_abi", False)
         end
         index = len(arguments) - 1
         while index >= 0:
@@ -4384,7 +4384,7 @@ function emit_expression(generator, syntax):
             call emit_uncaught_runtime_error(generator)
             call assembler.label(output, call_ok)
         end
-        if indirect_call and generator["path"].find("compiler/pure/") < 0:
+        if indirect_call and not generator.get("current_internal_function", generator["internal_abi"]):
             call assembler.emit(output, x86_64.push(0))
             call emit_load_local(generator, 7, target["name"])
             call assembler.relative(output, [232], "runtime_function_return_tag")
@@ -5314,14 +5314,14 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             end
             dynamic_return = generator.get("current_return_type", "Any") == "Any"
             if statement["expression"] == None:
-                if dynamic_return and generator["path"].find("compiler/pure/") < 0 and not generator.get("current_internal_function", False):
+                if dynamic_return and not generator.get("current_internal_function", generator["internal_abi"]):
                     call assembler.relative(generator["builder"], [232], "runtime_box_none")
                 else:
                     call assembler.emit(generator["builder"], x86_64.mov_imm64(0, 0))
                 end
             else:
                 call emit_expression(generator, statement["expression"])
-                if generator["path"].find("compiler/pure/") < 0 and not generator.get("current_internal_function", False):
+                if not generator.get("current_internal_function", generator["internal_abi"]):
                     return_type = infer_expression_type(statement["expression"], generator["types"], generator["function_returns"])
                     if return_type == "Function" or (dynamic_return and (return_type == "Int" or return_type == "Bool" or return_type == "None")):
                         call emit_collection_box(generator, statement["expression"])
@@ -5848,8 +5848,7 @@ end
 function has_specialization_candidate(functions):
     for name in functions.keys():
         declaration = functions[name]
-        declaration_path = declaration.get("path", "")
-        if declaration_path.find("compiler/pure/") < 0 and len(declaration["parameters"]) > 0:
+        if not declaration.get("internal_abi", False) and len(declaration["parameters"]) > 0:
             if not statements_block_specialization(declaration["body"]):
                 return True
             end
@@ -5860,8 +5859,7 @@ end
 
 function program_blocks_specialization(program):
     for statement in program:
-        statement_path = statement.get("path", "")
-        if statement_path.find("compiler/pure/") < 0:
+        if not statement.get("internal_abi", False):
             if statements_block_specialization([statement]):
                 return True
             end
@@ -6073,7 +6071,7 @@ function emit_function(generator, declaration):
     generator["variables"] = variables
     generator["types"] = types
     generator["current_return_type"] = generator["function_returns"].get(name, "Any")
-    generator["current_internal_function"] = declaration.get("path", generator["path"]).find("compiler/pure/") >= 0
+    generator["current_internal_function"] = declaration.get("internal_abi", False)
     if not generator["current_internal_function"]:
         generator["internal_abi"] = False
     end
@@ -6122,7 +6120,7 @@ function emit_function(generator, declaration):
     generator["current_class_name"] = old_current_class_name
 end
 
-function generate(path, source, program):
+function generate_mode(path, source, program, internal_abi):
     lines = source
     classes = class_table(path, lines, program)
     call validate_class_hierarchy(path, lines, classes)
@@ -6138,7 +6136,6 @@ function generate(path, source, program):
     function_returns = infer_function_returns(functions, classes, parameter_types, main_types)
     main_types = {}
     call collect_types(program, main_types, function_returns)
-    internal_abi = path.find("compiler/pure/") >= 0
     if not internal_abi and has_specialization_candidate(functions) and not program_blocks_specialization(program):
         # Direct-call observations propagate parameter types through helper
         # chains. Escaping callbacks retain their dynamic ABI.
@@ -6281,4 +6278,8 @@ function generate(path, source, program):
         call bytes.patch_little(program_code, relocation[0], displacement, 4)
     end
     return elf_image.image_entry(program_code, generator["data"], main_offset)
+end
+
+function generate(path, source, program):
+    return generate_mode(path, source, program, False)
 end

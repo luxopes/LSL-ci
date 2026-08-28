@@ -1,6 +1,6 @@
 # Hermetic command stand-in for the per-user package installer tests.
 
-hash = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+hash = "c34ee3495502162dcd7281e7c22dade9d59321397fecf344e7098f638208ea87"
 first = arg(1)
 if first == "-f":
     source = arg(3)
@@ -25,5 +25,9 @@ elif first.startswith("-"):
         exit(22)
     end
 else:
-    print hash, " ", first
+    if readfile(first).endswith("# modified" + chr(10)):
+        print "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", " ", first
+    else:
+        print hash, " ", first
+    end
 end

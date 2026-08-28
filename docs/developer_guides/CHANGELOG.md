@@ -4,6 +4,32 @@ Na této stránce jsou uživatelsky významné změny vydaných verzí. Stabiln�
 manuály a soubory ke stažení zůstávají dostupné v
 [historii vydání](/releases/).
 
+## 0.7.1 — 28. 8. 2026
+
+Stabilizační a bezpečnostní vydání bez nové syntaxe.
+
+- Safe/unsafe průchod nyní kontroluje i třetí výraz kroku slice. Linker
+  rozlišuje relativní moduly podle vyřešeného souboru, takže dva adresáře se
+  stejně pojmenovaným `helper.lsl` nesdílejí chybný cache záznam.
+- Interní raw ABI už není odvozeno z textu `compiler/pure/` v cestě. Self-host
+  trust core používá explicitní `# lsl: internal-abi` a AST provenance;
+  obyčejný projekt se stejně pojmenovaným adresářem zůstává ve veřejném
+  kontrolovaném tagged Any ABI.
+- `lsl origin NAME` pod zámkem ověřuje aktuální zdroj proti zaznamenanému
+  SHA-256. Instalace a update serializují commit, odmítají symlink/special-file
+  lock a při dvoufázovém zveřejnění preferují starý ověřený zdroj před novým
+  zdrojem se zastaralým provenance.
+- HTTP parser přijímá deklarovaný limit 64 hlaviček, vyžaduje neprázdný Host a
+  statický server odmítá FIFO i ostatní nesoubory bez zablokování. Chyba
+  aplikačního handleru je izolována na odpověď 500 a server obslouží další
+  požadavek.
+- Config purity kontrola nově blokuje i procesový `check` a `printl`.
+  CLI vytváří dočasný ELF až po úspěšném codegenu a uklízí chybové cesty
+  configu i sandboxu.
+- Opraveno rozlišení samostatné modulové funkce `origin()` od receiveru
+  `origin.method()` pro volání metody předka. Doplněny cílené regrese a plná
+  lokální suite prochází.
+
 ## 0.7.0 — 27. 8. 2026
 
 - `lsl server` nyní spouští omezený statický HTTP server; s certifikátem a
