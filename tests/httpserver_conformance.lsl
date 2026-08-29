@@ -6,7 +6,7 @@ root_box = IntArray()
 port_box = IntArray()
 
 function server_worker():
-    call httpserver.serve_listener(listener_box[0], root_box[0], None, 10, False)
+    call httpserver.serve_listener(listener_box[0], root_box[0], None, 11, False)
     return None
 end
 
@@ -23,6 +23,19 @@ end
 
 function app_server_worker():
     call httpserver.serve_listener(listener_box[0], -1, recovering_handler, 2, False)
+    return None
+end
+
+function echo_handler(request):
+    text = request["body_text"]
+    if text == None:
+        return {"body": "binary:" + String(len(request["body"])) + chr(10)}
+    end
+    return {"body": String(request["method"]) + ":" + text + chr(10)}
+end
+
+function echo_server_worker():
+    call httpserver.serve_listener(listener_box[0], -1, echo_handler, 6, False)
     return None
 end
 
@@ -73,6 +86,62 @@ function exchange(request):
     if written < 0:
         call fd.close(client)
         Error(TestFailure: "HTTP request write failed")
+    end
+    received = httpserver.read_handle_limit(client, 65536)
+    call fd.close(client)
+    if not received["ok"]:
+        Error(TestFailure: "HTTP response read failed")
+    end
+    data = received["data"]
+    return __lsl_text_from_bytes(data, 0, len(data))
+end
+
+function exchange_bytes(payload):
+    client = __lsl_fd_socket(httpserver.AF_INET, httpserver.SOCK_STREAM)
+    if client < 0:
+        Error(TestFailure: "HTTP client socket failed")
+    end
+    endpoint = httpserver.sockaddr_ipv4("127.0.0.1", port_box[0])
+    if __lsl_fd_connect(client, endpoint, len(endpoint)) < 0:
+        call fd.close(client)
+        Error(TestFailure: "HTTP client connect failed")
+    end
+    call httpserver.set_socket_timeout(client, httpserver.SO_RCVTIMEO, 5)
+    call httpserver.set_socket_timeout(client, httpserver.SO_SNDTIMEO, 5)
+    written = __lsl_fd_write(client, payload, len(payload))
+    if written < 0:
+        call fd.close(client)
+        Error(TestFailure: "HTTP request write failed")
+    end
+    received = httpserver.read_handle_limit(client, 65536)
+    call fd.close(client)
+    if not received["ok"]:
+        Error(TestFailure: "HTTP response read failed")
+    end
+    data = received["data"]
+    return __lsl_text_from_bytes(data, 0, len(data))
+end
+
+function exchange_half_close(request):
+    client = __lsl_fd_socket(httpserver.AF_INET, httpserver.SOCK_STREAM)
+    if client < 0:
+        Error(TestFailure: "HTTP client socket failed")
+    end
+    endpoint = httpserver.sockaddr_ipv4("127.0.0.1", port_box[0])
+    if __lsl_fd_connect(client, endpoint, len(endpoint)) < 0:
+        call fd.close(client)
+        Error(TestFailure: "HTTP client connect failed")
+    end
+    call httpserver.set_socket_timeout(client, httpserver.SO_RCVTIMEO, 5)
+    call httpserver.set_socket_timeout(client, httpserver.SO_SNDTIMEO, 5)
+    payload = httpserver.text_bytes(request)
+    if __lsl_fd_write(client, payload, len(payload)) < 0:
+        call fd.close(client)
+        Error(TestFailure: "HTTP request write failed")
+    end
+    if __lsl_syscall(48, client, 1, 0, 0) < 0:
+        call fd.close(client)
+        Error(TestFailure: "HTTP client shutdown failed")
     end
     received = httpserver.read_handle_limit(client, 65536)
     call fd.close(client)
@@ -141,6 +210,9 @@ end
 maximum_headers_response = exchange(maximum_headers_request + separator + separator)
 call require(maximum_headers_response.startswith("HTTP/1.1 200 OK"), "documented 64-header limit was rejected")
 
+static_body_response = exchange("POST / HTTP/1.1" + separator + "Host: localhost" + separator + "Content-Length: 5" + separator + separator + "hello")
+call require(static_body_response.startswith("HTTP/1.1 413 Content Too Large"), "static server accepted a request body")
+
 call require(thread_join(worker) == 0, "HTTP server worker did not exit cleanly")
 
 app_listener = httpserver.listen_ipv4("127.0.0.1", 0, 16)
@@ -152,6 +224,40 @@ call require(failed_handler_response.startswith("HTTP/1.1 500 Internal Server Er
 recovered_handler_response = exchange("GET / HTTP/1.1" + separator + "Host: localhost" + separator + separator)
 call require(recovered_handler_response.startswith("HTTP/1.1 200 OK") and recovered_handler_response.endswith("recovered" + chr(10)), "server did not recover after a handler failure")
 call require(thread_join(app_worker) == 0, "HTTP application server worker did not exit cleanly")
+
+echo_listener = httpserver.listen_ipv4("127.0.0.1", 0, 16)
+listener_box[0] = echo_listener
+port_box[0] = httpserver.local_port(echo_listener)
+echo_worker = thread_spawn(echo_server_worker)
+
+utf8_body = "ahoj " + chr(382) + "lu" + chr(357) + chr(10) + "druhy radek"
+utf8_length = len(httpserver.text_bytes(utf8_body))
+utf8_response = exchange("POST /submit HTTP/1.1" + separator + "Host: localhost" + separator + "Content-Length: " + String(utf8_length) + separator + separator + utf8_body)
+call require(utf8_response.startswith("HTTP/1.1 200 OK"), "UTF-8 POST body was rejected")
+call require(utf8_response.endswith("POST:" + utf8_body + chr(10)), "UTF-8 POST body did not round-trip")
+
+binary_request = httpserver.text_bytes("POST /binary HTTP/1.1" + separator + "Host: localhost" + separator + "Content-Length: 4" + separator + separator)
+binary_request.append(255)
+binary_request.append(254)
+binary_request.append(1)
+binary_request.append(2)
+binary_response = exchange_bytes(binary_request)
+call require(binary_response.startswith("HTTP/1.1 200 OK") and binary_response.endswith("binary:4" + chr(10)), "invalid UTF-8 body did not stay binary-only")
+
+continue_response = exchange("POST /expect HTTP/1.1" + separator + "Host: localhost" + separator + "Content-Length: 4" + separator + "Expect: 100-continue" + separator + separator + "cont")
+call require(continue_response.startswith("HTTP/1.1 100 Continue"), "Expect: 100-continue got no interim response")
+call require("HTTP/1.1 200 OK" in continue_response and continue_response.endswith("POST:cont" + chr(10)), "body after 100-continue was lost")
+
+incomplete_response = exchange_half_close("POST /incomplete HTTP/1.1" + separator + "Host: localhost" + separator + "Content-Length: 10" + separator + separator + "four")
+call require(incomplete_response.startswith("HTTP/1.1 400 Bad Request"), "incomplete request body was not rejected")
+
+oversized_response = exchange("POST /huge HTTP/1.1" + separator + "Host: localhost" + separator + "Content-Length: 9388608" + separator + separator)
+call require(oversized_response.startswith("HTTP/1.1 413 Content Too Large"), "oversized declared body was not rejected")
+
+empty_body_response = exchange("GET /empty HTTP/1.1" + separator + "Host: localhost" + separator + separator)
+call require(empty_body_response.startswith("HTTP/1.1 200 OK") and empty_body_response.endswith("GET:" + chr(10)), "empty body_text is not the empty string")
+
+call require(thread_join(echo_worker) == 0, "HTTP echo server worker did not exit cleanly")
 
 call unlink(escape_path)
 call unlink(fifo_path)

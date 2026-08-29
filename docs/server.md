@@ -69,8 +69,17 @@ end
 call httpserver.serve(application, "127.0.0.1", 8080, 0)
 ```
 
-Handler dostane Dictionary s `method`, `target`, `version` a `headers`.
-Může vrátit String/ByteArray (status 200), nebo Dictionary s `status`,
+Handler dostane Dictionary s `method`, `target`, `version`, `headers`,
+`body` a `body_text`. Od 0.7.2 dynamický server přijímá request body do
+8 MiB: `body` je vždy `ByteArray` (prázdné bez těla) a `body_text` je UTF-8
+dekódovaný `String`, nebo `None`, když tělo není well-formed UTF-8 (RFC
+3629, bez overlong sekvencí a surrogatů). Na `Expect: 100-continue` server
+odpoví interim `HTTP/1.1 100 Continue` před čtením těla. Nekompletní tělo je
+`400`, timeout `408`, deklarovaná délka nad 8 MiB `413` a `Transfer-Encoding`
+zůstává odmítnuté. Dynamický handler vidí i `POST`, `PUT` a další metody a
+o odpovědi rozhoduje sám; statický režim dál obsluhuje jen `GET`/`HEAD` bez
+request body.
+Handler může vrátit String/ByteArray (status 200), nebo Dictionary s `status`,
 `reason`, `body` a `content_type`. Odpověď handleru je omezená na 8 MiB a jeho
 zachytitelná chyba se změní na request-local 500; listener pak pokračuje.
 Dynamický handler běží ve stejném procesu;

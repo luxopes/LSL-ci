@@ -1,6 +1,6 @@
 # Core Lux Simple Lang module: version metadata and small helpers.
 
-version = "0.7.1"
+version = "0.7.2"
 name = "Lux Simple Lang"
 
 function identity(value):

@@ -347,7 +347,93 @@ function decimal_header(value):
     return result
 end
 
-function read_request(client):
+# RFC 3629 well-formedness over raw bytes: no overlongs, no surrogates,
+# nothing above U+10FFFF. The raw byte copy in __lsl_text_from_bytes does not
+# validate, so the server checks before exposing a request body as text.
+function utf8_valid(buffer):
+    length = len(buffer)
+    index = 0
+    while index < length:
+        byte = buffer[index]
+        if byte < 128:
+            index += 1
+            continue
+        end
+        follow = 0
+        low = 128
+        high = 191
+        if byte >= 194 and byte <= 223:
+            follow = 1
+        elif byte == 224:
+            follow = 2
+            low = 160
+        elif (byte >= 225 and byte <= 236) or byte == 238 or byte == 239:
+            follow = 2
+        elif byte == 237:
+            follow = 2
+            high = 159
+        elif byte == 240:
+            follow = 3
+            low = 144
+        elif byte >= 241 and byte <= 243:
+            follow = 3
+        elif byte == 244:
+            follow = 3
+            high = 143
+        else:
+            return False
+        end
+        if index + follow >= length:
+            return False
+        end
+        second = buffer[index + 1]
+        if second < low or second > high:
+            return False
+        end
+        offset = 2
+        while offset <= follow:
+            trailer = buffer[index + offset]
+            if trailer < 128 or trailer > 191:
+                return False
+            end
+            offset += 1
+        end
+        index += follow + 1
+    end
+    return True
+end
+
+# Read a declared request body: leftover header-buffer bytes first, then the
+# socket until content_length bytes arrived. The caller already bounded
+# content_length by MAX_BODY_BYTES.
+function read_body(client, collected, finish, total, content_length):
+    body = __lsl_byte_zeros(content_length)
+    have = total - finish
+    if have > content_length:
+        return error_request(400, "Bad Request", "request body exceeds its declared length")
+    end
+    if have > 0:
+        call __lsl_byte_copy(body, collected, 0, finish, have)
+    end
+    chunk = __lsl_byte_zeros(65536)
+    while have < content_length:
+        count = __lsl_fd_read(Int(client), chunk, len(chunk))
+        if count == -4:
+            continue
+        elif count == -11 or count == -110:
+            return error_request(408, "Request Timeout", "request body timed out")
+        elif count <= 0:
+            return error_request(400, "Bad Request", "request body is incomplete")
+        elif count > content_length - have:
+            return error_request(400, "Bad Request", "request body exceeds its declared length")
+        end
+        call __lsl_byte_copy(body, chunk, have, 0, count)
+        have += count
+    end
+    return {"ok": True, "data": body}
+end
+
+function read_request(client, allow_body):
     collected = __lsl_byte_zeros(MAX_HEADER_BYTES)
     chunk = __lsl_byte_zeros(4096)
     total = 0
@@ -425,15 +511,38 @@ function read_request(client):
         return error_request(400, "Bad Request", "HTTP/1.1 requires a non-empty Host")
     elif "transfer-encoding" in headers:
         return error_request(400, "Bad Request", "Transfer-Encoding is not accepted")
-    elif "content-length" in headers:
+    end
+    content_length = 0
+    if "content-length" in headers:
         content_length = decimal_header(headers["content-length"])
         if content_length < 0:
             return error_request(400, "Bad Request", "Content-Length is invalid")
-        elif content_length != 0:
-            return error_request(413, "Content Too Large", "request bodies are not accepted")
         end
     end
-    return {"ok": True, "method": method, "target": target, "version": version, "headers": headers}
+    if content_length != 0 and not Bool(allow_body):
+        return error_request(413, "Content Too Large", "request bodies are not accepted")
+    elif content_length > MAX_BODY_BYTES:
+        return error_request(413, "Content Too Large", "request body exceeds 8 MiB")
+    end
+    body = ByteArray()
+    if content_length > 0:
+        if "expect" in headers and headers["expect"].lower() == "100-continue":
+            interim = "HTTP/1.1 100 Continue" + chr(13) + chr(10) + chr(13) + chr(10)
+            if socket_write(client, text_bytes(interim)) < 0:
+                return error_request(400, "Bad Request", "client closed before sending the body")
+            end
+        end
+        filled = read_body(client, collected, finish, total, content_length)
+        if not filled["ok"]:
+            return filled
+        end
+        body = filled["data"]
+    end
+    body_text = None
+    if utf8_valid(body):
+        body_text = __lsl_text_from_bytes(body, 0, len(body))
+    end
+    return {"ok": True, "method": method, "target": target, "version": version, "headers": headers, "body": body, "body_text": body_text}
 end
 
 function safe_relative_target(target):
@@ -631,7 +740,7 @@ function serve_listener(listener, root_handle, handler, maximum_requests, announ
             end
             Error(ServerError: "accept failed (" + String(client) + ")")
         end
-        request = read_request(client)
+        request = read_request(client, handler != None)
         if not request["ok"]:
             call send_error(client, request)
         else:

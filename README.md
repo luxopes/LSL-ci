@@ -1,6 +1,6 @@
 # Lux Simple Lang (LSL)
 
-**LSL 0.7.1** je stabilizované vydání self-hostovaného jazyka pro běžné
+**LSL 0.7.2** je vydání self-hostovaného jazyka pro běžné
 programování, deklarativní konfiguraci, AI orchestrace a volitelné CUDA
 výpočty. Compiler i host runtime
 jsou pouze LSL: compiler přímo zapisuje statický Linux x86_64 ELF a runtime
@@ -11,12 +11,15 @@ pure-LSL a Tensor používá CPU fallback.
 
 ## Self-hosted vydání
 
-LSL 0.7.1 je nejnovější stabilní vydání. Binární balík pro Linux x86_64,
+LSL 0.7.2 je nejnovější stabilní vydání. Binární balík pro Linux x86_64,
 zdrojový archiv a aktualizovaný český manuál jsou na
 [lsl.lux-ai.cz](https://lsl.lux-ai.cz/). Stabilní manuály vydání jsou v
 [historii vydání](https://lsl.lux-ai.cz/releases/):
 
-- [LSL 0.7.1](https://lsl.lux-ai.cz/) — stabilizace HTTP serveru, provenance,
+- [LSL 0.7.2](https://lsl.lux-ai.cz/) — HTTP request body pro dynamický
+  server: `body`/`body_text` v handleru, `Expect: 100-continue` a bounded
+  čtení těla do 8 MiB;
+- LSL 0.7.1 — stabilizace HTTP serveru, provenance,
   linkeru, veřejného ABI a úklidu dočasných artefaktů;
 - [LSL 0.7.0](https://lsl.lux-ai.cz/releases/0.7/) — HTTP/HTTPS server,
   capability sandbox a explicitní safe/unsafe hranice;
@@ -160,6 +163,7 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 - [Bezpečnostní model a hranice důvěry](docs/security.md)
 - [Native/plugin ABI](docs/native-plugins.md)
 - [CUDA backend a worker protokol](docs/cuda.md)
+- [Poznámky k vydání 0.7.2](docs/release-0.7.2.md)
 - [Poznámky k vydání 0.7.1](docs/release-0.7.1.md)
 - [Poznámky k vydání 0.7.0](docs/release-0.7.md)
 - [Poznámky k lokálnímu vydání 0.6.9](docs/release-0.6.9.md)

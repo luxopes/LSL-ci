@@ -1086,3 +1086,12 @@ cleanup a dokumentace) jsou pro aktuální Linux x86-64 scope uzavřené.
 Další targety, syntetická fault injection a případná změna definované
 two's-complement Int overflow sémantiky jsou navazující práce, ne známé
 blockery vydání 0.7.0. Aktuální seznam je v `TODO.md`.
+
+Vydání 0.7.2 přidává request body dynamického HTTP serveru (`body`,
+`body_text`, `Expect: 100-continue`, bounded čtení do 8 MiB) a prošlo
+bitově shodným fixed pointem, plnou suite, config diffem a ELF auditem.
+Compiler hash je
+`cfe35706540168443f7a95982d3cac6f90a40d0775fcedd2cee00bc7a3b9de71`, CLI
+hash `3e21c4e05838d374c756bbb7b48c2d571d1e2b87d7cdda03c4a2744487b60bcb` a
+test runner hash
+`d91aebca46bc75b07796c62c75bce02881ec10024385efa56a89c28ccf42ab59`.
