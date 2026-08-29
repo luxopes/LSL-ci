@@ -42,6 +42,26 @@ MAX_HEADER_COUNT = 64
 MAX_TARGET_BYTES = 2048
 MAX_BODY_BYTES = 8388608
 SOCKET_TIMEOUT_SECONDS = 5
+BODY_CHUNK_BYTES = 65536
+BODY_INITIAL_CAPACITY = 16777216
+
+# Dynamic request and response body limit in bytes; 0 means unlimited (the
+# 0.7.3 default). MAX_BODY_BYTES keeps bounding only the static file server.
+BODY_LIMIT = IntArray()
+BODY_LIMIT.append(0)
+
+function set_body_limit(limit):
+    value = Int(limit)
+    if value < 0:
+        Error(ValueError: "body limit cannot be negative")
+    end
+    BODY_LIMIT[0] = value
+    return None
+end
+
+function body_limit():
+    return BODY_LIMIT[0]
+end
 
 function put_u32(buffer, offset, value):
     target = ByteArray(buffer)
@@ -404,10 +424,15 @@ function utf8_valid(buffer):
 end
 
 # Read a declared request body: leftover header-buffer bytes first, then the
-# socket until content_length bytes arrived. The caller already bounded
-# content_length by MAX_BODY_BYTES.
+# socket until content_length bytes arrived. Capacity grows with the bytes
+# that actually arrive, so a hostile declared Content-Length cannot allocate
+# memory up front; the declared length only caps the final size.
 function read_body(client, collected, finish, total, content_length):
-    body = __lsl_byte_zeros(content_length)
+    capacity = content_length
+    if capacity > BODY_INITIAL_CAPACITY:
+        capacity = BODY_INITIAL_CAPACITY
+    end
+    body = __lsl_byte_zeros(capacity)
     have = total - finish
     if have > content_length:
         return error_request(400, "Bad Request", "request body exceeds its declared length")
@@ -415,8 +440,17 @@ function read_body(client, collected, finish, total, content_length):
     if have > 0:
         call __lsl_byte_copy(body, collected, 0, finish, have)
     end
-    chunk = __lsl_byte_zeros(65536)
+    chunk = __lsl_byte_zeros(BODY_CHUNK_BYTES)
     while have < content_length:
+        if have == capacity:
+            capacity = capacity * 2
+            if capacity > content_length:
+                capacity = content_length
+            end
+            grown = __lsl_byte_zeros(capacity)
+            call __lsl_byte_copy(grown, body, 0, 0, have)
+            body = grown
+        end
         count = __lsl_fd_read(Int(client), chunk, len(chunk))
         if count == -4:
             continue
@@ -427,8 +461,22 @@ function read_body(client, collected, finish, total, content_length):
         elif count > content_length - have:
             return error_request(400, "Bad Request", "request body exceeds its declared length")
         end
+        if have + count > capacity:
+            capacity = have + count
+            if capacity * 2 <= content_length:
+                capacity = capacity * 2
+            end
+            grown = __lsl_byte_zeros(capacity)
+            call __lsl_byte_copy(grown, body, 0, 0, have)
+            body = grown
+        end
         call __lsl_byte_copy(body, chunk, have, 0, count)
         have += count
+    end
+    if capacity != content_length:
+        exact = __lsl_byte_zeros(content_length)
+        call __lsl_byte_copy(exact, body, 0, 0, content_length)
+        body = exact
     end
     return {"ok": True, "data": body}
 end
@@ -521,8 +569,8 @@ function read_request(client, allow_body):
     end
     if content_length != 0 and not Bool(allow_body):
         return error_request(413, "Content Too Large", "request bodies are not accepted")
-    elif content_length > MAX_BODY_BYTES:
-        return error_request(413, "Content Too Large", "request body exceeds 8 MiB")
+    elif BODY_LIMIT[0] > 0 and content_length > BODY_LIMIT[0]:
+        return error_request(413, "Content Too Large", "request body exceeds the configured limit of " + String(BODY_LIMIT[0]) + " bytes")
     end
     body = ByteArray()
     if content_length > 0:
@@ -714,7 +762,7 @@ function normalize_app_response(value):
         return {"status": 500, "reason": "Internal Server Error", "body": "500 Internal Server Error" + chr(10), "content_type": "text/plain; charset=utf-8"}
     elif type(body) != "String" and type(body) != "ByteArray":
         return {"status": 500, "reason": "Internal Server Error", "body": "500 Internal Server Error" + chr(10), "content_type": "text/plain; charset=utf-8"}
-    elif (type(body) == "String" and __lsl_text_byte_length(String(body)) > MAX_BODY_BYTES) or (type(body) == "ByteArray" and len(body) > MAX_BODY_BYTES):
+    elif BODY_LIMIT[0] > 0 and ((type(body) == "String" and __lsl_text_byte_length(String(body)) > BODY_LIMIT[0]) or (type(body) == "ByteArray" and len(body) > BODY_LIMIT[0])):
         return {"status": 500, "reason": "Internal Server Error", "body": "500 Internal Server Error" + chr(10), "content_type": "text/plain; charset=utf-8"}
     end
     return {"status": status, "reason": reason, "body": body, "content_type": mime}

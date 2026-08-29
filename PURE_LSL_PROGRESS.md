@@ -1095,3 +1095,11 @@ Compiler hash je
 hash `3e21c4e05838d374c756bbb7b48c2d571d1e2b87d7cdda03c4a2744487b60bcb` a
 test runner hash
 `d91aebca46bc75b07796c62c75bce02881ec10024385efa56a89c28ccf42ab59`.
+
+Vydání 0.7.3 ruší pevný 8MiB body limit dynamického HTTP serveru
+(`set_body_limit`, výchozí bez limitu, growth-buffer čtení) a prošlo
+fixed pointem, plnou suite, config diffem a ELF auditem. Compiler hash je
+`de0097e8921d217af1b74d18c8b0d22e6588b6cdf5243396b81c16da2a7275b3`, CLI
+hash `5b39893f4f5245e28591814553fae799241b7b1af65fbc07dc60f4513a188f02` a
+test runner hash
+`1cb44cb88ebed259a754dc79004a8ebd7b5a06e3b5b122e699c396b0a6fba434`.

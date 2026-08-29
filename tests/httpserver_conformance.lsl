@@ -39,6 +39,41 @@ function echo_server_worker():
     return None
 end
 
+function roundtrip_handler(request):
+    return {"body": request["body"], "content_type": "application/octet-stream"}
+end
+
+function roundtrip_server_worker():
+    call httpserver.serve_listener(listener_box[0], -1, roundtrip_handler, 3, False)
+    return None
+end
+
+function exchange_raw(payload, read_limit):
+    client = __lsl_fd_socket(httpserver.AF_INET, httpserver.SOCK_STREAM)
+    if client < 0:
+        Error(TestFailure: "HTTP client socket failed")
+    end
+    endpoint = httpserver.sockaddr_ipv4("127.0.0.1", port_box[0])
+    if __lsl_fd_connect(client, endpoint, len(endpoint)) < 0:
+        call fd.close(client)
+        Error(TestFailure: "HTTP client connect failed")
+    end
+    call httpserver.set_socket_timeout(client, httpserver.SO_RCVTIMEO, 30)
+    call httpserver.set_socket_timeout(client, httpserver.SO_SNDTIMEO, 30)
+    # __lsl_fd_write completes the whole buffer internally and returns a
+    # status: 0 on success, negative errno on failure.
+    if __lsl_fd_write(client, payload, len(payload)) < 0:
+        call fd.close(client)
+        Error(TestFailure: "HTTP request write failed")
+    end
+    received = httpserver.read_handle_limit(client, read_limit)
+    call fd.close(client)
+    if not received["ok"]:
+        Error(TestFailure: "HTTP response read failed")
+    end
+    return received["data"]
+end
+
 function reset_before_response(request):
     client = __lsl_fd_socket(httpserver.AF_INET, httpserver.SOCK_STREAM)
     if client < 0:
@@ -251,13 +286,45 @@ call require("HTTP/1.1 200 OK" in continue_response and continue_response.endswi
 incomplete_response = exchange_half_close("POST /incomplete HTTP/1.1" + separator + "Host: localhost" + separator + "Content-Length: 10" + separator + separator + "four")
 call require(incomplete_response.startswith("HTTP/1.1 400 Bad Request"), "incomplete request body was not rejected")
 
+call httpserver.set_body_limit(1024)
 oversized_response = exchange("POST /huge HTTP/1.1" + separator + "Host: localhost" + separator + "Content-Length: 9388608" + separator + separator)
-call require(oversized_response.startswith("HTTP/1.1 413 Content Too Large"), "oversized declared body was not rejected")
+call require(oversized_response.startswith("HTTP/1.1 413 Content Too Large"), "configured body limit was not enforced")
+call httpserver.set_body_limit(0)
 
 empty_body_response = exchange("GET /empty HTTP/1.1" + separator + "Host: localhost" + separator + separator)
 call require(empty_body_response.startswith("HTTP/1.1 200 OK") and empty_body_response.endswith("GET:" + chr(10)), "empty body_text is not the empty string")
 
 call require(thread_join(echo_worker) == 0, "HTTP echo server worker did not exit cleanly")
+
+roundtrip_listener = httpserver.listen_ipv4("127.0.0.1", 0, 16)
+listener_box[0] = roundtrip_listener
+port_box[0] = httpserver.local_port(roundtrip_listener)
+roundtrip_worker = thread_spawn(roundtrip_server_worker)
+
+big_size = 9437184
+big_header = httpserver.text_bytes("POST /big HTTP/1.1" + separator + "Host: localhost" + separator + "Content-Length: " + String(big_size) + separator + separator)
+big_request = __lsl_byte_zeros(len(big_header) + big_size)
+call __lsl_byte_copy(big_request, big_header, 0, 0, len(big_header))
+fill_index = len(big_header)
+while fill_index < len(big_request):
+    big_request[fill_index] = 65
+    fill_index += 1
+end
+big_response = exchange_raw(big_request, 10485760)
+big_text_head = __lsl_text_from_bytes(big_response, 0, 200)
+call require(big_text_head.startswith("HTTP/1.1 200 OK"), "9 MiB body was not accepted by default")
+call require("Content-Length: " + String(big_size) in big_text_head, "9 MiB body did not round-trip in full")
+call require(big_response[len(big_response) - 1] == 65, "9 MiB response payload is corrupted")
+
+call httpserver.set_body_limit(1024)
+limited_response = exchange("POST /limited HTTP/1.1" + separator + "Host: localhost" + separator + "Content-Length: 2048" + separator + separator + ("x" * 2048))
+call require(limited_response.startswith("HTTP/1.1 413 Content Too Large"), "runtime-configured limit was not enforced")
+call httpserver.set_body_limit(0)
+
+restored_response = exchange("POST /restored HTTP/1.1" + separator + "Host: localhost" + separator + "Content-Length: 5" + separator + separator + "small")
+call require(restored_response.startswith("HTTP/1.1 200 OK") and restored_response.endswith("small"), "limit reset did not restore unlimited bodies")
+
+call require(thread_join(roundtrip_worker) == 0, "HTTP roundtrip server worker did not exit cleanly")
 
 call unlink(escape_path)
 call unlink(fifo_path)
