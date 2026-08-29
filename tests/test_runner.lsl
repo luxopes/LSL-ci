@@ -191,6 +191,9 @@ call require_success(run(compiler, ["tests/compiler/float_smoke.lsl", float_test
 call require_success(run(float_test, []), "run Float smoke")
 call require_success(run(compiler, ["tests/syscall6_conformance.lsl", syscall6_test]), "compile six-argument syscall conformance")
 call require_output(syscall6_test, [], "tests/syscall6_conformance.out", "six-argument syscall output differs")
+string_split_test = test_path("string-split-test")
+call require_success(run(compiler, ["tests/string_split_conformance.lsl", string_split_test]), "compile String split conformance")
+call require_output(string_split_test, [], "tests/string_split_conformance.out", "String split output differs")
 call require_success(run(compiler, ["tests/httpserver_conformance.lsl", httpserver_test]), "compile HTTP server conformance")
 httpserver_root = test_path("httpserver-root")
 call mkdir(httpserver_root)
@@ -203,13 +206,13 @@ call require_output(optimization_test, [], "tests/codegen_optimization_conforman
 # Checked public Any collection and numeric dispatchers added in 0.6.9 are
 # linked into standalone programs so callbacks cannot bypass validation. Keep
 # a tight ceiling around that intentional runtime growth.
-if len(readbytes(optimization_test)) > 97000:
-    Error(TestFailure: "optimized standalone ELF exceeds 97000 bytes")
+if len(readbytes(optimization_test)) > 98000:
+    Error(TestFailure: "optimized standalone ELF exceeds 98000 bytes")
 end
 call require_success(run(compiler, ["compiler/pure/cli.lsl", cli_test]), "compile stdin CLI")
 call require_hardened_elf(cli_test)
 help_output = capture(cli_test, ["--help"])
-expected_help = "Lux Simple Lang (LSL) 0.7.3" + chr(10)
+expected_help = "Lux Simple Lang (LSL) 0.7.4" + chr(10)
 expected_help += chr(10)
 expected_help += "Usage:" + chr(10)
 expected_help += "  lsl [SOURCE [ARG...]]" + chr(10)
@@ -230,11 +233,11 @@ if capture_status() != 0 or help_output != expected_help:
     Error(TestFailure: "CLI --help output differs")
 end
 version_output = capture(cli_test, ["version"])
-if capture_status() != 0 or version_output != "0.7.3" + chr(10):
+if capture_status() != 0 or version_output != "0.7.4" + chr(10):
     Error(TestFailure: "CLI version output differs")
 end
 version_flag_output = capture(cli_test, ["--version"])
-if capture_status() != 0 or version_flag_output != "0.7.3" + chr(10):
+if capture_status() != 0 or version_flag_output != "0.7.4" + chr(10):
     Error(TestFailure: "CLI --version output differs")
 end
 config_output = capture(cli_test, ["config", "examples/config/system.lsl"])

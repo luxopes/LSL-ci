@@ -5,7 +5,7 @@
 5
 6 3 1
 survived empty min
-Lux Simple Lang (LSL) 0.7.3
+Lux Simple Lang (LSL) 0.7.4
 functions: print printl input for loop safe unsafe if elif else try class ctype function type del len abs sqrt help
 types: Bool Int Float String List Tuple RealArray IntArray FloatArray ByteArray Dictionary
 modules: os time json process config ai tensor cuda native math bigint httpserver sandbox

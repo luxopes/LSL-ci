@@ -1103,3 +1103,11 @@ fixed pointem, plnou suite, config diffem a ELF auditem. Compiler hash je
 hash `5b39893f4f5245e28591814553fae799241b7b1af65fbc07dc60f4513a188f02` a
 test runner hash
 `1cb44cb88ebed259a754dc79004a8ebd7b5a06e3b5b122e699c396b0a6fba434`.
+
+Vydání 0.7.4 opravuje `String.split` (byte-přesné kousky, lineární čas) a
+prošlo fixed pointem, plnou suite včetně nové split konformance, config
+diffem a ELF auditem. Compiler hash je
+`b96874ce0c3c729c4111297491ba418506d81639ca1fe710bb5adeafd0ff8296`, CLI
+hash `b730d9d8a9d1e9032b67bf1f7481a4720838cdcc91494ba94d02404c9c66fb83` a
+test runner hash
+`f184a95393d0e1786d3867f099dc2773032c31a3a7a99fc56ff4b4321a996770`.

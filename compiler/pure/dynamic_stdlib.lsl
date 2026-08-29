@@ -200,13 +200,31 @@ function __lsl_string_index(text, needle):
     return position
 end
 
+# Copy the byte range [start, start + count) of a String into a new String.
+# UTF-8 sequences are preserved verbatim, and the cost is linear in the
+# piece length instead of a code-point walk from the beginning.
+function __lsl_byte_piece(s, start, count):
+    if count <= 0:
+        return ""
+    end
+    buffer = __lsl_byte_zeros(count)
+    index = 0
+    while index < count:
+        buffer[index] = __lsl_text_byte(s, start + index)
+        index += 1
+    end
+    return __lsl_text_from_bytes(buffer, 0, count)
+end
+
 function __lsl_split(text, separator):
-    # Byte probes plus native slices: the char-list walk with `current +=`
-    # was quadratic per piece and allocated a String per character.
+    # Pure byte probes and byte-range pieces. The earlier version probed
+    # bytes but sliced by code points, which returned wrong pieces for any
+    # multi-byte String and cost a code-point walk from the start per
+    # piece (quadratic on large inputs).
     s = __lsl_require_string(text)
     sep = __lsl_require_string_value(separator)
-    n = len(s)
-    m = len(sep)
+    n = __lsl_text_byte_length(String(s))
+    m = __lsl_text_byte_length(String(sep))
     result = []
     if m == 0 or m > n:
         call result.append(s)
@@ -230,7 +248,7 @@ function __lsl_split(text, separator):
                 offset += 1
             end
             if matches:
-                call result.append(s[start:index])
+                call result.append(__lsl_byte_piece(s, start, index - start))
                 index += m
                 start = index
             else:
@@ -240,7 +258,7 @@ function __lsl_split(text, separator):
             index += 1
         end
     end
-    call result.append(s[start:n])
+    call result.append(__lsl_byte_piece(s, start, n - start))
     return result
 end
 
