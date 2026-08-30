@@ -1120,3 +1120,13 @@ Compiler hash je
 hash `07f13c9331cf3f57e8813d0b2decaa3204e956340f23c337ca7da7b7e039305b` a
 test runner hash
 `1117f3d14be4a5d7dff251774fb8baa9739d850abeda37d3e5b13003f7a9a81d`.
+
+Vydání 0.7.6 nahrazuje jediný first-fit volný seznam 136 segregovanými
+seznamy (přesné 8B biny do 1 KiB, class-ceiling 2K..1M, first-fit jen nad
+1 MiB): alokace je O(1) a gc+thread "deadlock" z 0.7.5 (ve skutečnosti
+lineární kolaps alokátoru) je opraven; reprodukce je povýšena na
+konformanci. Compiler hash je
+`828f1b56cc4020e3c850ce29aa129fc7c3ba2198ea008b333dbab10bd597e776`, CLI
+hash `ebc29e380ad01880bd09337e35dd2d63204d0cd59d9ae1437ad9a7c02437ae0f` a
+test runner hash
+`d613672eb70c905c4c2ea912e54b3ecaf242e757dfc9559c15d1c6ebb647a31a`.

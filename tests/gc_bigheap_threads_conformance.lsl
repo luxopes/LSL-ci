@@ -1,3 +1,9 @@
+# Regression for the 0.7.5 allocator collapse: after a ~9 MiB HTTP body
+# round-trips through a worker-thread listener, millions of small freed
+# blocks used to make every allocation a linear free-list walk, so the next
+# serving loop with per-request gc() effectively hung while holding the heap
+# mutex. Segregated size-class free lists (0.7.6) keep allocation O(1); this
+# test completes in seconds or times out in the runner when it regresses.
 load fd
 load httpserver
 

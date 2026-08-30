@@ -3929,7 +3929,7 @@ function emit_expression(generator, syntax):
                 call assembler.label(output, done_label)
                 return
             elif target["name"] == "help":
-                call emit_static_write(generator, "Lux Simple Lang (LSL) 0.7.5" + chr(10) + "functions: print printl input for loop safe unsafe if elif else try class ctype function type del len abs sqrt help" + chr(10) + "types: Bool Int Float String List Tuple RealArray IntArray FloatArray ByteArray Dictionary" + chr(10) + "modules: os time json process config ai tensor cuda native math bigint httpserver sandbox" + chr(10) + "docs: see README.md and docs/" + chr(10))
+                call emit_static_write(generator, "Lux Simple Lang (LSL) 0.7.6" + chr(10) + "functions: print printl input for loop safe unsafe if elif else try class ctype function type del len abs sqrt help" + chr(10) + "types: Bool Int Float String List Tuple RealArray IntArray FloatArray ByteArray Dictionary" + chr(10) + "modules: os time json process config ai tensor cuda native math bigint httpserver sandbox" + chr(10) + "docs: see README.md and docs/" + chr(10))
                 call assembler.emit(output, x86_64.mov_imm64(0, 0))
                 return
             elif target["name"] == "abs":
@@ -6146,11 +6146,11 @@ function generate_mode(path, source, program, internal_abi):
     end
     output = assembler.builder()
     unchecked_intarray = source.find("# lsl: unchecked-intarray") >= 0
-    # Globals live in the state block right after the 192-byte runtime
+    # Globals live in the state block right after the 256-byte runtime
     # header (rbx-relative), so no register has to point at the main frame.
     global_offsets = {}
     for global_name in main_variables.keys():
-        global_offsets[global_name] = 192 + len(global_offsets) * 8
+        global_offsets[global_name] = 1280 + len(global_offsets) * 8
     end
     globals_bytes = aligned_frame(main_variables)
     generator = {"path": path, "internal_abi": internal_abi, "unchecked_intarray": unchecked_intarray, "lines": lines, "variables": {}, "types": {}, "global_variables": global_offsets, "global_types": main_types, "functions": functions, "classes": classes, "function_returns": function_returns, "function_parameters": parameter_types, "builder": output, "data": [], "string_offsets": {}, "relocations": [], "counter": 0, "error_label": "", "current_class_name": ""}
@@ -6194,11 +6194,13 @@ function generate_mode(path, source, program, internal_abi):
     # table, 120 main stack top, 128 gc gate, 136 threads flag, 160..183 the
     # main thread's thread-local block (fs base: pending error, error flag,
     # stack top), 144 the next bounded-GC object threshold, 152 its Float
-    # formatting counter and 184 the bounded mark depth; then the program
+    # formatting counter and 184 the bounded mark depth; 192..1279 the 136
+    # segregated free-list heads (128 exact 8-byte bins up to 1 KiB plus 8
+    # range classes) (never GC roots); then the program
     # globals (globals_bytes) and the 1 MiB
     # String-intern table, all on brk; the object registry starts small in
     # mmap.
-    call assembler.emit(output, x86_64.lea_base(9, 3, 192 + globals_bytes))
+    call assembler.emit(output, x86_64.lea_base(9, 3, 1280 + globals_bytes))
     call assembler.emit(output, x86_64.move_reg_reg(7, 9))
     call assembler.emit(output, x86_64.add_reg_imm32(7, 1048576))
     call assembler.emit(output, x86_64.mov_imm64(0, 12))
@@ -6218,7 +6220,7 @@ function generate_mode(path, source, program, internal_abi):
     call assembler.emit(output, x86_64.store_memory(3, 32, 0))
     call assembler.emit(output, x86_64.mov_imm64(10, registry_mask))
     call assembler.emit(output, x86_64.store_memory(3, 40, 10))
-    call assembler.emit(output, x86_64.lea_base(9, 3, 192 + globals_bytes))
+    call assembler.emit(output, x86_64.lea_base(9, 3, 1280 + globals_bytes))
     call assembler.emit(output, x86_64.store_memory(3, 48, 9))
     call assembler.emit(output, x86_64.mov_imm64(10, 65535))
     call assembler.emit(output, x86_64.store_memory(3, 56, 10))
@@ -6265,8 +6267,8 @@ function generate_mode(path, source, program, internal_abi):
     call assembler.emit(output, x86_64.add_reg_imm8(4, 32))
     call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
     call assembler.relative(output, [15, 140], "runtime_fatal_setup")
-    call assembler.emit(output, x86_64.lea_base(7, 3, 192))
-    call assembler.emit(output, x86_64.lea_base(6, 3, 192 + globals_bytes))
+    call assembler.emit(output, x86_64.lea_base(7, 3, 1280))
+    call assembler.emit(output, x86_64.lea_base(6, 3, 1280 + globals_bytes))
     call assembler.relative(output, [232], "runtime_set_global_roots")
     call emit_statements(generator, program, "", "", "")
     call assembler.emit(output, x86_64.mov_imm64(0, 231))
