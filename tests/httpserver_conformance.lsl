@@ -1,5 +1,11 @@
 load fd
 load httpserver
+load time
+
+# Child mode: `<binary> <root> memory-server` serves MEMORY_REQUESTS requests
+# of a garbage-allocating handler on its own MAIN thread (no workers), which
+# is the topology the per-request gc() protects, then verifies its own RSS.
+MEMORY_REQUESTS = 1200
 
 listener_box = IntArray()
 root_box = IntArray()
@@ -41,6 +47,60 @@ end
 
 function roundtrip_handler(request):
     return {"body": request["body"], "content_type": "application/octet-stream"}
+end
+
+# Allocates a few hundred KB of garbage per request, like a dashboard page
+# render. Regression for the allocator exhaustion of a long-running
+# main-thread listener: serve_listener now reclaims per request.
+function garbage_handler(request):
+    rows = []
+    row = 0
+    while row < 900:
+        rows.append("<tr><td>row-" + String(row) + "</td><td>payload-payload-payload-payload</td><td>" + String(request["target"]) + "</td></tr>")
+        row += 1
+    end
+    return {"body": "<table>" + "".join(rows) + "</table>", "content_type": "text/html; charset=utf-8"}
+end
+
+function own_rss_kb():
+    rss_line = ""
+    for status_line in fd.read_text("/proc/self/status").split(chr(10)):
+        if status_line.startswith("VmRSS"):
+            rss_line = status_line
+        end
+    end
+    value = 0
+    for token in rss_line.split(" "):
+        if len(token) > 0 and ord(token[0]) >= 48 and ord(token[0]) <= 57:
+            value = Int(token)
+        end
+    end
+    return value
+end
+
+function memory_server_child(root):
+    listener = httpserver.listen_ipv4("127.0.0.1", 0, 16)
+    call writefile(root + "/memory-port.txt", String(httpserver.local_port(listener)))
+    call httpserver.serve_listener(listener, -1, garbage_handler, MEMORY_REQUESTS, False)
+    rss_kb = own_rss_kb()
+    if rss_kb <= 0:
+        print "memory server cannot read VmRSS"
+        exit(2)
+    end
+    if rss_kb >= 150000:
+        print "memory server leaked: VmRSS " + String(rss_kb) + " kB"
+        exit(3)
+    end
+    exit(0)
+end
+
+memory_child_status = IntArray()
+memory_child_status.append(-1)
+
+function memory_child_worker():
+    status = run(executable_path(), [String(arg(1)), "memory-server"])
+    memory_child_status[0] = status
+    return None
 end
 
 function roundtrip_server_worker():
@@ -187,6 +247,10 @@ function exchange_half_close(request):
     return __lsl_text_from_bytes(data, 0, len(data))
 end
 
+if arg_count() >= 3 and arg(2) == "memory-server":
+    call memory_server_child(String(arg(1)))
+end
+
 escape_path = String(arg(1)) + "/escape"
 call unlink(escape_path)
 fifo_path = String(arg(1)) + "/blocked.pipe"
@@ -325,6 +389,51 @@ restored_response = exchange("POST /restored HTTP/1.1" + separator + "Host: loca
 call require(restored_response.startswith("HTTP/1.1 200 OK") and restored_response.endswith("small"), "limit reset did not restore unlimited bodies")
 
 call require(thread_join(roundtrip_worker) == 0, "HTTP roundtrip server worker did not exit cleanly")
+
+# Memory endurance: a child process serves MEMORY_REQUESTS garbage-allocating
+# requests on its own main thread and verifies its RSS stays flat — the
+# per-request gc() in serve_listener is what keeps it flat. The child runs in
+# a separate process because that is the supported topology for a
+# long-running listener; see the known-issue note in the 0.7.5 release notes
+# about gc() while worker threads are running.
+memory_port_path = String(arg(1)) + "/memory-port.txt"
+call unlink(memory_port_path)
+memory_child = thread_spawn(memory_child_worker)
+memory_wait = 0
+while not exists(memory_port_path):
+    call time.sleep(0.05)
+    memory_wait += 1
+    if memory_wait > 200:
+        Error(TestFailure: "memory server child did not publish its port")
+    end
+end
+memory_port = Int(readfile(memory_port_path).strip())
+memory_separator = chr(13) + chr(10)
+memory_index = 0
+while memory_index < MEMORY_REQUESTS:
+    memory_client = __lsl_fd_socket(httpserver.AF_INET, httpserver.SOCK_STREAM)
+    if memory_client < 0:
+        Error(TestFailure: "memory endurance socket failed at " + String(memory_index))
+    end
+    memory_endpoint = httpserver.sockaddr_ipv4("127.0.0.1", memory_port)
+    if __lsl_fd_connect(memory_client, memory_endpoint, len(memory_endpoint)) < 0:
+        Error(TestFailure: "memory endurance connect failed at " + String(memory_index))
+    end
+    call httpserver.set_socket_timeout(memory_client, httpserver.SO_RCVTIMEO, 5)
+    call httpserver.set_socket_timeout(memory_client, httpserver.SO_SNDTIMEO, 5)
+    memory_payload = httpserver.text_bytes("GET /memory HTTP/1.1" + memory_separator + "Host: localhost" + memory_separator + memory_separator)
+    if __lsl_fd_write(memory_client, memory_payload, len(memory_payload)) < 0:
+        Error(TestFailure: "memory endurance write failed at " + String(memory_index))
+    end
+    memory_received = httpserver.read_handle_limit(memory_client, 500000)
+    call fd.close(memory_client)
+    if not memory_received["ok"]:
+        Error(TestFailure: "memory endurance read failed at " + String(memory_index))
+    end
+    memory_index += 1
+end
+call require(thread_join(memory_child) == 0, "memory server thread join failed")
+call require(memory_child_status[0] == 0, "memory endurance server failed with status " + String(memory_child_status[0]))
 
 call unlink(escape_path)
 call unlink(fifo_path)

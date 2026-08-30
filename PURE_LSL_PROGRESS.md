@@ -1111,3 +1111,12 @@ diffem a ELF auditem. Compiler hash je
 hash `b730d9d8a9d1e9032b67bf1f7481a4720838cdcc91494ba94d02404c9c66fb83` a
 test runner hash
 `f184a95393d0e1786d3867f099dc2773032c31a3a7a99fc56ff4b4321a996770`.
+
+Vydání 0.7.5 přidává per-request `gc()` do `serve_listener` (dlouhoběžící
+listener už nevyčerpá alokátor; endurance konformance v child procesu) a
+dokumentuje známý gc+thread deadlock s reprodukcí v `tests/known_issues/`.
+Compiler hash je
+`3fd701c3c850ec94ae9c7944b359ccea55038883968e3146edaab49b63bca837`, CLI
+hash `07f13c9331cf3f57e8813d0b2decaa3204e956340f23c337ca7da7b7e039305b` a
+test runner hash
+`1117f3d14be4a5d7dff251774fb8baa9739d850abeda37d3e5b13003f7a9a81d`.

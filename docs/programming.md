@@ -256,7 +256,11 @@ check(len(text) > 0, "prázdný vstup")
 - `last_error()` vrátí poslední zachycenou zprávu.
 - `check` je vhodný pro invarianty a validaci hranic.
 
-LSL používá GC, ale procesy, nativní library handles a protokoly mají explicitní
+LSL používá GC, ale automatická alokační heuristika nedrží krok s
+dlouhoběžícími smyčkami: server nebo daemon má volat `gc()` periodicky
+(např. po každé obsloužené jednotce práce) z hlavního vlákna, jinak proces
+časem vyčerpá alokátor. `httpserver.serve_listener` to od 0.7.5 dělá sám.
+Procesy, nativní library handles a protokoly mají explicitní
 životní cyklus. `native.open` vždy párujte s `native.close`; u procesních API
 kontrolujte strukturovaný `status`/`ok`.
 

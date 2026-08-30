@@ -8,7 +8,7 @@ load package
 load parser
 load sandbox
 
-VERSION = "0.7.4"
+VERSION = "0.7.5"
 
 function print_help():
     print "Lux Simple Lang (LSL) " + VERSION

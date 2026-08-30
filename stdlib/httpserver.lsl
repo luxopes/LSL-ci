@@ -812,6 +812,12 @@ function serve_listener(listener, root_handle, handler, maximum_requests, announ
         end
         call fd.close(client)
         served += 1
+        # Reclaim per-request garbage. The allocator's automatic heuristic
+        # does not keep up with a long-running request loop, which exhausted
+        # the allocator after enough requests. gc() is a no-op in worker
+        # threads, so threaded listeners are unaffected; a listener on the
+        # main thread stays flat.
+        call gc()
     end
     call fd.close(listener)
     if root_handle >= 0:
