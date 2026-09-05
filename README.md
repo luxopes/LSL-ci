@@ -1,6 +1,6 @@
 # Lux Simple Lang (LSL)
 
-**LSL 0.7.6** je vydání self-hostovaného jazyka pro běžné
+**LSL 0.7.7** je vydání self-hostovaného jazyka pro běžné
 programování, deklarativní konfiguraci, AI orchestrace a volitelné CUDA
 výpočty. Compiler i host runtime
 jsou pouze LSL: compiler přímo zapisuje statický Linux x86_64 ELF a runtime
@@ -11,12 +11,15 @@ pure-LSL a Tensor používá CPU fallback.
 
 ## Self-hosted vydání
 
-LSL 0.7.6 je nejnovější stabilní vydání. Binární balík pro Linux x86_64,
+LSL 0.7.7 přináší persistentní CUDA session, device buffery a GPU tenzory.
+Binární balík pro Linux x86_64,
 zdrojový archiv a aktualizovaný český manuál jsou na
 [lsl.lux-ai.cz](https://lsl.lux-ai.cz/). Stabilní manuály vydání jsou v
 [historii vydání](https://lsl.lux-ai.cz/releases/):
 
-- [LSL 0.7.6](https://lsl.lux-ai.cz/) — segregované volné seznamy:
+- [LSL 0.7.7](https://lsl.lux-ai.cz/) — persistentní CUDA, Float64 device buffery,
+  elementwise operace, transpozice, DeviceTensor a opravy dispatchingu;
+- LSL 0.7.6 — segregované volné seznamy:
   alokace O(1), oprava kolapsu alokátoru hlášeného v 0.7.5 jako
   gc+thread deadlock;
 - LSL 0.7.5 — per-request `gc()` v HTTP
@@ -172,6 +175,7 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 - [Bezpečnostní model a hranice důvěry](docs/security.md)
 - [Native/plugin ABI](docs/native-plugins.md)
 - [CUDA backend a worker protokol](docs/cuda.md)
+- [Poznámky k vydání 0.7.7](docs/release-0.7.7.md)
 - [Poznámky k vydání 0.7.6](docs/release-0.7.6.md)
 - [Poznámky k vydání 0.7.5](docs/release-0.7.5.md)
 - [Poznámky k vydání 0.7.4](docs/release-0.7.4.md)
@@ -201,8 +205,9 @@ Známé zbývající mezery jsou vedené výhradně v `PURE_LSL_PROGRESS.md`; CU
 LSL používá bundlovaný izolovaný NVIDIA CUDA Runtime worker s CPU fallbackem,
 nikoli přímý in-process CUDA driver ABI. FloatArray kernely jsou ručně
 vektorizované přes SSE2 a `thread_spawn`/`thread_join` poskytují sdílená
-vlákna s atomickými builtiny; obecná autovektorizace, persistentní CUDA
-kontext, širší Tensor operace a obecné foreign shared-object ABI zůstávají
-otevřené.
+vlákna s atomickými builtiny. CUDA 0.7.7 přidává persistentní kontext,
+device buffery a dense Float64 Tensor operace. Obecná autovektorizace,
+uživatelské GPU kernely, další dtype a obecné foreign shared-object ABI
+zůstávají mimo veřejný kontrakt.
 
 Licence: MIT, viz `LICENSE`.

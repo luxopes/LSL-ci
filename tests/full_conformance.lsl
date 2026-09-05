@@ -63,9 +63,11 @@ load raster_kernel_conformance
 load dictionary_key_conformance
 load native_elf_conformance
 load tensor_conformance
+load class_method_return_conformance
 load bigint_conformance
 load math_conformance
 load cuda_conformance
+load cuda_policy_conformance
 load ai_conformance
 load capture_stream_conformance
 load capture_result_conformance

@@ -1,12 +1,12 @@
 # LSL — Vývojářské příručky
 
-> **LSL 0.7.1 — stabilizace serveru, provenance, linkeru a veřejného ABI.**
+> **LSL 0.7.7 — persistentní CUDA, device buffery a GPU tenzory.**
 > [Historie verzí](/releases/) · [Manuál 0.5](/releases/0.5/) ·
 > [Manuál 0.6](/releases/0.6/) · [Manuál 0.6.5](/releases/0.6.5/) ·
 > [Changelog](CHANGELOG.md)
 > [Stáhnout binárky nebo zdrojový kód](index.html#downloads).
 
-Podrobné průvodce stabilním LSL (Lux Simple Lang) 0.7. Každá kapitola
+Podrobné průvodce LSL (Lux Simple Lang) 0.7.7. Každá kapitola
 vysvětluje jednu oblast od základů — text předpokládá, že s programováním
 teprve začínáte. Všechny konstrukty jsou popsány srozumitelně: co dělají,
 k čemu slouží, jak se zapisují a jak fungují.
@@ -67,6 +67,10 @@ k čemu slouží, jak se zapisují a jak fungují.
 14. **[Sandbox a bezpečnost](14-sandbox-and-safety.md)**
     Capability sandbox, omezení zdrojů, bezpečný výchozí režim compileru,
     explicitní `unsafe:` hranice a omezení ochrany paměti v LSL 0.7.
+
+15. **[CUDA a GPU tenzory](15-cuda.md)**
+    Persistentní sessions, Float64 buffery, DeviceTensor, CPU fallback,
+    životnost prostředků, protokol a hardwarové testy.
 
 ## Referenční příručka
 

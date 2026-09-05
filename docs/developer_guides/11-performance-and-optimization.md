@@ -592,46 +592,37 @@ Pro přesné výsledky:
 
 ## CUDA backend
 
-LSL 0.6 přidává volitelný modul `cuda` a automaticky přes něj směruje Tensor
-operace `sum`, `dot`, `axpy` a `matmul`. Samotný self-hosted ELF zůstává bez
-závislosti na libc a CUDA knihovnách: NVIDIA CUDA Driver/Runtime vlastní
-samostatný executable worker. Bundlovaný worker skutečně spouští NVIDIA
-Float64 kernely. Metadata používají `lsl-cuda-v1` JSON přes stdin, výpočetní
-pole rychlý raw Float64 binární transport.
+LSL 0.7.7 poskytuje jednorázové FloatArray kernely s automatickým CPU
+fallbackem i persistentní `cuda.session()`. Session drží CUDA kontext,
+uchovává buffery na GPU a další příkazy předává přímo přes Unix socket.
+`Tensor.to_device(session)` vrací DeviceTensor pro výpočty bez opakovaného
+nahrávání mezivýsledků.
 
-```text
-LSL_CUDA_WORKER=./cuda/lsl-cuda-worker
-LSL_CUDA=auto                 # auto, required, off
-LSL_CUDA_DEVICE=0
-LSL_CUDA_MIN_ELEMENTS=400000000
-```
+Podporované dense Float64 operace jsou sum, dot, AXPY, matmul, elementwise
+add/subtract/multiply/divide, scale, fill, ReLU a transpozice.
+Compiler a host ELF stále nepoužívají libc ani CUDA knihovny; NVIDIA runtime
+vlastní volitelný izolovaný worker.
 
 ```lsl
 load cuda
 load tensor
 
-print cuda.probe(), cuda.devices(), cuda.backend()
-product = tensor.matmul_data(a, b, m, k, n)
+call cuda.configure("cuda/lsl-cuda-worker", "required", 0)
+s = cuda.session()
+host = tensor.from_values([1, 2, 3, 4], [2, 2])
+a = host.to_device(s)
+b = a.matmul(a)
+print b.sum()
+call s.close()
 ```
 
-- `auto`: při chybě nebo absenci workeru bezpečně použije CPU kernel.
-- `required`: absence nebo chyba CUDA skončí `Cuda*Error`.
-- `off`: CUDA se vůbec nezkouší.
+Na GTX 1650 byl medián pěti výpočtů 512×512 dne 5. 9. 2026: CPU 0,04325 s,
+persistentní CUDA včetně downloadu 0,02228 s (1,94×). Jednorázová inicializace
+a dva uploady trvaly 0,319 s. Pro malé jednorázové vstupy obvykle vyhraje CPU;
+opakované GPU operace amortizují inicializaci.
 
-Pro malé vstupy je CPU rychlejší kvůli startu procesu a CUDA kontextu; práh
-řídí `LSL_CUDA_MIN_ELEMENTS`. Jde o počet prvků pro vektorové operace a
-`m*k*n` pro matmul. `cuda.probe()` nejprve spustí device kernel a ověří jeho
-výsledek. Portable conformance double testuje dispatch a fallback bez GPU,
-`tests/cuda_hardware_conformance.lsl` testuje skutečné zařízení.
-
-Na GeForce GTX 1650 bylo první end-to-end matmul 1024×1024 přibližně 11,73 s
-na CPU a 1,16 s přes CUDA. Pro 128×128 bylo CPU přibližně 0,003 s a první
-CUDA dispatch 0,87 s; proto je výchozí automatický práh konzervativní.
-
-Persistentní CUDA proces, přímý in-process CUDA driver ABI a zero-copy device
-buffery zatím nejsou součástí 0.6. FloatArray kernely používají ruční SSE2
-vektorizaci (viz výše); obecná autovektorizace uživatelských smyček
-neexistuje.
+Konfigurace, životnost prostředků, CPU fallback, číselné tolerance, přesné
+limity a reprodukovatelný benchmark jsou v [CUDA a GPU tenzory](15-cuda.md).
 
 ## Kam dál
 

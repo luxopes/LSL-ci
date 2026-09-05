@@ -1,5 +1,38 @@
 # Pure-LSL migration
 
+## Aktuální vydání 0.7.7 — 5. 9. 2026
+
+CUDA doplněna o persistentní session ABI 2, přímý binární Unix socket,
+device buffery, Float64 elementwise operace a transpozici, DeviceTensor a
+explicitní upload/download/free/close. CPU session má stejné rozhraní.
+Opraveny work/element limity matmul, vysoké gridy, předání indexu zařízení,
+fallback po vadném workeru a materializace tensorových pohledů. Starší ABI 1
+a jednorázové kernely zůstávají dostupné. Veřejný rozsah a limity:
+`docs/cuda.md`; obecné dtype a uživatelské GPU kernely jsou mimo tento rozsah.
+
+Compiler zachovává instanční typ `self` při inferenci návratových hodnot;
+regrese `class_method_return_conformance` funguje i s uniklými callbacky.
+Stage 2 a 3 jsou bitově shodné, všechny nástroje vznikly sériově pod 2 GiB.
+Plná sada včetně hardwarové CUDA prošla. Čistá instalace reprodukuje compiler
+bitově, config odpovídá golden souboru, instalovaný příklad z `/tmp` vrací
+stejný výsledek na CPU a GPU. Audit static PIE a hardeningu CUDA workeru prošel.
+
+HTTP/GC stress z 0.7.6 potřebuje přibližně 2,6 GiB: suite byla ověřena
+s 4 GiB limitem. Klientský timeout je 30 s místo 5 s a test má 180 s alarm,
+aby při selhání klienta nezůstával neomezeně blokovaný listener.
+
+SHA-256:
+
+- compiler: `5b5b3d89adf580e98fc7b042102b1489099ef44d22ddf46aa8686524947d9fa7`;
+- CLI: `ea86d1313917cec0e44ada41cdf534be96c17c363d41b09f5da67b5eaa6ee1ec`;
+- runner: `d9954fa52b5c7b73b30510cca3bbb97419c2e8b37733846861bd55885f099e31`;
+- CUDA worker: `e6822df1ceff1df15ab9b21502e1fb9a14038801638d0a0162b5ac8032c90016`.
+
+GTX 1650 / CC 7.5, CUDA 13.3, 512×512: medián pěti běhů CPU 0,04325 s,
+persistentní CUDA včetně downloadu 0,02228 s (1,94×), start/upload 0,319 s.
+Všech deset výsledků má checksum 134217728. Benchmark je
+`tests/cuda_session_benchmark.lsl`.
+
 ## Goal
 Produkční compiler a host runtime musí mít pouze LSL zdroje: žádný C/C++
 backend, runtime, libc, assembler, linker, Python ani shell launcher. Compiler

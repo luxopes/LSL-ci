@@ -19,6 +19,10 @@ je nutné zapnout přes `lsl sandbox`.
 - Volitelný CUDA worker validuje celý JSON objekt a ABI a má pevné limity pro
   stdin, hloubku, pole i device buffery. Release binárka je PIE s full RELRO,
   NOW binding, stack protector a neproveditelným stackem.
+- CUDA session ABI 2 přijme jediného klienta stejného UID přes privátní Unix
+  socket, kontroluje handly a celkovou paměť a omezí příkaz na 120 sekund.
+  EOF uvolní device buffery; socket se nedědí přes exec. Podrobnosti v
+  [CUDA API](15-cuda.md).
 
 ## HTTP a TLS
 

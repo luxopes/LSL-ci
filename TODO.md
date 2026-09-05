@@ -12,6 +12,9 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktu�
 
 ## Hotovo
 
+- 0.7.7: persistentní CUDA session, device buffery, dense Float64 operace,
+  DeviceTensor, CPU fallback, device selection, protokol a hardwarové regrese.
+
 - pure-LSL Linux x86_64 compiler, přímý machine code a ELF writer;
 - bitově shodný multi-stage fixed point bez C/Python/shell toolchainu;
 - veřejné LSL-generované `lsl` a `compiler/lslc`;

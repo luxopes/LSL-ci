@@ -1,0 +1,8 @@
+malformed-auto 5.0
+malformed-required True FloatArray([2.0, 3.0])
+missing-auto 5.0 False
+missing-session cpu
+missing-required True
+cpu-limit 2000001 0.0
+empty-tensor 0 0.0 [0, 0]
+empty-device [3, 0] 0.0

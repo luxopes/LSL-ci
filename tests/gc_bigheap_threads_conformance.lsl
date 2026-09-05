@@ -7,6 +7,9 @@
 load fd
 load httpserver
 
+# Bound the process even if a failed client leaves the listener in accept().
+call __lsl_syscall(37, 180, 0, 0, 0)
+
 listener_box = IntArray()
 port_box = IntArray()
 
@@ -36,8 +39,10 @@ function memory_client_worker():
         client = __lsl_fd_socket(httpserver.AF_INET, httpserver.SOCK_STREAM)
         endpoint = httpserver.sockaddr_ipv4("127.0.0.1", port_box[0])
         check(__lsl_fd_connect(client, endpoint, len(endpoint)) >= 0, "connect")
-        call httpserver.set_socket_timeout(client, httpserver.SO_RCVTIMEO, 5)
-        call httpserver.set_socket_timeout(client, httpserver.SO_SNDTIMEO, 5)
+        # A full collection of the >2 GiB stress heap can outlast five seconds
+        # on a loaded host. This test checks allocator progress, not HTTP latency.
+        call httpserver.set_socket_timeout(client, httpserver.SO_RCVTIMEO, 30)
+        call httpserver.set_socket_timeout(client, httpserver.SO_SNDTIMEO, 30)
         payload = httpserver.text_bytes("GET /m HTTP/1.1" + separator + "Host: x" + separator + separator)
         check(__lsl_fd_write(client, payload, len(payload)) >= 0, "write")
         received = httpserver.read_handle_limit(client, 500000)
@@ -89,3 +94,4 @@ call httpserver.serve_listener(memory_listener, -1, garbage_handler, 30, False)
 print "memory served"
 check(thread_join(memory_worker) == 0, "join memory")
 print "done"
+call __lsl_syscall(37, 0, 0, 0, 0)

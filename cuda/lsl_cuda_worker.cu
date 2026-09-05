@@ -18,6 +18,16 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <map>
+#include <memory>
+#include <cstdint>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <poll.h>
+#include <fcntl.h>
 
 namespace {
 
@@ -29,6 +39,7 @@ constexpr std::size_t kMaxElements = 2000000;
 constexpr std::size_t kMaxBinaryBytes = kMaxElements * 2 * sizeof(double);
 constexpr unsigned long long kProbeInput = 0x4c534c4355444136ULL;
 constexpr unsigned long long kProbeOutput = 0x91f498ec5844b56bULL;
+int configured_device = -1;
 
 class WorkerError : public std::runtime_error {
 public:
@@ -77,7 +88,7 @@ public:
     explicit JsonScanner(const std::string& json) : json_(json), position_(0) {}
 
     std::size_t top_level_value_position(const std::string& target,
-                                         std::size_t* value_end = nullptr) {
+                                         std::size_t* value_end = nullptr, bool required = true) {
         skip_whitespace();
         expect('{', "request must be a JSON Object");
         skip_whitespace();
@@ -86,6 +97,7 @@ public:
         std::size_t result_end = 0;
         if (consume('}')) {
             finish();
+            if (!required) return json_.size();
             throw WorkerError("request is missing key " + target);
         }
         while (true) {
@@ -115,6 +127,7 @@ public:
         }
         finish();
         if (!found) {
+            if (!required) return json_.size();
             throw WorkerError("request is missing key " + target);
         }
         if (value_end != nullptr) {
@@ -163,6 +176,17 @@ private:
         }
     }
 
+    unsigned unicode_unit() {
+        if (json_.size() - position_ < 4) throw WorkerError("unfinished JSON Unicode escape");
+        unsigned value = 0;
+        for (int index = 0; index < 4; ++index) {
+            const char digit = json_[position_++];
+            if (!is_hex_digit(digit)) throw WorkerError("invalid JSON Unicode escape");
+            value = value * 16 + (digit <= '9' ? digit - '0' : (digit | 32) - 'a' + 10);
+        }
+        return value;
+    }
+
     std::string parse_string(bool capture) {
         expect('"', "JSON Object key must be a String");
         std::string result;
@@ -181,17 +205,30 @@ private:
                 }
                 const char escaped = json_[position_++];
                 if (escaped == 'u') {
-                    if (json_.size() - position_ < 4) {
-                        throw WorkerError("unfinished JSON Unicode escape");
+                    unsigned code = unicode_unit();
+                    if (code >= 0xd800 && code <= 0xdbff) {
+                        if (!consume('\\') || !consume('u')) throw WorkerError("unpaired JSON Unicode surrogate");
+                        const unsigned low = unicode_unit();
+                        if (low < 0xdc00 || low > 0xdfff) throw WorkerError("unpaired JSON Unicode surrogate");
+                        code = 0x10000 + (code - 0xd800) * 1024 + low - 0xdc00;
+                    } else if (code >= 0xdc00 && code <= 0xdfff) {
+                        throw WorkerError("unpaired JSON Unicode surrogate");
                     }
-                    for (int index = 0; index < 4; ++index) {
-                        if (!is_hex_digit(json_[position_ + index])) {
-                            throw WorkerError("invalid JSON Unicode escape");
-                        }
-                    }
-                    position_ += 4;
                     if (capture) {
-                        result.push_back('?');
+                        if (code < 128) result.push_back(static_cast<char>(code));
+                        else if (code < 2048) {
+                            result.push_back(static_cast<char>(0xc0 | (code >> 6)));
+                            result.push_back(static_cast<char>(0x80 | (code & 63)));
+                        } else if (code < 65536) {
+                            result.push_back(static_cast<char>(0xe0 | (code >> 12)));
+                            result.push_back(static_cast<char>(0x80 | ((code >> 6) & 63)));
+                            result.push_back(static_cast<char>(0x80 | (code & 63)));
+                        } else {
+                            result.push_back(static_cast<char>(0xf0 | (code >> 18)));
+                            result.push_back(static_cast<char>(0x80 | ((code >> 12) & 63)));
+                            result.push_back(static_cast<char>(0x80 | ((code >> 6) & 63)));
+                            result.push_back(static_cast<char>(0x80 | (code & 63)));
+                        }
                     }
                 } else if (escaped == '"' || escaped == '\\' || escaped == '/' ||
                            escaped == 'b' || escaped == 'f' || escaped == 'n' ||
@@ -386,7 +423,7 @@ double number_at(const std::string& json, std::size_t& position) {
     char* stop = nullptr;
     errno = 0;
     double value = std::strtod(start, &stop);
-    if (stop == start || errno == ERANGE || !std::isfinite(value)) {
+    if (stop == start || !std::isfinite(value)) {
         throw WorkerError("invalid finite numeric value in request");
     }
     position = static_cast<std::size_t>(stop - json.c_str());
@@ -428,7 +465,7 @@ double double_argument(const char* text, const char* name) {
     char* stop = nullptr;
     errno = 0;
     double value = std::strtod(text, &stop);
-    if (stop == text || *stop != '\0' || errno == ERANGE || !std::isfinite(value)) {
+    if (stop == text || *stop != '\0') {
         throw WorkerError(std::string("invalid binary ") + name);
     }
     return value;
@@ -491,13 +528,13 @@ void print_array(const std::vector<double>& values) {
     if (values.size() > kMaxJsonElements) {
         throw WorkerError("JSON response exceeds the secure element limit");
     }
+    for (double value : values) {
+        if (!std::isfinite(value)) throw WorkerError("CUDA result contains a non-finite Float");
+    }
     std::cout << "{\"abi\":1,\"ok\":true,\"value\":[";
     for (std::size_t index = 0; index < values.size(); ++index) {
         if (index != 0) {
             std::cout << ',';
-        }
-        if (!std::isfinite(values[index])) {
-            throw WorkerError("CUDA result contains a non-finite Float");
         }
         std::cout << std::setprecision(17) << values[index];
     }
@@ -615,8 +652,9 @@ __global__ void matmul_kernel(const double* left, const double* right,
     __shared__ double left_tile[kTile][kTile];
     __shared__ double right_tile[kTile][kTile];
 
-    const int row = blockIdx.y * kTile + threadIdx.y;
-    const int column = blockIdx.x * kTile + threadIdx.x;
+    const int tile_columns = (columns + kTile - 1) / kTile;
+    const int row = (blockIdx.x / tile_columns) * kTile + threadIdx.y;
+    const int column = (blockIdx.x % tile_columns) * kTile + threadIdx.x;
     double total = 0.0;
     const int tile_count = (inner + kTile - 1) / kTile;
 
@@ -652,15 +690,18 @@ int selected_device() {
     if (count <= 0) {
         throw WorkerError("no CUDA device is available");
     }
-    int device = 0;
+    int device = configured_device < 0 ? 0 : configured_device;
     const char* configured = std::getenv("LSL_CUDA_DEVICE");
-    if (configured != nullptr && configured[0] != '\0') {
+    if (configured_device < 0 && configured != nullptr && configured[0] != '\0') {
         char* stop = nullptr;
         long parsed = std::strtol(configured, &stop, 10);
         if (stop == configured || *stop != '\0' || parsed < 0 || parsed >= count) {
             throw WorkerError("LSL_CUDA_DEVICE does not select an available device");
         }
         device = static_cast<int>(parsed);
+    }
+    if (device >= count) {
+        throw WorkerError("CUDA device index is not available");
     }
     cuda_check(cudaSetDevice(device), "cudaSetDevice");
     return device;
@@ -692,6 +733,7 @@ void print_probe() {
         << "{\"abi\":1,\"ok\":true,\"value\":{"
         << "\"backend\":\"nvidia-cuda-runtime\","
         << "\"verified\":true,"
+        << "\"binary\":true,\"session_abi\":2,"
         << "\"device\":" << device << ','
         << "\"name\":\"" << json_escape(properties.name) << "\","
         << "\"compute_capability\":\"" << properties.major << '.'
@@ -735,34 +777,19 @@ void print_devices() {
     std::cout << "]}\n";
 }
 
-double gpu_reduce(const std::vector<double>& left,
-                  const std::vector<double>* right) {
-    if (left.empty()) {
+double gpu_reduce_device(const double* left, const double* right, std::size_t count) {
+    if (count == 0) {
         return 0.0;
     }
-    selected_device();
-    DeviceBuffer<double> device_left(left.size());
-    cuda_check(cudaMemcpy(device_left.get(), left.data(),
-                          left.size() * sizeof(double), cudaMemcpyHostToDevice),
-               "reduction cudaMemcpy left host-to-device");
-
-    DeviceBuffer<double> device_right(right == nullptr ? 0 : right->size());
-    if (right != nullptr) {
-        cuda_check(cudaMemcpy(device_right.get(), right->data(),
-                              right->size() * sizeof(double),
-                              cudaMemcpyHostToDevice),
-                   "dot cudaMemcpy right host-to-device");
-    }
-
-    std::size_t blocks = (left.size() + kThreads * 2 - 1) / (kThreads * 2);
+    std::size_t blocks = (count + kThreads * 2 - 1) / (kThreads * 2);
     DeviceBuffer<double> partial_a(blocks);
     DeviceBuffer<double> partial_b(blocks);
     if (right == nullptr) {
         reduce_sum_kernel<<<static_cast<unsigned int>(blocks), kThreads>>>(
-            device_left.get(), partial_a.get(), left.size());
+            left, partial_a.get(), count);
     } else {
         reduce_dot_kernel<<<static_cast<unsigned int>(blocks), kThreads>>>(
-            device_left.get(), device_right.get(), partial_a.get(), left.size());
+            left, right, partial_a.get(), count);
     }
     cuda_check(cudaGetLastError(), "reduction kernel launch");
 
@@ -787,6 +814,20 @@ double gpu_reduce(const std::vector<double>& left,
                           cudaMemcpyDeviceToHost),
                "reduction cudaMemcpy device-to-host");
     return result;
+}
+
+double gpu_reduce(const std::vector<double>& left, const std::vector<double>* right) {
+    if (left.empty()) return 0.0;
+    selected_device();
+    DeviceBuffer<double> a(left.size());
+    DeviceBuffer<double> b(right == nullptr ? 0 : right->size());
+    cuda_check(cudaMemcpy(a.get(), left.data(), left.size() * sizeof(double),
+                          cudaMemcpyHostToDevice), "upload reduction left");
+    if (right != nullptr) {
+        cuda_check(cudaMemcpy(b.get(), right->data(), right->size() * sizeof(double),
+                              cudaMemcpyHostToDevice), "upload reduction right");
+    }
+    return gpu_reduce_device(a.get(), b.get(), left.size());
 }
 
 std::vector<double> gpu_axpy(double alpha, const std::vector<double>& x,
@@ -865,8 +906,8 @@ std::vector<double> gpu_matmul(const std::vector<double>& left,
                "matmul cudaMemcpy right host-to-device");
 
     dim3 threads(kTile, kTile);
-    dim3 blocks((columns + kTile - 1) / kTile,
-                (rows + kTile - 1) / kTile);
+    dim3 blocks(((columns + kTile - 1) / kTile) *
+                ((rows + kTile - 1) / kTile));
     matmul_kernel<<<blocks, threads>>>(device_left.get(), device_right.get(),
                                       device_output.get(), rows, inner, columns);
     cuda_check(cudaGetLastError(), "matmul kernel launch");
@@ -888,6 +929,12 @@ void run_request(const std::string& request) {
     }
     const std::string operation = string_value(request, "operation");
     const std::string payload = object_value(request, "payload");
+    JsonScanner scanner(request);
+    if (scanner.top_level_value_position("device", nullptr, false) != request.size()) {
+        const auto device = integer_value(request, "device");
+        if (device > 255) throw WorkerError("CUDA device must be between 0 and 255");
+        configured_device = static_cast<int>(device);
+    }
     if (operation == "cuda.probe") {
         print_probe();
     } else if (operation == "cuda.devices") {
@@ -1049,12 +1096,26 @@ void run_binary(int argc, char** argv) {
     }
 }
 
+#include "session.cuh"
+
 } // namespace
 
 int main(int argc, char** argv) {
+    if (argc >= 3 && std::strcmp(argv[1], "--device") == 0) {
+        try {
+            configured_device = static_cast<int>(size_argument(argv[2], "device"));
+        } catch (const std::exception& error) {
+            std::cerr << error.what() << '\n';
+            return 2;
+        }
+        argv += 2;
+        argc -= 2;
+    }
     const bool binary = argc >= 2 && std::strcmp(argv[1], "--binary") == 0;
     try {
-        if (binary) {
+        if (argc == 2 && std::strcmp(argv[1], "--session") == 0) {
+            start_session();
+        } else if (binary) {
             run_binary(argc, argv);
         } else if (argc == 2) {
             run_request(argv[1]);

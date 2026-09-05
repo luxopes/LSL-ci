@@ -4,6 +4,29 @@ Na této stránce jsou uživatelsky významné změny vydaných verzí. Stabiln�
 manuály a soubory ke stažení zůstávají dostupné v
 [historii vydání](/releases/).
 
+## 0.7.7 — 5. 9. 2026
+
+- Persistentní CUDA session drží kontext a device buffery mezi příkazy.
+  Přímý binární Unix socket nahrazuje nové procesy u opakovaných výpočtů.
+- Float64 buffery podporují sum, dot, AXPY, matmul, sčítání, odčítání,
+  násobení, dělení, scale, fill, ReLU a transpozici. DeviceTensor přidává
+  tvarovou kontrolu, reshape a explicitní přenosy do/z host Tensoru.
+- Výběr zařízení se správně předává i přes prázdné process environment.
+  Matmul odlišuje pracovní jednotky od limitů polí a podporuje vysoké matice.
+- CPU fallback i GPU mají kontrolovanou životnost session a bufferů, snapshot
+  přenosy a limity. Binární transport zachovává signed zero, NaN a Infinity.
+- Tensorové operace respektují offset a strides; prázdné tensory a nulová
+  vnitřní dimenze matmul fungují. Compiler zachovává návratový typ řetězených
+  metod přes `self` i bez call-site specializace.
+- Přidány CPU/GPU session regrese, vadný worker, ownership, use-after-free,
+  hardwarové limity a benchmark s kontrolními součty. Podrobné API v kapitole
+  [CUDA a GPU tenzory](15-cuda.md).
+
+## 0.7.6 — 30. 8. 2026
+
+Segregované volné seznamy odstranily lineární průchody alokátorem po velkých
+HTTP požadavcích. Vydání zahrnuje opravy HTTP body a `String.split` z 0.7.2–0.7.5.
+
 ## 0.7.1 — 28. 8. 2026
 
 Stabilizační a bezpečnostní vydání bez nové syntaxe.

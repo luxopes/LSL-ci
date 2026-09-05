@@ -28,6 +28,12 @@ má pevné limity vstupu, hloubky, počtu prvků a device paměti; release biná
 je PIE s full RELRO, NOW binding, stack protector a neproveditelným stackem.
 CUDA driver a runtime přesto zůstávají cizí důvěryhodnou závislostí.
 
+CUDA ABI 2 používá privátní Unix socket pro jedinou session, ověřuje UID
+klienta, omezuje celkovou device paměť a příkazy mají 120sekundový deadline.
+Handly nejsou device adresy a po uvolnění se nerecyklují. EOF uvolní všechny
+buffery. Host spojení je CLOEXEC a zápis používá MSG_NOSIGNAL. Sessions jsou
+vázané na jedno host vlákno; nejde o síťovou ani víceuživatelskou GPU službu.
+
 ## HTTP, balíčky a TLS
 
 TLS zajišťuje systémový `/usr/bin/curl` a jeho trust store. LSL předává URL,

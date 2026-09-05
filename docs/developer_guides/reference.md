@@ -663,6 +663,14 @@ nezáporný, `x.power(0)` je `1` (včetně `0.power(0)`) a záporný exponent vy
 | `cuda.dot_data(a, b)` | GPU dot nad FloatArray s CPU fallbackem. |
 | `cuda.axpy_data(alpha, x, y)` | GPU AXPY in-place s CPU fallbackem. |
 | `cuda.matmul_data(a, b, m, k, n)` | GPU matmul s CPU fallbackem. |
+| `cuda.device()` / `cuda.set_device(index)` | Index zařízení pro příští operace a sessions. |
+| `cuda.session()` | Persistentní Session s `upload`, `zeros`, `info`, `synchronize`, `close`. |
+
+Buffer má `count`, `download()`, `sum()`, `dot(other)`, `add(other)`,
+`subtract(other)`, `multiply(other)`, `divide(other)`, `scale(alpha)`,
+`relu()`, `fill(value)`, `axpy(alpha, other)`, `matmul(other, m, k, n)`,
+`transpose(m, n)` a `free()`. In-place jsou `fill` a `axpy`.
+Životnost, přesné limity a protokol popisuje [CUDA API](15-cuda.md).
 
 Konfigurace prostředí: `LSL_CUDA_WORKER`, `LSL_CUDA=auto|required|off` a
 `LSL_CUDA_DEVICE`; `LSL_CUDA_MIN_ELEMENTS` má výchozí hodnotu 400 000 000
@@ -697,6 +705,12 @@ pracovních jednotek.
 | `t.shape` | List rozměrů. |
 | `t.data` | Podkladový FloatArray. |
 | `t.dtype` | Typ prvků (např. `"Float64"`). |
+| `t.contiguous_data()` | FloatArray v logickém pořadí pohledu. |
+| `t.to_device(session)` | Nahraje Tensor či pohled do DeviceTensoru. |
+
+DeviceTensor poskytuje `rank`, `size`, `to_host`, `reshape`, `free`,
+`sum`, `dot`, `matmul`, `transpose`, `add`, `subtract`, `multiply`, `divide`,
+`scale`, `relu`, `fill` a `axpy`; viz [CUDA API](15-cuda.md).
 
 ### <span class="badge badge-module">luxos</span> luxos — LuxOS aktivační runtime
 

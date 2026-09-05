@@ -215,7 +215,7 @@ end
 call require_success(run(compiler, ["compiler/pure/cli.lsl", cli_test]), "compile stdin CLI")
 call require_hardened_elf(cli_test)
 help_output = capture(cli_test, ["--help"])
-expected_help = "Lux Simple Lang (LSL) 0.7.6" + chr(10)
+expected_help = "Lux Simple Lang (LSL) 0.7.7" + chr(10)
 expected_help += chr(10)
 expected_help += "Usage:" + chr(10)
 expected_help += "  lsl [SOURCE [ARG...]]" + chr(10)
@@ -236,11 +236,11 @@ if capture_status() != 0 or help_output != expected_help:
     Error(TestFailure: "CLI --help output differs")
 end
 version_output = capture(cli_test, ["version"])
-if capture_status() != 0 or version_output != "0.7.6" + chr(10):
+if capture_status() != 0 or version_output != "0.7.7" + chr(10):
     Error(TestFailure: "CLI version output differs")
 end
 version_flag_output = capture(cli_test, ["--version"])
-if capture_status() != 0 or version_flag_output != "0.7.6" + chr(10):
+if capture_status() != 0 or version_flag_output != "0.7.7" + chr(10):
     Error(TestFailure: "CLI --version output differs")
 end
 config_output = capture(cli_test, ["config", "examples/config/system.lsl"])
@@ -502,6 +502,7 @@ servers = [
     ["tests/fd_inherit_server.lsl", test_path("fd-inherit-server")],
     ["tests/http_transport_server.lsl", test_path("http-transport-server")],
     ["tests/cuda_worker.lsl", test_path("cuda-worker")],
+    ["tests/cuda_bad_worker.lsl", test_path("cuda-bad-worker")],
     ["tests/os_command_server.lsl", test_path("os-command-server")],
     ["tests/system_package_server.lsl", test_path("system-package-server")],
     ["tests/system_command_server.lsl", test_path("system-command-apt")],
@@ -522,7 +523,17 @@ call require_success(run(capture_cloexec_test, [test_path("capture-stream-server
 if env.get("LSL_CUDA_HARDWARE_TEST", "0") == "1":
     cuda_hardware_test = test_path("cuda-hardware-test")
     call require_success(run(compiler, ["tests/cuda_hardware_conformance.lsl", cuda_hardware_test]), "compile CUDA hardware conformance")
-    call require_success(run(cuda_hardware_test, []), "run CUDA hardware conformance")
+    call require_success(run(cuda_hardware_test, [cuda_worker]), "run CUDA hardware conformance")
+end
+
+cuda_session_test = test_path("cuda-session-test")
+cuda_protocol_test = test_path("cuda-protocol-test")
+call require_success(run(compiler, ["tests/cuda_protocol_conformance.lsl", cuda_protocol_test]), "compile CUDA protocol conformance")
+call require_success(run(cuda_protocol_test, [cuda_worker]), "run CUDA protocol conformance")
+call require_success(run(compiler, ["tests/cuda_session_conformance.lsl", cuda_session_test]), "compile CUDA session conformance")
+call require_output(cuda_session_test, [test_root], "tests/cuda_session_conformance.out", "CPU session conformance differs")
+if env.get("LSL_CUDA_HARDWARE_TEST", "0") == "1":
+    call require_output(cuda_session_test, [test_root, cuda_worker], "tests/cuda_session_conformance.out", "CUDA session conformance differs")
 end
 
 thread_test = test_path("thread-reuse-test")

@@ -1,6 +1,9 @@
 load cuda
 
 worker = arg(1)
+if worker == None:
+    worker = "./cuda/lsl-cuda-worker"
+end
 call cuda.configure(worker, "required", 0)
 probe = cuda.probe()
 if probe == None or not probe.get("verified", False):
@@ -10,7 +13,7 @@ if probe.get("backend", "") != "nvidia-cuda-runtime":
     Error(TestFailure: "CUDA worker did not report the NVIDIA runtime backend")
 end
 devices = cuda.devices()
-if len(devices) == 0 or devices[0].get("name", "") != probe.get("name", ""):
+if len(devices) == 0 or devices[Int(probe["device"])].get("name", "") != probe.get("name", ""):
     Error(TestFailure: "CUDA device enumeration differs from verified probe")
 end
 
@@ -49,3 +52,35 @@ if product[0] != 58.0 or product[1] != 64.0 or product[2] != 139.0 or product[3]
 end
 
 print "cuda-hardware-ok", probe["name"], probe["compute_capability"]
+
+# Work units exceed 2 million while every matrix is within the transport cap.
+square = float_zeros(160 * 160)
+call float_fill(square, 1.0)
+matrix = cuda.matmul_data(square, square, 160, 160, 160)
+if float_sum(matrix) != 4096000.0:
+    Error(TestFailure: "CUDA matmul confused work units with element limits")
+end
+# Grid.y would exceed CUDA's 65535 limit without flattened tile indexing.
+tall = float_zeros(1048600)
+call float_fill(tall, 1.0)
+unit = float_zeros(1)
+unit[0] = 2.0
+matrix = cuda.matmul_data(tall, unit, 1048600, 1, 1)
+if len(matrix) != 1048600 or float_sum(matrix) != 2097200.0:
+    Error(TestFailure: "CUDA tall matmul grid differs")
+end
+call cuda.set_device(255)
+if cuda.available():
+    Error(TestFailure: "CUDA ignored an invalid selected device")
+end
+caught = False
+try:
+    call cuda.sum_data(unit)
+else:
+    caught = True
+end
+if not caught:
+    Error(TestFailure: "required CUDA did not propagate device failure")
+end
+call cuda.set_device(0)
+print "cuda-hardware-limits-ok"

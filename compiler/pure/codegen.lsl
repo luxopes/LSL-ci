@@ -3929,7 +3929,7 @@ function emit_expression(generator, syntax):
                 call assembler.label(output, done_label)
                 return
             elif target["name"] == "help":
-                call emit_static_write(generator, "Lux Simple Lang (LSL) 0.7.6" + chr(10) + "functions: print printl input for loop safe unsafe if elif else try class ctype function type del len abs sqrt help" + chr(10) + "types: Bool Int Float String List Tuple RealArray IntArray FloatArray ByteArray Dictionary" + chr(10) + "modules: os time json process config ai tensor cuda native math bigint httpserver sandbox" + chr(10) + "docs: see README.md and docs/" + chr(10))
+                call emit_static_write(generator, "Lux Simple Lang (LSL) 0.7.7" + chr(10) + "functions: print printl input for loop safe unsafe if elif else try class ctype function type del len abs sqrt help" + chr(10) + "types: Bool Int Float String List Tuple RealArray IntArray FloatArray ByteArray Dictionary" + chr(10) + "modules: os time json process config ai tensor cuda native math bigint httpserver sandbox" + chr(10) + "docs: see README.md and docs/" + chr(10))
                 call assembler.emit(output, x86_64.mov_imm64(0, 0))
                 return
             elif target["name"] == "abs":
@@ -6001,6 +6001,14 @@ function infer_function_returns(functions, classes, parameter_types, global_type
             for parameter in declaration["parameters"]:
                 types[parameter] = parameter_types[name][parameter_index]
                 parameter_index += 1
+            end
+            # Match emit_function: self remains an instance even when call-site
+            # specialization is disabled. Method chains must retain the return
+            # type of another method or of self.
+            if "class_name" in declaration and len(declaration["parameters"]) > 0:
+                if declaration["parameters"][0] == "self":
+                    types["self"] = "Instance:" + declaration["class_name"]
+                end
             end
             call collect_types(declaration["body"], types, result)
             inferred = returned_type(declaration["body"], types, result)

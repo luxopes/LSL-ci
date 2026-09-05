@@ -20,3 +20,14 @@ All test runners, fixtures and generated test tools live under this tree.
 - `config/` and `modules/` contain subsystem-specific fixtures.
 
 The suite requires no C, Python, shell launcher, assembler or linker.
+
+CUDA 0.7.7: `cuda_session_conformance.lsl` runs on CPU by default; the runner
+also compares its complete output against an NVIDIA device when
+`LSL_CUDA_HARDWARE_TEST=1`. The hardware corpus checks recursive reductions,
+matmul work/transport limits, tall grids and explicit device selection. Policy
+tests use malformed/missing workers and check fallback without partial mutation.
+`cuda_session_benchmark.lsl` reports five-run medians and verifies checksums.
+
+Build compilers serially with a 2 GiB address-space limit. For the full suite,
+use 4 GiB: the existing 9 MiB HTTP/GC stress needs roughly 2.6 GiB. That fixture
+has a 180-second process alarm and allows 30 seconds per client request.

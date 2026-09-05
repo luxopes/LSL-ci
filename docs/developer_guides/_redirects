@@ -27,3 +27,6 @@
 /manual/0.7.1                    /                                 301
 /manual/0.7.1/*                  /                                 301
 /changelog                       /#CHANGELOG                       301
+/cuda.md                         /#15-cuda                         301
+/manual/0.7.7                    /                                 301
+/manual/0.7.7/*                  /                                 301

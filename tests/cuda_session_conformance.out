@@ -1,0 +1,27 @@
+17.0 91.0
+FloatArray([22.0, 24.0, 139.0, 154.0])
+FloatArray([8.0, 6.0, 12.0, 14.0, 16.0, 18.0])
+FloatArray([7.0, -16.0, 27.0, 40.0, 55.0, 72.0])
+FloatArray([1.0, 0.0, 3.0, 4.0, 5.0, 6.0])
+FloatArray([2.0, -4.0, 6.0, 8.0, 10.0, 12.0])
+FloatArray([1.0, 4.0, -2.0, 5.0, 3.0, 6.0])
+FloatArray([15.0, 14.0, 21.0, 24.0, 27.0, 30.0])
+18.0
+freed True
+0.0 0.0 FloatArray([])
+0 0
+closed True
+ownership True
+snapshot 6.0
+FloatArray([1.0, 2.0])
+FloatArray([2.0, 2.0])
+empty-inner FloatArray([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+ieee True True True
+view FloatArray([1.0, 4.0, 2.0, 5.0, 3.0, 6.0]) 21.0
+strides True
+tensor [2, 3] FloatArray([1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
+device-matmul [3, 3] FloatArray([17.0, 22.0, 27.0, 22.0, 29.0, 36.0, 27.0, 36.0, 45.0])
+device-elementwise 63.0
+released 0 0
+boundary 2000000.0 2000000
+buffer-limit True

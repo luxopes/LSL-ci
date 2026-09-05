@@ -32,6 +32,12 @@ Kořenové CLI při release buildu 0.7.1 už může překročit dřívější li
 každý artefakt samostatně; limit 2 GiB ponechává rezervu, ale stále ukončí
 nekontrolovaný růst.
 
+Samotná plná testovací sada obsahuje 9 MiB HTTP/GC stress z 0.7.6, který
+při naplnění pracovního heapu potřebuje více než 2 GiB. Pro běh suite použijte
+samostatný subshell s `ulimit -v 4194304`; pro sériové compiler/stage buildy
+ponechte 2 GiB. Pod 2 GiB může tento starší stress při vyčerpání paměti
+uvíznout, proto při auditu používejte i vnější časový limit.
+
 ## Mapa implementace
 
 | Soubor | Odpovědnost |
