@@ -1,0 +1,6 @@
+update manifest and signature checks ok
+update archive checks ok
+update limits and filesystem checks ok
+Recovered previous LSL installation after an interrupted update.
+Rolled back to LSL 0.7.7
+update atomic activation and rollback checks ok

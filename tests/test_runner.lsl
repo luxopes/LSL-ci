@@ -223,7 +223,8 @@ expected_help += "  lsl compile [--unsafe] SOURCE OUTPUT" + chr(10)
 expected_help += "  lsl config ENTRY" + chr(10)
 expected_help += "  lsl install NAME" + chr(10)
 expected_help += "  lsl install --config FILE" + chr(10)
-expected_help += "  lsl update NAME" + chr(10)
+expected_help += "  lsl update [NAME]" + chr(10)
+expected_help += "  lsl update [--check | --rollback] [--system] [--allow-downgrade]" + chr(10)
 expected_help += "  lsl origin [NAME]" + chr(10)
 expected_help += "  lsl server [OPTIONS]" + chr(10)
 expected_help += "  lsl sandbox [OPTIONS] SOURCE [ARG...]" + chr(10)
@@ -248,9 +249,26 @@ if capture_status() != 0 or config_output != readfile("tests/config_expected.jso
     Error(TestFailure: "CLI trusted config wrapper output differs")
 end
 origin_output = capture(cli_test, ["origin"])
-if capture_status() != 0 or origin_output != "https://luxos-registry-temp-2026.netlify.app/lsl" + chr(10):
+if capture_status() != 0 or origin_output != "https://lsl.lux-ai.cz/packages" + chr(10):
     Error(TestFailure: "CLI registry origin output differs")
 end
+call capture(cli_test, ["update", "--unknown"])
+if capture_status() == 0 or capture_stderr().find("unknown self-update option") < 0:
+    Error(TestFailure: "CLI self-update option dispatch failed")
+end
+call capture(cli_test, ["update"])
+if capture_status() == 0 or capture_stderr().find("source checkout is never overwritten") < 0:
+    Error(TestFailure: "CLI self-update did not protect development checkout")
+end
+call capture(cli_test, ["update", "No_Such_Library"])
+if capture_status() == 0 or capture_stderr().find("invalid library name") < 0:
+    Error(TestFailure: "CLI named update no longer dispatches to package manager")
+end
+update_test = test_path("update-test")
+update_helper = test_path("update-helper")
+call require_success(run(compiler, ["tests/compiler/update_helper.lsl", update_helper]), "compile updater resource-limit helper")
+call require_success(run(compiler, ["tests/compiler/update_conformance.lsl", update_test]), "compile signed updater conformance")
+call require_output(update_test, [update_helper], "tests/compiler/update_conformance.out", "signed updater conformance differs")
 server_help = capture(cli_test, ["server", "--help"])
 if capture_status() != 0 or server_help.find("--tls-cert FILE") < 0 or server_help.find("--max-requests N") < 0:
     Error(TestFailure: "CLI server help differs")

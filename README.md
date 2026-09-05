@@ -118,6 +118,12 @@ Bez argumentu installer používá `/usr/local` (podle oprávnění procesu). In
 
 ## Zdrojové knihovny
 
+`lsl update` bez názvu knihovny aktualizuje samotné LSL. `lsl update --check`
+pouze ověří dostupnou verzi, `lsl update --rollback` obnoví předchozí instalaci.
+Podepsaný updater podporuje `~/.local` bez sudo a `/usr/local` s explicitním
+`sudo /usr/local/bin/lsl update --system`. Checkout se nepřepisuje.
+Podrobnosti: [aktualizace LSL](docs/updates.md).
+
 ```text
 ./lsl install textkit
 ./lsl update textkit
@@ -125,9 +131,9 @@ Bez argumentu installer používá `/usr/local` (podle oprávnění procesu). In
 ./lsl origin textkit
 ```
 
-Knihovna se stáhne z dočasného HTTPS registru, ověří zveřejněným SHA-256,
+Knihovna se stáhne z produkčního registru `https://lsl.lux-ai.cz/packages`, ověří zveřejněným SHA-256,
 zkušebně přeloží, zapíše ověřitelný `.origin` provenance sidecar a atomicky
-uloží do `~/.local/lib/lsl/stdlib`. `update`
+uloží do `~/.local/lib/lsl/stdlib`. `update NAME`
 vyžaduje existující knihovnu a používá stejnou ověřenou atomickou cestu. Config
 obsahuje jeden název na řádek; prázdné řádky a řádky začínající `#` se ignorují.
 Built-in moduly

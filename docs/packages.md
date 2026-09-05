@@ -14,7 +14,7 @@ lsl origin textkit
 Výchozí endpoint je:
 
 ```text
-https://luxos-registry-temp-2026.netlify.app/lsl
+https://lsl.lux-ai.cz/packages
 ```
 
 Pro jméno `textkit` klient stáhne `textkit.lsl` a `textkit.sha256`. Jméno musí
@@ -27,7 +27,7 @@ Klient:
 
 1. povolí HTTPS; nezabezpečené HTTP přijme pouze pro číselný loopback
    `127.0.0.1` při lokálním testu (nikoli přes měnitelný DNS/NSS název); diskless LuxOS bez curlu smí použít
-   certificate-checking BusyBox wget pouze pro přesný dočasný Netlify origin;
+   certificate-checking BusyBox wget pouze pro přesný produkční endpoint;
 2. přes přímé argv volání transportu přijme nejvýše 1 MiB zdroje a SHA-256 sidecar;
 3. odmítne prázdný zdroj, NUL byte a neplatný 64znakový lowercase SHA-256;
 4. zapíše skrytý staging soubor a ověří jeho hash přes `sha256sum`;
@@ -47,6 +47,7 @@ nejdřív aktualizovat pomocí LSL 0.7.
 
 `lsl update NAME` nejdřív vyžaduje existující cílový modul a potom používá
 stejné ověření, zkušební překlad a atomickou náhradu jako instalace.
+Bez názvu knihovny `lsl update` spouští [podepsaný updater samotného LSL](updates.md).
 
 `lsl install --config FILE` načte nejvýše 64 KiB a 256 položek. Soubor používá
 LF a tisknutelnou ASCII podmnožinu UTF-8, obsahuje přesně jeden validní název na
@@ -81,7 +82,7 @@ Vzdálená URL musí být HTTPS a nesmí obsahovat whitespace, řídicí znaky, 
 ani fragment. Formát v1 je záměrně jediný `.lsl` soubor bez instalačních skriptů
 a bez dependency resolveru.
 
-Dočasný registr není podepsaný. HTTPS a hash pod stejným originem odhalí
+Registr knihoven v1 není podepsaný. HTTPS a hash pod stejným originem odhalí
 poškození nebo nekonzistentní přenos, ale neprokazují identitu vydavatele proti
-kompromitovanému registru. Produkční katalog bude potřebovat oddělené trust
-roots, podpisy, expiraci a metadata závislostí.
+kompromitovanému registru. Důvěra stojí na HTTPS a řízeném Forgejo/deploy řetězci.
+Ed25519 podpisy updateru LSL se nevztahují na zdrojové knihovny.

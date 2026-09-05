@@ -275,9 +275,9 @@ function fetch(curl_path, server, url):
         ]
         output = capture_clean(curl_path, arguments)
         tool = "curl"
-    elif server == "https://luxos-registry-temp-2026.netlify.app/lsl" and exists("/bin/wget"):
+    elif server == "https://lsl.lux-ai.cz/packages" and exists("/bin/wget"):
         # The diskless image has pinned BusyBox and CA roots but intentionally
-        # omits curl. Keep this fallback scoped to the temporary HTTPS origin.
+        # omits curl. Keep this fallback scoped to the production HTTPS origin.
         output = capture_clean("/bin/wget", ["-q", "-T", "120", "-O", "-", url])
         tool = "wget"
     else:

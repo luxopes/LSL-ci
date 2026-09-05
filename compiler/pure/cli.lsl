@@ -7,6 +7,7 @@ load linker
 load package
 load parser
 load sandbox
+load update
 
 VERSION = "0.7.7"
 
@@ -19,7 +20,8 @@ function print_help():
     print "  lsl config ENTRY"
     print "  lsl install NAME"
     print "  lsl install --config FILE"
-    print "  lsl update NAME"
+    print "  lsl update [NAME]"
+    print "  lsl update [--check | --rollback] [--system] [--allow-downgrade]"
     print "  lsl origin [NAME]"
     print "  lsl server [OPTIONS]"
     print "  lsl sandbox [OPTIONS] SOURCE [ARG...]"
@@ -200,7 +202,7 @@ end
 function registry_server():
     server = __lsl_getenv("LSL_REGISTRY")
     if server == None or server == "":
-        server = "https://luxos-registry-temp-2026.netlify.app/lsl"
+        server = "https://lsl.lux-ai.cz/packages"
     end
     return package.normalize_server(server)
 end
@@ -396,11 +398,14 @@ elif command == "install":
     exit(0)
 elif command == "update":
     name = arg(2)
-    if name == None or arg(3) != None:
-        print "usage: lsl update NAME"
+    if name == None or String(name).startswith("--"):
+        call update.main(VERSION)
+    elif arg(3) != None:
+        print "usage: lsl update [NAME]"
         exit(2)
+    else:
+        call package.update(name, user_home(), registry_server(), "/usr/bin/curl", "/usr/bin/sha256sum", "/usr/bin/mv", "/usr/bin/chmod", executable_path())
     end
-    call package.update(name, user_home(), registry_server(), "/usr/bin/curl", "/usr/bin/sha256sum", "/usr/bin/mv", "/usr/bin/chmod", executable_path())
     exit(0)
 elif command == "origin":
     name = arg(2)

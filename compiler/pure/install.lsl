@@ -116,6 +116,8 @@ sources = [
     "parser.lsl",
     "process_runtime.lsl",
     "thread_runtime.lsl",
+    "update.lsl",
+    "update_install.lsl",
     "x86_64.lsl"
 ]
 for name in sources:
