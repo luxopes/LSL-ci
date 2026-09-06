@@ -5,6 +5,10 @@ Každá položka obsahuje název, signaturu a stručný popis.
 
 ---
 
+Nově v 0.7.8: modul [random](16-random.md),
+[list/dict comprehensions](04-collections.md) a
+[výchozí/pojmenované argumenty](03-functions-and-classes.md).
+
 ## <span class="badge badge-builtin">BUILT-IN</span> 1. Built-in funkce *(dostupné všude bez importu)*
 
 ### <span class="badge badge-builtin">VÝSTUP</span> Výstup

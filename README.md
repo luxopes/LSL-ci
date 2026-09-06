@@ -1,6 +1,6 @@
 # Lux Simple Lang (LSL)
 
-**LSL 0.7.7** je vydání self-hostovaného jazyka pro běžné
+**LSL 0.7.8** je vydání self-hostovaného jazyka pro běžné
 programování, deklarativní konfiguraci, AI orchestrace a volitelné CUDA
 výpočty. Compiler i host runtime
 jsou pouze LSL: compiler přímo zapisuje statický Linux x86_64 ELF a runtime
@@ -11,13 +11,16 @@ pure-LSL a Tensor používá CPU fallback.
 
 ## Self-hosted vydání
 
-LSL 0.7.7 přináší persistentní CUDA session, device buffery a GPU tenzory.
+LSL 0.7.8 přináší knihovnu `random`, list/dict comprehensions,
+výchozí a pojmenované argumenty a podepsaný self-updater.
 Binární balík pro Linux x86_64,
 zdrojový archiv a aktualizovaný český manuál jsou na
 [lsl.lux-ai.cz](https://lsl.lux-ai.cz/). Stabilní manuály vydání jsou v
 [historii vydání](https://lsl.lux-ai.cz/releases/):
 
-- [LSL 0.7.7](https://lsl.lux-ai.cz/) — persistentní CUDA, Float64 device buffery,
+- [LSL 0.7.8](https://lsl.lux-ai.cz/) — `random` v pure LSL, comprehensions,
+  výchozí a pojmenované argumenty, `lsl update`;
+- LSL 0.7.7 — persistentní CUDA, Float64 device buffery,
   elementwise operace, transpozice, DeviceTensor a opravy dispatchingu;
 - LSL 0.7.6 — segregované volné seznamy:
   alokace O(1), oprava kolapsu alokátoru hlášeného v 0.7.5 jako
@@ -181,6 +184,9 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 - [Bezpečnostní model a hranice důvěry](docs/security.md)
 - [Native/plugin ABI](docs/native-plugins.md)
 - [CUDA backend a worker protokol](docs/cuda.md)
+- [Random — náhodná čísla a výběry](docs/random.md)
+- [Podepsané aktualizace LSL](docs/updates.md)
+- [Poznámky k vydání 0.7.8](docs/release-0.7.8.md)
 - [Poznámky k vydání 0.7.7](docs/release-0.7.7.md)
 - [Poznámky k vydání 0.7.6](docs/release-0.7.6.md)
 - [Poznámky k vydání 0.7.5](docs/release-0.7.5.md)

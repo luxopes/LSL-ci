@@ -4,6 +4,17 @@ Na této stránce jsou uživatelsky významné změny vydaných verzí. Stabiln�
 manuály a soubory ke stažení zůstávají dostupné v
 [historii vydání](/releases/).
 
+## 0.7.8 — 6. 9. 2026
+
+- Nová pure-LSL knihovna [random](16-random.md): Random/SystemRandom,
+  MT19937, SHA-512 seedy, snapshot stavu, BigInt, vážené výběry,
+  shuffle/sample a běžná rozdělení včetně binomial.
+- [List/dict comprehensions](04-collections.md): vnoření, filtry, rozbalení
+  a izolované proměnné; výchozí immutable a pojmenované argumenty funkcí.
+- Podepsaný self-updater: `lsl update` pro LSL a `lsl update NAME` pro knihovnu.
+  Produkční registry, Ed25519, kontrola archivu a atomická instalace s rollbackem.
+- Referenční random vektory, thread/GC a compiler bezpečnostní regrese.
+
 ## 0.7.7 — 5. 9. 2026
 
 - Persistentní CUDA session drží kontext a device buffery mezi příkazy.

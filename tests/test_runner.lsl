@@ -215,7 +215,7 @@ end
 call require_success(run(compiler, ["compiler/pure/cli.lsl", cli_test]), "compile stdin CLI")
 call require_hardened_elf(cli_test)
 help_output = capture(cli_test, ["--help"])
-expected_help = "Lux Simple Lang (LSL) 0.7.7" + chr(10)
+expected_help = "Lux Simple Lang (LSL) 0.7.8" + chr(10)
 expected_help += chr(10)
 expected_help += "Usage:" + chr(10)
 expected_help += "  lsl [SOURCE [ARG...]]" + chr(10)
@@ -237,11 +237,11 @@ if capture_status() != 0 or help_output != expected_help:
     Error(TestFailure: "CLI --help output differs")
 end
 version_output = capture(cli_test, ["version"])
-if capture_status() != 0 or version_output != "0.7.7" + chr(10):
+if capture_status() != 0 or version_output != "0.7.8" + chr(10):
     Error(TestFailure: "CLI version output differs")
 end
 version_flag_output = capture(cli_test, ["--version"])
-if capture_status() != 0 or version_flag_output != "0.7.7" + chr(10):
+if capture_status() != 0 or version_flag_output != "0.7.8" + chr(10):
     Error(TestFailure: "CLI --version output differs")
 end
 config_output = capture(cli_test, ["config", "examples/config/system.lsl"])
@@ -586,6 +586,8 @@ end
 # typed collections. Run them in short-lived processes so their globals do not
 # consume the shared aggregate's object-table budget during later BigInt stress.
 boundary_tests = [
+    "random_conformance",
+    "random_thread_conformance",
     "bytearray_slice_conformance",
     "dynamic_builtin_boundary_conformance",
     "dynamic_collection_boundary_conformance",
@@ -612,6 +614,10 @@ if mode == "fast":
     print "pure LSL fast tests passed"
     exit(0)
 end
+
+extensions_test = test_path("language-extensions-negative")
+call require_success(run(compiler, ["tests/compiler/language_extensions_negative.lsl", extensions_test]), "compile language extension diagnostics")
+call require_output(extensions_test, [compiler, test_root], "tests/compiler/language_extensions_negative.out", "language extension diagnostics differ")
 
 json_fuzz_test = test_path("json-fuzz-test")
 gc_stress_test = test_path("gc-stress-test")

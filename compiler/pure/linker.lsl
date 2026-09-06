@@ -34,7 +34,7 @@ function module_prefix(index):
 end
 
 function builtin_module(name):
-    builtins = "|ai|bigint|config|configure|css|cuda|display|env|fd|gfx|http|httpserver|input|json|lconf|lux|luxos|math|native|os|plugin|process|sandbox|system|tensor|time|tui|ui|unixsock|wayland|x11|"
+    builtins = "|_random_hash|ai|bigint|config|configure|css|cuda|display|env|fd|gfx|http|httpserver|input|json|lconf|lux|luxos|math|native|os|plugin|process|random|sandbox|system|tensor|time|tui|ui|unixsock|wayland|x11|"
     return "|" + String(name) + "|" in builtins
 end
 
@@ -174,7 +174,10 @@ function annotate_expression(expression, path):
     end
     expression["path"] = path
     kind = expression["kind"]
-    if kind == "member":
+    if kind == "comprehension":
+        call annotate_statements(expression["body"], path)
+        call annotate_expression(expression["result"], path)
+    elif kind == "member":
         call annotate_expression(expression["target"], path)
     elif kind == "call":
         call annotate_expression(expression["target"], path)
@@ -316,7 +319,10 @@ function validate_safe_expression(expression, trusted, unsafe_context, sandbox_m
         return None
     end
     kind = expression["kind"]
-    if kind == "name":
+    if kind == "comprehension":
+        call mark_trusted(expression["body"], trusted)
+        call validate_safe_statements(expression["body"], unsafe_context, sandbox_mode)
+    elif kind == "name":
         name = expression["name"]
         if not trusted and unsafe_name(name) and (not unsafe_context or sandbox_mode):
             call unsafe_failure(expression, name, sandbox_mode)
@@ -411,7 +417,9 @@ function transform_expression(expression, own_functions, imported_names, namespa
         return None
     end
     kind = expression["kind"]
-    if kind == "name":
+    if kind == "comprehension":
+        call transform_statements(expression["body"], own_functions, imported_names, namespaces)
+    elif kind == "name":
         name = expression["name"]
         if name in imported_names:
             expression["name"] = imported_names[name]

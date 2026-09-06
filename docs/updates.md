@@ -77,8 +77,8 @@ Při násilném ukončení může zůstat scratch nebo neaktivní generace na di
 
 Rollback do staršího vydání bez self-updateru obnoví i jeho staré CLI. Další
 obnova pak vyžaduje novější updater nebo ruční instalaci ověřeného vydání.
-Tento klient sám nepřepisuje publikované archivy ani manifesty; bude součástí
-příštího zveřejněného buildu.
+Tento klient sám nepřepisuje publikované archivy ani manifesty; je součástí
+vydání 0.7.8 a novějších.
 
 ## Systémové nástroje a testy
 
@@ -99,6 +99,8 @@ Volitelný integrační test se skutečným veřejným archivem:
 ```text
 ./compiler/pure/lslc-direct tests/compiler/update_release_integration.lsl /tmp/update-release-test
 /tmp/update-release-test /absolute/path/lsl-0.7.7-linux-x86_64.tar.gz
+# Pro nové vydání lze přidat cesty k jeho veřejnému manifestu a podpisu:
+/tmp/update-release-test /absolute/path/lsl-0.7.8-linux-x86_64.tar.gz /path/stable.json /path/stable.json.sig
 ```
 
 Test vytvoří izolovaný privátní prefix, ověří podpis i archiv, provede
@@ -109,6 +111,7 @@ Nezasahuje do skutečné uživatelské ani systémové instalace.
 HTTPS přenos a upgrade. Používá testovací frontend
 `tests/compiler/update_cli_fixture.lsl`, který pouze hlásí starou verzi 0.7.6;
 updater, podpis, archiv i installer jsou skutečné. Test očekává veřejnou
-stabilní 0.7.7 a argumenty: bezpečný rodičovský adresář pro dočasný testovací
+stabilní 0.7.8 a argumenty: bezpečný rodičovský adresář pro dočasný testovací
 HOME (ne pod world-writable `/tmp`), přeložený testovací frontend a cestu
-k `lsl-install`. Nevytváří ani nepodepisuje produkční release.
+k `lsl-install`; volitelný čtvrtý argument změní očekávanou verzi.
+Nevytváří ani nepodepisuje produkční release.

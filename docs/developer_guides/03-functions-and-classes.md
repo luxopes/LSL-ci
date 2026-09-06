@@ -51,7 +51,8 @@ Co znamenají jednotlivé části:
 
 ### Parametry — vstupní hodnoty
 
-Parametry jsou povinné a předávají se v pořadí, v jakém byly zapsány.
+Parametry bez výchozí hodnoty jsou povinné. Poziční argumenty se předávají
+v pořadí, v jakém byly parametry zapsány.
 První hodnota v závorkách při volání jde do prvního parametru, druhá do
 druhého atd.:
 
@@ -66,6 +67,28 @@ call pozdrav("Eva", 25)     # Ahoj Eva, je ti 25 let.
 
 - Při volání `pozdrav("Karel", 30)` se do `jmeno` dosadí `"Karel"` a
   do `vek` se dosadí `30`.
+
+### Výchozí a pojmenované argumenty (0.7.8)
+
+```lsl
+function pozdrav(jmeno, pozdrav="Ahoj"):
+    return pozdrav + " " + jmeno
+end
+print pozdrav("Eva")
+print pozdrav(pozdrav="Dobrý den", jmeno="Karel")
+```
+
+Default je číselný/textový literál, Bool nebo None; seznamy, slovníky ani
+volání funkcí jako default nejsou podporovány. Povinné parametry musí být
+před volitelnými a poziční argumenty před pojmenovanými. Compiler odmítne
+neznámá jména, duplicity, chybějící argumenty i více hodnot jednoho parametru.
+Stejné pravidlo platí pro metody a konstruktory včetně `origin.method`.
+
+Keyword argumenty builtinů a nepřímých Function volání, *args/**kwargs a
+keyword-only parametry zatím nejsou podporovány. Funkci s defaulty nelze
+uložit jako Function hodnotu; pro callback použijte wrapper bez defaultů.
+Pořadí vedlejších efektů v argumentech není Python kontrakt: důležité
+operace vyhodnoťte do proměnných před voláním.
 
 ### Návratová hodnota — co funkce vrací
 

@@ -1,17 +1,21 @@
 # LSL — Vývojářské příručky
 
-> **LSL 0.7.7 — persistentní CUDA, device buffery a GPU tenzory.**
+> **LSL 0.7.8 — random, comprehensions a podepsané aktualizace.**
 > [Historie verzí](/releases/) · [Manuál 0.5](/releases/0.5/) ·
 > [Manuál 0.6](/releases/0.6/) · [Manuál 0.6.5](/releases/0.6.5/) ·
 > [Changelog](CHANGELOG.md)
 > [Stáhnout binárky nebo zdrojový kód](index.html#downloads).
 
-Podrobné průvodce LSL (Lux Simple Lang) 0.7.7. Každá kapitola
+Podrobné průvodce LSL (Lux Simple Lang) 0.7.8. Každá kapitola
 vysvětluje jednu oblast od základů — text předpokládá, že s programováním
 teprve začínáte. Všechny konstrukty jsou popsány srozumitelně: co dělají,
 k čemu slouží, jak se zapisují a jak fungují.
 
 ## Obsah
+
+Nově: [Random — náhodná čísla a výběry](16-random.md),
+list/dict comprehensions v kapitole [Kolekce](04-collections.md) a
+výchozí/pojmenované argumenty v kapitole [Funkce](03-functions-and-classes.md).
 
 1. **[Začínáme s LSL](01-getting-started.md)**
    Co je programování, první program, terminál, proměnné, vstup/výstup,
@@ -71,6 +75,9 @@ k čemu slouží, jak se zapisují a jak fungují.
 15. **[CUDA a GPU tenzory](15-cuda.md)**
     Persistentní sessions, Float64 buffery, DeviceTensor, CPU fallback,
     životnost prostředků, protokol a hardwarové testy.
+
+16. **[Random](16-random.md)**
+    Reprodukovatelné seedy, MT19937, SystemRandom, kolekce a rozdělení.
 
 ## Referenční příručka
 

@@ -181,9 +181,21 @@ call motor(10)
 result = motor(10)
 ```
 
-`call` zahodí návratovou hodnotu; běžné volání ji lze použít ve výrazu. Parametry jsou povinné a předávají se pozičně. `return` bez hodnoty vrátí `None`. Funkce čtou globální scope, zápis je lokální pro aktuální volání. Funkce jsou first-class hodnoty: lze je uložit, vrátit a předat jako callback (`type(callback)` je `Function`). Lexikální closures a keyword arguments nejsou součástí syntaxe 0.6.
+`call` zahodí návratovou hodnotu; běžné volání ji lze použít ve výrazu.
+`return` bez hodnoty vrátí `None`. Funkce čtou globální scope, zápis je
+lokální pro aktuální volání. Funkce bez defaultů jsou first-class hodnoty:
+lze je uložit, vrátit a předat jako callback (`type(callback)` je `Function`).
+Lexikální closures nejsou podporovány.
 
-Pořadí vyhodnocení více argumentů není v 0.6 součástí veřejného kontraktu; kód nesmí záviset na pořadí jejich vedlejších efektů. Compiler smí neunikající přímou funkci specializovat podle stabilně odvozených typů argumentů. First-class callback a dynamická introspekční hranice vždy zachovávají obecný tagged ABI.
+Od 0.7.8 lze deklarovat `function f(a, b=2)` a volat `f(1)` nebo
+`f(b=4, a=1)`. Default musí být immutable literál: číslo (i se znaménkem),
+String, Bool nebo None. Povinné parametry předcházejí volitelným;
+poziční argumenty předcházejí pojmenovaným. Chybějící, neznámé a duplicitní
+argumenty compiler odmítne. Platí také pro metody, konstruktory a origin.
+Builtin keyword volání, *args/**kwargs, keyword-only parametry a
+first-class Function hodnoty s defaulty zatím nejsou podporovány.
+
+Pořadí vyhodnocení více argumentů není součástí veřejného kontraktu; kód nesmí záviset na pořadí jejich vedlejších efektů. Compiler smí neunikající přímou funkci specializovat podle stabilně odvozených typů argumentů. First-class callback a dynamická introspekční hranice vždy zachovávají obecný tagged ABI.
 
 ## Třídy a instance
 
@@ -323,6 +335,32 @@ del(object.member)
 ```
 
 Mazat lze proměnnou, měnitelný index nebo člen LSL instance/třídy.
+
+## List/dict comprehensions (0.7.8)
+
+Comprehension vytváří kolekci přímo z výrazu, smyčky a volitelných filtrů:
+
+```lsl
+squares = [x*x for x in rang(10) if x % 2 == 0]
+mapping = {key:value*2 for key,value in [("a", 2), ("b", 3)]}
+pairs = [(x,y) for x in rang(3) for y in rang(x) if y > 0]
+matrix = [[x*y for y in rang(3)] for x in rang(2)]
+fixed = Tuple([x for x in rang(3)])
+```
+
+Klauzule se vykonávají zleva doprava jako vnořené smyčky; filtr ovlivní
+následující klauzule. Vnější iterable se vyhodnotí právě jednou v okolním
+scope. Proměnné comprehensions zůstávají lokální a nepřepíší stejně
+pojmenované okolní proměnné. U Dictionary se klíč vyhodnotí před hodnotou,
+pozdější duplicitní klíč nahradí předchozí hodnotu.
+
+Podporováno je vnoření, více for/if klauzulí a ploché rozbalení dvojic
+nebo jiných pevných počtů prvků, např. `for (a,b) in rows`. Nesprávná
+délka rozbalovaného prvku vyvolá chybu. Maximum je 64 klauzulí.
+Výsledky jsou eager List/Dictionary; nejde o kompresi dat gzip/zlib.
+LSL 0.7.8 nemá typ Set ani lazy generátory. Tuple vytvořte převodem
+`Tuple([...])`; syntaxe `(x for x in data)` není podporována.
+
 
 ## Moduly
 

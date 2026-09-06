@@ -12,7 +12,7 @@ function state_with_interpolation(path, source, interpolation_depth):
     # needed when producing a parser diagnostic.
     # Slots 4/5 bound recursive unary/block parsing. Slots 6/7 bound the token
     # complexity of one expression, and slot 8 follows nested Lux Strings.
-    return [lexer.tokenize(path, source), 0, path, source, 0, 0, 0, 0, interpolation_depth]
+    return [lexer.tokenize(path, source), 0, path, source, 0, 0, 0, 0, interpolation_depth, [0]]
 end
 
 function current(parser):
@@ -102,17 +102,34 @@ end
 
 function parse_arguments(parser):
     arguments = []
+    names = []
+    named = False
     if match(parser, ")"):
-        return arguments
+        return [arguments, names]
     end
     loop:
+        name = ""
+        if check_kind(parser, "name") and parser[0][parser[1] + 1]["value"] == "=":
+            name = advance(parser)["value"]
+            call advance(parser)
+            named = True
+            if name in names:
+                call fail_at(parser, previous(parser), "E1240", "duplicate keyword argument", "pass each keyword once")
+            end
+        elif named:
+            call fail_at(parser, current(parser), "E1240", "positional argument after keyword argument", "put positional arguments first")
+        end
+        names.append(name)
         arguments.append(parse_expression(parser))
         if match(parser, ")"):
             break
         end
         call expect(parser, ",", "E1101", "expected comma between arguments")
     end
-    return arguments
+    if not named:
+        names = []
+    end
+    return [arguments, names]
 end
 
 function interpolation_literal(token, value):
@@ -172,6 +189,7 @@ function interpolation_value(parser, value, token):
                 call diagnostics.fail(path, token["line"], token["column"], max(1, token["end_column"] - token["column"]), value, "E1117", "Lux String interpolation nesting exceeds 64 levels", "split the expression into intermediate values")
             end
             expression_parser = state_with_interpolation(path, expression_source, parser[8] + 1)
+            expression_parser[9] = parser[9]
             expression = parse_expression(expression_parser)
             if not check_kind(expression_parser, "eof"):
                 call fail_at(expression_parser, current(expression_parser), "E1114", "unexpected token in Lux String interpolation", "use one expression between the braces")
@@ -211,8 +229,180 @@ function interpolation_value(parser, value, token):
     return parts[0]
 end
 
+function synthetic_name(token, name):
+    result = node("name", token)
+    result["name"] = name
+    return result
+end
+
+function synthetic_assign(token, target, value):
+    result = node("assign", token)
+    result["has_comprehension"] = True
+    result["target"] = target
+    result["value"] = value
+    result["operator"] = "="
+    return result
+end
+
+function rename_comprehension(value, names):
+    if type(value) == "List":
+        for item in value:
+            call rename_comprehension(item, names)
+        end
+    elif type(value) == "Dictionary":
+        if value.get("kind", "") == "name":
+            if value["name"] in names:
+                value["name"] = names[value["name"]]
+            end
+        else:
+            for key in value.keys():
+                call rename_comprehension(value[key], names)
+            end
+        end
+    end
+end
+
+function parse_comprehension(parser, token, collection, key, value):
+    serial = parser[9][0]
+    parser[9][0] += 1
+    prefix = "@comprehension@" + parser[2] + "@" + String(serial) + "@"
+    bindings = {}
+    clauses = []
+    while check(parser, "for") or check(parser, "if"):
+        if len(clauses) >= 64:
+            call fail_at(parser, current(parser), "E1242", "too many comprehension clauses", "use at most 64 for/if clauses")
+        end
+        opening = advance(parser)
+        if opening["value"] == "if":
+            clauses.append({"kind": "if", "condition": parse_expression(parser)})
+        else:
+            targets = []
+            parenthesized = match(parser, "(")
+            loop:
+                target = expect_kind(parser, "name", "E1242", "expected comprehension variable")
+                targets.append(target["value"])
+                bindings[target["value"]] = prefix + target["value"]
+                if not match(parser, ","):
+                    break
+                end
+            end
+            if parenthesized:
+                call expect(parser, ")", "E1242", "unclosed comprehension target")
+            end
+            call expect(parser, "in", "E1242", "expected in after comprehension target")
+            clauses.append({"kind": "for", "targets": targets, "iterable": parse_expression(parser)})
+        end
+    end
+    closing = "]"
+    if collection == "dictionary":
+        closing = "}"
+    end
+    call expect(parser, closing, "E1242", "unclosed comprehension")
+    # The outermost iterable is evaluated in the enclosing scope. Every other
+    # reference to a bound name uses an unspellable local; no save/restore is
+    # necessary even when evaluation raises an exception.
+    call rename_comprehension(value, bindings)
+    call rename_comprehension(key, bindings)
+    for index in rang(1, len(clauses)):
+        if clauses[index]["kind"] == "for":
+            call rename_comprehension(clauses[index]["iterable"], bindings)
+        else:
+            call rename_comprehension(clauses[index]["condition"], bindings)
+        end
+    end
+    result_name = synthetic_name(token, prefix + "result")
+    empty = node(collection, token)
+    if collection == "dictionary":
+        empty["entries"] = []
+        key_name = synthetic_name(token, prefix + "key")
+        target = node("index", token)
+        target["target"] = result_name
+        target["index"] = key_name
+        body = [synthetic_assign(token, key_name, key), synthetic_assign(token, target, value)]
+    else:
+        empty["items"] = []
+        target = node("member", token)
+        target["target"] = result_name
+        target["name"] = "append"
+        append = node("call", token)
+        append["target"] = target
+        append["arguments"] = [value]
+        statement = node("expression", token)
+        statement["has_comprehension"] = True
+        statement["expression"] = append
+        body = [statement]
+    end
+    index = len(clauses) - 1
+    while index >= 0:
+        clause = clauses[index]
+        wrapper = node(clause["kind"], token)
+        wrapper["has_comprehension"] = True
+        if clause["kind"] == "if":
+            wrapper["branches"] = [[clause["condition"], body]]
+            wrapper["otherwise"] = []
+        else:
+            targets = clause["targets"]
+            # Each for owns its counter even when a later clause rebinds the
+            # same exposed name. This also keeps boxed collection elements
+            # separate from raw range counters in type inference.
+            loop_name = prefix + "item" + String(index)
+            if len(targets) > 1:
+                loop_name = prefix + "unpack" + String(index)
+                unpacked = []
+                # Indexing alone would silently accept tuples of wrong length.
+                length_call = node("call", token)
+                length_call["target"] = synthetic_name(token, "len")
+                length_call["arguments"] = [synthetic_name(token, loop_name)]
+                expected = node("literal", token)
+                expected["literal_kind"] = "number"
+                expected["value"] = String(len(targets))
+                expected["integer_value"] = len(targets)
+                guard = node("if", token)
+                failure = node("error", token)
+                failure["error_kind"] = "ValueError"
+                failure["message"] = interpolation_literal(token, "comprehension unpacking length mismatch")
+                condition = node("compare", token)
+                condition["operators"] = ["!="]
+                condition["operands"] = [length_call, expected]
+                guard["branches"] = [[condition, [failure]]]
+                guard["otherwise"] = []
+                unpacked.append(guard)
+                for target_index in rang(len(targets)):
+                    position = node("literal", token)
+                    position["literal_kind"] = "number"
+                    position["value"] = String(target_index)
+                    position["integer_value"] = target_index
+                    item = node("index", token)
+                    item["target"] = synthetic_name(token, loop_name)
+                    item["index"] = position
+                    unpacked.append(synthetic_assign(token, synthetic_name(token, bindings[targets[target_index]]), item))
+                end
+                unpacked.extend(body)
+                body = unpacked
+            else:
+                assigned = [synthetic_assign(token, synthetic_name(token, bindings[targets[0]]), synthetic_name(token, loop_name))]
+                assigned.extend(body)
+                body = assigned
+            end
+            wrapper["name"] = loop_name
+            wrapper["iterable"] = clause["iterable"]
+            wrapper["body"] = body
+        end
+        body = [wrapper]
+        index -= 1
+    end
+    result = node("comprehension", token)
+    result["collection_kind"] = collection
+    complete_body = [synthetic_assign(token, result_name, empty)]
+    complete_body.extend(body)
+    result["body"] = complete_body
+    result["result"] = result_name
+    return finish_node(result, parser)
+end
+
 function parse_primary(parser):
     token = advance(parser)
+    comprehension = None
     kind = token["kind"]
     value = token["value"]
     if kind == "lux_string":
@@ -269,6 +459,10 @@ function parse_primary(parser):
         if not match(parser, "]"):
             loop:
                 items.append(parse_expression(parser))
+                if len(items) == 1 and check(parser, "for"):
+                    comprehension = parse_comprehension(parser, token, "list", None, items[0])
+                    break
+                end
                 if match(parser, "]"):
                     break
                 end
@@ -277,6 +471,9 @@ function parse_primary(parser):
         end
         result = node("list", token)
         result["items"] = items
+        if comprehension != None:
+            result = comprehension
+        end
     elif value == "{":
         entries = []
         if not match(parser, "}"):
@@ -284,6 +481,10 @@ function parse_primary(parser):
                 key = parse_expression(parser)
                 call expect(parser, ":", "E1105", "expected colon in Dictionary literal")
                 value_node = parse_expression(parser)
+                if len(entries) == 0 and check(parser, "for"):
+                    comprehension = parse_comprehension(parser, token, "dictionary", key, value_node)
+                    break
+                end
                 entries.append([key, value_node])
                 if match(parser, "}"):
                     break
@@ -297,6 +498,9 @@ function parse_primary(parser):
         end
         result = node("dictionary", token)
         result["entries"] = entries
+        if comprehension != None:
+            result = comprehension
+        end
     else:
         call fail_at(parser, token, "E1100", "expected an expression", "use a literal, name, collection, or function call")
         result = node("invalid", token)
@@ -306,7 +510,11 @@ function parse_primary(parser):
         if match(parser, "("):
             call_node = node("call", token)
             call_node["target"] = result
-            call_node["arguments"] = parse_arguments(parser)
+            parsed_arguments = parse_arguments(parser)
+            call_node["arguments"] = parsed_arguments[0]
+            if len(parsed_arguments[1]) > 0:
+                call_node["argument_names"] = parsed_arguments[1]
+            end
             result = finish_node(call_node, parser)
         elif match(parser, "["):
             index_node = node("index", token)
@@ -574,10 +782,30 @@ function parse_function(parser, opening):
     name = expect_kind(parser, "name", "E1203", "expected function name")
     call expect(parser, "(", "E1204", "expected parameter list")
     parameters = []
+    defaults = []
+    has_default = False
     if not match(parser, ")"):
         loop:
             parameter = expect_kind(parser, "name", "E1205", "expected parameter name")
+            if parameter["value"] in parameters:
+                call fail_at(parser, parameter, "E1241", "duplicate parameter name", "use distinct parameter names")
+            end
             parameters.append(parameter["value"])
+            default_value = None
+            if match(parser, "="):
+                has_default = True
+                default_value = parse_expression(parser)
+                constant = default_value
+                if constant["kind"] == "unary" and (constant["operator"] == "-" or constant["operator"] == "+"):
+                    constant = constant["operand"]
+                end
+                if constant["kind"] != "literal":
+                    call fail_at(parser, parameter, "E1241", "default argument must be an immutable literal", "use a number, String, Bool or None")
+                end
+            elif has_default:
+                call fail_at(parser, parameter, "E1241", "required parameter after a default", "put required parameters first")
+            end
+            defaults.append(default_value)
             if len(parameters) > 256:
                 call fail_at(parser, parameter, "E1233", "function has more than 256 parameters", "split the interface into structured values")
             end
@@ -594,6 +822,9 @@ function parse_function(parser, opening):
     result = node("function", opening)
     result["name"] = name["value"]
     result["parameters"] = parameters
+    if has_default:
+        result["defaults"] = defaults
+    end
     result["body"] = body
     return finish_node(result, parser)
 end
@@ -705,6 +936,15 @@ function parse_class(parser, opening):
 end
 
 function parse_statement(parser):
+    before = parser[9][0]
+    result = parse_statement_inner(parser)
+    if parser[9][0] != before:
+        result["has_comprehension"] = True
+    end
+    return result
+end
+
+function parse_statement_inner(parser):
     opening = current(parser)
     if match(parser, "function"):
         return parse_function(parser, opening)

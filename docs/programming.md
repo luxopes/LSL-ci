@@ -167,6 +167,32 @@ end
 `rang` má exkluzivní pravou mez. Stop i step výraz se vyhodnotí jednou před
 smyčkou. `break` a `continue` fungují ve všech druzích smyček.
 
+## List/dict comprehensions (0.7.8)
+
+Comprehension vytváří kolekci přímo z výrazu, smyčky a volitelných filtrů:
+
+```lsl
+squares = [x*x for x in rang(10) if x % 2 == 0]
+mapping = {key:value*2 for key,value in [("a", 2), ("b", 3)]}
+pairs = [(x,y) for x in rang(3) for y in rang(x) if y > 0]
+matrix = [[x*y for y in rang(3)] for x in rang(2)]
+fixed = Tuple([x for x in rang(3)])
+```
+
+Klauzule se vykonávají zleva doprava jako vnořené smyčky; filtr ovlivní
+následující klauzule. Vnější iterable se vyhodnotí právě jednou v okolním
+scope. Proměnné comprehensions zůstávají lokální a nepřepíší stejně
+pojmenované okolní proměnné. U Dictionary se klíč vyhodnotí před hodnotou,
+pozdější duplicitní klíč nahradí předchozí hodnotu.
+
+Podporováno je vnoření, více for/if klauzulí a ploché rozbalení dvojic
+nebo jiných pevných počtů prvků, např. `for (a,b) in rows`. Nesprávná
+délka rozbalovaného prvku vyvolá chybu. Maximum je 64 klauzulí.
+Výsledky jsou eager List/Dictionary; nejde o kompresi dat gzip/zlib.
+LSL 0.7.8 nemá typ Set ani lazy generátory. Tuple vytvořte převodem
+`Tuple([...])`; syntaxe `(x for x in data)` není podporována.
+
+
 ## Funkce a callbacks
 
 ```lsl

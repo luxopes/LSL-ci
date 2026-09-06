@@ -1,6 +1,21 @@
 # Pure-LSL migration
 
-## Aktuální vydání 0.7.7 — 5. 9. 2026
+## Aktuální vydání 0.7.8 — 6. 9. 2026
+
+Pure-LSL `random`: MT19937 a SHA-512 seedování, Random/SystemRandom,
+stav, vážené výběry, shuffle/sample, BigInt a běžná rozdělení. Přidány
+list/dict comprehensions s hygienickými proměnnými, vnořením a filtry,
+immutable default argumenty a pojmenovaná volání. Nové negativní testy
+kontrolují i safe/unsafe hranice uvnitř comprehensions. Detaily a limity
+jsou v `docs/random.md` a `docs/release-0.7.8.md`.
+
+Vydání zahrnuje dříve dokončený podepsaný self-updater a produkční registry.
+
+Stage 2/3 jsou bitově shodné; všechny nástroje sestaveny sériově pod 2 GiB.
+Compiler: `00743c98334cc8014f709a4204fe556e69ecc61450441a4f2ed64deaa66bf9bc`.
+CLI: `a810cb486e6041e1ad214f6943129b1509e2af62bdb17a72aa0e00dd603b9149`.
+
+## Vydání 0.7.7 — 5. 9. 2026
 
 CUDA doplněna o persistentní session ABI 2, přímý binární Unix socket,
 device buffery, Float64 elementwise operace a transpozici, DeviceTensor a

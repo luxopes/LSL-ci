@@ -42,8 +42,34 @@ function label_name(generator, prefix):
     return prefix + "_" + String(counter)
 end
 
+function collect_expression_variables(value, variables):
+    if type(value) == "List":
+        for item in value:
+            call collect_expression_variables(item, variables)
+        end
+    elif type(value) == "Dictionary":
+        if value.get("kind", "") == "comprehension":
+            call collect_variables(value["body"], variables)
+            return
+        end
+        for field in ["target", "value", "condition", "expression", "iterable", "left", "right", "operand", "index", "start", "stop", "step", "message", "parent", "arguments", "items", "operands", "expressions", "entries"]:
+            if field in value:
+                call collect_expression_variables(value[field], variables)
+            end
+        end
+        if "branches" in value:
+            for branch in value["branches"]:
+                call collect_expression_variables(branch[0], variables)
+            end
+        end
+    end
+end
+
 function collect_variables(statements, variables):
     for statement in statements:
+        if statement.get("has_comprehension", False):
+            call collect_expression_variables(statement, variables)
+        end
         kind = statement["kind"]
         if kind == "class":
             name = statement["name"]
@@ -127,6 +153,12 @@ function infer_expression_type(syntax, types, function_returns):
             return "Function"
         end
         return "Any"
+    elif kind == "comprehension":
+        call collect_types(syntax["body"], types, function_returns)
+        if syntax["collection_kind"] == "dictionary":
+            return "Dictionary"
+        end
+        return "List"
     elif kind == "list":
         return "List"
     elif kind == "tuple":
@@ -1164,6 +1196,9 @@ function scan_local_uses(node, counts, excluded, weight, ranges, clock):
     if "body" in node:
         call scan_local_uses(node["body"], counts, excluded, body_weight, ranges, clock)
     end
+    if kind == "comprehension":
+        call scan_local_uses(node["result"], counts, excluded, weight, ranges, clock)
+    end
     if "branches" in node:
         for branch in node["branches"]:
             call scan_local_uses(branch[0], counts, excluded, weight, ranges, clock)
@@ -1975,6 +2010,46 @@ function emit_bitwise(generator, syntax):
     end
 end
 
+function bind_arguments(generator, syntax, declaration, skip):
+    parameters = declaration["parameters"]
+    supplied = syntax["arguments"]
+    names = syntax.get("argument_names", [])
+    if len(names) == 0 and "defaults" not in declaration:
+        return supplied
+    end
+    values = []
+    for index in rang(skip, len(parameters)):
+        values.append(None)
+    end
+    for index in rang(len(supplied)):
+        position = index
+        if len(names) > 0 and names[index] != "":
+            position = -1
+            for parameter_index in rang(skip, len(parameters)):
+                if parameters[parameter_index] == names[index]:
+                    position = parameter_index - skip
+                end
+            end
+        end
+        if position < 0 or position >= len(values):
+            call unsupported(generator["path"], generator["lines"], syntax, "unknown keyword or too many arguments: " + String(names) + " for " + String(parameters), "use the function's declared parameters")
+        elif values[position] != None:
+            call unsupported(generator["path"], generator["lines"], syntax, "multiple values for one argument", "pass each parameter only once")
+        end
+        values[position] = supplied[index]
+    end
+    defaults = declaration.get("defaults", [])
+    for index in rang(len(values)):
+        if values[index] == None:
+            if len(defaults) == 0 or defaults[index + skip] == None:
+                call unsupported(generator["path"], generator["lines"], syntax, "missing required argument: " + parameters[index + skip], "supply the required argument")
+            end
+            values[index] = defaults[index + skip]
+        end
+    end
+    return values
+end
+
 function emit_expression(generator, syntax):
     output = generator["builder"]
     kind = syntax["kind"]
@@ -2043,10 +2118,17 @@ function emit_expression(generator, syntax):
         if name in generator["variables"] or name in generator["global_variables"]:
             call emit_load_local(generator, 0, name)
         elif name in generator["functions"]:
+            if "defaults" in generator["functions"][name]:
+                call unsupported(generator["path"], generator["lines"], syntax, "functions with defaults cannot be used as Function values yet", "wrap the call in a function with explicit parameters")
+            end
             call assembler.relative(output, x86_64.lea_rip_prefix(0), "function_" + name)
         else:
             call unsupported(generator["path"], generator["lines"], syntax, "unknown native variable: " + name, "assign the variable before reading it")
         end
+    elif kind == "comprehension":
+        call collect_types(syntax["body"], generator["types"], generator["function_returns"])
+        call emit_statements(generator, syntax["body"], "", "", "")
+        call emit_expression(generator, syntax["result"])
     elif kind == "real_array":
         array_values = {"kind": "list", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "items": syntax["items"]}
         array_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_real_array"}, "arguments": [array_values]}
@@ -2698,6 +2780,9 @@ function emit_expression(generator, syntax):
     elif kind == "call":
         target = syntax["target"]
         if target["kind"] == "name":
+            if "argument_names" in syntax and target["name"] not in generator["functions"] and target["name"] not in generator["classes"]:
+                call unsupported(generator["path"], generator["lines"], syntax, "keyword arguments require a declared function or class", "use positional arguments for builtins and Function values")
+            end
             builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "Dictionary": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sqrt": 1, "sum": 1, "float_zeros": 1, "float_fill": 2, "float_sum": 1, "float_dot": 2, "float_axpy": 3, "float_matmul": 5, "type": 1, "exit": 1, "input": 1, "readfile": 1, "readbytes": 1, "__lsl_getenv": 1, "mkdir": 1, "unlink": 1, "rmdir": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "help": 0, "run": 2, "run_clean": 2, "capture": 2, "capture_clean": 2, "capture_stream": 3, "capture_stream_clean": 3, "capture_input": 3, "capture_input_clean": 3, "capture_input_stream": 4, "capture_input_stream_clean": 4, "capture_status": 0, "capture_stderr": 0, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2, "native_open": 1, "native_size": 1, "native_u64": 2, "native_name_equal": 3, "native_function": 2, "native_call": 2, "native_close": 1, "__lsl_test_small_tables": 0, "__lsl_test_fd_fault": 1, "__lsl_object_table_mask": 0, "__lsl_intern_table_mask": 0, "__lsl_wall_time": 0, "__lsl_sleep": 1, "__lsl_isatty": 1, "__lsl_stdin_eof": 0, "__lsl_run": 2, "__lsl_run_clean": 2, "__lsl_capture": 2, "__lsl_capture_clean": 2, "__lsl_fd_open": 2, "__lsl_fd_read": 3, "__lsl_fd_write": 3, "__lsl_fd_seek": 2, "__lsl_fd_close": 1, "__lsl_fd_socket": 2, "__lsl_fd_connect": 3, "__lsl_checked_index": 1, "__lsl_int_zeros": 1, "__lsl_byte_zeros": 1, "__lsl_raster_pack": 5, "__lsl_raster_copy": 5, "__lsl_raster_fill": 4, "__lsl_fd_ioctl": 3, "__lsl_fd_mmap": 3, "__lsl_mem_pack": 5, "__lsl_data_address": 1, "__lsl_syscall": 5, "__lsl_mem_unpack": 4, "__lsl_text_from_bytes": 3, "__lsl_byte_copy": 5, "__lsl_text_byte": 2, "__lsl_text_byte_length": 1, "__lsl_floatarray_bytes": 1, "__lsl_floatarray_from_bytes": 1, "atomic_add": 3, "atomic_xchg": 3, "atomic_cas": 4, "atomic_pause": 0, "thread_spawn": 1, "thread_join": 1, "cpu_count": 0, "popcount": 1, "trailing_zeros": 1}
             builtin_arity["__lsl_mkdir_private"] = 1
             builtin_arity["__lsl_fd_snapshot"] = 3
@@ -3929,7 +4014,7 @@ function emit_expression(generator, syntax):
                 call assembler.label(output, done_label)
                 return
             elif target["name"] == "help":
-                call emit_static_write(generator, "Lux Simple Lang (LSL) 0.7.7" + chr(10) + "functions: print printl input for loop safe unsafe if elif else try class ctype function type del len abs sqrt help" + chr(10) + "types: Bool Int Float String List Tuple RealArray IntArray FloatArray ByteArray Dictionary" + chr(10) + "modules: os time json process config ai tensor cuda native math bigint httpserver sandbox" + chr(10) + "docs: see README.md and docs/" + chr(10))
+                call emit_static_write(generator, "Lux Simple Lang (LSL) 0.7.8" + chr(10) + "functions: print printl input for loop safe unsafe if elif else try class ctype function type del len abs sqrt help" + chr(10) + "types: Bool Int Float String List Tuple RealArray IntArray FloatArray ByteArray Dictionary" + chr(10) + "modules: os time json process config ai tensor cuda native math bigint random httpserver sandbox" + chr(10) + "docs: see README.md and docs/" + chr(10))
                 call assembler.emit(output, x86_64.mov_imm64(0, 0))
                 return
             elif target["name"] == "abs":
@@ -4009,10 +4094,18 @@ function emit_expression(generator, syntax):
                 origin_arguments.extend(syntax["arguments"])
                 origin_target = {"kind": "name", "name": origin_method_name, "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]}
                 origin_expression = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": origin_target, "arguments": origin_arguments}
+                if "argument_names" in syntax:
+                    origin_names = [""]
+                    origin_names.extend(syntax["argument_names"])
+                    origin_expression["argument_names"] = origin_names
+                end
                 call emit_expression(generator, origin_expression)
                 return
             end
             receiver_type = infer_expression_type(target["target"], generator["types"], generator["function_returns"])
+            if "argument_names" in syntax and not receiver_type.startswith("Class:") and not receiver_type.startswith("Instance:"):
+                call unsupported(generator["path"], generator["lines"], syntax, "builtin methods do not accept keyword arguments", "use positional arguments")
+            end
             if not receiver_type.startswith("Class:") and not receiver_type.startswith("Instance:") and not method_supported(receiver_type, target["name"]):
                 call unsupported(generator["path"], generator["lines"], syntax, "type " + receiver_type + " has no method " + target["name"], "use a method documented for " + receiver_type)
             end
@@ -4068,6 +4161,14 @@ function emit_expression(generator, syntax):
                 end
                 combined_arguments.extend(syntax["arguments"])
                 combined_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": native_method_name}, "arguments": combined_arguments}
+                if "argument_names" in syntax:
+                    combined_names = []
+                    if len(combined_arguments) > len(syntax["arguments"]):
+                        combined_names.append("")
+                    end
+                    combined_names.extend(syntax["argument_names"])
+                    combined_call["argument_names"] = combined_names
+                end
                 call emit_expression(generator, combined_call)
                 return
             elif (receiver_type == "IntArray" or receiver_type == "FloatArray" or receiver_type == "ByteArray") and target["name"] != "append" and target["name"] != "clear":
@@ -4254,8 +4355,12 @@ function emit_expression(generator, syntax):
             call assembler.relative(output, [232], "runtime_dict_new")
             call assembler.emit(output, x86_64.push(0))
             initializer_name = resolve_method_name(generator["classes"], generator["functions"], class_name, "init")
+            if initializer_name == "" and "argument_names" in syntax:
+                call unsupported(generator["path"], generator["lines"], syntax, "class without init does not accept keyword arguments", "declare an initializer or construct the class without arguments")
+            end
             if initializer_name != "":
                 initializer = generator["functions"][initializer_name]
+                arguments = bind_arguments(generator, syntax, initializer, 1)
                 if len(arguments) + 1 != len(initializer["parameters"]):
                     call unsupported(generator["path"], generator["lines"], syntax, "initializer argument count mismatch", "pass exactly " + String(len(initializer["parameters"]) - 1) + " arguments")
                 end
@@ -4305,11 +4410,14 @@ function emit_expression(generator, syntax):
         arguments = syntax["arguments"]
         public_callee = False
         if not indirect_call:
+            arguments = bind_arguments(generator, syntax, generator["functions"][target["name"]], 0)
             expected_arguments = len(generator["functions"][target["name"]]["parameters"])
             if len(arguments) != expected_arguments:
                 call unsupported(generator["path"], generator["lines"], syntax, "function argument count mismatch for " + target["name"], "pass exactly " + String(expected_arguments) + " arguments")
             end
             public_callee = not generator["functions"][target["name"]].get("internal_abi", False)
+        elif "argument_names" in syntax:
+            call unsupported(generator["path"], generator["lines"], syntax, "keyword arguments require a statically known function", "call the declared function or pass positional arguments")
         end
         index = len(arguments) - 1
         while index >= 0:
@@ -5079,6 +5187,9 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 continue
             end
             arguments = iterable["arguments"]
+            if "argument_names" in iterable:
+                call unsupported(generator["path"], generator["lines"], iterable, "rang does not accept keyword arguments", "use positional arguments")
+            end
             if len(arguments) < 1 or len(arguments) > 3:
                 call unsupported(generator["path"], generator["lines"], statement, "rang expects one to three arguments", "use rang(stop), rang(start, stop), or rang(start, stop, step)")
             end
@@ -5581,7 +5692,9 @@ function observe_expression_types(syntax, types, function_returns, functions, ob
         return
     end
     kind = syntax["kind"]
-    if kind == "name":
+    if kind == "comprehension":
+        call observe_statement_types(syntax["body"], types, function_returns, functions, observations, escaped)
+    elif kind == "name":
         name = syntax["name"]
         if name in functions:
             escaped[name] = True
@@ -5619,6 +5732,9 @@ function observe_expression_types(syntax, types, function_returns, functions, ob
         direct_name = ""
         if target["kind"] == "name" and target["name"] in functions:
             direct_name = target["name"]
+            if "argument_names" in syntax:
+                escaped[direct_name] = True
+            end
         else:
             call observe_expression_types(target, types, function_returns, functions, observations, escaped)
         end
@@ -5728,7 +5844,9 @@ function expression_blocks_specialization(syntax):
         return False
     end
     kind = syntax["kind"]
-    if kind == "call":
+    if kind == "comprehension":
+        return statements_block_specialization(syntax["body"])
+    elif kind == "call":
         target = syntax["target"]
         if target["kind"] == "name":
             name = target["name"]
@@ -5872,7 +5990,7 @@ function infer_function_parameters(program, functions, function_returns, global_
     result = empty_parameter_types(functions)
     blocked = {}
     for name in functions.keys():
-        blocked[name] = name.startswith("__lsl_") or statements_block_specialization(functions[name]["body"])
+        blocked[name] = name.startswith("__lsl_") or "defaults" in functions[name] or statements_block_specialization(functions[name]["body"])
     end
     iteration = 0
     phase = 0
