@@ -192,6 +192,112 @@ function __lsl_find(text, needle):
     return -1
 end
 
+# Embedded topic help: available in standalone ELF programs, without files/network.
+function __lsl_help_text(topic):
+    if type(topic) != "String":
+        Error(TypeError: "help topic must be a String")
+    end
+    if len(topic) > 128:
+        Error(ValueError: "help topic exceeds 128 characters")
+    end
+    topics = {
+        "help": "help() prints the topic index. help(\"TOPIC\") prints help for a command, keyword, builtin or module.\nTopics may be runtime String values. The return value is None.\nExamples: help(\"print\"), help(\"random\"), help(\"install\"). Full manual: lsl man.",
+        "install": "lsl install NAME\nDownload a per-user library from the configured HTTPS registry, verify SHA-256,\ncompile it without executing it, and install atomically under ~/.local/lib/lsl/stdlib.\nlsl install --config FILE  Install names from an LF-separated config file.\nlsl install --tui          Browse catalog; Space marks, i installs, y confirms.\nNo sudo is needed for per-user packages. LSL_REGISTRY overrides the registry.",
+        "list": "lsl list\nList installed source libraries with their scope (bundled/user) and path.\nThis command is offline and does not create installation directories.\nBundled libraries take priority over per-user libraries with the same name.",
+        "search": "lsl search [QUERY]\nSearch the registry catalog by name or description (case-insensitive).\nWithout QUERY, list all catalog packages. Results show version and installation status.\nExit status: 0 = match, 1 = no match or registry error, 2 = invalid arguments.\nAvailability is catalog metadata; install still verifies source integrity and compilation.",
+        "check": "lsl check NAME\nCheck whether a library file is installed (bundled or per-user).\nExit status: 0 = installed, 1 = missing/error, 2 = invalid arguments.\nOffline, no compilation or execution. Use lsl origin NAME to verify recorded provenance.",
+        "man": "lsl man [TOPIC]\nOpen the offline version of the web manual in a terminal browser.\nArrows/PgUp/PgDn scroll; Enter opens; / searches; n finds next; Esc returns; q exits.\nlsl man --plain [TOPIC] prints plain text (also used automatically for pipes).\nExamples: lsl man random; lsl man --plain reference.",
+        "update": "lsl update                     Update LSL itself from the signed stable channel.\nlsl update NAME                Update an installed per-user library.\nlsl update --check             Check for a new LSL version without installing.\nsudo /usr/local/bin/lsl update --system  Update the system installation.\nsudo /usr/local/bin/lsl update --system --rollback  Restore the previous version.\nEd25519 signature, version, platform, size and SHA-256 are verified before activation.\n--allow-downgrade is an explicit developer override.",
+        "origin": "lsl origin [NAME]\nWithout NAME print the active registry URL. With NAME verify the installed library\nagainst its recorded SHA-256 and print its name, origin, source URL and hash.",
+        "compile": "lsl compile [--unsafe] SOURCE OUTPUT\nCompile LSL source into a native Linux x86_64 ELF. The default is checked compilation.\n--unsafe explicitly enables the unsafe compiler mode. Compilation does not run the program.",
+        "config": "lsl config ENTRY\nEvaluate a validated LSL configuration graph and print its merged configuration.\nEvaluation runs with time and resource limits.",
+        "server": "lsl server [OPTIONS]\nServe static files: --dir ROOT --bind IPV4 --port PORT --once --max-requests N.\nFor HTTPS supply both --tls-cert FILE and --tls-key FILE (system nginx/OpenSSL).\nRun lsl server --help for defaults and all options.",
+        "sandbox": "lsl sandbox [OPTIONS] SOURCE [ARG...]\nCompile and run with capability and resource limits.\n--profile strict|server --timeout SECONDS --memory BYTES --read PATH --write PATH.\nRequires the system sandbox tools and a systemd user session. See lsl sandbox --help.",
+        "version": "lsl version\nPrint the installed LSL version, suitable for scripts. Equivalent: lsl --version.",
+        "print": "print VALUE [, VALUE...]\nPrint values separated by spaces and end with a newline.\nExample: print \"answer\", 42",
+        "printl": "printl \"text {EXPRESSION}\"\nPrint an interpolated Lux String and a newline. Equivalent: print l\"text {EXPRESSION}\".",
+        "input": "input(PROMPT) -> String\nRead one input line after displaying PROMPT.\nExample: name = input(\"Name: \")",
+        "function": "function NAME(PARAMETERS): ... end\nDeclare a function. return VALUE returns a result; omitted return yields None.\nImmutable default values and named arguments are supported for declared functions.",
+        "return": "return VALUE\nReturn a value from a function. A bare return returns None.",
+        "class": "class NAME(True): ... end\nDeclare a class. Define init(self, ...) as the constructor.\nclass Child(Parent) inherits methods; origin.method(...) invokes the parent.",
+        "ctype": "ctype Public | Private\nSelect class export visibility. Public is the default; Private prevents module export.",
+        "if": "if CONDITION: ... elif CONDITION: ... else: ... end\nConditional execution; elif and else are optional.",
+        "for": "for ITEM in ITERABLE: ... end\nIterate over a collection. Comprehensions additionally support flat unpacking.\nExample: [x*x for x in rang(10) if x % 2 == 0].",
+        "while": "while CONDITION: ... end\nRepeat while the condition is true; break exits, continue advances the loop.",
+        "loop": "loop: ... end\nAn unconditional loop. Use break to leave it.",
+        "break": "break\nExit the innermost loop.",
+        "continue": "continue\nSkip the rest of the current loop iteration.",
+        "try": "try: ... else: ... end\nCatch an LSL error. In else, last_error() provides the error text.",
+        "Error": "Error(NAME: MESSAGE)\nRaise a catchable named error. Example: Error(ValueError: \"bad value\").",
+        "safe": "safe: ... end\nOn an LSL runtime error, skip the rest of the block and continue after end.\nUse try/else when you need an explicit error handler. This is not a security sandbox.",
+        "unsafe": "unsafe: ... end\nExplicitly enter the unsafe boundary. Do not use it on untrusted data.",
+        "load": "load MODULE\nLoad an LSL source library. Bundled modules cannot be shadowed by local/user files.\nUse lsl install NAME to obtain a registry library.",
+        "del": "del(COLLECTION[KEY])\nDelete a dictionary entry or collection element. Deleting a variable removes its binding.",
+        "len": "len(VALUE) -> Int\nReturn the number of elements in a collection or Unicode characters in a String.",
+        "type": "type(VALUE) -> String\nReturn the runtime type name.",
+        "abs": "abs(NUMBER)\nReturn the absolute value of an Int, Bool or Float.",
+        "sqrt": "sqrt(NUMBER) -> Float\nReturn the square root of a nonnegative number.",
+        "sum": "sum(ITERABLE)\nAdd the elements of a numeric iterable.",
+        "min": "min(ITERABLE) or min(A, B)\nReturn the smallest element or operand.",
+        "max": "max(ITERABLE) or max(A, B)\nReturn the largest element or operand.",
+        "rang": "rang(STOP), rang(START, STOP), rang(START, STOP, STEP)\nConstruct an integer range excluding STOP; STEP must not be zero.",
+        "range": "range(...) is an alias of rang(...). See help(\"rang\") for start/stop/step.",
+        "String": "String(VALUE)\nConvert a value to text. Strings are UTF-8; indexing uses Unicode characters.",
+        "Int": "Int(VALUE)\nConvert a supported numeric value or decimal String to a signed 64-bit integer.",
+        "Float": "Float(VALUE)\nConvert a number or numeric String to IEEE-754 Float64.",
+        "Bool": "Bool(VALUE)\nConvert a value to its truth value.",
+        "List": "List(VALUE)\nCreate a mutable list. Literal: [1, 2, 3]. Comprehension: [x*x for x in rang(4)].",
+        "Tuple": "Tuple(VALUE)\nCreate an immutable tuple. Literal: (1, 2). Tuple([x for x in rang(3)]) is eager.",
+        "Dictionary": "Dictionary(VALUE)\nCreate a key/value dictionary. Literal: {\"a\": 1}.\nComprehension: {x:x*x for x in rang(4)}.",
+        "IntArray": "IntArray() creates a packed signed 64-bit array; IntArray(existing) is a checked cast.",
+        "FloatArray": "FloatArray() creates a packed Float64 array; FloatArray(existing) is a checked cast.",
+        "ByteArray": "ByteArray() creates a byte array (0..255); ByteArray(existing) is a checked cast.",
+        "RealArray": "RealArray(VALUE)\nCreate a fixed-length sequence. Elements can change; the length cannot.\nLiteral: ![1, 2, 3]. See lsl man collections.",
+        "readfile": "readfile(PATH) -> String\nRead a UTF-8 text file. For bounded reads, load fd and use fd.read_text_limit.",
+        "writefile": "writefile(PATH, TEXT)\nWrite text to a file, replacing existing contents.",
+        "appendfile": "appendfile(PATH, TEXT)\nAppend text to a file.",
+        "readbytes": "readbytes(PATH) -> ByteArray\nRead a file as binary bytes.",
+        "writebytes": "writebytes(PATH, BYTES)\nWrite bytes to a file. ELF output is made executable by the runtime.",
+        "run": "run(EXECUTABLE, ARGUMENTS) -> Int\nExecute a program with an argv list, without a shell; return its exit status.",
+        "capture": "capture(EXECUTABLE, ARGUMENTS) -> String\nCapture stdout from direct argv execution. Inspect capture_status() and capture_stderr().",
+        "exit": "exit(STATUS)\nTerminate the program with an integer exit status.",
+        "arg": "arg(INDEX) -> String or None\nRead a program argument; arg(1) is the first user argument.",
+        "arg_count": "arg_count() -> Int\nReturn the number of program arguments including the executable name.",
+        "last_error": "last_error() -> String\nReturn the most recent caught LSL error text.",
+        "gc": "gc()\nRequest garbage collection. References still reachable from the program remain alive.",
+        "clock": "clock() -> Float\nReturn the runtime clock value for timing. See the time module for sleep and wall time.",
+        "chr": "chr(CODEPOINT) -> String\nConstruct a one-character Unicode String.",
+        "ord": "ord(CHARACTER) -> Int\nReturn the Unicode codepoint of one character.",
+        "random": "load random\nPython-style MT19937 Random and OS-backed SystemRandom. Supports seed/state,\nrandom/randrange/randint/getrandbits/randbytes, choice/choices/sample/shuffle,\nand probability distributions. Example: rng = random.Random(42)\nSee lsl man random for compatibility and exact limits.",
+        "cuda": "load cuda\nPersistent CUDA sessions and device buffers. Requires NVIDIA hardware and the CUDA worker.\nSee lsl man cuda for resource lifetime, API and hardware requirements.",
+        "tensor": "load tensor\nCPU tensors and persistent GPU DeviceTensor operations. See lsl man cuda.",
+        "json": "load json\njson.encode(VALUE) serializes data; json.decode(TEXT) parses JSON.",
+        "os": "load os\nSafe direct-argv process execution and executable lookup, never implicit shell execution.",
+        "time": "load time\nSleep and time utilities. See lsl man --plain reference.",
+        "tui": "load tui\nPure-LSL full-screen terminal toolkit: Terminal, enter/leave, read_key and rendering.\nAlways restore the terminal on errors and cancellation.",
+        "math": "load math\nMathematical constants and numeric functions. See lsl man --plain reference.",
+        "bigint": "load bigint\nArbitrary-precision integer arithmetic. Construct bigint.BigInt(VALUE).",
+        "ai": "load ai\nAI service client utilities; see lsl man ai.",
+        "httpserver": "load httpserver\nNative HTTP server and managed HTTPS support; also available via lsl server.",
+        "process": "load process\nDirect-argv process utilities. See lsl man --plain reference.",
+        "fd": "load fd\nChecked descriptor I/O, bounded file reads and binary transport helpers."
+    }
+    if topic == "":
+        names = topics.keys()
+        call names.sort()
+        return "Lux Simple Lang (LSL) 0.8.0" + chr(10) + "Use help(\"TOPIC\") for details; lsl man opens the full offline manual." + chr(10) + "topics: " + " ".join(names)
+    end
+    if topic not in topics:
+        Error(HelpError: "unknown help topic; call help() to list supported topics")
+    end
+    return topics[topic]
+end
+
+function __lsl_help(topic):
+    print __lsl_help_text(topic)
+    return None
+end
+
 function __lsl_string_index(text, needle):
     position = __lsl_find(text, needle)
     if position < 0:

@@ -99,8 +99,11 @@ end
 sources = [
     "assembler.lsl",
     "bytes.lsl",
+    "browser.lsl",
+    "catalog.lsl",
     "cli.lsl",
     "codegen.lsl",
+    "console.lsl",
     "diagnostics.lsl",
     "dynamic_stdlib.lsl",
     "elf_image.lsl",
@@ -110,6 +113,7 @@ sources = [
     "lexer.lsl",
     "linker.lsl",
     "lslc_direct.lsl",
+    "manual.lsl",
     "native_runtime.lsl",
     "native_plugin_runtime.lsl",
     "package.lsl",
@@ -127,6 +131,13 @@ end
 standard_modules = ["_random_hash.lsl", "ai.lsl", "bigint.lsl", "config.lsl", "configure.lsl", "css.lsl", "cuda.lsl", "display.lsl", "env.lsl", "fd.lsl", "gfx.lsl", "http.lsl", "httpserver.lsl", "input.lsl", "json.lsl", "lconf.lsl", "lux.lsl", "luxos.lsl", "math.lsl", "native.lsl", "os.lsl", "plugin.lsl", "process.lsl", "random.lsl", "sandbox.lsl", "system.lsl", "tensor.lsl", "time.lsl", "tui.lsl", "ui.lsl", "unixsock.lsl", "wayland.lsl", "x11.lsl"]
 for name in standard_modules:
     call copy_text(source_path("stdlib/" + name), prefix + "/lib/lsl/stdlib/" + name)
+end
+
+call mkdir(prefix + "/lib/lsl/docs")
+call mkdir(prefix + "/lib/lsl/docs/developer_guides")
+manual_pages = ["README", "01-getting-started", "02-language-basics", "03-functions-and-classes", "04-collections", "05-error-handling", "06-modules-and-imports", "07-files-io-and-processes", "08-configuration-system", "09-gui-programming", "10-ai-applications", "11-performance-and-optimization", "12-compiler-internals", "13-server-and-origin", "14-sandbox-and-safety", "15-cuda", "16-random", "17-cli-and-packages", "reference", "security", "CHANGELOG"]
+for name in manual_pages:
+    call copy_text(source_path("docs/developer_guides/" + name + ".md"), prefix + "/lib/lsl/docs/developer_guides/" + name + ".md")
 end
 
 print "installed pure LSL into", prefix

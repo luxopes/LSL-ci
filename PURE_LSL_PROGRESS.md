@@ -1,6 +1,21 @@
 # Pure-LSL migration
 
-## Aktuální vydání 0.7.8 — 6. 9. 2026
+## Aktuální vydání 0.8.0 — 6. 9. 2026
+
+Barevné CLI a diagnostika, list/search/check, validovaný katalog knihoven,
+TUI správce balíčků a offline manuál všech 17 webových kapitol. Embedded
+`help()` / `help("TOPIC")` pracuje i se String proměnnou v samostatném ELF.
+Implementace i nové conformance testy jsou pure LSL. TUI čte klávesy přes
+buffer a poll, obnovuje terminál a neprovádí instalace bez potvrzení.
+Podrobnosti: `docs/release-0.8.0.md`.
+
+Stage 2/3 jsou bitově shodné; nástroje vznikly sériově pod 2 GiB. Plná
+regresní sada včetně GTX 1650 prošla s limitem 4 GiB. Nápověda se linkuje
+jen při použití; optimalizační fixture zůstává pod limitem 98 000 bajtů.
+Compiler: `f34c2e2bb08e85149b3c932a1f93eb5d42390d530d9036a10e394bc751ab3bc7`.
+CLI: `4b1dcae83a10da335cb3e3dbac0a15448c3527e4b3bf0d8183f7d5ac5d862163`.
+
+## Vydání 0.7.8 — 6. 9. 2026
 
 Pure-LSL `random`: MT19937 a SHA-512 seedování, Random/SystemRandom,
 stav, vážené výběry, shuffle/sample, BigInt a běžná rozdělení. Přidány

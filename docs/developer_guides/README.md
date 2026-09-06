@@ -1,19 +1,20 @@
 # LSL — Vývojářské příručky
 
-> **LSL 0.7.8 — random, comprehensions a podepsané aktualizace.**
+> **LSL 0.8.0 — správa knihoven, barevné CLI, TUI a offline manuál.**
 > [Historie verzí](/releases/) · [Manuál 0.5](/releases/0.5/) ·
 > [Manuál 0.6](/releases/0.6/) · [Manuál 0.6.5](/releases/0.6.5/) ·
 > [Changelog](CHANGELOG.md)
 > [Stáhnout binárky nebo zdrojový kód](index.html#downloads).
 
-Podrobné průvodce LSL (Lux Simple Lang) 0.7.8. Každá kapitola
+Podrobné průvodce LSL (Lux Simple Lang) 0.8.0. Každá kapitola
 vysvětluje jednu oblast od základů — text předpokládá, že s programováním
 teprve začínáte. Všechny konstrukty jsou popsány srozumitelně: co dělají,
 k čemu slouží, jak se zapisují a jak fungují.
 
 ## Obsah
 
-Nově: [Random — náhodná čísla a výběry](16-random.md),
+Nově: [CLI, knihovny a terminálový manuál](17-cli-and-packages.md).
+Dále: [Random — náhodná čísla a výběry](16-random.md),
 list/dict comprehensions v kapitole [Kolekce](04-collections.md) a
 výchozí/pojmenované argumenty v kapitole [Funkce](03-functions-and-classes.md).
 
@@ -78,6 +79,9 @@ výchozí/pojmenované argumenty v kapitole [Funkce](03-functions-and-classes.md
 
 16. **[Random](16-random.md)**
     Reprodukovatelné seedy, MT19937, SystemRandom, kolekce a rozdělení.
+
+17. **[CLI, knihovny a terminálový manuál](17-cli-and-packages.md)**
+    List/search/check, TUI instalátor, offline manuál, barvy a `help("téma")`.
 
 ## Referenční příručka
 

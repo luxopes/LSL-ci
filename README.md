@@ -1,6 +1,6 @@
 # Lux Simple Lang (LSL)
 
-**LSL 0.7.8** je vydání self-hostovaného jazyka pro běžné
+**LSL 0.8.0** je vydání self-hostovaného jazyka pro běžné
 programování, deklarativní konfiguraci, AI orchestrace a volitelné CUDA
 výpočty. Compiler i host runtime
 jsou pouze LSL: compiler přímo zapisuje statický Linux x86_64 ELF a runtime
@@ -11,14 +11,17 @@ pure-LSL a Tensor používá CPU fallback.
 
 ## Self-hosted vydání
 
-LSL 0.7.8 přináší knihovnu `random`, list/dict comprehensions,
-výchozí a pojmenované argumenty a podepsaný self-updater.
+LSL 0.8.0 přináší barevné CLI, `list`, `search`, `check`, TUI správce
+balíčků, offline manuál a `help("téma")`. Random, comprehensions, CUDA
+a podepsaný self-updater zůstávají součástí vydání.
 Binární balík pro Linux x86_64,
 zdrojový archiv a aktualizovaný český manuál jsou na
 [lsl.lux-ai.cz](https://lsl.lux-ai.cz/). Stabilní manuály vydání jsou v
 [historii vydání](https://lsl.lux-ai.cz/releases/):
 
-- [LSL 0.7.8](https://lsl.lux-ai.cz/) — `random` v pure LSL, comprehensions,
+- [LSL 0.8.0](https://lsl.lux-ai.cz/) — správa knihoven, TUI, offline manuál,
+  barevné výpisy a tematická nápověda;
+- LSL 0.7.8 — `random` v pure LSL, comprehensions,
   výchozí a pojmenované argumenty, `lsl update`;
 - LSL 0.7.7 — persistentní CUDA, Float64 device buffery,
   elementwise operace, transpozice, DeviceTensor a opravy dispatchingu;
@@ -69,6 +72,12 @@ Datovaný přehled změn je v
 ./lsl compile --unsafe raw.lsl raw    # výslovně privilegovaný překlad
 ./lsl config examples/config/system.lsl
 ./lsl install textkit
+./lsl list
+./lsl check textkit
+./lsl search text
+./lsl install --tui
+./lsl man
+./lsl help install
 ./lsl origin textkit
 ./lsl server --dir public --port 8080
 ./lsl sandbox --read input.txt program.lsl
@@ -187,6 +196,8 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 - [Random — náhodná čísla a výběry](docs/random.md)
 - [Podepsané aktualizace LSL](docs/updates.md)
 - [Poznámky k vydání 0.7.8](docs/release-0.7.8.md)
+- [Poznámky k vydání 0.8.0](docs/release-0.8.0.md)
+- [CLI, knihovny a terminálový manuál](docs/developer_guides/17-cli-and-packages.md)
 - [Poznámky k vydání 0.7.7](docs/release-0.7.7.md)
 - [Poznámky k vydání 0.7.6](docs/release-0.7.6.md)
 - [Poznámky k vydání 0.7.5](docs/release-0.7.5.md)

@@ -268,7 +268,7 @@ function infer_expression_type(syntax, types, function_returns):
                 return "Float"
             elif name == "exists" or name == "native_name_equal":
                 return "Bool"
-            elif name == "__lsl_sleep" or name == "atomic_pause":
+            elif name == "__lsl_sleep" or name == "atomic_pause" or name == "help":
                 return "None"
             elif name == "List":
                 return "List"
@@ -2780,6 +2780,9 @@ function emit_expression(generator, syntax):
     elif kind == "call":
         target = syntax["target"]
         if target["kind"] == "name":
+            if target["name"] == "help" or target["name"] == "__lsl_help" or target["name"] == "__lsl_help_text":
+                generator["help_used"] = True
+            end
             if "argument_names" in syntax and target["name"] not in generator["functions"] and target["name"] not in generator["classes"]:
                 call unsupported(generator["path"], generator["lines"], syntax, "keyword arguments require a declared function or class", "use positional arguments for builtins and Function values")
             end
@@ -2816,7 +2819,11 @@ function emit_expression(generator, syntax):
             builtin_arity["__lsl_unbox_bool"] = 1
             builtin_arity["__lsl_unbox_int"] = 1
             builtin_arity["__lsl_syscall6"] = 7
-            if target["name"] in builtin_arity:
+            if target["name"] == "help":
+                if len(syntax["arguments"]) > 1:
+                    call unsupported(generator["path"], generator["lines"], syntax, "builtin help expects zero or one argument", "use help() or help(\"TOPIC\")")
+                end
+            elif target["name"] in builtin_arity:
                 expected_builtin = builtin_arity[target["name"]]
                 if len(syntax["arguments"]) != expected_builtin:
                     call unsupported(generator["path"], generator["lines"], syntax, "builtin " + target["name"] + " expects " + String(expected_builtin) + " argument(s), got " + String(len(syntax["arguments"])), "pass exactly " + String(expected_builtin) + " argument(s)")
@@ -4014,8 +4021,12 @@ function emit_expression(generator, syntax):
                 call assembler.label(output, done_label)
                 return
             elif target["name"] == "help":
-                call emit_static_write(generator, "Lux Simple Lang (LSL) 0.7.8" + chr(10) + "functions: print printl input for loop safe unsafe if elif else try class ctype function type del len abs sqrt help" + chr(10) + "types: Bool Int Float String List Tuple RealArray IntArray FloatArray ByteArray Dictionary" + chr(10) + "modules: os time json process config ai tensor cuda native math bigint random httpserver sandbox" + chr(10) + "docs: see README.md and docs/" + chr(10))
-                call assembler.emit(output, x86_64.mov_imm64(0, 0))
+                help_arguments = syntax["arguments"]
+                if len(help_arguments) == 0:
+                    help_arguments = [{"kind": "literal", "literal_kind": "string", "value": "", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]}]
+                end
+                help_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_help"}, "arguments": help_arguments}
+                call emit_expression(generator, help_call)
                 return
             elif target["name"] == "abs":
                 abs_arg_type = infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"])
@@ -6293,7 +6304,11 @@ function generate_mode(path, source, program, internal_abi):
 
     for statement in program:
         if statement["kind"] == "function":
-            call emit_function(generator, statement)
+            # Topic help is optional runtime data. Do not grow every unrelated
+            # standalone program by embedding the complete help catalog.
+            if statement["name"] != "__lsl_help" and statement["name"] != "__lsl_help_text":
+                call emit_function(generator, statement)
+            end
         elif statement["kind"] == "class":
             for member in statement["body"]:
                 if member["kind"] == "function":
@@ -6400,6 +6415,10 @@ function generate_mode(path, source, program, internal_abi):
     call assembler.emit(output, x86_64.mov_imm64(0, 231))
     call assembler.emit(output, x86_64.mov_imm64(7, 0))
     call assembler.emit(output, x86_64.syscall())
+    if generator.get("help_used", False):
+        call emit_function(generator, functions["__lsl_help_text"])
+        call emit_function(generator, functions["__lsl_help"])
+    end
     program_code = assembler.finish(output)
     for relocation in generator["relocations"]:
         displacement = len(program_code) + relocation[2] - relocation[1]

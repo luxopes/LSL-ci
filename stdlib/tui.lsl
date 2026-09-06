@@ -39,9 +39,12 @@ class Terminal(True):
 
     function init(self):
         self.saved = ""
+        self.active = False
         self.rows = 24
         self.cols = 80
         self.inbuf = __lsl_byte_zeros(32)
+        self.input_index = 0
+        self.input_count = 0
         self.out = ByteArray()
     end
 
@@ -53,10 +56,11 @@ class Terminal(True):
         if capture_status() != 0 or len(self.saved) == 0 or len(self.saved) > 4096 or chr(0) in self.saved:
             Error(TUIError: "cannot read terminal state")
         end
-        if os.run_argv_clean(command, ["-echo", "-icanon", "min", "1", "time", "0"]) != 0:
+        if os.run_argv_clean(command, ["-echo", "-icanon", "-isig", "-ixon", "min", "1", "time", "0"]) != 0:
             Error(TUIError: "cannot enter terminal raw mode")
         end
         call self.query_size()
+        self.active = True
         call self.emit(ESC + "[?1049h" + ESC + "[?25l" + ESC + "[2J")
         call self.flush()
         return None
@@ -65,12 +69,16 @@ class Terminal(True):
     # Restore the terminal: show cursor, leave the alternate screen, restore the
     # saved stty state. Safe to call more than once.
     function leave(self):
-        call self.emit(ESC + "[?25h" + ESC + "[?1049l")
-        call self.flush()
+        if self.active:
+            call self.emit(ESC + "[0m" + ESC + "[?25h" + ESC + "[?1049l")
+            call self.flush()
+            self.active = False
+        end
         if self.saved != "":
             if os.run_argv_clean(stty_tool(), [self.saved]) != 0:
                 Error(TUIError: "cannot restore terminal state")
             end
+            self.saved = ""
         end
         return None
     end
@@ -185,71 +193,86 @@ class Terminal(True):
         return None
     end
 
-    # Block until a key is available, returning a normalized key string.
-    function read_key(self):
-        buffer = ByteArray(self.inbuf)
-        count = fd.read(0, buffer, 8)
-        if count <= 0:
-            return "none"
+    # Buffered byte reads preserve pasted keys and split escape sequences.
+    # A short poll distinguishes a standalone Escape from an ANSI key sequence.
+    function read_byte(self, timeout):
+        if self.input_index >= self.input_count:
+            if timeout >= 0:
+                descriptor = __lsl_byte_zeros(8)
+                descriptor[4] = 1
+                ready = __lsl_syscall(7, __lsl_data_address(descriptor), 1, Int(timeout), 0)
+                if ready == 0:
+                    return -2
+                elif ready < 0:
+                    Error(TUIError: "terminal input poll failed")
+                end
+            end
+            self.input_count = fd.read(0, ByteArray(self.inbuf), 32)
+            self.input_index = 0
+            if self.input_count <= 0:
+                return -1
+            end
         end
-        first = buffer[0]
-        if first == 27:
-            if count == 1:
+        result = ByteArray(self.inbuf)[self.input_index]
+        self.input_index += 1
+        return result
+    end
+
+    function read_key(self):
+        first = self.read_byte(-1)
+        if first < 0:
+            return "none"
+        elif first == 27:
+            second = self.read_byte(50)
+            if second < 0:
+                return "esc"
+            elif second != 91 and second != 79:
+                # Leave a following ordinary key queued, rather than eating it.
+                self.input_index -= 1
                 return "esc"
             end
-            second = buffer[1]
-            if second == 91 or second == 79:
-                if count < 3:
+            sequence = ""
+            for index in rang(24):
+                byte = self.read_byte(50)
+                if byte < 0:
                     return "esc"
                 end
-                third = buffer[2]
-                if third == 65:
-                    return "up"
-                end
-                if third == 66:
-                    return "down"
-                end
-                if third == 67:
-                    return "right"
-                end
-                if third == 68:
-                    return "left"
-                end
-                if third == 72:
-                    return "home"
-                end
-                if third == 70:
-                    return "end"
-                end
-                if third == 53:
-                    return "pageup"
-                end
-                if third == 54:
-                    return "pagedown"
-                end
-                if third == 51:
-                    return "delete"
+                sequence += chr(byte)
+                if byte >= 64 and byte <= 126:
+                    break
                 end
             end
-            return "esc"
-        end
-        if first == 13 or first == 10:
+            keys = {"A": "up", "B": "down", "C": "right", "D": "left", "H": "home", "F": "end", "1~": "home", "4~": "end", "5~": "pageup", "6~": "pagedown", "3~": "delete", "Z": "backtab"}
+            return keys.get(sequence, "esc")
+        elif first == 13 or first == 10:
             return "enter"
-        end
-        if first == 127 or first == 8:
+        elif first == 127 or first == 8:
             return "backspace"
-        end
-        if first == 9:
+        elif first == 9:
             return "tab"
-        end
-        if first == 3:
+        elif first == 3:
             return "ctrl-c"
-        end
-        if first == 4:
+        elif first == 4:
             return "ctrl-d"
-        end
-        if first >= 32 and first <= 126:
+        elif first >= 32 and first <= 126:
             return "char:" + chr(first)
+        elif first >= 194 and first <= 244:
+            count = 2
+            if first >= 240:
+                count = 4
+            elif first >= 224:
+                count = 3
+            end
+            encoded = __lsl_byte_zeros(count)
+            encoded[0] = first
+            for index in rang(1, count):
+                byte = self.read_byte(50)
+                if byte < 128 or byte > 191:
+                    return "code:" + String(first)
+                end
+                encoded[index] = byte
+            end
+            return "char:" + __lsl_text_from_bytes(encoded, 0, count)
         end
         return "code:" + String(first)
     end

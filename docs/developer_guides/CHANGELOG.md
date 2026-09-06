@@ -4,6 +4,21 @@ Na této stránce jsou uživatelsky významné změny vydaných verzí. Stabiln�
 manuály a soubory ke stažení zůstávají dostupné v
 [historii vydání](/releases/).
 
+## 0.8.0 — 6. 9. 2026
+
+- Barevná nápověda, stavové výpisy a diagnostika; prostý text pro pipes a NO_COLOR.
+- `lsl list` a `lsl check NAME`: offline inventář bundled/user knihoven.
+- `lsl search [QUERY]`: validovaný produkční katalog s verzemi a popisy.
+- `lsl install --tui`: filtrování, označení balíčků a potvrzená instalace.
+- `lsl man`: offline TUI manuál se všemi 17 webovými kapitolami a referencí.
+- `help()` i `help("TOPIC")`, včetně runtime témat a samostatných ELF programů;
+  také `lsl help TOPIC`.
+- TUI nezahazuje rychlé klávesy, dekóduje UTF-8 a dělené escape sekvence,
+  obnovuje terminál po ukončení i zachycené chybě.
+- Odstraněny staré soubory BUG*.md a netlify.toml; historie Gitu se nemění.
+
+Podrobnosti: [CLI a balíčky](17-cli-and-packages.md).
+
 ## 0.7.8 — 6. 9. 2026
 
 - Nová pure-LSL knihovna [random](16-random.md): Random/SystemRandom,

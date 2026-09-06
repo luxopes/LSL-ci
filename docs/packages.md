@@ -1,6 +1,6 @@
 # Instalace a původ LSL knihoven
 
-LSL 0.7 umí instalovat jednosouborové zdrojové moduly bez sudo a uchovává
+LSL umí instalovat jednosouborové zdrojové moduly bez sudo a uchovává
 jejich ověřený původ:
 
 ```text
@@ -9,7 +9,16 @@ lsl update textkit
 lsl install --config libraries.conf
 lsl origin
 lsl origin textkit
+lsl list
+lsl check textkit
+lsl search text
+lsl install --tui
 ```
+
+Od 0.8.0 je k dispozici offline inventář (`list`, `check`), vyhledávání
+v katalogu (`search`) a interaktivní TUI s filtrem, označením a potvrzením
+instalací. Přehled rozlišuje bundled a uživatelské moduly. Podrobnosti a
+návratové stavy: [CLI a balíčky](developer_guides/17-cli-and-packages.md).
 
 Výchozí endpoint je:
 

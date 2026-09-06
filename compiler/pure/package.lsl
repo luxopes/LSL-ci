@@ -2,6 +2,8 @@
 # validate a registry-published SHA-256, compile the source, and atomically move
 # it into the user module directory. No shell is involved.
 
+load console
+
 SYS_FLOCK = 73
 LOCK_EX = 2
 O_RDWR = 2
@@ -318,7 +320,7 @@ function ensure_directory(path):
     end
 end
 
-function user_directory(home):
+function user_path(home):
     if type(home) != "String" or len(home) == 0 or __lsl_text_byte_length(String(home)) > 4095 or home[0] != "/":
         Error(PackageError: "HOME must be an absolute path")
     end
@@ -333,6 +335,11 @@ function user_directory(home):
             Error(PackageError: "HOME must not contain parent traversal")
         end
     end
+    return home + "/.local/lib/lsl/stdlib"
+end
+
+function user_directory(home):
+    directory = user_path(home)
     base = home + "/.local"
     call ensure_directory(base)
     base += "/lib"
@@ -404,7 +411,7 @@ function install(name, home, server, curl_path, sha256_path, move_path, chmod_pa
 
     source_url = server + "/" + name + ".lsl"
     hash_url = server + "/" + name + ".sha256"
-    print "Fetching", source_url
+    call console.heading("Fetching " + source_url)
     source = fetch(curl_path, server, source_url)
     expected = fetch(curl_path, server, hash_url).strip()
     if __lsl_text_byte_length(source) == 0:
@@ -469,7 +476,7 @@ function install(name, home, server, curl_path, sha256_path, move_path, chmod_pa
     end
     call release_package_lock(lock)
     call rmdir(work)
-    print "Installed", name, "into", destination + "."
+    call console.success("Installed " + name + " into " + destination + ".")
 end
 
 function update(name, home, server, curl_path, sha256_path, move_path, chmod_path, lsl_path):

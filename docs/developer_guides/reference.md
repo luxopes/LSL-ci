@@ -151,7 +151,7 @@ a `>>=` fungují stejně jako `+=`.
 | Funkce | Popis |
 |---|---|
 | `len(value)` | Vrátí délku řetězce, seznamu, slovníku nebo pole. |
-| `help()` | Vypíše základní nápovědu. |
+| `help()` / `help("TOPIC")` | Vypíše seznam témat / nápovědu k příkazu, konstruktu či modulu. Přijímá runtime String, vrací None; neznámé téma vyvolá HelpError. Úplný manuál: `lsl man`. |
 
 ---
 

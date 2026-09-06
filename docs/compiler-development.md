@@ -58,6 +58,10 @@ uvíznout, proto při auditu používejte i vnější časový limit.
 | `compiler/pure/dynamic_stdlib.lsl` | LSL helper funkce připojené ke každému programu |
 | `compiler/pure/lslc_direct.lsl` | produkční compiler entrypoint |
 | `compiler/pure/package.lsl` | bezpečná instalace per-user zdrojových knihoven |
+| `compiler/pure/catalog.lsl` | validovaný katalog a offline inventář knihoven |
+| `compiler/pure/browser.lsl` | TUI správce balíčků a manuálu |
+| `compiler/pure/manual.lsl` | seznam a načítání offline webových kapitol |
+| `compiler/pure/console.lsl` | barvy pro TTY, NO_COLOR a sanitizace výpisů |
 | `stdlib/` | veřejné staticky linkované moduly |
 | `tests/test_runner.lsl` | pure-LSL regression runner |
 

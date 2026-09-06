@@ -215,7 +215,7 @@ end
 call require_success(run(compiler, ["compiler/pure/cli.lsl", cli_test]), "compile stdin CLI")
 call require_hardened_elf(cli_test)
 help_output = capture(cli_test, ["--help"])
-expected_help = "Lux Simple Lang (LSL) 0.7.8" + chr(10)
+expected_help = "Lux Simple Lang (LSL) 0.8.0" + chr(10)
 expected_help += chr(10)
 expected_help += "Usage:" + chr(10)
 expected_help += "  lsl [SOURCE [ARG...]]" + chr(10)
@@ -223,6 +223,12 @@ expected_help += "  lsl compile [--unsafe] SOURCE OUTPUT" + chr(10)
 expected_help += "  lsl config ENTRY" + chr(10)
 expected_help += "  lsl install NAME" + chr(10)
 expected_help += "  lsl install --config FILE" + chr(10)
+expected_help += "  lsl install --tui" + chr(10)
+expected_help += "  lsl list" + chr(10)
+expected_help += "  lsl search [QUERY]" + chr(10)
+expected_help += "  lsl check NAME" + chr(10)
+expected_help += "  lsl man [--plain] [TOPIC]" + chr(10)
+expected_help += "  lsl help [TOPIC]" + chr(10)
 expected_help += "  lsl update [NAME]" + chr(10)
 expected_help += "  lsl update [--check | --rollback] [--system] [--allow-downgrade]" + chr(10)
 expected_help += "  lsl origin [NAME]" + chr(10)
@@ -233,15 +239,28 @@ expected_help += chr(10)
 expected_help += "Options:" + chr(10)
 expected_help += "  -h, --help     Show this help" + chr(10)
 expected_help += "  --version      Show version" + chr(10)
+expected_help += "  NO_COLOR       Disable automatic terminal colors (environment variable)" + chr(10)
 if capture_status() != 0 or help_output != expected_help:
     Error(TestFailure: "CLI --help output differs")
 end
+catalog_test = test_path("catalog-test")
+call require_success(run(compiler, ["tests/compiler/catalog_conformance.lsl", catalog_test]), "compile catalog/manual conformance")
+call require_output(catalog_test, [], "tests/compiler/catalog_conformance.out", "catalog/manual conformance differs")
+cli_080_test = test_path("cli-080-test")
+call require_success(run(compiler, ["tests/compiler/cli_080_conformance.lsl", cli_080_test]), "compile CLI 0.8.0 conformance")
+call require_output(cli_080_test, [cli_test, compiler], "tests/compiler/cli_080_conformance.out", "CLI 0.8.0 conformance differs")
+tui_keys_test = test_path("tui-keys-test")
+call require_success(run(compiler, ["tests/tui_keys_conformance.lsl", tui_keys_test]), "compile terminal keys conformance")
+tui_keys_output = capture_input(tui_keys_test, [], "ab" + chr(27) + "[A" + chr(27) + "[6~ž" + chr(10) + chr(3) + chr(4) + chr(27) + "q")
+if capture_status() != 0 or tui_keys_output != "buffered terminal keys passed" + chr(10):
+    Error(TestFailure: "buffered terminal keys differ")
+end
 version_output = capture(cli_test, ["version"])
-if capture_status() != 0 or version_output != "0.7.8" + chr(10):
+if capture_status() != 0 or version_output != "0.8.0" + chr(10):
     Error(TestFailure: "CLI version output differs")
 end
 version_flag_output = capture(cli_test, ["--version"])
-if capture_status() != 0 or version_flag_output != "0.7.8" + chr(10):
+if capture_status() != 0 or version_flag_output != "0.8.0" + chr(10):
     Error(TestFailure: "CLI --version output differs")
 end
 config_output = capture(cli_test, ["config", "examples/config/system.lsl"])
@@ -586,6 +605,7 @@ end
 # typed collections. Run them in short-lived processes so their globals do not
 # consume the shared aggregate's object-table budget during later BigInt stress.
 boundary_tests = [
+    "help_conformance",
     "random_conformance",
     "random_thread_conformance",
     "bytearray_slice_conformance",

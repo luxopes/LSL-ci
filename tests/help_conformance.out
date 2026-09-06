@@ -1,0 +1,6 @@
+print VALUE [, VALUE...]
+Print values separated by spaces and end with a newline.
+Example: print "answer", 42
+len(VALUE) -> Int
+Return the number of elements in a collection or Unicode characters in a String.
+help conformance passed

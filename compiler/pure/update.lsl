@@ -1,6 +1,7 @@
 # Stable-channel self-update client. Trust root is compiled into the ELF;
 # neither environment variables nor downloaded keys can replace it.
 load fd
+load console
 load json
 load update_install
 
@@ -475,21 +476,21 @@ function execute(current, settings, work, prefix):
     call download(MANIFEST_URL + ".sig", work + "/manifest.sig", 64)
     manifest = verified_manifest(work, current, host_platform(), settings["allow-downgrade"])
     if manifest["comparison"] == 0:
-        print "LSL " + current + " is up to date."
+        call console.success("LSL " + current + " is up to date.")
         return None
     elif settings["check"]:
-        print "LSL " + manifest["version"] + " is available (installed " + current + ")."
+        call console.heading("LSL " + manifest["version"] + " is available (installed " + current + ").")
         return None
     end
     artifact = manifest["artifact"]
-    print "Downloading verified LSL " + manifest["version"] + " for Linux x86_64."
+    call console.heading("Downloading verified LSL " + manifest["version"] + " for Linux x86_64.")
     call download(artifact["url"], work + "/release.tar.gz", artifact["size"])
     installer = extract_archive(work, artifact)
     generation = update_install.private_work(store + "/generations")
     call update_install.install_stage(installer, generation, manifest["version"], work)
     call update_install.prepare(prefix, executable_path(), current, work)
     call update_install.activate(store, generation, manifest["version"], work)
-    print "Updated LSL " + current + " -> " + manifest["version"] + ". Previous version retained; use lsl update --rollback."
+    call console.success("Updated LSL " + current + " -> " + manifest["version"] + ". Previous version retained; use lsl update --rollback.")
 end
 
 function main(current):
