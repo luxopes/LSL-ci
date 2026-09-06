@@ -1,5 +1,6 @@
-# Test-only old frontend: all update logic is the real production client.
-# Reports 0.7.6 to exercise the public signed 0.7.7 upgrade end to end without
+# lsl: internal-abi
+# Test-only old frontend: preserve the actual CLI's raw ABI as well as logic.
+# Reports 0.7.6 to exercise the public signed upgrade end to end without
 # changing a production manifest or possessing its private signing key.
 load update
 load update_install

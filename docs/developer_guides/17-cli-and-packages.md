@@ -114,3 +114,27 @@ sudo /usr/local/bin/lsl update --system --rollback
 `--system` samo nezvyšuje oprávnění. Úplná cesta funguje i tehdy, když sudo
 nemá `/usr/local/bin` ve svém PATH. Podepsaný updater uchovává předchozí
 generaci pro rollback.
+
+### Jednorázový přechod z 0.7.8
+
+Skutečné CLI 0.7.8 má chybu převodu nulového offsetu při čtení tar archivu;
+`lsl update` skončí `Int expects Int, Float, String, or Bool` ještě před
+změnou instalace. V 0.8.0 je chyba opravená a regresní testy pokrývají také
+interní ABI CLI (nejen veřejné testovací drivery).
+
+Z 0.7.8 proto jednou použijte instalační program z nového archivu:
+
+```bash
+curl -fSLO https://lsl.lux-ai.cz/downloads/lsl-0.8.0-linux-x86_64.tar.gz
+curl -fSLO https://lsl.lux-ai.cz/downloads/SHA256SUMS
+sha256sum --ignore-missing -c SHA256SUMS
+tar -xzf lsl-0.8.0-linux-x86_64.tar.gz
+sudo ./lsl-0.8.0/bin/lsl-install /usr/local
+```
+
+Instalátor 0.8.0 rozpozná stávající spravovanou instalaci a nepřepisuje
+soubory přes symlinky: připraví novou generaci, otestuje ji a atomicky přepne
+aktivní verzi. Zachová předchozí verzi pro rollback. U legacy instalace
+v `/usr/local` nebo `~/.local` nejprve vytvoří její snapshot. Pro uživatelskou
+instalaci použijte bez sudo `./lsl-0.8.0/bin/lsl-install "$HOME/.local"`.
+Další aktualizace z opravené 0.8.0 již používají běžné `lsl update`.

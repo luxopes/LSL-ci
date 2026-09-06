@@ -14,6 +14,9 @@ Vydání přidává správu knihoven, TUI a tematickou nápovědu v čistém LSL
 - `help()` zůstává; `help("TOPIC")` nově podporuje runtime String argument,
   zachytitelné chyby a samostatné ELF bez instalace LSL.
 - Vylepšené klávesové TUI vstupy a obnovení stavu terminálu.
+- Opraveno čtení tar archivu v interním ABI skutečného CLI. Z 0.7.8 je
+  nutný jednorázový přechod přes nový `lsl-install`; ten nově umí atomicky
+  přeinstalovat spravovaný prefix a zachovat rollback, bez přepisu symlinků.
 - Odstraněné staré BUG*.md a netlify.toml jsou dostupné v historii Gitu.
 
 Použití a přesná sémantika příkazů:
@@ -21,4 +24,5 @@ Použití a přesná sémantika příkazů:
 
 Compiler, runtime, CLI i testy zůstávají self-hosted LSL. CUDA worker se
 nemění. Systémové nástroje jsou používány pouze přes přímé argv, bez shellu.
-Podepsaný aktualizační kanál a rollback zůstávají kompatibilní s 0.7.8.
+Formát podepsaného kanálu se nemění. Přechod z 0.7.8 vyžaduje výše uvedený
+jednorázový instalační postup; následující aktualizace z 0.8.0 již fungují.

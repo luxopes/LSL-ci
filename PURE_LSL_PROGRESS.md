@@ -13,7 +13,12 @@ Stage 2/3 jsou bitově shodné; nástroje vznikly sériově pod 2 GiB. Plná
 regresní sada včetně GTX 1650 prošla s limitem 4 GiB. Nápověda se linkuje
 jen při použití; optimalizační fixture zůstává pod limitem 98 000 bajtů.
 Compiler: `f34c2e2bb08e85149b3c932a1f93eb5d42390d530d9036a10e394bc751ab3bc7`.
-CLI: `4b1dcae83a10da335cb3e3dbac0a15448c3527e4b3bf0d8183f7d5ac5d862163`.
+CLI: `c414a69d56d449d947e202dc4bdebc04745e9edf25fdc35dffbe5f56c6c668e4`.
+
+Závěrečný test skutečné 0.7.8 odhalil raw-ABI Int(0) v tar readeru, který
+veřejný testovací driver maskoval. Oprava používá kontrolované interní Int
+rozbalení; testy nyní explicitně pokrývají CLI ABI. Nový installer podporuje
+atomický přechod ze staré instalace i přeinstalování spravované generace.
 
 ## Vydání 0.7.8 — 6. 9. 2026
 

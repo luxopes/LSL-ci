@@ -23,7 +23,7 @@ function digits(text, maximum):
     result = 0
     for character in String(text):
         digit = ord(character) - 48
-        if digit < 0 or digit > 9 or result > (Int(maximum) - digit) // 10:
+        if digit < 0 or digit > 9 or result > (__lsl_typed_int(maximum) - digit) // 10:
             call fail("decimal field outside supported range")
         end
         result = result * 10 + digit
@@ -235,7 +235,8 @@ end
 
 function tar_string(buffer, offset, width):
     data = ByteArray(buffer)
-    end_index = Int(offset)
+    # Offset zero is a raw Int in the CLI's internal ABI, not public None.
+    end_index = __lsl_typed_int(offset)
     while end_index < offset + width and data[end_index] != 0:
         if data[end_index] < 32 or data[end_index] > 126:
             call fail("non-ASCII tar header string")
@@ -417,7 +418,7 @@ function extract_archive(work, artifact):
                 call fail("cannot create archive directory")
             end
         else:
-            size = Int(entry["size"])
+            size = __lsl_typed_int(entry["size"])
             contents = __lsl_byte_zeros(size)
             call __lsl_byte_copy(contents, data, 0, entry["offset"], size)
             call writebytes(path, contents)

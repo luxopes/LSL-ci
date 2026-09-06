@@ -23,7 +23,7 @@ end
 function little(buffer, offset, width):
     data = ByteArray(buffer)
     value = 0
-    index = Int(width) - 1
+    index = __lsl_typed_int(width) - 1
     while index >= 0:
         value = value * 256 + data[offset + index]
         index -= 1

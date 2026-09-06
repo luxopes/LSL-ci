@@ -121,6 +121,10 @@ config a fixed-point kontrolu. Aktuální SHA-256 je v `PURE_LSL_PROGRESS.md`.
 
 ## Instalace
 
+Při přechodu z 0.7.8 použijte jednou `lsl-install` z nového archivu: starý
+updater má chybu čtení tar hlavičky. Installer 0.8.0 zachová předchozí
+generaci a atomicky přepne instalaci. [Postup](docs/developer_guides/17-cli-and-packages.md#jednorázový-přechod-z-078).
+
 ```text
 ./compiler/pure/lsl-install /tmp/lsl-prefix
 /tmp/lsl-prefix/bin/lsl program.lsl

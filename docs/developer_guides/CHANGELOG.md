@@ -16,6 +16,9 @@ manuály a soubory ke stažení zůstávají dostupné v
 - TUI nezahazuje rychlé klávesy, dekóduje UTF-8 a dělené escape sekvence,
   obnovuje terminál po ukončení i zachycené chybě.
 - Odstraněny staré soubory BUG*.md a netlify.toml; historie Gitu se nemění.
+- Opraven nulový offset tar readeru v raw ABI CLI; `lsl-install` umí
+  bezpečně migrovat i přeinstalovat aktivní generaci. Z 0.7.8 je potřeba
+  jednorázový přechod přes instalační archiv, viz návod níže.
 
 Podrobnosti: [CLI a balíčky](17-cli-and-packages.md).
 

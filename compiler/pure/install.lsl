@@ -1,4 +1,50 @@
 # Pure-LSL installer. No shell, cp, libc, or foreign build tool.
+load fd
+load update_install
+
+# A downloaded installer can repair an older self-updater without writing
+# through prefix/bin symlinks into the active generation. Retain rollback.
+function reinstall_managed(prefix):
+    call update_install.installation(prefix + "/bin/lsl", __lsl_getenv("HOME"), prefix == "/usr/local")
+    store = prefix + "/lib/lsl-updates"
+    call update_install.directory(store)
+    call update_install.directory(store + "/generations")
+    call update_install.public_directory(store)
+    call update_install.public_directory(store + "/generations")
+    handle = update_install.lock(store)
+    work = update_install.private_work(store)
+    failure = None
+    try:
+        call update_install.recover(store, work)
+        if update_install.metadata(store + "/current") == None:
+            previous_version = update_install.bounded(prefix + "/bin/lsl", ["version"], 1048576, 30).strip()
+            call update_install.health(prefix, previous_version, work)
+        else:
+            active = update_install.target(store, "current")
+            previous_version = fd.read_text_limit(active + "/version", 64).strip()
+            call update_install.health(active, previous_version, work)
+        end
+        generation = update_install.private_work(store + "/generations")
+        call update_install.install_stage(executable_path(), generation, "0.8.0", work)
+        call update_install.prepare(prefix, prefix + "/bin/lsl", previous_version, work)
+        call update_install.activate(store, generation, "0.8.0", work)
+    else:
+        failure = last_error()
+    end
+    cleanup_failure = None
+    try:
+        call update_install.cleanup_scratch(work)
+    else:
+        cleanup_failure = last_error()
+    end
+    call fd.close(handle)
+    if failure != None:
+        Error(InstallError: String(failure))
+    elif cleanup_failure != None:
+        Error(InstallError: String(cleanup_failure))
+    end
+    print "Installed LSL 0.8.0 atomically; previous version retained for rollback."
+end
 
 function dirname(path):
     slash = -1
@@ -76,6 +122,12 @@ for component in prefix.split("/"):
     if component == "..":
         Error(InstallError: "installation prefix must not contain parent traversal")
     end
+end
+
+supported_prefix = prefix == "/usr/local" or prefix == String(__lsl_getenv("HOME")) + "/.local"
+if update_install.metadata(prefix + "/lib/lsl-updates/current") != None or (supported_prefix and exists(prefix + "/bin/lsl")):
+    call reinstall_managed(prefix)
+    exit(0)
 end
 
 call mkdir(prefix)
