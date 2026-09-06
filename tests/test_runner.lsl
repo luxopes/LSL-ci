@@ -206,16 +206,22 @@ call require_output(httpserver_test, [httpserver_root], "tests/httpserver_confor
 call require_success(run(compiler, ["tests/codegen_optimization_conformance.lsl", optimization_test]), "compile codegen optimization conformance")
 call require_hardened_elf(optimization_test)
 call require_output(optimization_test, [], "tests/codegen_optimization_conformance.out", "codegen optimization output differs")
-# Checked public Any collection and numeric dispatchers added in 0.6.9 are
-# linked into standalone programs so callbacks cannot bypass validation. Keep
-# a tight ceiling around that intentional runtime growth.
-if len(readbytes(optimization_test)) > 98000:
-    Error(TestFailure: "optimized standalone ELF exceeds 98000 bytes")
+# Checked public Any dispatchers and Set's GC/equality/collection helpers are
+# linked into standalone programs. Set/sorted/dedup intentionally add ~7.3 KiB;
+# retain the previous tight (~400-byte) headroom over the measured baseline.
+if len(readbytes(optimization_test)) > 105500:
+    Error(TestFailure: "optimized standalone ELF exceeds 105500 bytes")
+end
+for collection_negative in ["sorted()", "sorted([], [])", "sorted([], key=None)", "dedup()", "dedup([], [])", "set([], [])", "set(values=[])", "set()[0]", "set().append(1)", "set().add()", "set().pop(0)", "set().union()", "set().discard(1, 2)"]:
+    collection_source = test_path("collection-arity-negative.lsl")
+    call writefile(collection_source, "call " + collection_negative + chr(10))
+    call capture(compiler, [collection_source, test_path("collection-arity-negative")])
+    call require_failure(capture_status(), "invalid collection builtin accepted: " + collection_negative)
 end
 call require_success(run(compiler, ["compiler/pure/cli.lsl", cli_test]), "compile stdin CLI")
 call require_hardened_elf(cli_test)
 help_output = capture(cli_test, ["--help"])
-expected_help = "Lux Simple Lang (LSL) 0.8.0" + chr(10)
+expected_help = "Lux Simple Lang (LSL) 0.8.1" + chr(10)
 expected_help += chr(10)
 expected_help += "Usage:" + chr(10)
 expected_help += "  lsl [SOURCE [ARG...]]" + chr(10)
@@ -256,11 +262,11 @@ if capture_status() != 0 or tui_keys_output != "buffered terminal keys passed" +
     Error(TestFailure: "buffered terminal keys differ")
 end
 version_output = capture(cli_test, ["version"])
-if capture_status() != 0 or version_output != "0.8.0" + chr(10):
+if capture_status() != 0 or version_output != "0.8.1" + chr(10):
     Error(TestFailure: "CLI version output differs")
 end
 version_flag_output = capture(cli_test, ["--version"])
-if capture_status() != 0 or version_flag_output != "0.8.0" + chr(10):
+if capture_status() != 0 or version_flag_output != "0.8.1" + chr(10):
     Error(TestFailure: "CLI --version output differs")
 end
 config_output = capture(cli_test, ["config", "examples/config/system.lsl"])
@@ -608,6 +614,8 @@ end
 # typed collections. Run them in short-lived processes so their globals do not
 # consume the shared aggregate's object-table budget during later BigInt stress.
 boundary_tests = [
+    "collections_builtins_conformance",
+    "collections_pointer_conformance",
     "help_conformance",
     "random_conformance",
     "random_thread_conformance",

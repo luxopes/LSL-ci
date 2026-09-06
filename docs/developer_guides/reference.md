@@ -39,6 +39,9 @@ Nově v 0.7.8: modul [random](16-random.md),
 | `IntArray()` | Vytvoří prázdné pole celých čísel (neboxované Int64). |
 | `FloatArray()` | Vytvoří prázdné pole desetinných čísel (neboxované Float64). |
 | `ByteArray()` | Vytvoří prázdné pole bytů (0–255). |
+| `set()` / `set(iterable)` | Vytvoří Set unikátních neměnných hodnot; Dictionary poskytuje klíče. |
+| `sorted(iterable)` | Vrátí stabilně vzestupně seřazený nový List; původní kolekci nemění. Jeden argument, bez `key`/`reverse`. |
+| `dedup(list)` | Vrátí mělký List bez duplicit, v pořadí prvních výskytů; podporuje i vnořené měnitelné kolekce. |
 
 ### <span class="badge badge-builtin">INTROSPEKCE</span> Zjištění typu
 
@@ -207,6 +210,30 @@ a `>>=` fungují stejně jako `+=`.
 | `d.clear()` | Vyprázdní celý slovník. |
 | `d.setdefault(key, default)` | Nastaví hodnotu, pokud klíč neexistuje; vrátí ji. |
 | `d.copy()` | Vrátí mělkou kopii slovníku. |
+
+### Set (od 0.8.1)
+
+Prvky: `Int`, `Float`, `Bool`, `None`, `String`, `Function` a rekurzivně
+neměnné `Tuple`. Rovnost ignoruje pořadí; iterace zachovává pořadí vložení.
+Set podporuje `len`, `Bool`, `in`, `for`, `List(s)`, `Tuple(s)` a `sorted(s)`.
+Nemá indexaci, slicing, literál ani operátorové zkratky množinových metod.
+Vyhledávání je nyní lineární; nejde zatím o hash set.
+
+| Metoda | Popis |
+|---|---|
+| `s.add(x)` | Přidá prvek, pokud dosud chybí. |
+| `s.discard(x)` | Odstraní prvek, pokud existuje. |
+| `s.remove(x)` | Odstraní prvek; chybějící vyvolá `KeyError`. |
+| `s.pop()` | Odstraní a vrátí poslední vložený prvek; prázdný Set vyvolá `KeyError`. |
+| `s.clear()` | Vyprázdní množinu. |
+| `s.copy()` | Vytvoří nezávislou mělkou kopii. |
+| `s.update(iterable)` | Ověří vstup a přidá jeho prvky do původního Set. |
+| `s.union(iterable)` | Vrátí sjednocení jako nový Set. |
+| `s.intersection(iterable)` | Vrátí průnik jako nový Set. |
+| `s.difference(iterable)` | Vrátí rozdíl jako nový Set. |
+| `s.symmetric_difference(iterable)` | Vrátí symetrický rozdíl jako nový Set. |
+| `s.issubset(iterable)` / `s.issuperset(iterable)` | Otestuje podmnožinu / nadmnožinu. |
+| `s.isdisjoint(iterable)` | Otestuje, zda množiny nemají společné prvky. |
 
 ### <span class="badge badge-methods">Tuple</span> Tuple
 

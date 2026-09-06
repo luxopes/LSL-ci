@@ -125,16 +125,16 @@ interní ABI CLI (nejen veřejné testovací drivery).
 Z 0.7.8 proto jednou použijte instalační program z nového archivu:
 
 ```bash
-curl -fSLO https://lsl.lux-ai.cz/downloads/lsl-0.8.0-linux-x86_64.tar.gz
+curl -fSLO https://lsl.lux-ai.cz/downloads/lsl-0.8.1-linux-x86_64.tar.gz
 curl -fSLO https://lsl.lux-ai.cz/downloads/SHA256SUMS
 sha256sum --ignore-missing -c SHA256SUMS
-tar -xzf lsl-0.8.0-linux-x86_64.tar.gz
-sudo ./lsl-0.8.0/bin/lsl-install /usr/local
+tar -xzf lsl-0.8.1-linux-x86_64.tar.gz
+sudo ./lsl-0.8.1/bin/lsl-install /usr/local
 ```
 
-Instalátor 0.8.0 rozpozná stávající spravovanou instalaci a nepřepisuje
+Instalátor 0.8.1 rozpozná stávající spravovanou instalaci a nepřepisuje
 soubory přes symlinky: připraví novou generaci, otestuje ji a atomicky přepne
 aktivní verzi. Zachová předchozí verzi pro rollback. U legacy instalace
 v `/usr/local` nebo `~/.local` nejprve vytvoří její snapshot. Pro uživatelskou
-instalaci použijte bez sudo `./lsl-0.8.0/bin/lsl-install "$HOME/.local"`.
+instalaci použijte bez sudo `./lsl-0.8.1/bin/lsl-install "$HOME/.local"`.
 Další aktualizace z opravené 0.8.0 již používají běžné `lsl update`.

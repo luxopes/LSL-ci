@@ -53,7 +53,7 @@ for topic in ["install", "list", "search", "check", "man", "update", "print"]:
     require(capture_status() == 0 and len(output) > 30 and chr(27) not in output, "topic CLI help")
 end
 output = capture_input(cli, [], "help()" + chr(10))
-require(capture_status() == 0 and "Lux Simple Lang (LSL) 0.8.0" in output and "topics:" in output, "help() index")
+require(capture_status() == 0 and "Lux Simple Lang (LSL) 0.8.1" in output and "topics:" in output, "help() index")
 for source in ["help(\"print\", \"len\")", "help(topic=\"print\")"]:
     call writefile(work + "/bad-help.lsl", source + chr(10))
     call capture(compiler, [work + "/bad-help.lsl", work + "/bad-help"])

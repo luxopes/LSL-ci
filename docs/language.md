@@ -358,9 +358,30 @@ Podporováno je vnoření, více for/if klauzulí a ploché rozbalení dvojic
 nebo jiných pevných počtů prvků, např. `for (a,b) in rows`. Nesprávná
 délka rozbalovaného prvku vyvolá chybu. Maximum je 64 klauzulí.
 Výsledky jsou eager List/Dictionary; nejde o kompresi dat gzip/zlib.
-LSL 0.7.8 nemá typ Set ani lazy generátory. Tuple vytvořte převodem
+Set vytvořte pomocí `set(iterable)`; set comprehension ani lazy generátory
+nejsou podporované. Tuple vytvořte převodem
 `Tuple([...])`; syntaxe `(x for x in data)` není podporována.
 
+
+### Řazení a deduplikace (od 0.8.1)
+
+`sorted(iterable)` vrací nový stabilně vzestupně seřazený List bez změny
+vstupu. Přijímá sekvence, Set a Dictionary (klíče); prvky musí být kompatibilní
+čísla nebo String. Podporován je jeden argument, zatím bez `key`/`reverse`.
+`dedup(list)` vrací mělký List bez duplicit podle strukturální LSL rovnosti,
+v pořadí prvních výskytů. Přijímá i vnořené měnitelné kolekce; původní list
+nemění. `.sort()` nadále řadí na místě.
+
+`set()` / `set(iterable)` vytváří samostatný měnitelný typ `Set`. Prvky jsou
+neměnné skaláry nebo rekurzivně neměnné Tuple. Podporuje členství, délku,
+pravdivost, iteraci, porovnání rovnosti bez ohledu na pořadí, převod na List
+a metody `add`, `discard`, `remove`, `pop`, `clear`, `copy`, `update`, `union`,
+`intersection`, `difference`, `symmetric_difference`, `issubset`, `issuperset`
+a `isdisjoint`. Iterace/rendering zachovává pořadí vložení; `pop()` odebere
+poslední prvek. `remove` chybějícího prvku a `pop` prázdného Set vyvolají
+`KeyError`. Indexace, slicing, použití jako klíč Dictionary, set literály
+a operátorové zkratky nejsou podporované. Lookup je lineární; Set konstrukce
+i `dedup` mají v nejhorším případě kvadratický počet porovnání.
 
 ## Moduly
 

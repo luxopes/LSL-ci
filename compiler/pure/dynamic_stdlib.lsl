@@ -238,6 +238,9 @@ function __lsl_help_text(topic):
         "abs": "abs(NUMBER)\nReturn the absolute value of an Int, Bool or Float.",
         "sqrt": "sqrt(NUMBER) -> Float\nReturn the square root of a nonnegative number.",
         "sum": "sum(ITERABLE)\nAdd the elements of a numeric iterable.",
+        "sorted": "sorted(ITERABLE) -> List\nReturn a stable ascending sorted copy, without changing the input.\nAccepts sequences, Set, and Dictionary keys. Values must be compatible numbers or Strings.\nThis version accepts one argument (no key/reverse parameters). List.sort() still sorts in place.",
+        "dedup": "dedup(LIST) -> List\nReturn a shallow list of distinct values in first-occurrence order.\nUses LSL structural equality, including nested Lists/Dictionaries; does not change the input.",
+        "set": "set() or set(ITERABLE) -> Set\nCreate a mutable collection of unique immutable values (scalars and recursively immutable Tuples).\nSupports len, Bool, in, for, equality, add, discard, remove, pop, clear, copy, update,\nunion, intersection, difference, symmetric_difference, issubset, issuperset, isdisjoint.\nSet equality ignores order. Iteration keeps insertion order; there is no indexing or Set literal.\nUse List(s) or sorted(s) to obtain a list. Membership currently uses a linear scan.",
         "min": "min(ITERABLE) or min(A, B)\nReturn the smallest element or operand.",
         "max": "max(ITERABLE) or max(A, B)\nReturn the largest element or operand.",
         "rang": "rang(STOP), rang(START, STOP), rang(START, STOP, STEP)\nConstruct an integer range excluding STOP; STEP must not be zero.",
@@ -285,7 +288,7 @@ function __lsl_help_text(topic):
     if topic == "":
         names = topics.keys()
         call names.sort()
-        return "Lux Simple Lang (LSL) 0.8.0" + chr(10) + "Use help(\"TOPIC\") for details; lsl man opens the full offline manual." + chr(10) + "topics: " + " ".join(names)
+        return "Lux Simple Lang (LSL) 0.8.1" + chr(10) + "Use help(\"TOPIC\") for details; lsl man opens the full offline manual." + chr(10) + "topics: " + " ".join(names)
     end
     if topic not in topics:
         Error(HelpError: "unknown help topic; call help() to list supported topics")
@@ -414,6 +417,17 @@ function __lsl_extend(target, values):
 end
 
 function __lsl_list(values):
+    if __lsl_type_code(values) == 3:
+        return values.keys()
+    elif __lsl_type_code(values) == 16:
+        result = []
+        index = 0
+        while index < len(values):
+            result.append(values[index])
+            index += 1
+        end
+        return result
+    end
     values = __lsl_require_sequence(values)
     result = []
     value_code = __lsl_type_code(values)
@@ -519,7 +533,9 @@ end
 
 function __lsl_dynamic_copy(target):
     target_type = __lsl_type_code(target)
-    if target_type == 2:
+    if target_type == 16:
+        return __lsl_set(target)
+    elif target_type == 2:
         return __lsl_copy(target)
     elif target_type == 3:
         return __lsl_dict_copy(target)
@@ -530,6 +546,9 @@ function __lsl_dynamic_copy(target):
 end
 
 function __lsl_dynamic_pop0(target):
+    if __lsl_type_code(target) == 16:
+        return __lsl_set_pop(target)
+    end
     if __lsl_type_code(target) != 2:
         Error(TypeError: "pop() without an argument requires a List")
     end
@@ -564,7 +583,9 @@ end
 
 function __lsl_dynamic_contains(target, value):
     target_type = __lsl_type_code(target)
-    if target_type == 1:
+    if target_type == 16:
+        return __lsl_set_contains(target, value)
+    elif target_type == 1:
         return __lsl_find(target, __lsl_require_string_value(value)) >= 0
     elif target_type == 3:
         for key in target.keys():
@@ -577,6 +598,212 @@ function __lsl_dynamic_contains(target, value):
         return __lsl_sequence_contains(target, value)
     end
     Error(TypeError: "right operand of in is not a collection")
+end
+
+function __lsl_sorted(values):
+    result = __lsl_list(values)
+    call __lsl_sort(result)
+    return result
+end
+
+# Unlike Set, dedup also accepts nested mutable values. Equality is the same
+# structural equality used by LSL lists; retain the first object, not a clone.
+function __lsl_dedup(values):
+    values = __lsl_require_list(values)
+    result = []
+    for value in values:
+        if not __lsl_sequence_contains(result, value):
+            result.append(value)
+        end
+    end
+    return result
+end
+
+function __lsl_require_set(value):
+    if __lsl_type_code(value) != 16:
+        Error(TypeError: "method requires a Set receiver")
+    end
+    return value
+end
+
+function __lsl_check_set_key(value):
+    if __lsl_type_code(value) == 16:
+        Error(TypeError: "mutable Set cannot be a Dictionary key")
+    end
+    return value
+end
+
+function __lsl_set_check_value(value, depth):
+    code = __lsl_type_code(value)
+    if code == 7:
+        if depth >= 64:
+            Error(ValueError: "Set element nesting exceeds 64 levels")
+        end
+        for item in value:
+            call __lsl_set_check_value(item, depth + 1)
+        end
+    elif code != 0 and code != 1 and code != 4 and code != 5 and code != 6 and code != 9 and code != 10:
+        Error(TypeError: "Set elements must be immutable scalar values or Tuples")
+    end
+end
+
+function __lsl_set_find(target, value):
+    index = 0
+    while index < len(target):
+        if target[index] == value:
+            return index
+        end
+        index += 1
+    end
+    return -1
+end
+
+function __lsl_set_contains(target, value):
+    call __lsl_set_check_value(value, 0)
+    return __lsl_set_find(target, value) >= 0
+end
+
+function __lsl_set_add(target, value):
+    target = __lsl_require_set(target)
+    call __lsl_set_check_value(value, 0)
+    if __lsl_set_find(target, value) < 0:
+        # Private raw List-layout primitive; public append/indexing stays banned.
+        call __lsl_set_append(target, value)
+    end
+end
+
+function __lsl_set(values):
+    values = __lsl_list(values)
+    result = __lsl_new_set()
+    for value in values:
+        call __lsl_set_add(result, value)
+    end
+    return result
+end
+
+function __lsl_set_discard(target, value):
+    target = __lsl_require_set(target)
+    call __lsl_set_check_value(value, 0)
+    position = __lsl_set_find(target, value)
+    if position >= 0:
+        call __lsl_set_delete(target, position)
+    end
+end
+
+function __lsl_set_remove(target, value):
+    target = __lsl_require_set(target)
+    call __lsl_set_check_value(value, 0)
+    position = __lsl_set_find(target, value)
+    if position < 0:
+        Error(KeyError: "value is not in Set")
+    end
+    call __lsl_set_delete(target, position)
+end
+
+function __lsl_set_delete(target, position):
+    index = __lsl_typed_int(position)
+    while index + 1 < len(target):
+        call __lsl_set_store(target, index, target[index + 1])
+        index += 1
+    end
+    call __lsl_pop_last(target)
+end
+
+function __lsl_set_pop(target):
+    target = __lsl_require_set(target)
+    if len(target) == 0:
+        Error(KeyError: "pop from empty Set")
+    end
+    return __lsl_pop(target)
+end
+
+function __lsl_set_update(target, values):
+    target = __lsl_require_set(target)
+    # Validate and snapshot before mutation, including update(self).
+    values = __lsl_set(values)
+    for value in values:
+        call __lsl_set_add(target, value)
+    end
+end
+
+function __lsl_set_union(target, values):
+    target = __lsl_require_set(target)
+    result = __lsl_set(target)
+    call __lsl_set_update(result, values)
+    return result
+end
+
+function __lsl_set_intersection(target, values):
+    target = __lsl_require_set(target)
+    other = __lsl_set(values)
+    result = __lsl_new_set()
+    for value in target:
+        if __lsl_set_contains(other, value):
+            call __lsl_set_add(result, value)
+        end
+    end
+    return result
+end
+
+function __lsl_set_difference(target, values):
+    target = __lsl_require_set(target)
+    other = __lsl_set(values)
+    result = __lsl_new_set()
+    for value in target:
+        if not __lsl_set_contains(other, value):
+            call __lsl_set_add(result, value)
+        end
+    end
+    return result
+end
+
+function __lsl_set_symmetric_difference(target, values):
+    target = __lsl_require_set(target)
+    other = __lsl_set(values)
+    result = __lsl_set_difference(target, other)
+    call __lsl_set_update(result, __lsl_set_difference(other, target))
+    return result
+end
+
+function __lsl_set_issubset(target, values):
+    target = __lsl_require_set(target)
+    other = __lsl_set(values)
+    for value in target:
+        if not __lsl_set_contains(other, value):
+            return False
+        end
+    end
+    return True
+end
+
+function __lsl_set_issuperset(target, values):
+    target = __lsl_require_set(target)
+    return __lsl_set_issubset(__lsl_set(values), target)
+end
+
+function __lsl_set_isdisjoint(target, values):
+    target = __lsl_require_set(target)
+    other = __lsl_set(values)
+    for value in target:
+        if __lsl_set_contains(other, value):
+            return False
+        end
+    end
+    return True
+end
+
+function __lsl_collection_remove(target, value):
+    if __lsl_type_code(target) == 16:
+        return __lsl_set_remove(target, value)
+    end
+    return __lsl_remove(__lsl_require_list(target), value)
+end
+
+function __lsl_collection_update(target, values):
+    if __lsl_type_code(target) == 16:
+        return __lsl_set_update(target, values)
+    end
+    return __lsl_update(__lsl_require_dictionary(target), values)
 end
 
 function __lsl_real_array(values):
@@ -1219,7 +1446,7 @@ function __lsl_render_seen(value, quote, active, depth):
         end
         result.append("])")
         return "".join(result)
-    elif code != 2 and code != 7 and code != 8:
+    elif code != 2 and code != 7 and code != 8 and code != 16:
         return "<Object>"
     end
     open_bracket = "["
@@ -1229,6 +1456,12 @@ function __lsl_render_seen(value, quote, active, depth):
         close_bracket = ")"
     elif code == 8:
         open_bracket = "!["
+    elif code == 16:
+        if len(value) == 0:
+            return "set()"
+        end
+        open_bracket = "{"
+        close_bracket = "}"
     end
     if __lsl_render_active(value, active):
         return open_bracket + "..." + close_bracket
@@ -1285,6 +1518,8 @@ function __lsl_type_name(value):
         return "FloatArray"
     elif code == 15:
         return "ByteArray"
+    elif code == 16:
+        return "Set"
     end
     return "Any"
 end
@@ -1557,6 +1792,17 @@ function __lsl_equal_seen(left, right, seen_left, seen_right, depth):
     if left_code != right_code:
         return False
     end
+    if left_code == 16:
+        if len(left) != len(right):
+            return False
+        end
+        for item in left:
+            if not __lsl_set_contains(right, item):
+                return False
+            end
+        end
+        return True
+    end
     if left_code == 2 or left_code == 7 or left_code == 8 or left_code == 3:
         seen_index = 0
         while seen_index < len(seen_left):
@@ -1648,7 +1894,7 @@ function __lsl_equal(left, right):
     if left_code != right_code:
         return False
     end
-    if left_code == 2 or left_code == 7 or left_code == 8 or left_code == 13 or left_code == 14 or left_code == 15 or left_code == 3:
+    if left_code == 2 or left_code == 7 or left_code == 8 or left_code == 13 or left_code == 14 or left_code == 15 or left_code == 3 or left_code == 16:
         return __lsl_equal_seen(left, right, [], [], 0)
     end
     return False

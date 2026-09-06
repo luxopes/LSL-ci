@@ -13,7 +13,7 @@ load parser
 load sandbox
 load update
 
-VERSION = "0.8.0"
+VERSION = "0.8.1"
 
 function print_help():
     call console.heading("Lux Simple Lang (LSL) " + VERSION)

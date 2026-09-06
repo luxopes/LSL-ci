@@ -268,10 +268,12 @@ function infer_expression_type(syntax, types, function_returns):
                 return "Float"
             elif name == "exists" or name == "native_name_equal":
                 return "Bool"
-            elif name == "__lsl_sleep" or name == "atomic_pause" or name == "help":
+            elif name == "__lsl_sleep" or name == "atomic_pause" or name == "help" or name == "__lsl_set_append" or name == "__lsl_set_store":
                 return "None"
-            elif name == "List":
+            elif name == "List" or name == "sorted" or name == "dedup":
                 return "List"
+            elif name == "set" or name == "__lsl_new_set":
+                return "Set"
             elif name == "Tuple":
                 return "Tuple"
             elif name == "RealArray":
@@ -292,6 +294,15 @@ function infer_expression_type(syntax, types, function_returns):
         elif target["kind"] == "member":
             member = target["name"]
             receiver_type = infer_expression_type(target["target"], types, function_returns)
+            if receiver_type == "Set":
+                if member == "copy" or member == "union" or member == "intersection" or member == "difference" or member == "symmetric_difference":
+                    return "Set"
+                elif member == "issubset" or member == "issuperset" or member == "isdisjoint":
+                    return "Bool"
+                elif member == "add" or member == "discard" or member == "remove" or member == "update" or member == "clear":
+                    return "None"
+                end
+            end
             if receiver_type.startswith("Class:") or receiver_type.startswith("Instance:"):
                 if receiver_type.startswith("Class:"):
                     receiver_class = receiver_type[6:len(receiver_type)]
@@ -305,6 +316,12 @@ function infer_expression_type(syntax, types, function_returns):
             end
             if member == "append" or member == "extend" or member == "sort" or member == "reverse" or member == "clear":
                 return "None"
+            elif (receiver_type == "Any" or receiver_type == "Set") and (member == "add" or member == "discard"):
+                return "None"
+            elif (receiver_type == "Any" or receiver_type == "Set") and (member == "issubset" or member == "issuperset" or member == "isdisjoint"):
+                return "Bool"
+            elif (receiver_type == "Any" or receiver_type == "Set") and (member == "union" or member == "intersection" or member == "difference" or member == "symmetric_difference"):
+                return "Set"
             elif member == "strip" or member == "lstrip" or member == "rstrip" or member == "join" or member == "replace" or member == "lower" or member == "upper" or member == "title" or member == "capitalize":
                 return "String"
             elif member == "split" or member == "keys" or member == "values" or member == "items":
@@ -465,7 +482,11 @@ function is_sequence_type(value_type):
 end
 
 function is_sized_type(value_type):
-    return is_sequence_type(value_type) or value_type == "Dictionary"
+    return is_sequence_type(value_type) or value_type == "Dictionary" or value_type == "Set"
+end
+
+function set_method(name):
+    return name == "add" or name == "discard" or name == "union" or name == "intersection" or name == "difference" or name == "symmetric_difference" or name == "issubset" or name == "issuperset" or name == "isdisjoint"
 end
 
 function is_mutable_index_type(value_type):
@@ -478,7 +499,9 @@ end
 
 function method_supported(receiver_type, name):
     if receiver_type == "Any":
-        return method_function(name) != "" or name == "append" or name == "clear" or name == "pop" or name == "keys" or name == "index"
+        return method_function(name) != "" or name == "append" or name == "clear" or name == "pop" or name == "keys" or name == "index" or set_method(name)
+    elif receiver_type == "Set":
+        return set_method(name) or name == "remove" or name == "pop" or name == "clear" or name == "update" or name == "copy"
     elif receiver_type == "String":
         return name == "strip" or name == "lstrip" or name == "rstrip" or name == "lower" or name == "upper" or name == "title" or name == "capitalize" or name == "startswith" or name == "endswith" or name == "find" or name == "index" or name == "count" or name == "split" or name == "join" or name == "replace"
     elif receiver_type == "List":
@@ -552,7 +575,7 @@ function emit_truth(generator):
 end
 
 function maybe_collection(value_type):
-    return value_type == "List" or value_type == "Tuple" or value_type == "RealArray" or value_type == "IntArray" or value_type == "FloatArray" or value_type == "ByteArray" or value_type == "Dictionary" or value_type == "Any"
+    return value_type == "List" or value_type == "Tuple" or value_type == "RealArray" or value_type == "IntArray" or value_type == "FloatArray" or value_type == "ByteArray" or value_type == "Dictionary" or value_type == "Set" or value_type == "Any"
 end
 
 function condition_is_bool(syntax):
@@ -1726,10 +1749,15 @@ end
 
 function emit_dictionary_key_box(generator, syntax):
     key_type = infer_expression_type(syntax, generator["types"], generator["function_returns"])
-    if key_type == "List" or key_type == "Tuple" or key_type == "RealArray" or key_type == "IntArray" or key_type == "FloatArray" or key_type == "ByteArray" or key_type == "Dictionary" or key_type.startswith("Class:") or key_type.startswith("Instance:"):
+    if key_type == "List" or key_type == "Tuple" or key_type == "RealArray" or key_type == "IntArray" or key_type == "FloatArray" or key_type == "ByteArray" or key_type == "Dictionary" or key_type == "Set" or key_type.startswith("Class:") or key_type.startswith("Instance:"):
         call unsupported(generator["path"], generator["lines"], syntax, "mutable or collection value cannot be a Dictionary key", "use String, Int, Bool, None, Float, or Function keys")
     end
     call emit_collection_box(generator, syntax)
+    if key_type == "Any" and not generator["internal_abi"]:
+        call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
+        call assembler.relative(generator["builder"], [232], "function___lsl_check_set_key")
+        call emit_pending_error(generator)
+    end
 end
 
 function dynamic_numeric_runtime(generator, name):
@@ -2342,7 +2370,11 @@ function emit_expression(generator, syntax):
                 end
             else:
                 if target_type == "Any" and not generator["internal_abi"]:
-                    call assembler.relative(output, [232], "runtime_dynamic_get")
+                    if generator.get("current_internal_function", False):
+                        call assembler.relative(output, [232], "runtime_iter_get")
+                    else:
+                        call assembler.relative(output, [232], "runtime_dynamic_get")
+                    end
                 else:
                     call assembler.relative(output, [232], "runtime_get")
                 end
@@ -2819,6 +2851,11 @@ function emit_expression(generator, syntax):
             builtin_arity["__lsl_unbox_bool"] = 1
             builtin_arity["__lsl_unbox_int"] = 1
             builtin_arity["__lsl_syscall6"] = 7
+            builtin_arity["sorted"] = 1
+            builtin_arity["dedup"] = 1
+            builtin_arity["__lsl_new_set"] = 0
+            builtin_arity["__lsl_set_append"] = 2
+            builtin_arity["__lsl_set_store"] = 3
             if target["name"] == "help":
                 if len(syntax["arguments"]) > 1:
                     call unsupported(generator["path"], generator["lines"], syntax, "builtin help expects zero or one argument", "use help() or help(\"TOPIC\")")
@@ -2828,12 +2865,49 @@ function emit_expression(generator, syntax):
                 if len(syntax["arguments"]) != expected_builtin:
                     call unsupported(generator["path"], generator["lines"], syntax, "builtin " + target["name"] + " expects " + String(expected_builtin) + " argument(s), got " + String(len(syntax["arguments"])), "pass exactly " + String(expected_builtin) + " argument(s)")
                 end
-            elif target["name"] == "IntArray" or target["name"] == "FloatArray" or target["name"] == "ByteArray":
+            elif target["name"] == "IntArray" or target["name"] == "FloatArray" or target["name"] == "ByteArray" or target["name"] == "set":
                 if len(syntax["arguments"]) > 1:
                     call unsupported(generator["path"], generator["lines"], syntax, "builtin " + target["name"] + " expects zero or one argument", "pass no argument for a new array or an existing array as a checked cast")
                 end
             end
-            if target["name"] == "IntArray" or target["name"] == "FloatArray" or target["name"] == "ByteArray":
+            if target["name"] == "sorted" or target["name"] == "dedup" or target["name"] == "set":
+                collection_arguments = syntax["arguments"]
+                if len(collection_arguments) == 0:
+                    collection_arguments = [{"kind": "list", "items": [], "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]}]
+                end
+                collection_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_" + target["name"]}, "arguments": collection_arguments}
+                call emit_expression(generator, collection_call)
+                return
+            elif target["name"] == "__lsl_new_set":
+                call assembler.emit(output, x86_64.mov_imm64(7, 0))
+                call assembler.emit(output, x86_64.mov_imm64(6, 0))
+                call assembler.relative(output, [232], "runtime_list_new")
+                call assembler.emit(output, x86_64.store_memory_imm32(0, 0, 16))
+                return
+            elif target["name"] == "__lsl_set_append" or target["name"] == "__lsl_set_store":
+                call emit_expression(generator, syntax["arguments"][0])
+                call assembler.emit(output, x86_64.push(0))
+                if target["name"] == "__lsl_set_store":
+                    call emit_expression(generator, syntax["arguments"][1])
+                    call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                    call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+                    call assembler.emit(output, x86_64.push(0))
+                end
+                call emit_expression(generator, syntax["arguments"][len(syntax["arguments"]) - 1])
+                call emit_collection_box(generator, syntax["arguments"][len(syntax["arguments"]) - 1])
+                if target["name"] == "__lsl_set_append":
+                    call assembler.emit(output, x86_64.move_reg_reg(6, 0))
+                    call assembler.emit(output, x86_64.pop(7))
+                    call assembler.relative(output, [232], "runtime_list_append")
+                else:
+                    call assembler.emit(output, x86_64.pop(6))
+                    call assembler.emit(output, x86_64.pop(7))
+                    call assembler.emit(output, x86_64.load_memory(7, 7, 24))
+                    call assembler.emit(output, x86_64.store_indexed(7, 6, 3, 0))
+                end
+                call assembler.emit(output, x86_64.mov_imm64(0, 0))
+                return
+            elif target["name"] == "IntArray" or target["name"] == "FloatArray" or target["name"] == "ByteArray":
                 expected_array_code = 13
                 if target["name"] == "FloatArray":
                     expected_array_code = 14
@@ -4121,6 +4195,9 @@ function emit_expression(generator, syntax):
                 call unsupported(generator["path"], generator["lines"], syntax, "type " + receiver_type + " has no method " + target["name"], "use a method documented for " + receiver_type)
             end
             method_arity = {"strip": 0, "lstrip": 0, "rstrip": 0, "lower": 0, "upper": 0, "title": 0, "capitalize": 0, "sort": 0, "reverse": 0, "copy": 0, "keys": 0, "values": 0, "items": 0, "clear": 0, "append": 1, "startswith": 1, "endswith": 1, "find": 1, "count": 1, "split": 1, "join": 1, "extend": 1, "remove": 1, "index": 1, "update": 1, "replace": 2, "insert": 2}
+            if set_method(target["name"]):
+                method_arity[target["name"]] = 1
+            end
             if target["name"] in method_arity and not receiver_type.startswith("Class:") and not receiver_type.startswith("Instance:"):
                 expected_method = method_arity[target["name"]]
                 if len(syntax["arguments"]) != expected_method:
@@ -4138,6 +4215,8 @@ function emit_expression(generator, syntax):
                 pop_arity_valid = False
                 if receiver_type == "Dictionary":
                     pop_arity_valid = len(syntax["arguments"]) == 1 or len(syntax["arguments"]) == 2
+                elif receiver_type == "Set":
+                    pop_arity_valid = len(syntax["arguments"]) == 0
                 elif receiver_type == "Any":
                     pop_arity_valid = len(syntax["arguments"]) >= 0 and len(syntax["arguments"]) <= 2
                 else:
@@ -4152,6 +4231,18 @@ function emit_expression(generator, syntax):
                 if method_index_type != "Int" and method_index_type != "Bool" and method_index_type != "Any":
                     call unsupported(generator["path"], generator["lines"], syntax["arguments"][0], "sequence index must be Int", "convert the index with Int(...)")
                 end
+            end
+            if (receiver_type == "Set" and target["name"] != "clear") or ((receiver_type == "Any") and (set_method(target["name"]) or target["name"] == "remove" or target["name"] == "update")):
+                set_target = "__lsl_set_" + target["name"]
+                if target["name"] == "copy":
+                    set_target = "__lsl_set"
+                elif receiver_type == "Any" and (target["name"] == "remove" or target["name"] == "update"):
+                    set_target = "__lsl_collection_" + target["name"]
+                end
+                set_arguments = [target["target"]]
+                set_arguments.extend(syntax["arguments"])
+                call emit_expression(generator, {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": set_target}, "arguments": set_arguments})
+                return
             end
             if receiver_type.startswith("Class:") or receiver_type.startswith("Instance:"):
                 if receiver_type.startswith("Class:"):
@@ -4573,7 +4664,7 @@ function emit_expression(generator, syntax):
             elif container_type == "String" and member_type != "String" and member_type != "Any":
                 call unsupported(generator["path"], generator["lines"], left, "String membership requires a String value", "convert the searched value with String(...)")
             end
-            if (container_type == "Any" and not generator["internal_abi"]) or container_type == "IntArray" or container_type == "FloatArray" or container_type == "ByteArray" or (container_type == "String" and member_type == "Any" and not generator["internal_abi"]):
+            if (container_type == "Any" and not generator["internal_abi"]) or container_type == "Set" or container_type == "IntArray" or container_type == "FloatArray" or container_type == "ByteArray" or (container_type == "String" and member_type == "Any" and not generator["internal_abi"]):
                 contains_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_dynamic_contains"}, "arguments": [right, left]}
                 call emit_expression(generator, contains_call)
             else:
@@ -4751,7 +4842,7 @@ function emit_print_value(generator, expression):
     end
     if True:
         value_type = infer_expression_type(expression, generator["types"], generator["function_returns"])
-        if value_type == "List" or value_type == "Tuple" or value_type == "RealArray" or value_type == "IntArray" or value_type == "FloatArray" or value_type == "ByteArray" or value_type == "Dictionary" or value_type == "Function" or value_type == "Any":
+        if value_type == "List" or value_type == "Tuple" or value_type == "RealArray" or value_type == "IntArray" or value_type == "FloatArray" or value_type == "ByteArray" or value_type == "Dictionary" or value_type == "Set" or value_type == "Function" or value_type == "Any":
             str_call = {"kind": "call", "line": expression["line"], "column": expression["column"], "end_column": expression["end_column"], "target": {"kind": "name", "name": "__lsl_str_value"}, "arguments": [expression]}
             call emit_expression(generator, str_call)
             call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
@@ -5120,7 +5211,7 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 value_name = statement["name"]
                 call emit_expression(generator, iterable)
                 iterable_type = infer_expression_type(iterable, generator["types"], generator["function_returns"])
-                if iterable_type != "Any" and iterable_type != "Dictionary" and not is_sequence_type(iterable_type):
+                if iterable_type != "Any" and iterable_type != "Dictionary" and iterable_type != "Set" and not is_sequence_type(iterable_type):
                     call unsupported(generator["path"], generator["lines"], iterable, "value of type " + iterable_type + " is not iterable", "iterate a String, collection, typed array, or Dictionary")
                 end
                 if iterable_type == "Dictionary":
@@ -5173,7 +5264,7 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 elif iterable_type == "IntArray":
                     call assembler.emit(generator["builder"], x86_64.load_memory(0, 7, 24))
                     call assembler.emit(generator["builder"], x86_64.load_indexed(0, 0, 6, 3))
-                elif iterable_type == "List" or iterable_type == "Tuple" or iterable_type == "RealArray" or iterable_type == "FloatArray":
+                elif iterable_type == "List" or iterable_type == "Tuple" or iterable_type == "RealArray" or iterable_type == "FloatArray" or iterable_type == "Set":
                     call assembler.relative(generator["builder"], [232], "runtime_list_get")
                     if iterable_type == "FloatArray":
                         call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
@@ -5181,7 +5272,7 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                     end
                 else:
                     if iterable_type == "Any" and not generator["internal_abi"]:
-                        call assembler.relative(generator["builder"], [232], "runtime_dynamic_get")
+                        call assembler.relative(generator["builder"], [232], "runtime_iter_get")
                         call emit_pending_error(generator)
                     else:
                         call assembler.relative(generator["builder"], [232], "runtime_get")
@@ -5651,7 +5742,7 @@ function returned_type(statements, types, function_returns):
 end
 
 function specializable_parameter_type(value_type):
-    return value_type == "Int" or value_type == "Bool" or value_type == "None" or value_type == "Float" or value_type == "String" or value_type == "List" or value_type == "Tuple" or value_type == "RealArray" or value_type == "Dictionary" or value_type == "IntArray" or value_type == "FloatArray" or value_type == "ByteArray" or value_type.startswith("Class:") or value_type.startswith("Instance:")
+    return value_type == "Int" or value_type == "Bool" or value_type == "None" or value_type == "Float" or value_type == "String" or value_type == "List" or value_type == "Tuple" or value_type == "RealArray" or value_type == "Dictionary" or value_type == "IntArray" or value_type == "FloatArray" or value_type == "ByteArray" or value_type == "Set" or value_type.startswith("Class:") or value_type.startswith("Instance:")
 end
 
 function empty_parameter_types(functions):

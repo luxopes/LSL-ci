@@ -15,6 +15,7 @@ jak ho vytvořit, jak do něj ukládat a číst hodnoty.
 | Seznam položek (lze přidávat a mazat) | `List` | Univerzální, měnitelný |
 | Pevnou skupinu hodnot (nemění se) | `Tuple` | Lehčí, bezpečnější |
 | Tabulku klíč→hodnota (např. jméno→věk) | `Dictionary` | Rychlé vyhledávání podle klíče |
+| Unikátní neměnné hodnoty | `Set` | Odstraní duplicity a nabízí množinové metody |
 | Velké pole čísel pro výpočty | `IntArray` / `FloatArray` | Efektivní, neboxované |
 | Binární data (obrázky, soubory) | `ByteArray` | Jeden byte na prvek |
 
@@ -40,7 +41,8 @@ Podporováno je vnoření, více for/if klauzulí a ploché rozbalení dvojic
 nebo jiných pevných počtů prvků, např. `for (a,b) in rows`. Nesprávná
 délka rozbalovaného prvku vyvolá chybu. Maximum je 64 klauzulí.
 Výsledky jsou eager List/Dictionary; nejde o kompresi dat gzip/zlib.
-LSL 0.7.8 nemá typ Set ani lazy generátory. Tuple vytvořte převodem
+Set vytvořte pomocí `set(iterable)`; set comprehension ani lazy generátory
+nejsou podporované. Tuple vytvořte převodem
 `Tuple([...])`; syntaxe `(x for x in data)` není podporována.
 
 
@@ -160,6 +162,24 @@ data.reverse()       # obrátí na místě: [5, 4, 3, 1, 1]
 kopie = data.copy()   # vytvoří mělkou kopii
 ```
 
+Od 0.8.1 lze získat seřazenou kopii přímo:
+
+```lsl
+data = [3, 1, 3, 2]
+print sorted(data)    # [1, 2, 3, 3]
+print dedup(data)     # [3, 1, 2]
+print data            # [3, 1, 3, 2] — původní seznam se nemění
+```
+
+`sorted(iterable)` vrací nový List, řadí stabilně vzestupně čísla nebo řetězce
+(podle Unicode code points) a přijímá jeden argument, bez `key`/`reverse`.
+Vstupem může být sekvence, Set nebo Dictionary (řadí klíče). `.sort()` nadále
+mění seznam na místě a nevrací seřazený seznam.
+
+`dedup(list)` vrací mělkou kopii bez duplicit. Zachová první výskyt podle
+LSL rovnosti, včetně vnořených List/Dictionary; původní objekty nekopíruje.
+Používá lineární hledání, tedy nejhůře kvadratický počet porovnání.
+
 ### Mazání
 
 ```lsl
@@ -187,6 +207,27 @@ for i in rang(len(ovoce)):
     printl "{i}: {ovoce[i]}"
 end
 ```
+
+## Set — množina (od 0.8.1)
+
+```lsl
+unikatni = set([3, 1, 3, 2])
+unikatni.add(4)
+unikatni.discard(1)
+print sorted(unikatni)       # [2, 3, 4]
+print 3 in unikatni          # True
+print len(unikatni)          # 3
+print sorted(unikatni.intersection([2, 9]))  # [2]
+prazdna = set()
+```
+
+Set přijímá skaláry (`Int`, `Float`, `Bool`, `None`, `String`, `Function`)
+a Tuple obsahující pouze takové neměnné hodnoty. Měnitelné kolekce odmítne
+s `TypeError`; pro deduplikaci vnořených seznamů použijte `dedup`.
+Rovnost Set nezávisí na pořadí prvků. Iterace deterministicky zachovává pořadí
+vložených prvků. Podporovány jsou `for`, `in`, `len`, `Bool`, převod `List(s)`
+a množinové metody popsané v [referenci](reference.md). Indexování ani literál
+`{1, 2}` nejsou podporované. Vyhledávání je zatím lineární, ne hashované.
 
 ## Tuple — neměnitelná skupina
 

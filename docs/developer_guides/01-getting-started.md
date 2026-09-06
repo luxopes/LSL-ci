@@ -146,7 +146,7 @@ Spusťte LSL bez argumentů:
 Objeví se:
 
 ```text
-Lux Simple Lang 0.8.0 interactive source mode
+Lux Simple Lang 0.8.1 interactive source mode
 Enter code; type exit on its own line to compile and run.
 >>>
 ```

@@ -36,6 +36,14 @@ Allocator před payloadem udržuje neveřejnou 32-byte GC hlavičku. Aktuální 
 - `13` contiguous raw `IntArray`
 - `14` contiguous raw IEEE-754 `FloatArray`
 - `15` packed `ByteArray`
+- `16` `Set`: unique immutable elements in the boxed List layout
+
+Set uses the List header, count, capacity and slot buffer. Its buffer and every
+element are traced by GC exactly like a List. Private helpers may read/mutate
+slots; public indexed get/set, slicing, append and Dictionary-key use reject it.
+Iteration uses a separate checked type dispatcher, not public indexing. Set
+equality ignores order, while iteration/rendering preserve insertion order.
+The initial implementation uses linear equality lookup, not hash buckets.
 
 String payload je UTF-8, ale jazykové `len`, indexace a slicing pracují s Unicode code points. List/Tuple/RealArray slots, Dictionary hodnoty a instance fields nesou dynamické hodnoty; staticky známé Int, Bool a None jsou na této hranici boxované. Generic truth, equality, comparison, numeric operations, rendering, JSON, conversions, indexing a `rang` přijímají raw i boxed Int. Typed Int fast path zůstává raw.
 

@@ -4,6 +4,14 @@ Na této stránce jsou uživatelsky významné změny vydaných verzí. Stabiln�
 manuály a soubory ke stažení zůstávají dostupné v
 [historii vydání](/releases/).
 
+## 0.8.1 — 6. 9. 2026
+
+- `sorted(iterable)` vrací stabilně vzestupně seřazený nový List.
+- `set()` / `set(iterable)` vytváří nový typ Set s unikátními prvky,
+  členstvím, iterací, GC a základními množinovými metodami.
+- `dedup(list)` zachovává pořadí prvních výskytů i původní seznam;
+  podporuje strukturální porovnání vnořených kolekcí.
+
 ## 0.8.0 — 6. 9. 2026
 
 - Barevná nápověda, stavové výpisy a diagnostika; prostý text pro pipes a NO_COLOR.

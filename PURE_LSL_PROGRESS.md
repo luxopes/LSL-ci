@@ -1,6 +1,20 @@
 # Pure-LSL migration
 
-## Aktuální vydání 0.8.0 — 6. 9. 2026
+## Aktuální vydání 0.8.1 — 6. 9. 2026
+
+`sorted(iterable)` vrací stabilně seřazený List; `dedup(list)` zachovává
+první výskyty i vstup. Nový heap typ Set (16) má GC, render, rovnost bez
+pořadí, iteraci, členství a množinové metody. Implementace je pouze LSL;
+Set používá lineární lookup. `sorted` zatím nemá `key`/`reverse`.
+
+Přegenerovány compiler, CLI, installer, configure a runner. Fixed point je
+bitově shodný, plná sada včetně GTX 1650 a nových Any/pointer-collision testů
+prošla. Compiler: `88863cc28498de4b4c032253bb2931fd098c9f9eb9e5e377eb74edd053a7de23`.
+CLI: `2d76856112faeb7158ea4ad2f376f3724af109388db23fb328fa07ebfe6c51b2`.
+Optimalizační fixture má 105 140 bajtů; nový limit 105 500 ponechává těsnou
+rezervu nad záměrně rozšířeným runtime. Podrobnosti: `docs/release-0.8.1.md`.
+
+## Vydání 0.8.0 — 6. 9. 2026
 
 Barevné CLI a diagnostika, list/search/check, validovaný katalog knihoven,
 TUI správce balíčků a offline manuál všech 17 webových kapitol. Embedded

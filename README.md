@@ -1,6 +1,6 @@
 # Lux Simple Lang (LSL)
 
-**LSL 0.8.0** je vydání self-hostovaného jazyka pro běžné
+**LSL 0.8.1** je vydání self-hostovaného jazyka pro běžné
 programování, deklarativní konfiguraci, AI orchestrace a volitelné CUDA
 výpočty. Compiler i host runtime
 jsou pouze LSL: compiler přímo zapisuje statický Linux x86_64 ELF a runtime
@@ -11,15 +11,16 @@ pure-LSL a Tensor používá CPU fallback.
 
 ## Self-hosted vydání
 
-LSL 0.8.0 přináší barevné CLI, `list`, `search`, `check`, TUI správce
-balíčků, offline manuál a `help("téma")`. Random, comprehensions, CUDA
-a podepsaný self-updater zůstávají součástí vydání.
+LSL 0.8.1 přidává `sorted(iterable)`, množiny `set()` a deduplikaci
+`dedup(list)`. Barevné CLI, správce balíčků, offline manuál, random,
+comprehensions, CUDA a podepsaný self-updater zůstávají součástí vydání.
 Binární balík pro Linux x86_64,
 zdrojový archiv a aktualizovaný český manuál jsou na
 [lsl.lux-ai.cz](https://lsl.lux-ai.cz/). Stabilní manuály vydání jsou v
 [historii vydání](https://lsl.lux-ai.cz/releases/):
 
-- [LSL 0.8.0](https://lsl.lux-ai.cz/) — správa knihoven, TUI, offline manuál,
+- [LSL 0.8.1](https://lsl.lux-ai.cz/) — `sorted`, Set a `dedup`;
+- LSL 0.8.0 — správa knihoven, TUI, offline manuál,
   barevné výpisy a tematická nápověda;
 - LSL 0.7.8 — `random` v pure LSL, comprehensions,
   výchozí a pojmenované argumenty, `lsl update`;
@@ -122,7 +123,7 @@ config a fixed-point kontrolu. Aktuální SHA-256 je v `PURE_LSL_PROGRESS.md`.
 ## Instalace
 
 Při přechodu z 0.7.8 použijte jednou `lsl-install` z nového archivu: starý
-updater má chybu čtení tar hlavičky. Installer 0.8.0 zachová předchozí
+updater má chybu čtení tar hlavičky. Installer 0.8.1 zachová předchozí
 generaci a atomicky přepne instalaci. [Postup](docs/developer_guides/17-cli-and-packages.md#jednorázový-přechod-z-078).
 
 ```text
@@ -162,7 +163,7 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 
 - Int, Bool, None a boxed IEEE-754 Float;
 - UTF-8 String s code-point `len`, indexací, slicingem, `chr` a `ord`;
-- List, Tuple, RealArray, Dictionary a neboxované `IntArray`/`FloatArray`/packed `ByteArray`;
+- List, Tuple, Set, RealArray, Dictionary a neboxované `IntArray`/`FloatArray`/packed `ByteArray`;
 - functions, recursion, first-class Function pointers a callbacks;
 - classes/instances, jednoduchá dědičnost `class Child(Parent)`, přepisování
   metod, `origin.method()` a public/private module class lowering;
@@ -201,6 +202,7 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 - [Podepsané aktualizace LSL](docs/updates.md)
 - [Poznámky k vydání 0.7.8](docs/release-0.7.8.md)
 - [Poznámky k vydání 0.8.0](docs/release-0.8.0.md)
+- [Poznámky k vydání 0.8.1](docs/release-0.8.1.md)
 - [CLI, knihovny a terminálový manuál](docs/developer_guides/17-cli-and-packages.md)
 - [Poznámky k vydání 0.7.7](docs/release-0.7.7.md)
 - [Poznámky k vydání 0.7.6](docs/release-0.7.6.md)
