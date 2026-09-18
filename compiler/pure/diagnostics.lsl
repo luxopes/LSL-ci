@@ -18,12 +18,12 @@ function fail(path, line_number, column, width, source_line, code, message, help
     end
     gutter = String(line_number)
     print console.style("error[" + code + "]: " + console.clean(message), "1;31")
-    print " --> " + console.clean(path) + ":" + String(line_number) + ":" + String(column)
-    print repeat_text(" ", len(gutter) + 1) + "|"
-    print gutter + " | " + console.clean(source_line)
-    print repeat_text(" ", len(gutter) + 1) + "| " + repeat_text(" ", column - 1) + "^" + repeat_text("~", width - 1)
+    print console.style(" --> " + console.clean(path) + ":" + String(line_number) + ":" + String(column), "1;34")
+    print console.style(repeat_text(" ", len(gutter) + 1) + "|", "34")
+    print console.style(gutter + " | ", "34") + console.clean(source_line)
+    print console.style(repeat_text(" ", len(gutter) + 1) + "| ", "34") + repeat_text(" ", column - 1) + console.style("^" + repeat_text("~", width - 1), "1;31")
     if help_text != "":
-        print console.style(" help: " + help_text, "36")
+        print console.style(" help: " + console.clean(help_text), "36")
     end
     exit(1)
 end

@@ -1,6 +1,30 @@
 # Pure-LSL migration
 
-## Aktuální vydání 0.8.1 — 6. 9. 2026
+## Aktuální vydání 0.8.2 — 18. 9. 2026
+
+Rozšířené `safe`/`try`: chyby jmen, metod, argumentů a podporovaných
+statických typových kontrol se uvnitř chráněného kódu a funkcí snižují na
+běhové chyby. Známá volání zůstávají přímá. Out-of-line obnova rsp uklidí
+rozpracované výrazy pouze při chybě; samostatný codegen test porovnává
+úspěšnou cestu bajtově se stávajícími instrukcemi. Nativní `last_error()`
+materializuje statické chybové Stringy pro běžné String metody.
+
+Sdílená nealokující chybová výpisová cesta podporuje terminálové barvy,
+NO_COLOR a FORCE_COLOR. Výchozí úspěšná cesta prostředí ani TTY nezkoumá.
+Grafické moduly jsou v `extensions/` a oficiálním registru, nikoli v základní
+instalaci. Jejich závislosti jsou v hashované hlavičce; instalátor ověří
+každý zdroj před zpracováním závislostí a odmítne cykly. Privilegované části
+mají explicitní `unsafe`. Fontová data gfx (2 000 řádků) jsou beze změny,
+rozdělená na pět parserem přijatelných literálů.
+
+Podrobnosti a hranice zachytávání: `docs/release-0.8.2.md`.
+
+Stage 2/3 jsou bitově shodné, všechny nástroje vznikly sériově pod 2 GiB.
+Plná sada včetně GTX 1650, barev, závislostí a nových safe regresí prošla
+s limitem 4 GiB. Compiler: `31dbde66f9639cffaa60a2361427accb465f235ac0376ebfdf84cebfef4cc77c`.
+CLI: `67f52e7a2d830eba505b6c948a275228177c643a66a404c07550169027e66591`.
+
+## Vydání 0.8.1 — 6. 9. 2026
 
 `sorted(iterable)` vrací stabilně seřazený List; `dedup(list)` zachovává
 první výskyty i vstup. Nový heap typ Set (16) má GC, render, rovnost bez

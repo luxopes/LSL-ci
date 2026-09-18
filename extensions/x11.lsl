@@ -73,107 +73,111 @@ end
 
 # Blocking read of exactly count bytes from a nonblocking socket.
 function read_exact(handle, count):
-    if type(count) != "Int" or count < 0 or count > MAX_X11_REPLY:
-        Error(X11Error: "X11 reply exceeds the secure limit")
-    end
-    chunk = ByteArray()
-    index = 0
-    while index < count:
-        chunk.append(0)
-        index += 1
-    end
-    collected = ByteArray()
-    deadline = clock() + 10.0
-    while len(collected) < count:
-        got = fd.read(handle, chunk, count - len(collected))
-        if got == fd.again:
-            if clock() >= deadline:
-                Error(X11Error: "timed out waiting for the X server")
-            end
-            call __lsl_sleep(0.001)
-            continue
+    unsafe:
+        if type(count) != "Int" or count < 0 or count > MAX_X11_REPLY:
+            Error(X11Error: "X11 reply exceeds the secure limit")
         end
-        if got == 0:
-            Error(X11Error: "X server closed the connection")
-        end
+        chunk = ByteArray()
         index = 0
-        while index < got:
-            collected.append(chunk[index])
+        while index < count:
+            chunk.append(0)
             index += 1
         end
+        collected = ByteArray()
+        deadline = clock() + 10.0
+        while len(collected) < count:
+            got = fd.read(handle, chunk, count - len(collected))
+            if got == fd.again:
+                if clock() >= deadline:
+                    Error(X11Error: "timed out waiting for the X server")
+                end
+                call __lsl_sleep(0.001)
+                continue
+            end
+            if got == 0:
+                Error(X11Error: "X server closed the connection")
+            end
+            index = 0
+            while index < got:
+                collected.append(chunk[index])
+                index += 1
+            end
+        end
+        return collected
     end
-    return collected
 end
 
 # Find the MIT-MAGIC-COOKIE-1 for this display in ~/.Xauthority.
 function find_cookie(display):
-    path = env.get("XAUTHORITY", "")
-    if path == "":
-        home = env.get("HOME", "")
-        if home == "":
-            return ByteArray()
-        end
-        path = home + "/.Xauthority"
-    end
-    if not exists(path):
-        return ByteArray()
-    end
-    data = ByteArray(fd.read_all_limit(path, MAX_XAUTHORITY))
-    total = len(data)
-    offset = 0
-    wanted = "MIT-MAGIC-COOKIE-1"
-    number_text = String(display)
-    while offset + 4 <= total:
-        offset += 2
-        address_length = get16be(data, offset)
-        offset += 2
-        if address_length > total - offset:
-            return ByteArray()
-        end
-        offset += address_length
-        if offset > total - 2:
-            return ByteArray()
-        end
-        number_length = get16be(data, offset)
-        offset += 2
-        if number_length > total - offset:
-            return ByteArray()
-        end
-        number = __lsl_text_from_bytes(data, offset, number_length)
-        offset += number_length
-        if offset > total - 2:
-            return ByteArray()
-        end
-        name_length = get16be(data, offset)
-        offset += 2
-        if name_length > total - offset:
-            return ByteArray()
-        end
-        name = __lsl_text_from_bytes(data, offset, name_length)
-        offset += name_length
-        if offset > total - 2:
-            return ByteArray()
-        end
-        data_length = get16be(data, offset)
-        offset += 2
-        if data_length > total - offset:
-            return ByteArray()
-        end
-        if name == wanted and (number == number_text or number == ""):
-            if data_length > 256:
+    unsafe:
+        path = env.get("XAUTHORITY", "")
+        if path == "":
+            home = env.get("HOME", "")
+            if home == "":
                 return ByteArray()
             end
-            cookie = ByteArray()
-            index = 0
-            while index < data_length:
-                cookie.append(data[offset + index])
-                index += 1
-            end
-            return cookie
+            path = home + "/.Xauthority"
         end
-        offset += data_length
+        if not exists(path):
+            return ByteArray()
+        end
+        data = ByteArray(fd.read_all_limit(path, MAX_XAUTHORITY))
+        total = len(data)
+        offset = 0
+        wanted = "MIT-MAGIC-COOKIE-1"
+        number_text = String(display)
+        while offset + 4 <= total:
+            offset += 2
+            address_length = get16be(data, offset)
+            offset += 2
+            if address_length > total - offset:
+                return ByteArray()
+            end
+            offset += address_length
+            if offset > total - 2:
+                return ByteArray()
+            end
+            number_length = get16be(data, offset)
+            offset += 2
+            if number_length > total - offset:
+                return ByteArray()
+            end
+            number = __lsl_text_from_bytes(data, offset, number_length)
+            offset += number_length
+            if offset > total - 2:
+                return ByteArray()
+            end
+            name_length = get16be(data, offset)
+            offset += 2
+            if name_length > total - offset:
+                return ByteArray()
+            end
+            name = __lsl_text_from_bytes(data, offset, name_length)
+            offset += name_length
+            if offset > total - 2:
+                return ByteArray()
+            end
+            data_length = get16be(data, offset)
+            offset += 2
+            if data_length > total - offset:
+                return ByteArray()
+            end
+            if name == wanted and (number == number_text or number == ""):
+                if data_length > 256:
+                    return ByteArray()
+                end
+                cookie = ByteArray()
+                index = 0
+                while index < data_length:
+                    cookie.append(data[offset + index])
+                    index += 1
+                end
+                return cookie
+            end
+            offset += data_length
+        end
+        return ByteArray()
     end
-    return ByteArray()
 end
 
 function display_number():
@@ -347,142 +351,144 @@ end
 # Connect, authenticate and map one InputOutput window. Returns a
 # Dictionary of the raw connection state the caller must keep.
 function create_window(width, height, title):
-    window_width = Int(width)
-    window_height = Int(height)
-    if window_width <= 0 or window_width > MAX_X11_DIMENSION or window_height <= 0 or window_height > MAX_X11_DIMENSION:
-        Error(X11Error: "X11 window dimensions must be between 1 and 16384")
-    end
-    if type(title) != "String":
-        Error(X11Error: "X11 title must be a String")
-    end
-    if __lsl_text_byte_length(String(title)) > 262116 or chr(0) in title:
-        Error(X11Error: "X11 title is invalid or too long")
-    end
-    number = display_number()
-    handle = fd.connect_unix("/tmp/.X11-unix/X" + String(number))
+    unsafe:
+        window_width = Int(width)
+        window_height = Int(height)
+        if window_width <= 0 or window_width > MAX_X11_DIMENSION or window_height <= 0 or window_height > MAX_X11_DIMENSION:
+            Error(X11Error: "X11 window dimensions must be between 1 and 16384")
+        end
+        if type(title) != "String":
+            Error(X11Error: "X11 title must be a String")
+        end
+        if __lsl_text_byte_length(String(title)) > 262116 or chr(0) in title:
+            Error(X11Error: "X11 title is invalid or too long")
+        end
+        number = display_number()
+        handle = fd.connect_unix("/tmp/.X11-unix/X" + String(number))
 
-    cookie = ByteArray(find_cookie(number))
-    setup = ByteArray()
-    setup.append(108)
-    setup.append(0)
-    call put16(setup, 11)
-    call put16(setup, 0)
-    auth_name = ""
-    if len(cookie) > 0:
-        auth_name = "MIT-MAGIC-COOKIE-1"
-    end
-    call put16(setup, len(auth_name))
-    call put16(setup, len(cookie))
-    call put16(setup, 0)
-    for character in auth_name:
-        setup.append(ord(character))
-    end
-    padding = pad4(len(auth_name))
-    index = 0
-    while index < padding:
+        cookie = ByteArray(find_cookie(number))
+        setup = ByteArray()
+        setup.append(108)
         setup.append(0)
-        index += 1
-    end
-    index = 0
-    while index < len(cookie):
-        setup.append(cookie[index])
-        index += 1
-    end
-    padding = pad4(len(cookie))
-    index = 0
-    while index < padding:
-        setup.append(0)
-        index += 1
-    end
-    call send_bytes(handle, setup)
-
-    head = ByteArray(read_exact(handle, 8))
-    status = head[0]
-    reply_size = get16(head, 6) * 4
-    if reply_size > MAX_X11_REPLY:
-        Error(X11Error: "X11 setup reply exceeds the secure limit")
-    end
-    payload = ByteArray(read_exact(handle, reply_size))
-    if status != 1:
-        reason = ""
+        call put16(setup, 11)
+        call put16(setup, 0)
+        auth_name = ""
+        if len(cookie) > 0:
+            auth_name = "MIT-MAGIC-COOKIE-1"
+        end
+        call put16(setup, len(auth_name))
+        call put16(setup, len(cookie))
+        call put16(setup, 0)
+        for character in auth_name:
+            setup.append(ord(character))
+        end
+        padding = pad4(len(auth_name))
         index = 0
-        while index < head[1] and index < len(payload):
-            reason += chr(payload[index])
+        while index < padding:
+            setup.append(0)
             index += 1
         end
-        Error(X11Error: "X server refused the connection: " + reason)
+        index = 0
+        while index < len(cookie):
+            setup.append(cookie[index])
+            index += 1
+        end
+        padding = pad4(len(cookie))
+        index = 0
+        while index < padding:
+            setup.append(0)
+            index += 1
+        end
+        call send_bytes(handle, setup)
+
+        head = ByteArray(read_exact(handle, 8))
+        status = head[0]
+        reply_size = get16(head, 6) * 4
+        if reply_size > MAX_X11_REPLY:
+            Error(X11Error: "X11 setup reply exceeds the secure limit")
+        end
+        payload = ByteArray(read_exact(handle, reply_size))
+        if status != 1:
+            reason = ""
+            index = 0
+            while index < head[1] and index < len(payload):
+                reason += chr(payload[index])
+                index += 1
+            end
+            Error(X11Error: "X server refused the connection: " + reason)
+        end
+        if len(payload) < 40 or payload[20] < 1:
+            Error(X11Error: "X server returned a truncated setup reply")
+        end
+
+        id_base = get32(payload, 4)
+        vendor_length = get16(payload, 16)
+        format_count = payload[21]
+        screen = 32 + vendor_length + pad4(vendor_length) + format_count * 8
+        if screen < 32 or screen > len(payload) - 40:
+            Error(X11Error: "X server returned an invalid screen table")
+        end
+        root = get32(payload, screen)
+        root_visual = get32(payload, screen + 32)
+        depth = payload[screen + 38]
+        window_id = id_base
+        gc_id = id_base + 1
+
+        wm_protocols = intern_atom(handle, "WM_PROTOCOLS")
+        wm_delete = intern_atom(handle, "WM_DELETE_WINDOW")
+        net_wm_name = intern_atom(handle, "_NET_WM_NAME")
+        utf8_string = intern_atom(handle, "UTF8_STRING")
+
+        request = ByteArray()
+        request.append(1)
+        request.append(depth)
+        call put16(request, 10)
+        call put32(request, window_id)
+        call put32(request, root)
+        call put16(request, 0)
+        call put16(request, 0)
+        call put16(request, window_width)
+        call put16(request, window_height)
+        call put16(request, 0)
+        call put16(request, 1)
+        call put32(request, root_visual)
+        call put32(request, 2 + 2048)
+        call put32(request, 0)
+        call put32(request, 163919)
+        call send_bytes(handle, request)
+
+        # WM_NAME (STRING, best-effort) plus _NET_WM_NAME (UTF8_STRING) so
+        # both legacy and modern window managers show the title correctly.
+        call set_property_utf8(handle, window_id, 39, 31, title)
+        call set_property_utf8(handle, window_id, net_wm_name, utf8_string, title)
+        call set_property_atom(handle, window_id, wm_protocols, wm_delete)
+
+        request = ByteArray()
+        request.append(55)
+        request.append(0)
+        call put16(request, 4)
+        call put32(request, gc_id)
+        call put32(request, window_id)
+        call put32(request, 0)
+        call send_bytes(handle, request)
+
+        request = ByteArray()
+        request.append(8)
+        request.append(0)
+        call put16(request, 2)
+        call put32(request, window_id)
+        call send_bytes(handle, request)
+
+        info = {}
+        info["handle"] = handle
+        info["window_id"] = window_id
+        info["gc_id"] = gc_id
+        info["depth"] = depth
+        info["wm_delete"] = wm_delete
+        info["width"] = window_width
+        info["height"] = window_height
+        return info
     end
-    if len(payload) < 40 or payload[20] < 1:
-        Error(X11Error: "X server returned a truncated setup reply")
-    end
-
-    id_base = get32(payload, 4)
-    vendor_length = get16(payload, 16)
-    format_count = payload[21]
-    screen = 32 + vendor_length + pad4(vendor_length) + format_count * 8
-    if screen < 32 or screen > len(payload) - 40:
-        Error(X11Error: "X server returned an invalid screen table")
-    end
-    root = get32(payload, screen)
-    root_visual = get32(payload, screen + 32)
-    depth = payload[screen + 38]
-    window_id = id_base
-    gc_id = id_base + 1
-
-    wm_protocols = intern_atom(handle, "WM_PROTOCOLS")
-    wm_delete = intern_atom(handle, "WM_DELETE_WINDOW")
-    net_wm_name = intern_atom(handle, "_NET_WM_NAME")
-    utf8_string = intern_atom(handle, "UTF8_STRING")
-
-    request = ByteArray()
-    request.append(1)
-    request.append(depth)
-    call put16(request, 10)
-    call put32(request, window_id)
-    call put32(request, root)
-    call put16(request, 0)
-    call put16(request, 0)
-    call put16(request, window_width)
-    call put16(request, window_height)
-    call put16(request, 0)
-    call put16(request, 1)
-    call put32(request, root_visual)
-    call put32(request, 2 + 2048)
-    call put32(request, 0)
-    call put32(request, 163919)
-    call send_bytes(handle, request)
-
-    # WM_NAME (STRING, best-effort) plus _NET_WM_NAME (UTF8_STRING) so
-    # both legacy and modern window managers show the title correctly.
-    call set_property_utf8(handle, window_id, 39, 31, title)
-    call set_property_utf8(handle, window_id, net_wm_name, utf8_string, title)
-    call set_property_atom(handle, window_id, wm_protocols, wm_delete)
-
-    request = ByteArray()
-    request.append(55)
-    request.append(0)
-    call put16(request, 4)
-    call put32(request, gc_id)
-    call put32(request, window_id)
-    call put32(request, 0)
-    call send_bytes(handle, request)
-
-    request = ByteArray()
-    request.append(8)
-    request.append(0)
-    call put16(request, 2)
-    call put32(request, window_id)
-    call send_bytes(handle, request)
-
-    info = {}
-    info["handle"] = handle
-    info["window_id"] = window_id
-    info["gc_id"] = gc_id
-    info["depth"] = depth
-    info["wm_delete"] = wm_delete
-    info["width"] = window_width
-    info["height"] = window_height
-    return info
 end
 
 # Send an already-packed BGRX buffer as ZPixmap PutImage strips. The

@@ -155,11 +155,22 @@ end
 
 function installed(home, bundled):
     result = []
-    for name in directory_names(bundled):
-        result.append({"name": name, "scope": "bundled", "path": bundled + "/" + name + ".lsl"})
-    end
+    directory = ""
     if home != None and home != "":
         directory = package.user_path(home)
+    end
+    for name in directory_names(bundled):
+        path = bundled + "/" + name + ".lsl"
+        scope = "bundled"
+        # A legacy ~/.local toolchain shares its source directory with user
+        # packages. Installer provenance distinguishes downloaded libraries;
+        # this is inventory only, not a replacement for `lsl origin` verification.
+        if directory == bundled and library_file(path + ".origin"):
+            scope = "user"
+        end
+        result.append({"name": name, "scope": scope, "path": path})
+    end
+    if directory != "" and directory != bundled:
         for name in directory_names(directory):
             result.append({"name": name, "scope": "user", "path": directory + "/" + name + ".lsl"})
         end

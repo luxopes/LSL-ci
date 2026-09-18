@@ -63,10 +63,22 @@ uvíznout, proto při auditu používejte i vnější časový limit.
 | `compiler/pure/manual.lsl` | seznam a načítání offline webových kapitol |
 | `compiler/pure/console.lsl` | barvy pro TTY, NO_COLOR a sanitizace výpisů |
 | `stdlib/` | veřejné staticky linkované moduly |
+| `extensions/` | volitelné grafické knihovny, mimo základní instalaci |
 | `tests/test_runner.lsl` | pure-LSL regression runner |
 
 `compiler/pure/` je pouze produkční kód a generované release ELF. Všechny testy,
 smoke drivery a fixtures patří do `tests/`.
+
+Grafické zdroje v `extensions/` a publikované kopie v LSL-Packages musí být
+shodné. Jejich raw operace mají explicitní `unsafe`; nelze jim přidělit
+důvěru pouze podle názvu importu. Instalované LSL je hledá v uživatelském
+adresáři po `lsl install NAME`, vývojový checkout v `extensions/`.
+
+`safe` obnovuje zásobník v out-of-line chybovém handleru; úspěšná cesta
+nemá nové dynamické kontroly. `tests/compiler/safe_codegen_conformance.lsl`
+kontroluje její instrukce a `tests/safe_recovery_conformance.lsl` opakované
+selhání složených výrazů. Neodkládejte syntaktické a bezpečnostní kontroly
+do runtime: převádějí se pouze podporované sémantické chyby výrazů.
 
 ## Pipeline
 

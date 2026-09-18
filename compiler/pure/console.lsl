@@ -14,8 +14,21 @@ function clean(value):
 end
 
 function colors():
+    return colors_fd(1)
+end
+
+function colors_fd(descriptor):
+    if __lsl_getenv("NO_COLOR") != None:
+        return False
+    end
+    force = __lsl_getenv("FORCE_COLOR")
+    if force == "0":
+        return False
+    elif force != None and force != "":
+        return True
+    end
     term = __lsl_getenv("TERM")
-    return __lsl_isatty(1) and term != "dumb" and __lsl_getenv("NO_COLOR") == None
+    return __lsl_isatty(descriptor) and term != "dumb"
 end
 
 function style(text, code):
@@ -39,7 +52,7 @@ end
 
 function error(text):
     message = "error: " + clean(text)
-    if __lsl_isatty(2) and __lsl_getenv("TERM") != "dumb" and __lsl_getenv("NO_COLOR") == None:
+    if colors_fd(2):
         message = chr(27) + "[1;31m" + message + chr(27) + "[0m"
     end
     message += chr(10)

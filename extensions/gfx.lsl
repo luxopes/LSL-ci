@@ -234,9 +234,11 @@ end
 # buffer to a typed local, which aliases the same object and keeps the
 # inner loops on native indexed stores.
 function raster_clear(pixels, width, height, color):
-    data = IntArray(pixels)
-    call __lsl_raster_fill(data, 0, Int(width) * Int(height), Int(color))
-    return None
+    unsafe:
+        data = IntArray(pixels)
+        call __lsl_raster_fill(data, 0, Int(width) * Int(height), Int(color))
+        return None
+    end
 end
 
 function raster_set(pixels, width, height, x, y, color):
@@ -252,16 +254,18 @@ function raster_set(pixels, width, height, x, y, color):
 end
 
 function raster_hline(pixels, width, height, x, y, length, color):
-    py = Int(y)
-    w = Int(width)
-    if py < 0 or py >= Int(height):
+    unsafe:
+        py = Int(y)
+        w = Int(width)
+        if py < 0 or py >= Int(height):
+            return None
+        end
+        stop = min(Int(x) + Int(length), w)
+        cursor = max(Int(x), 0)
+        data = IntArray(pixels)
+        call __lsl_raster_fill(data, py * w + cursor, stop - cursor, Int(color))
         return None
     end
-    stop = min(Int(x) + Int(length), w)
-    cursor = max(Int(x), 0)
-    data = IntArray(pixels)
-    call __lsl_raster_fill(data, py * w + cursor, stop - cursor, Int(color))
-    return None
 end
 
 function raster_vline(pixels, width, height, x, y, length, color):
@@ -282,20 +286,22 @@ function raster_vline(pixels, width, height, x, y, length, color):
 end
 
 function raster_fill_rect(pixels, width, height, x, y, w, h, color):
-    stride = Int(width)
-    value = Int(color)
-    x0 = max(Int(x), 0)
-    y0 = max(Int(y), 0)
-    x1 = min(Int(x) + Int(w), stride)
-    y1 = min(Int(y) + Int(h), Int(height))
-    data = IntArray(pixels)
-    span = x1 - x0
-    row = y0
-    while row < y1:
-        call __lsl_raster_fill(data, row * stride + x0, span, value)
-        row += 1
+    unsafe:
+        stride = Int(width)
+        value = Int(color)
+        x0 = max(Int(x), 0)
+        y0 = max(Int(y), 0)
+        x1 = min(Int(x) + Int(w), stride)
+        y1 = min(Int(y) + Int(h), Int(height))
+        data = IntArray(pixels)
+        span = x1 - x0
+        row = y0
+        while row < y1:
+            call __lsl_raster_fill(data, row * stride + x0, span, value)
+            row += 1
+        end
+        return None
     end
-    return None
 end
 
 function raster_rect(pixels, width, height, x, y, w, h, color):
@@ -339,23 +345,25 @@ function raster_line(pixels, width, height, x0, y0, x1, y1, color):
 end
 
 function raster_blit(dst_pixels, dst_width, dst_height, src_pixels, src_width, src_height, dx, dy):
-    src = IntArray(src_pixels)
-    swidth = Int(src_width)
-    shift_x = Int(dx)
-    shift_y = Int(dy)
-    x0 = max(0 - shift_x, 0)
-    y0 = max(0 - shift_y, 0)
-    x1 = min(swidth, Int(dst_width) - shift_x)
-    y1 = min(Int(src_height), Int(dst_height) - shift_y)
-    dst = IntArray(dst_pixels)
-    dwidth = Int(dst_width)
-    span = x1 - x0
-    row = y0
-    while row < y1:
-        call __lsl_raster_copy(dst, src, (row + shift_y) * dwidth + shift_x + x0, row * swidth + x0, span)
-        row += 1
+    unsafe:
+        src = IntArray(src_pixels)
+        swidth = Int(src_width)
+        shift_x = Int(dx)
+        shift_y = Int(dy)
+        x0 = max(0 - shift_x, 0)
+        y0 = max(0 - shift_y, 0)
+        x1 = min(swidth, Int(dst_width) - shift_x)
+        y1 = min(Int(src_height), Int(dst_height) - shift_y)
+        dst = IntArray(dst_pixels)
+        dwidth = Int(dst_width)
+        span = x1 - x0
+        row = y0
+        while row < y1:
+            call __lsl_raster_copy(dst, src, (row + shift_y) * dwidth + shift_x + x0, row * swidth + x0, span)
+            row += 1
+        end
+        return None
     end
-    return None
 end
 
 # Copy an axis-aligned sub-rectangle between two surfaces at the same
@@ -363,49 +371,53 @@ end
 # Rows go through the native copy kernel, so the cost is proportional to
 # the rectangle, not the surface.
 function raster_copy_rect(dst_pixels, dst_width, dst_height, src_pixels, src_width, src_height, x, y, w, h):
-    src = IntArray(src_pixels)
-    dst = IntArray(dst_pixels)
-    dwidth = Int(dst_width)
-    swidth = Int(src_width)
-    x0 = max(Int(x), 0)
-    y0 = max(Int(y), 0)
-    x1 = min(Int(x) + Int(w), min(dwidth, swidth))
-    y1 = min(Int(y) + Int(h), min(Int(dst_height), Int(src_height)))
-    span = x1 - x0
-    row = y0
-    while row < y1:
-        call __lsl_raster_copy(dst, src, row * dwidth + x0, row * swidth + x0, span)
-        row += 1
+    unsafe:
+        src = IntArray(src_pixels)
+        dst = IntArray(dst_pixels)
+        dwidth = Int(dst_width)
+        swidth = Int(src_width)
+        x0 = max(Int(x), 0)
+        y0 = max(Int(y), 0)
+        x1 = min(Int(x) + Int(w), min(dwidth, swidth))
+        y1 = min(Int(y) + Int(h), min(Int(dst_height), Int(src_height)))
+        span = x1 - x0
+        row = y0
+        while row < y1:
+            call __lsl_raster_copy(dst, src, row * dwidth + x0, row * swidth + x0, span)
+            row += 1
+        end
+        return None
     end
-    return None
 end
 
 # Filled circle by horizontal spans; one integer square-root scan per row
 # keeps it allocation-free. Used for round buttons.
 function raster_fill_circle(pixels, width, height, cx, cy, radius, color):
-    center_x = Int(cx)
-    center_y = Int(cy)
-    r = Int(radius)
-    w = Int(width)
-    h = Int(height)
-    data = IntArray(pixels)
-    value = Int(color)
-    dy = 0 - r
-    while dy <= r:
-        py = center_y + dy
-        if py >= 0 and py < h:
-            limit = r * r - dy * dy
-            dx = 0
-            while (dx + 1) * (dx + 1) <= limit:
-                dx += 1
+    unsafe:
+        center_x = Int(cx)
+        center_y = Int(cy)
+        r = Int(radius)
+        w = Int(width)
+        h = Int(height)
+        data = IntArray(pixels)
+        value = Int(color)
+        dy = 0 - r
+        while dy <= r:
+            py = center_y + dy
+            if py >= 0 and py < h:
+                limit = r * r - dy * dy
+                dx = 0
+                while (dx + 1) * (dx + 1) <= limit:
+                    dx += 1
+                end
+                start = max(center_x - dx, 0)
+                stop = min(center_x + dx + 1, w)
+                call __lsl_raster_fill(data, py * w + start, stop - start, value)
             end
-            start = max(center_x - dx, 0)
-            stop = min(center_x + dx + 1, w)
-            call __lsl_raster_fill(data, py * w + start, stop - start, value)
+            dy += 1
         end
-        dy += 1
+        return None
     end
-    return None
 end
 
 # A pill (rounded rectangle) as a middle rectangle plus two end circles.
@@ -621,20 +633,22 @@ class Surface(True):
     ctype Public
 
     function init(self, width, height):
-        w = Int(width)
-        h = Int(height)
-        if w <= 0 or h <= 0:
-            Error(GfxError: "surface dimensions must be positive")
-        elif w > 16384 or h > 16384 or w > 16777216 // h:
-            Error(GfxError: "surface exceeds the secure 16-million-pixel limit")
+        unsafe:
+            w = Int(width)
+            h = Int(height)
+            if w <= 0 or h <= 0:
+                Error(GfxError: "surface dimensions must be positive")
+            elif w > 16384 or h > 16384 or w > 16777216 // h:
+                Error(GfxError: "surface exceeds the secure 16-million-pixel limit")
+            end
+            self.width = w
+            self.height = h
+            # Bulk-allocate the pixel buffer in one shot. Building it with a
+            # per-element append registers one object per element, which blows
+            # the object table up to millions of slots (tens of MB) for a large
+            # surface; __lsl_int_zeros allocates the whole buffer at once.
+            self.pixels = __lsl_int_zeros(w * h)
         end
-        self.width = w
-        self.height = h
-        # Bulk-allocate the pixel buffer in one shot. Building it with a
-        # per-element append registers one object per element, which blows
-        # the object table up to millions of slots (tens of MB) for a large
-        # surface; __lsl_int_zeros allocates the whole buffer at once.
-        self.pixels = __lsl_int_zeros(w * h)
     end
 
     function clear(self, color):
@@ -743,7 +757,9 @@ font_codes = [
     201, 205, 211, 218, 221, 225, 233, 237, 243, 250, 253, 268, 269, 270, 271, 282,
     283, 327, 328, 344, 345, 352, 353, 356, 357, 366, 367, 381, 382
 ]
-font_bits = [
+# The glyph table is split into parts: one literal must stay under the
+# compiler's 1024-token expression limit (E1118).
+font_bits_part1 = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 8, 8, 8, 8, 8, 8, 8, 0, 8, 8, 0, 0,
     0, 0, 34, 34, 34, 34, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -768,7 +784,9 @@ font_bits = [
     0, 0, 0, 0, 126, 64, 64, 64, 124, 2, 2, 2, 66, 60, 0, 0,
     0, 0, 0, 0, 28, 32, 64, 64, 124, 66, 66, 66, 66, 60, 0, 0,
     0, 0, 0, 0, 126, 2, 2, 4, 4, 4, 8, 8, 8, 8, 0, 0,
-    0, 0, 0, 0, 60, 66, 66, 66, 60, 66, 66, 66, 66, 60, 0, 0,
+    0, 0, 0, 0, 60, 66, 66, 66, 60, 66, 66, 66, 66, 60, 0, 0
+]
+font_bits_part2 = [
     0, 0, 0, 0, 60, 66, 66, 66, 62, 2, 2, 2, 4, 56, 0, 0,
     0, 0, 0, 0, 0, 0, 24, 24, 0, 0, 0, 24, 24, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 24, 24, 0, 0, 0, 24, 8, 8, 16, 0,
@@ -793,7 +811,9 @@ font_bits = [
     0, 0, 0, 0, 66, 98, 98, 82, 82, 74, 74, 70, 70, 66, 0, 0,
     0, 0, 0, 0, 60, 66, 66, 66, 66, 66, 66, 66, 66, 60, 0, 0,
     0, 0, 0, 0, 124, 66, 66, 66, 124, 64, 64, 64, 64, 64, 0, 0,
-    0, 0, 0, 0, 60, 66, 66, 66, 66, 66, 66, 90, 102, 60, 3, 0,
+    0, 0, 0, 0, 60, 66, 66, 66, 66, 66, 66, 90, 102, 60, 3, 0
+]
+font_bits_part3 = [
     0, 0, 0, 0, 124, 66, 66, 66, 124, 72, 68, 68, 66, 66, 0, 0,
     0, 0, 0, 0, 60, 66, 66, 64, 48, 12, 2, 66, 66, 60, 0, 0,
     0, 0, 0, 0, 127, 8, 8, 8, 8, 8, 8, 8, 8, 8, 0, 0,
@@ -818,7 +838,9 @@ font_bits = [
     0, 0, 0, 0, 0, 2, 58, 68, 68, 68, 56, 32, 60, 66, 66, 60,
     0, 0, 0, 64, 64, 64, 92, 98, 66, 66, 66, 66, 66, 66, 0, 0,
     0, 0, 0, 8, 8, 0, 24, 8, 8, 8, 8, 8, 8, 62, 0, 0,
-    0, 0, 0, 4, 4, 0, 12, 4, 4, 4, 4, 4, 4, 4, 72, 48,
+    0, 0, 0, 4, 4, 0, 12, 4, 4, 4, 4, 4, 4, 4, 72, 48
+]
+font_bits_part4 = [
     0, 0, 0, 64, 64, 64, 68, 72, 80, 96, 80, 72, 68, 66, 0, 0,
     0, 0, 0, 24, 8, 8, 8, 8, 8, 8, 8, 8, 8, 62, 0, 0,
     0, 0, 0, 0, 0, 0, 118, 73, 73, 73, 73, 73, 73, 73, 0, 0,
@@ -843,7 +865,9 @@ font_bits = [
     12, 48, 0, 0, 126, 64, 64, 64, 124, 64, 64, 64, 64, 126, 0, 0,
     12, 48, 0, 0, 62, 8, 8, 8, 8, 8, 8, 8, 8, 62, 0, 0,
     12, 48, 0, 0, 60, 66, 66, 66, 66, 66, 66, 66, 66, 60, 0, 0,
-    12, 48, 0, 0, 66, 66, 66, 66, 66, 66, 66, 66, 66, 60, 0, 0,
+    12, 48, 0, 0, 66, 66, 66, 66, 66, 66, 66, 66, 66, 60, 0, 0
+]
+font_bits_part5 = [
     12, 48, 0, 0, 65, 65, 34, 34, 20, 8, 8, 8, 8, 8, 0, 0,
     0, 0, 12, 48, 0, 0, 60, 66, 2, 62, 66, 66, 70, 58, 0, 0,
     0, 0, 12, 48, 0, 0, 60, 66, 66, 126, 64, 64, 66, 60, 0, 0,
@@ -870,6 +894,12 @@ font_bits = [
     36, 24, 0, 0, 126, 2, 2, 4, 8, 16, 32, 64, 64, 126, 0, 0,
     0, 0, 36, 24, 0, 0, 126, 2, 4, 8, 16, 32, 64, 126, 0, 0
 ]
+font_bits = []
+font_bits.extend(font_bits_part1)
+font_bits.extend(font_bits_part2)
+font_bits.extend(font_bits_part3)
+font_bits.extend(font_bits_part4)
+font_bits.extend(font_bits_part5)
 
 # Build the fast lookup structures once at module load: packed glyph rows
 # in an IntArray and a code-point index into it.

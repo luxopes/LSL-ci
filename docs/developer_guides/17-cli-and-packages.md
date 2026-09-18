@@ -1,6 +1,16 @@
 # 17. CLI, knihovny a terminálový manuál
 
 LSL 0.8.0 přidává přehlednou správu knihoven, barevnou nápovědu a TUI.
+Od 0.8.2 jsou grafické knihovny volitelnými balíčky (`lsl install gfx`,
+`lsl install ui`, `lsl install display`). Deklarované závislosti se nejprve
+ověří a nainstalují automaticky. Cyklus či neplatný hash instalaci zastaví;
+již úspěšné závislosti mohou zůstat nainstalované.
+
+Chybové zprávy jsou barevné na terminálu. `NO_COLOR` má přednost před
+`FORCE_COLOR`; `FORCE_COLOR=1` vynutí barvy i do pipe a `FORCE_COLOR=0` je
+zakáže. Bez vynucení zůstávají pipes a `TERM=dumb` bez ANSI sekvencí.
+Zdrojová diagnostika zachovává svůj dosavadní výstupní kanál; běhové chyby
+píší na stderr. IDE nastavující `NO_COLOR=1` musí barvy povolit na své straně.
 Celá klientská implementace je v LSL. Pro stahování se používá systémový
 curl, pro ověřování SHA-256 systémový sha256sum; nepoužívají se shellové
 instalační skripty balíčků.
@@ -125,16 +135,16 @@ interní ABI CLI (nejen veřejné testovací drivery).
 Z 0.7.8 proto jednou použijte instalační program z nového archivu:
 
 ```bash
-curl -fSLO https://lsl.lux-ai.cz/downloads/lsl-0.8.1-linux-x86_64.tar.gz
+curl -fSLO https://lsl.lux-ai.cz/downloads/lsl-0.8.2-linux-x86_64.tar.gz
 curl -fSLO https://lsl.lux-ai.cz/downloads/SHA256SUMS
 sha256sum --ignore-missing -c SHA256SUMS
-tar -xzf lsl-0.8.1-linux-x86_64.tar.gz
-sudo ./lsl-0.8.1/bin/lsl-install /usr/local
+tar -xzf lsl-0.8.2-linux-x86_64.tar.gz
+sudo ./lsl-0.8.2/bin/lsl-install /usr/local
 ```
 
-Instalátor 0.8.1 rozpozná stávající spravovanou instalaci a nepřepisuje
+Instalátor 0.8.2 rozpozná stávající spravovanou instalaci a nepřepisuje
 soubory přes symlinky: připraví novou generaci, otestuje ji a atomicky přepne
 aktivní verzi. Zachová předchozí verzi pro rollback. U legacy instalace
 v `/usr/local` nebo `~/.local` nejprve vytvoří její snapshot. Pro uživatelskou
-instalaci použijte bez sudo `./lsl-0.8.1/bin/lsl-install "$HOME/.local"`.
+instalaci použijte bez sudo `./lsl-0.8.2/bin/lsl-install "$HOME/.local"`.
 Další aktualizace z opravené 0.8.0 již používají běžné `lsl update`.

@@ -288,7 +288,7 @@ function __lsl_help_text(topic):
     if topic == "":
         names = topics.keys()
         call names.sort()
-        return "Lux Simple Lang (LSL) 0.8.1" + chr(10) + "Use help(\"TOPIC\") for details; lsl man opens the full offline manual." + chr(10) + "topics: " + " ".join(names)
+        return "Lux Simple Lang (LSL) 0.8.2" + chr(10) + "Use help(\"TOPIC\") for details; lsl man opens the full offline manual." + chr(10) + "topics: " + " ".join(names)
     end
     if topic not in topics:
         Error(HelpError: "unknown help topic; call help() to list supported topics")

@@ -1,6 +1,6 @@
 # Lux Simple Lang (LSL)
 
-**LSL 0.8.1** je vydání self-hostovaného jazyka pro běžné
+**LSL 0.8.2** je vydání self-hostovaného jazyka pro běžné
 programování, deklarativní konfiguraci, AI orchestrace a volitelné CUDA
 výpočty. Compiler i host runtime
 jsou pouze LSL: compiler přímo zapisuje statický Linux x86_64 ELF a runtime
@@ -11,15 +11,16 @@ pure-LSL a Tensor používá CPU fallback.
 
 ## Self-hosted vydání
 
-LSL 0.8.1 přidává `sorted(iterable)`, množiny `set()` a deduplikaci
-`dedup(list)`. Barevné CLI, správce balíčků, offline manuál, random,
-comprehensions, CUDA a podepsaný self-updater zůstávají součástí vydání.
+LSL 0.8.2 opravuje `safe` a fonty `gfx`, doplňuje barevné chyby a odděluje
+grafické knihovny do instalovatelných rozšíření. `sorted`, Set, `dedup`,
+random, CUDA a podepsaný self-updater zůstávají součástí vydání.
 Binární balík pro Linux x86_64,
 zdrojový archiv a aktualizovaný český manuál jsou na
 [lsl.lux-ai.cz](https://lsl.lux-ai.cz/). Stabilní manuály vydání jsou v
 [historii vydání](https://lsl.lux-ai.cz/releases/):
 
-- [LSL 0.8.1](https://lsl.lux-ai.cz/) — `sorted`, Set a `dedup`;
+- [LSL 0.8.2](https://lsl.lux-ai.cz/) — opravy `safe`, barevné chyby a grafická rozšíření;
+- LSL 0.8.1 — `sorted`, Set a `dedup`;
 - LSL 0.8.0 — správa knihoven, TUI, offline manuál,
   barevné výpisy a tematická nápověda;
 - LSL 0.7.8 — `random` v pure LSL, comprehensions,
@@ -123,7 +124,7 @@ config a fixed-point kontrolu. Aktuální SHA-256 je v `PURE_LSL_PROGRESS.md`.
 ## Instalace
 
 Při přechodu z 0.7.8 použijte jednou `lsl-install` z nového archivu: starý
-updater má chybu čtení tar hlavičky. Installer 0.8.1 zachová předchozí
+updater má chybu čtení tar hlavičky. Installer 0.8.2 zachová předchozí
 generaci a atomicky přepne instalaci. [Postup](docs/developer_guides/17-cli-and-packages.md#jednorázový-přechod-z-078).
 
 ```text
@@ -134,6 +135,11 @@ generaci a atomicky přepne instalaci. [Postup](docs/developer_guides/17-cli-and
 Bez argumentu installer používá `/usr/local` (podle oprávnění procesu). Installer, build nástroje i test runner jsou LSL-generované ELF soubory. Instalovaný compiler hledá standardní moduly relativně k vlastnímu `/proc/self/exe`, takže funguje z libovolného pracovního adresáře.
 
 ## Zdrojové knihovny
+
+Grafické moduly `gfx`, `x11`, `wayland`, `display`, `input`, `ui` a `css`
+nejsou od 0.8.2 součástí základní instalace. Použijte například `lsl install ui`
+a `lsl install display`; závislosti se stáhnou automaticky. Zdrojové kopie
+pro vývoj jsou v `extensions/`, publikované balíčky v repozitáři LSL-Packages.
 
 `lsl update` bez názvu knihovny aktualizuje samotné LSL. `lsl update --check`
 pouze ověří dostupnou verzi, `lsl update --rollback` obnoví předchozí instalaci.
@@ -203,6 +209,7 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 - [Poznámky k vydání 0.7.8](docs/release-0.7.8.md)
 - [Poznámky k vydání 0.8.0](docs/release-0.8.0.md)
 - [Poznámky k vydání 0.8.1](docs/release-0.8.1.md)
+- [Poznámky k vydání 0.8.2](docs/release-0.8.2.md)
 - [CLI, knihovny a terminálový manuál](docs/developer_guides/17-cli-and-packages.md)
 - [Poznámky k vydání 0.7.7](docs/release-0.7.7.md)
 - [Poznámky k vydání 0.7.6](docs/release-0.7.6.md)

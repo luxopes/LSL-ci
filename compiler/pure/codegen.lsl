@@ -1750,6 +1750,10 @@ end
 function emit_dictionary_key_box(generator, syntax):
     key_type = infer_expression_type(syntax, generator["types"], generator["function_returns"])
     if key_type == "List" or key_type == "Tuple" or key_type == "RealArray" or key_type == "IntArray" or key_type == "FloatArray" or key_type == "ByteArray" or key_type == "Dictionary" or key_type == "Set" or key_type.startswith("Class:") or key_type.startswith("Instance:"):
+        if generator["error_label"] != "":
+            call emit_source_raise(generator, syntax, "TypeError", "mutable or collection value cannot be a Dictionary key")
+            return
+        end
         call unsupported(generator["path"], generator["lines"], syntax, "mutable or collection value cannot be a Dictionary key", "use String, Int, Bool, None, Float, or Function keys")
     end
     call emit_collection_box(generator, syntax)
@@ -1768,17 +1772,7 @@ function dynamic_numeric_runtime(generator, name):
 end
 
 function emit_uncaught_runtime_error(generator):
-    call emit_static_write_fd(generator, "LSL runtime error: ", 2)
-    call assembler.emit(generator["builder"], x86_64.load_fs(6, 0))
-    call assembler.emit(generator["builder"], x86_64.load_memory(2, 6, 8))
-    call assembler.emit(generator["builder"], x86_64.lea_base(6, 6, 16))
-    call assembler.emit(generator["builder"], x86_64.mov_imm64(7, 2))
-    call assembler.emit(generator["builder"], x86_64.mov_imm64(0, 1))
-    call assembler.emit(generator["builder"], x86_64.syscall())
-    call emit_static_write_fd(generator, chr(10), 2)
-    call assembler.emit(generator["builder"], x86_64.mov_imm64(7, 1))
-    call assembler.emit(generator["builder"], x86_64.mov_imm64(0, 231))
-    call assembler.emit(generator["builder"], x86_64.syscall())
+    call assembler.relative(generator["builder"], [233], "runtime_uncaught_error")
 end
 
 function emit_pending_error(generator):
@@ -1800,11 +1794,14 @@ function emit_runtime_raise(generator, message):
     if generator["error_label"] != "":
         call assembler.relative(generator["builder"], [233], generator["error_label"])
     else:
-        call emit_static_write_fd(generator, "LSL runtime error: " + message + chr(10), 2)
-        call assembler.emit(generator["builder"], x86_64.mov_imm64(7, 1))
-        call assembler.emit(generator["builder"], x86_64.mov_imm64(0, 231))
-        call assembler.emit(generator["builder"], x86_64.syscall())
+        call emit_uncaught_runtime_error(generator)
     end
+end
+
+# Rozhodnutí vzniká při překladu; úspěšná volání nemají novou runtime kontrolu.
+function emit_source_raise(generator, syntax, error_type, message):
+    location = syntax.get("path", generator["path"]) + ":" + String(syntax.get("line", 1)) + ":" + String(syntax.get("column", 1))
+    call emit_runtime_raise(generator, error_type + ": " + message + " at " + location)
 end
 
 function emit_dynamic_numeric_value_guard(generator, int_only):
@@ -1838,6 +1835,10 @@ end
 function checked_string_node(generator, syntax):
     value_type = infer_expression_type(syntax, generator["types"], generator["function_returns"])
     if value_type != "String" and value_type != "Any":
+        if generator["error_label"] != "":
+            call emit_source_raise(generator, syntax, "TypeError", "value must be a String")
+            return syntax
+        end
         call unsupported(generator["path"], generator["lines"], syntax, "value must be a String", "convert the value with String(...)")
     end
     if value_type == "Any" and not generator["internal_abi"] and not generator.get("current_internal_function", False):
@@ -1849,6 +1850,10 @@ end
 function checked_list_node(generator, syntax):
     value_type = infer_expression_type(syntax, generator["types"], generator["function_returns"])
     if value_type != "List" and value_type != "Any":
+        if generator["error_label"] != "":
+            call emit_source_raise(generator, syntax, "TypeError", "value must be a List")
+            return syntax
+        end
         call unsupported(generator["path"], generator["lines"], syntax, "value must be a List", "pass a List value")
     end
     if value_type == "Any" and not generator["internal_abi"] and not generator.get("current_internal_function", False):
@@ -1860,6 +1865,10 @@ end
 function checked_byte_sequence_node(generator, syntax):
     value_type = infer_expression_type(syntax, generator["types"], generator["function_returns"])
     if value_type != "ByteArray" and value_type != "List" and value_type != "Any":
+        if generator["error_label"] != "":
+            call emit_source_raise(generator, syntax, "TypeError", "binary data must be a ByteArray or List")
+            return syntax
+        end
         call unsupported(generator["path"], generator["lines"], syntax, "binary data must be a ByteArray or List", "pass a ByteArray value")
     end
     if value_type == "Any" and not generator["internal_abi"] and not generator.get("current_internal_function", False):
@@ -1871,6 +1880,10 @@ end
 function emit_checked_int_expression(generator, syntax, purpose):
     value_type = infer_expression_type(syntax, generator["types"], generator["function_returns"])
     if value_type != "Int" and value_type != "Bool" and value_type != "Any":
+        if generator["error_label"] != "":
+            call emit_source_raise(generator, syntax, "TypeError", purpose + " must be an Int")
+            return
+        end
         call unsupported(generator["path"], generator["lines"], syntax, purpose + " must be an Int", "convert the value with Int(...)")
     end
     call emit_expression(generator, syntax)
@@ -1940,6 +1953,10 @@ function bit_operand_node(generator, syntax):
         return syntax
     end
     if operand_type != "Any":
+        if generator["error_label"] != "":
+            call emit_source_raise(generator, syntax, "TypeError", "bitwise operators require Int operands, got " + operand_type)
+            return syntax
+        end
         call unsupported(generator["path"], generator["lines"], syntax, "bitwise operators require Int operands, got " + operand_type, "convert the value with Int(...) first")
     end
     coerce = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]}
@@ -1953,6 +1970,10 @@ function emit_shift(generator, syntax, left, right):
     operator = syntax["operator"]
     count = constant_int_expression(right)
     if count[0] and count[1] < 0:
+        if generator["error_label"] != "":
+            call emit_source_raise(generator, syntax, "ValueError", "negative shift count")
+            return
+        end
         call unsupported(generator["path"], generator["lines"], syntax, "negative shift count", "use a shift count of 0 or more")
     end
     if count[0] and count[1] >= 0 and count[1] <= 63:
@@ -2060,8 +2081,16 @@ function bind_arguments(generator, syntax, declaration, skip):
             end
         end
         if position < 0 or position >= len(values):
+            if generator["error_label"] != "":
+                call emit_source_raise(generator, syntax, "TypeError", "unknown keyword or too many arguments")
+                return None
+            end
             call unsupported(generator["path"], generator["lines"], syntax, "unknown keyword or too many arguments: " + String(names) + " for " + String(parameters), "use the function's declared parameters")
         elif values[position] != None:
+            if generator["error_label"] != "":
+                call emit_source_raise(generator, syntax, "TypeError", "multiple values for one argument")
+                return None
+            end
             call unsupported(generator["path"], generator["lines"], syntax, "multiple values for one argument", "pass each parameter only once")
         end
         values[position] = supplied[index]
@@ -2070,6 +2099,10 @@ function bind_arguments(generator, syntax, declaration, skip):
     for index in rang(len(values)):
         if values[index] == None:
             if len(defaults) == 0 or defaults[index + skip] == None:
+                if generator["error_label"] != "":
+                    call emit_source_raise(generator, syntax, "TypeError", "missing required argument: " + parameters[index + skip])
+                    return None
+                end
                 call unsupported(generator["path"], generator["lines"], syntax, "missing required argument: " + parameters[index + skip], "supply the required argument")
             end
             values[index] = defaults[index + skip]
@@ -2151,6 +2184,10 @@ function emit_expression(generator, syntax):
             end
             call assembler.relative(output, x86_64.lea_rip_prefix(0), "function_" + name)
         else:
+            if generator["error_label"] != "":
+                call emit_source_raise(generator, syntax, "NameError", "unknown native variable: " + name)
+                return
+            end
             call unsupported(generator["path"], generator["lines"], syntax, "unknown native variable: " + name, "assign the variable before reading it")
         end
     elif kind == "comprehension":
@@ -2204,17 +2241,29 @@ function emit_expression(generator, syntax):
             call assembler.relative(output, [232], "runtime_dict_get")
             call emit_pending_error(generator)
         else:
+            if generator["error_label"] != "":
+                call emit_source_raise(generator, syntax, "AttributeError", "member value requires a class or instance")
+                return
+            end
             call unsupported(generator["path"], generator["lines"], syntax, "member value requires a class or instance", "access a declared class field")
         end
     elif kind == "slice":
         target_slice_type = infer_expression_type(syntax["target"], generator["types"], generator["function_returns"])
         if target_slice_type != "Any" and not is_sequence_type(target_slice_type):
+            if generator["error_label"] != "":
+                call emit_source_raise(generator, syntax, "TypeError", "value of type " + target_slice_type + " does not support slicing")
+                return
+            end
             call unsupported(generator["path"], generator["lines"], syntax, "value of type " + target_slice_type + " does not support slicing", "slice a String, collection, or typed array")
         end
         for slice_bound in [syntax["start"], syntax["stop"], syntax.get("step", None)]:
             if slice_bound != None:
                 bound_type = infer_expression_type(slice_bound, generator["types"], generator["function_returns"])
                 if bound_type != "Int" and bound_type != "Bool" and bound_type != "Any":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, slice_bound, "TypeError", "slice bounds must be Int")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], slice_bound, "slice bounds must be Int", "convert the bound with Int(...)")
                 end
             end
@@ -2305,8 +2354,16 @@ function emit_expression(generator, syntax):
         target_type = infer_expression_type(syntax["target"], generator["types"], generator["function_returns"])
         index_type = infer_expression_type(syntax["index"], generator["types"], generator["function_returns"])
         if target_type != "Any" and target_type != "Dictionary" and not is_sequence_type(target_type):
+            if generator["error_label"] != "":
+                call emit_source_raise(generator, syntax, "TypeError", "value of type " + target_type + " is not indexable")
+                return
+            end
             call unsupported(generator["path"], generator["lines"], syntax, "value of type " + target_type + " is not indexable", "index a String, collection, typed array, or Dictionary")
         elif is_sequence_type(target_type) and index_type != "Int" and index_type != "Bool" and index_type != "Any":
+            if generator["error_label"] != "":
+                call emit_source_raise(generator, syntax["index"], "TypeError", "sequence index must be Int")
+                return
+            end
             call unsupported(generator["path"], generator["lines"], syntax["index"], "sequence index must be Int", "convert the index with Int(...)")
         end
         if target_type == "IntArray" and generator.get("unchecked_intarray", False) and is_fast_int_index(generator, syntax["index"]):
@@ -2389,6 +2446,10 @@ function emit_expression(generator, syntax):
         end
         operand_type = infer_expression_type(syntax["operand"], generator["types"], generator["function_returns"])
         if syntax["operator"] == "-" and not is_numeric_type(operand_type):
+            if generator["error_label"] != "":
+                call emit_source_raise(generator, syntax, "TypeError", "unary - requires a numeric operand")
+                return
+            end
             call unsupported(generator["path"], generator["lines"], syntax, "unary - requires a numeric operand", "pass an Int, Bool, or Float value")
         end
         call emit_expression(generator, syntax["operand"])
@@ -2420,20 +2481,36 @@ function emit_expression(generator, syntax):
         if operator == "+":
             valid_add = binary_left_type == "Any" or binary_right_type == "Any" or (is_numeric_type(binary_left_type) and is_numeric_type(binary_right_type)) or (binary_left_type == "String" and binary_right_type == "String") or (binary_left_type == "List" and binary_right_type == "List")
             if not valid_add:
+                if generator["error_label"] != "":
+                    call emit_source_raise(generator, syntax, "TypeError", "+ requires two numbers, two Strings, or two Lists")
+                    return
+                end
                 call unsupported(generator["path"], generator["lines"], syntax, "+ requires two numbers, two Strings, or two Lists", "use matching operand types or convert explicitly")
             end
         elif operator == "*":
             valid_multiply = binary_left_type == "Any" or binary_right_type == "Any" or (is_numeric_type(binary_left_type) and is_numeric_type(binary_right_type)) or (binary_left_type == "String" and (binary_right_type == "Int" or binary_right_type == "Bool")) or (binary_right_type == "String" and (binary_left_type == "Int" or binary_left_type == "Bool"))
             if not valid_multiply:
+                if generator["error_label"] != "":
+                    call emit_source_raise(generator, syntax, "TypeError", "* requires numeric operands or a String and Int")
+                    return
+                end
                 call unsupported(generator["path"], generator["lines"], syntax, "* requires numeric operands or a String and Int", "use numeric values or String * Int")
             end
         elif operator == "-" or operator == "/" or operator == "//" or operator == "%":
             if not is_numeric_type(binary_left_type) or not is_numeric_type(binary_right_type):
+                if generator["error_label"] != "":
+                    call emit_source_raise(generator, syntax, "TypeError", "operator " + operator + " requires numeric operands")
+                    return
+                end
                 call unsupported(generator["path"], generator["lines"], syntax, "operator " + operator + " requires numeric operands", "pass Int, Bool, or Float values")
             end
         elif operator == "^":
             valid_exponent = binary_right_type == "Int" or binary_right_type == "Bool" or binary_right_type == "Any"
             if not is_numeric_type(binary_left_type) or not valid_exponent:
+                if generator["error_label"] != "":
+                    call emit_source_raise(generator, syntax, "TypeError", "^ requires a numeric base and Int exponent")
+                    return
+                end
                 call unsupported(generator["path"], generator["lines"], syntax, "^ requires a numeric base and Int exponent", "use an Int exponent such as x ^ 3")
             end
         end
@@ -2446,6 +2523,10 @@ function emit_expression(generator, syntax):
             floor_left_numeric = floor_left_type == "Int" or floor_left_type == "Bool" or floor_left_type == "Float" or floor_left_type == "Any"
             floor_right_numeric = floor_right_type == "Int" or floor_right_type == "Bool" or floor_right_type == "Float" or floor_right_type == "Any"
             if not floor_left_numeric or not floor_right_numeric:
+                if generator["error_label"] != "":
+                    call emit_source_raise(generator, syntax, "TypeError", "operator " + operator + " requires numeric operands")
+                    return
+                end
                 call unsupported(generator["path"], generator["lines"], syntax, "operator " + operator + " requires numeric operands", "pass Int, Bool, or Float values")
             end
             if operator == "%":
@@ -2473,6 +2554,10 @@ function emit_expression(generator, syntax):
             if operator == "^":
                 exponent_type = infer_expression_type(syntax["right"], generator["types"], generator["function_returns"])
                 if exponent_type != "Int" and exponent_type != "Bool" and exponent_type != "Any":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax, "TypeError", "Float ^ requires an Int exponent")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax, "Float ^ requires an Int exponent", "use an Int exponent such as x ^ 3")
                 end
                 call emit_float_expression(generator, syntax["left"])
@@ -2579,6 +2664,10 @@ function emit_expression(generator, syntax):
             # Dynamic ^ : base may be boxed Float or raw Int; Int exponent.
             any_exp_type = infer_expression_type(syntax["right"], generator["types"], generator["function_returns"])
             if any_exp_type != "Int" and any_exp_type != "Bool" and any_exp_type != "Any":
+                if generator["error_label"] != "":
+                    call emit_source_raise(generator, syntax, "TypeError", "^ requires an Int exponent")
+                    return
+                end
                 call unsupported(generator["path"], generator["lines"], syntax, "^ requires an Int exponent", "use an Int exponent such as x ^ 3")
             end
             call emit_expression(generator, syntax["left"])
@@ -2816,6 +2905,10 @@ function emit_expression(generator, syntax):
                 generator["help_used"] = True
             end
             if "argument_names" in syntax and target["name"] not in generator["functions"] and target["name"] not in generator["classes"]:
+                if generator["error_label"] != "":
+                    call emit_source_raise(generator, syntax, "TypeError", "keyword arguments require a declared function or class")
+                    return
+                end
                 call unsupported(generator["path"], generator["lines"], syntax, "keyword arguments require a declared function or class", "use positional arguments for builtins and Function values")
             end
             builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "Dictionary": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sqrt": 1, "sum": 1, "float_zeros": 1, "float_fill": 2, "float_sum": 1, "float_dot": 2, "float_axpy": 3, "float_matmul": 5, "type": 1, "exit": 1, "input": 1, "readfile": 1, "readbytes": 1, "__lsl_getenv": 1, "mkdir": 1, "unlink": 1, "rmdir": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "help": 0, "run": 2, "run_clean": 2, "capture": 2, "capture_clean": 2, "capture_stream": 3, "capture_stream_clean": 3, "capture_input": 3, "capture_input_clean": 3, "capture_input_stream": 4, "capture_input_stream_clean": 4, "capture_status": 0, "capture_stderr": 0, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2, "native_open": 1, "native_size": 1, "native_u64": 2, "native_name_equal": 3, "native_function": 2, "native_call": 2, "native_close": 1, "__lsl_test_small_tables": 0, "__lsl_test_fd_fault": 1, "__lsl_object_table_mask": 0, "__lsl_intern_table_mask": 0, "__lsl_wall_time": 0, "__lsl_sleep": 1, "__lsl_isatty": 1, "__lsl_stdin_eof": 0, "__lsl_run": 2, "__lsl_run_clean": 2, "__lsl_capture": 2, "__lsl_capture_clean": 2, "__lsl_fd_open": 2, "__lsl_fd_read": 3, "__lsl_fd_write": 3, "__lsl_fd_seek": 2, "__lsl_fd_close": 1, "__lsl_fd_socket": 2, "__lsl_fd_connect": 3, "__lsl_checked_index": 1, "__lsl_int_zeros": 1, "__lsl_byte_zeros": 1, "__lsl_raster_pack": 5, "__lsl_raster_copy": 5, "__lsl_raster_fill": 4, "__lsl_fd_ioctl": 3, "__lsl_fd_mmap": 3, "__lsl_mem_pack": 5, "__lsl_data_address": 1, "__lsl_syscall": 5, "__lsl_mem_unpack": 4, "__lsl_text_from_bytes": 3, "__lsl_byte_copy": 5, "__lsl_text_byte": 2, "__lsl_text_byte_length": 1, "__lsl_floatarray_bytes": 1, "__lsl_floatarray_from_bytes": 1, "atomic_add": 3, "atomic_xchg": 3, "atomic_cas": 4, "atomic_pause": 0, "thread_spawn": 1, "thread_join": 1, "cpu_count": 0, "popcount": 1, "trailing_zeros": 1}
@@ -2858,15 +2951,27 @@ function emit_expression(generator, syntax):
             builtin_arity["__lsl_set_store"] = 3
             if target["name"] == "help":
                 if len(syntax["arguments"]) > 1:
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax, "TypeError", "builtin help expects zero or one argument")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax, "builtin help expects zero or one argument", "use help() or help(\"TOPIC\")")
                 end
             elif target["name"] in builtin_arity:
                 expected_builtin = builtin_arity[target["name"]]
                 if len(syntax["arguments"]) != expected_builtin:
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax, "TypeError", "builtin " + target["name"] + " expects " + String(expected_builtin) + " argument(s), got " + String(len(syntax["arguments"])))
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax, "builtin " + target["name"] + " expects " + String(expected_builtin) + " argument(s), got " + String(len(syntax["arguments"])), "pass exactly " + String(expected_builtin) + " argument(s)")
                 end
             elif target["name"] == "IntArray" or target["name"] == "FloatArray" or target["name"] == "ByteArray" or target["name"] == "set":
                 if len(syntax["arguments"]) > 1:
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax, "TypeError", "builtin " + target["name"] + " expects zero or one argument")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax, "builtin " + target["name"] + " expects zero or one argument", "pass no argument for a new array or an existing array as a checked cast")
                 end
             end
@@ -2939,6 +3044,10 @@ function emit_expression(generator, syntax):
                 return
             elif target["name"] == "float_zeros":
                 if infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"]) != "Int":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax["arguments"][0], "TypeError", "float_zeros size must be an Int")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax["arguments"][0], "float_zeros size must be an Int", "convert the size with Int(...)")
                 end
                 call emit_expression(generator, syntax["arguments"][0])
@@ -2954,6 +3063,10 @@ function emit_expression(generator, syntax):
                 return
             elif target["name"] == "__lsl_floatarray_bytes":
                 if infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"]) != "FloatArray":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax["arguments"][0], "TypeError", "__lsl_floatarray_bytes requires a FloatArray")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax["arguments"][0], "__lsl_floatarray_bytes requires a FloatArray", "pass a checked FloatArray value")
                 end
                 call emit_expression(generator, syntax["arguments"][0])
@@ -2962,6 +3075,10 @@ function emit_expression(generator, syntax):
                 return
             elif target["name"] == "__lsl_text_byte_length":
                 if infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"]) != "String":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax["arguments"][0], "TypeError", "__lsl_text_byte_length requires a String")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax["arguments"][0], "__lsl_text_byte_length requires a String", "pass captured binary String data")
                 end
                 call emit_expression(generator, syntax["arguments"][0])
@@ -2969,6 +3086,10 @@ function emit_expression(generator, syntax):
                 return
             elif target["name"] == "__lsl_floatarray_from_bytes":
                 if infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"]) != "String":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax["arguments"][0], "TypeError", "__lsl_floatarray_from_bytes requires a String")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax["arguments"][0], "__lsl_floatarray_from_bytes requires a String", "pass binary capture output")
                 end
                 call emit_expression(generator, syntax["arguments"][0])
@@ -3059,6 +3180,10 @@ function emit_expression(generator, syntax):
                 return
             elif target["name"] == "float_fill":
                 if infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"]) != "FloatArray" or infer_expression_type(syntax["arguments"][1], generator["types"], generator["function_returns"]) != "Float":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax, "TypeError", "float_fill requires (FloatArray, Float)")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax, "float_fill requires (FloatArray, Float)", "cast the array and convert the value with Float(...)")
                 end
                 call emit_expression(generator, syntax["arguments"][0])
@@ -3070,6 +3195,10 @@ function emit_expression(generator, syntax):
                 return
             elif target["name"] == "float_sum":
                 if infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"]) != "FloatArray":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax["arguments"][0], "TypeError", "float_sum requires a FloatArray")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax["arguments"][0], "float_sum requires a FloatArray", "use FloatArray(value) for a checked cast")
                 end
                 call emit_expression(generator, syntax["arguments"][0])
@@ -3078,6 +3207,10 @@ function emit_expression(generator, syntax):
                 return
             elif target["name"] == "float_dot":
                 if infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"]) != "FloatArray" or infer_expression_type(syntax["arguments"][1], generator["types"], generator["function_returns"]) != "FloatArray":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax, "TypeError", "float_dot requires two FloatArrays")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax, "float_dot requires two FloatArrays", "use FloatArray(value) for checked casts")
                 end
                 call emit_expression(generator, syntax["arguments"][0])
@@ -3096,6 +3229,10 @@ function emit_expression(generator, syntax):
                 return
             elif target["name"] == "float_matmul":
                 if infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"]) != "FloatArray" or infer_expression_type(syntax["arguments"][1], generator["types"], generator["function_returns"]) != "FloatArray" or infer_expression_type(syntax["arguments"][2], generator["types"], generator["function_returns"]) != "Int" or infer_expression_type(syntax["arguments"][3], generator["types"], generator["function_returns"]) != "Int" or infer_expression_type(syntax["arguments"][4], generator["types"], generator["function_returns"]) != "Int":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax, "TypeError", "float_matmul requires (FloatArray, FloatArray, Int, Int, Int)")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax, "float_matmul requires (FloatArray, FloatArray, Int, Int, Int)", "pass A, B, m, k, n")
                 end
                 for argument in syntax["arguments"]:
@@ -3132,6 +3269,10 @@ function emit_expression(generator, syntax):
                 return
             elif target["name"] == "float_axpy":
                 if infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"]) != "Float" or infer_expression_type(syntax["arguments"][1], generator["types"], generator["function_returns"]) != "FloatArray" or infer_expression_type(syntax["arguments"][2], generator["types"], generator["function_returns"]) != "FloatArray":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax, "TypeError", "float_axpy requires (Float, FloatArray, FloatArray)")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax, "float_axpy requires (Float, FloatArray, FloatArray)", "convert alpha with Float(...) and cast arrays with FloatArray(...)")
                 end
                 call emit_expression(generator, syntax["arguments"][0])
@@ -3354,6 +3495,10 @@ function emit_expression(generator, syntax):
             elif target["name"] == "len":
                 length_type = infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"])
                 if length_type != "Any" and not is_sized_type(length_type):
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax["arguments"][0], "TypeError", "value of type " + length_type + " has no length")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax["arguments"][0], "value of type " + length_type + " has no length", "pass a String, collection, typed array, or Dictionary")
                 end
                 call emit_expression(generator, syntax["arguments"][0])
@@ -3471,12 +3616,24 @@ function emit_expression(generator, syntax):
                 # index/value expressions run, and only load its backing pointer
                 # after all potentially allocating expressions have completed.
                 if infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"]) != "IntArray":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax["arguments"][0], "TypeError", "atomic RMW requires an IntArray target")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax["arguments"][0], "atomic RMW requires an IntArray target", "pass an IntArray as the first argument")
                 end
                 if infer_expression_type(syntax["arguments"][1], generator["types"], generator["function_returns"]) != "Int":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax["arguments"][1], "TypeError", "atomic RMW index requires an Int")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax["arguments"][1], "atomic RMW index requires an Int", "convert the index with Int(...) first")
                 end
                 if infer_expression_type(syntax["arguments"][2], generator["types"], generator["function_returns"]) != "Int":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax["arguments"][2], "TypeError", "atomic RMW value requires an Int")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax["arguments"][2], "atomic RMW value requires an Int", "convert the value with Int(...) first")
                 end
                 call emit_expression(generator, syntax["arguments"][0])
@@ -3510,15 +3667,31 @@ function emit_expression(generator, syntax):
                 # desired one. The slot's previous value always ends up in RAX,
                 # so the caller compares it with the expected value.
                 if infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"]) != "IntArray":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax["arguments"][0], "TypeError", "atomic_cas requires an IntArray target")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax["arguments"][0], "atomic_cas requires an IntArray target", "pass an IntArray as the first argument")
                 end
                 if infer_expression_type(syntax["arguments"][1], generator["types"], generator["function_returns"]) != "Int":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax["arguments"][1], "TypeError", "atomic_cas index requires an Int")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax["arguments"][1], "atomic_cas index requires an Int", "convert the index with Int(...) first")
                 end
                 if infer_expression_type(syntax["arguments"][2], generator["types"], generator["function_returns"]) != "Int":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax["arguments"][2], "TypeError", "atomic_cas expected value requires an Int")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax["arguments"][2], "atomic_cas expected value requires an Int", "convert the value with Int(...) first")
                 end
                 if infer_expression_type(syntax["arguments"][3], generator["types"], generator["function_returns"]) != "Int":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax["arguments"][3], "TypeError", "atomic_cas desired value requires an Int")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax["arguments"][3], "atomic_cas desired value requires an Int", "convert the value with Int(...) first")
                 end
                 call emit_expression(generator, syntax["arguments"][0])
@@ -3554,6 +3727,10 @@ function emit_expression(generator, syntax):
             elif target["name"] == "popcount" or target["name"] == "trailing_zeros":
                 # Bit builtins over raw Int: popcnt / tzcnt on the value.
                 if infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"]) != "Int":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax["arguments"][0], "TypeError", target["name"] + " requires an Int")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax["arguments"][0], target["name"] + " requires an Int", "convert the value with Int(...) first")
                 end
                 call emit_expression(generator, syntax["arguments"][0])
@@ -3573,6 +3750,10 @@ function emit_expression(generator, syntax):
                 # returns the logical tid (or -1 when the table is full).
                 spawn_type = infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"])
                 if spawn_type != "Function" and spawn_type != "Any":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax["arguments"][0], "TypeError", "thread_spawn requires a Function")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax["arguments"][0], "thread_spawn requires a Function", "pass the name of a function with no parameters")
                 end
                 call emit_expression(generator, syntax["arguments"][0])
@@ -3993,6 +4174,20 @@ function emit_expression(generator, syntax):
                 return
             elif target["name"] == "last_error":
                 call assembler.emit(output, x86_64.load_fs(0, 0))
+                error_value_ready = label_name(generator, "error_value_ready")
+                error_value_heap = label_name(generator, "error_value_heap")
+                call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+                call assembler.relative(output, [15, 132], error_value_ready)
+                call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                call assembler.relative(output, [232], "runtime_is_heap_object")
+                call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+                call assembler.relative(output, [15, 133], error_value_heap)
+                call assembler.emit(output, x86_64.load_fs(7, 0))
+                call assembler.relative(output, [232], "runtime_string_clone")
+                call assembler.emit(output, x86_64.store_fs(0, 0))
+                call assembler.label(output, error_value_heap)
+                call assembler.emit(output, x86_64.load_fs(0, 0))
+                call assembler.label(output, error_value_ready)
                 return
             elif target["name"] == "type":
                 value_type = infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"])
@@ -4039,6 +4234,10 @@ function emit_expression(generator, syntax):
                     return
                 end
                 if len(syntax["arguments"]) != 2:
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax, "TypeError", "builtin " + target["name"] + " expects 1 iterable or 2 values")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax, "builtin " + target["name"] + " expects 1 iterable or 2 values", "pass min(iterable) or min(a, b)")
                 end
                 minmax_left_type = infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"])
@@ -4046,6 +4245,10 @@ function emit_expression(generator, syntax):
                 minmax_left_numeric = minmax_left_type == "Int" or minmax_left_type == "Bool" or minmax_left_type == "Float" or minmax_left_type == "Any"
                 minmax_right_numeric = minmax_right_type == "Int" or minmax_right_type == "Bool" or minmax_right_type == "Float" or minmax_right_type == "Any"
                 if not minmax_left_numeric or not minmax_right_numeric:
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax, "TypeError", "builtin " + target["name"] + " expects numeric values")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax, "builtin " + target["name"] + " expects numeric values", "pass Int, Bool, or Float values")
                 end
                 minmax_dynamic = minmax_left_type == "Float" or minmax_right_type == "Float" or minmax_left_type == "Any" or minmax_right_type == "Any"
@@ -4105,6 +4308,10 @@ function emit_expression(generator, syntax):
             elif target["name"] == "abs":
                 abs_arg_type = infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"])
                 if not is_numeric_type(abs_arg_type):
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax, "TypeError", "abs requires a numeric operand")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax, "abs requires a numeric operand", "pass an Int, Bool, or Float value")
                 end
                 call emit_expression(generator, syntax["arguments"][0])
@@ -4131,6 +4338,10 @@ function emit_expression(generator, syntax):
             elif target["name"] == "sqrt":
                 sqrt_arg_type = infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"])
                 if not is_numeric_type(sqrt_arg_type):
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax, "TypeError", "sqrt requires a numeric operand")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax, "sqrt requires a numeric operand", "pass an Int, Bool, or Float value")
                 end
                 call emit_float_expression(generator, syntax["arguments"][0])
@@ -4173,6 +4384,10 @@ function emit_expression(generator, syntax):
                 end
                 origin_method_name = resolve_method_name(generator["classes"], generator["functions"], parent_class, target["name"])
                 if origin_method_name == "":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax, "AttributeError", "unknown parent method: " + target["name"])
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax, "unknown parent method: " + target["name"], "declare the method in an ancestor of " + current_class)
                 end
                 origin_arguments = [{"kind": "name", "name": "self", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]}]
@@ -4189,9 +4404,17 @@ function emit_expression(generator, syntax):
             end
             receiver_type = infer_expression_type(target["target"], generator["types"], generator["function_returns"])
             if "argument_names" in syntax and not receiver_type.startswith("Class:") and not receiver_type.startswith("Instance:"):
+                if generator["error_label"] != "":
+                    call emit_source_raise(generator, syntax, "TypeError", "builtin methods do not accept keyword arguments")
+                    return
+                end
                 call unsupported(generator["path"], generator["lines"], syntax, "builtin methods do not accept keyword arguments", "use positional arguments")
             end
             if not receiver_type.startswith("Class:") and not receiver_type.startswith("Instance:") and not method_supported(receiver_type, target["name"]):
+                if generator["error_label"] != "":
+                    call emit_source_raise(generator, syntax, "AttributeError", "type " + receiver_type + " has no method " + target["name"])
+                    return
+                end
                 call unsupported(generator["path"], generator["lines"], syntax, "type " + receiver_type + " has no method " + target["name"], "use a method documented for " + receiver_type)
             end
             method_arity = {"strip": 0, "lstrip": 0, "rstrip": 0, "lower": 0, "upper": 0, "title": 0, "capitalize": 0, "sort": 0, "reverse": 0, "copy": 0, "keys": 0, "values": 0, "items": 0, "clear": 0, "append": 1, "startswith": 1, "endswith": 1, "find": 1, "count": 1, "split": 1, "join": 1, "extend": 1, "remove": 1, "index": 1, "update": 1, "replace": 2, "insert": 2}
@@ -4201,14 +4424,26 @@ function emit_expression(generator, syntax):
             if target["name"] in method_arity and not receiver_type.startswith("Class:") and not receiver_type.startswith("Instance:"):
                 expected_method = method_arity[target["name"]]
                 if len(syntax["arguments"]) != expected_method:
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax, "TypeError", "method " + target["name"] + " expects " + String(expected_method) + " argument(s), got " + String(len(syntax["arguments"])))
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax, "method " + target["name"] + " expects " + String(expected_method) + " argument(s), got " + String(len(syntax["arguments"])), "pass exactly " + String(expected_method) + " argument(s)")
                 end
             elif target["name"] == "get":
                 if len(syntax["arguments"]) != 1 and len(syntax["arguments"]) != 2:
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax, "TypeError", "method get expects one or two arguments")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax, "method get expects one or two arguments", "use dictionary.get(key[, default])")
                 end
             elif target["name"] == "setdefault":
                 if len(syntax["arguments"]) != 2:
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax, "TypeError", "method setdefault expects two arguments")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax, "method setdefault expects two arguments", "use dictionary.setdefault(key, default)")
                 end
             elif target["name"] == "pop":
@@ -4223,12 +4458,20 @@ function emit_expression(generator, syntax):
                     pop_arity_valid = len(syntax["arguments"]) == 0 or len(syntax["arguments"]) == 1
                 end
                 if not pop_arity_valid:
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax, "TypeError", "invalid pop argument count")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax, "invalid pop argument count", "use list.pop([index]) or dictionary.pop(key[, default])")
                 end
             end
             if target["name"] == "insert" or (target["name"] == "pop" and receiver_type != "Dictionary" and receiver_type != "Any" and len(syntax["arguments"]) == 1):
                 method_index_type = infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"])
                 if method_index_type != "Int" and method_index_type != "Bool" and method_index_type != "Any":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax["arguments"][0], "TypeError", "sequence index must be Int")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax["arguments"][0], "sequence index must be Int", "convert the index with Int(...)")
                 end
             end
@@ -4252,6 +4495,10 @@ function emit_expression(generator, syntax):
                 end
                 native_method_name = resolve_method_name(generator["classes"], generator["functions"], class_name, target["name"])
                 if native_method_name == "":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax, "AttributeError", "unknown class method: " + target["name"])
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax, "unknown class method: " + target["name"], "declare the method inside class " + class_name)
                 end
                 declaration = generator["functions"][native_method_name]
@@ -4274,21 +4521,41 @@ function emit_expression(generator, syntax):
                 call emit_expression(generator, combined_call)
                 return
             elif (receiver_type == "IntArray" or receiver_type == "FloatArray" or receiver_type == "ByteArray") and target["name"] != "append" and target["name"] != "clear":
+                if generator["error_label"] != "":
+                    call emit_source_raise(generator, syntax, "TypeError", receiver_type + " method is not implemented: " + target["name"])
+                    return
+                end
                 call unsupported(generator["path"], generator["lines"], syntax, receiver_type + " method is not implemented: " + target["name"], "use append, clear, indexed access, indexed assignment, len, or iteration")
             elif target["name"] == "append":
                 if receiver_type == "Tuple" or receiver_type == "RealArray":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax, "TypeError", "fixed collection does not support append")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax, "fixed collection does not support append", "convert it with List(value) before appending")
                 end
                 if receiver_type == "IntArray":
                     if infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"]) != "Int":
+                        if generator["error_label"] != "":
+                            call emit_source_raise(generator, syntax["arguments"][0], "TypeError", "IntArray append requires an Int")
+                            return
+                        end
                         call unsupported(generator["path"], generator["lines"], syntax["arguments"][0], "IntArray append requires an Int", "convert the value with Int(...) before appending")
                     end
                 elif receiver_type == "FloatArray":
                     if infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"]) != "Float":
+                        if generator["error_label"] != "":
+                            call emit_source_raise(generator, syntax["arguments"][0], "TypeError", "FloatArray append requires a Float")
+                            return
+                        end
                         call unsupported(generator["path"], generator["lines"], syntax["arguments"][0], "FloatArray append requires a Float", "convert the value with Float(...) before appending")
                     end
                 elif receiver_type == "ByteArray":
                     if infer_expression_type(syntax["arguments"][0], generator["types"], generator["function_returns"]) != "Int":
+                        if generator["error_label"] != "":
+                            call emit_source_raise(generator, syntax["arguments"][0], "TypeError", "ByteArray append requires an Int")
+                            return
+                        end
                         call unsupported(generator["path"], generator["lines"], syntax["arguments"][0], "ByteArray append requires an Int", "convert the value with Int(...) before appending")
                     end
                 end
@@ -4324,6 +4591,10 @@ function emit_expression(generator, syntax):
                 return
             elif target["name"] == "clear":
                 if receiver_type == "Tuple" or receiver_type == "RealArray":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax, "TypeError", "fixed collection does not support clear")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax, "fixed collection does not support clear", "convert it with List(value) before changing its length")
                 elif receiver_type == "Dictionary":
                     clear_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_dict_clear"}, "arguments": [target["target"]]}
@@ -4341,6 +4612,10 @@ function emit_expression(generator, syntax):
                 return
             elif target["name"] == "pop":
                 if receiver_type == "Tuple" or receiver_type == "RealArray":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax, "TypeError", "fixed collection does not support pop")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax, "fixed collection does not support pop", "convert it with List(value) before changing its length")
                 end
                 pop_target = "__lsl_pop"
@@ -4396,6 +4671,10 @@ function emit_expression(generator, syntax):
                 end
                 if receiver_type == "Tuple" or receiver_type == "RealArray":
                     if target["name"] == "insert" or target["name"] == "remove" or target["name"] == "extend" or target["name"] == "sort" or target["name"] == "clear" or target["name"] == "pop":
+                        if generator["error_label"] != "":
+                            call emit_source_raise(generator, syntax, "TypeError", "fixed collection does not support " + target["name"])
+                            return
+                        end
                         call unsupported(generator["path"], generator["lines"], syntax, "fixed collection does not support " + target["name"], "convert it with List(value) before changing its length")
                     end
                 end
@@ -4449,6 +4728,10 @@ function emit_expression(generator, syntax):
             end
         end
         if target["kind"] != "name":
+            if generator["error_label"] != "":
+                call emit_source_raise(generator, syntax, "TypeError", "only direct Function calls are supported; unresolved target kind " + target["kind"] + " member " + target.get("name", "?"))
+                return
+            end
             call unsupported(generator["path"], generator["lines"], syntax, "only direct Function calls are supported; unresolved target kind " + target["kind"] + " member " + target.get("name", "?"), "call a declared function by name")
         end
         if target["name"] in generator["classes"]:
@@ -4458,12 +4741,23 @@ function emit_expression(generator, syntax):
             call assembler.emit(output, x86_64.push(0))
             initializer_name = resolve_method_name(generator["classes"], generator["functions"], class_name, "init")
             if initializer_name == "" and "argument_names" in syntax:
+                if generator["error_label"] != "":
+                    call emit_source_raise(generator, syntax, "TypeError", "class without init does not accept keyword arguments")
+                    return
+                end
                 call unsupported(generator["path"], generator["lines"], syntax, "class without init does not accept keyword arguments", "declare an initializer or construct the class without arguments")
             end
             if initializer_name != "":
                 initializer = generator["functions"][initializer_name]
                 arguments = bind_arguments(generator, syntax, initializer, 1)
+                if arguments == None:
+                    return
+                end
                 if len(arguments) + 1 != len(initializer["parameters"]):
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax, "TypeError", "initializer argument count mismatch")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], syntax, "initializer argument count mismatch", "pass exactly " + String(len(initializer["parameters"]) - 1) + " arguments")
                 end
                 index = len(arguments) - 1
@@ -4506,6 +4800,10 @@ function emit_expression(generator, syntax):
             if target["name"] in generator["variables"] or target["name"] in generator["global_variables"]:
                 indirect_call = True
             else:
+                if generator["error_label"] != "":
+                    call emit_source_raise(generator, syntax, "NameError", "unknown native function: " + target["name"])
+                    return
+                end
                 call unsupported(generator["path"], generator["lines"], syntax, "unknown native function: " + target["name"], "declare the function or assign a Function value before calling it")
             end
         end
@@ -4513,12 +4811,23 @@ function emit_expression(generator, syntax):
         public_callee = False
         if not indirect_call:
             arguments = bind_arguments(generator, syntax, generator["functions"][target["name"]], 0)
+            if arguments == None:
+                return
+            end
             expected_arguments = len(generator["functions"][target["name"]]["parameters"])
             if len(arguments) != expected_arguments:
+                if generator["error_label"] != "":
+                    call emit_source_raise(generator, syntax, "TypeError", "function argument count mismatch for " + target["name"])
+                    return
+                end
                 call unsupported(generator["path"], generator["lines"], syntax, "function argument count mismatch for " + target["name"], "pass exactly " + String(expected_arguments) + " arguments")
             end
             public_callee = not generator["functions"][target["name"]].get("internal_abi", False)
         elif "argument_names" in syntax:
+            if generator["error_label"] != "":
+                call emit_source_raise(generator, syntax, "TypeError", "keyword arguments require a statically known function")
+                return
+            end
             call unsupported(generator["path"], generator["lines"], syntax, "keyword arguments require a statically known function", "call the declared function or pass positional arguments")
         end
         index = len(arguments) - 1
@@ -4660,8 +4969,16 @@ function emit_expression(generator, syntax):
             container_type = infer_expression_type(right, generator["types"], generator["function_returns"])
             member_type = infer_expression_type(left, generator["types"], generator["function_returns"])
             if container_type != "Any" and not is_sized_type(container_type):
+                if generator["error_label"] != "":
+                    call emit_source_raise(generator, right, "TypeError", "right operand of in has type " + container_type + ", not a collection")
+                    return
+                end
                 call unsupported(generator["path"], generator["lines"], right, "right operand of in has type " + container_type + ", not a collection", "use a String, collection, typed array, or Dictionary")
             elif container_type == "String" and member_type != "String" and member_type != "Any":
+                if generator["error_label"] != "":
+                    call emit_source_raise(generator, left, "TypeError", "String membership requires a String value")
+                    return
+                end
                 call unsupported(generator["path"], generator["lines"], left, "String membership requires a String value", "convert the searched value with String(...)")
             end
             if (container_type == "Any" and not generator["internal_abi"]) or container_type == "Set" or container_type == "IntArray" or container_type == "FloatArray" or container_type == "ByteArray" or (container_type == "String" and member_type == "Any" and not generator["internal_abi"]):
@@ -4690,12 +5007,20 @@ function emit_expression(generator, syntax):
         end
         opcode = comparison_opcode(operator)
         if opcode < 0:
+            if generator["error_label"] != "":
+                call emit_source_raise(generator, syntax, "TypeError", "comparison " + operator + " is unavailable for current values")
+                return
+            end
             call unsupported(generator["path"], generator["lines"], syntax, "comparison " + operator + " is unavailable for current values", "use equality, membership, or an ordered Int comparison")
         end
         left_type = infer_expression_type(left, generator["types"], generator["function_returns"])
         right_type = infer_expression_type(right, generator["types"], generator["function_returns"])
         ordered_comparison = operator == "<" or operator == "<=" or operator == ">" or operator == ">="
         if ordered_comparison and (not is_numeric_type(left_type) or not is_numeric_type(right_type)):
+            if generator["error_label"] != "":
+                call emit_source_raise(generator, syntax, "TypeError", "ordered comparison requires numeric operands")
+                return
+            end
             call unsupported(generator["path"], generator["lines"], syntax, "ordered comparison requires numeric operands", "compare Int, Bool, or Float values")
         end
         if left_type == "Float" or right_type == "Float":
@@ -4929,8 +5254,16 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 target_type = infer_expression_type(target["target"], generator["types"], generator["function_returns"])
                 index_type = infer_expression_type(target["index"], generator["types"], generator["function_returns"])
                 if target_type != "Any" and not is_mutable_index_type(target_type):
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, statement, "TypeError", "value of type " + target_type + " does not support indexed assignment")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], statement, "value of type " + target_type + " does not support indexed assignment", "assign through a mutable collection or Dictionary")
                 elif target_type != "Dictionary" and target_type != "Any" and index_type != "Int" and index_type != "Bool" and index_type != "Any":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, target["index"], "TypeError", "sequence index must be Int")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], target["index"], "sequence index must be Int", "convert the index with Int(...)")
                 end
                 fast_value = statement["value"]
@@ -4940,6 +5273,10 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 end
                 if target_type == "IntArray" and generator.get("unchecked_intarray", False) and (is_fast_int_index(generator, target["index"]) or pure_int_need(generator, target["index"]) >= 1) and (is_fast_int_value(generator, fast_value) or pure_int_need(generator, fast_value) >= 1):
                     if infer_expression_type(fast_value, generator["types"], generator["function_returns"]) != "Int":
+                        if generator["error_label"] != "":
+                            call emit_source_raise(generator, statement["value"], "TypeError", "IntArray assignment requires an Int result")
+                            return
+                        end
                         call unsupported(generator["path"], generator["lines"], statement["value"], "IntArray assignment requires an Int result", "use integer arithmetic for the assigned value")
                     end
                     call emit_expression(generator, target["target"])
@@ -5021,10 +5358,22 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 if statement["operator"] == "=":
                     assigned_type = infer_expression_type(statement["value"], generator["types"], generator["function_returns"])
                     if target_type == "IntArray" and assigned_type != "Int":
+                        if generator["error_label"] != "":
+                            call emit_source_raise(generator, statement["value"], "TypeError", "IntArray assignment requires an Int")
+                            return
+                        end
                         call unsupported(generator["path"], generator["lines"], statement["value"], "IntArray assignment requires an Int", "convert the value with Int(...) before assignment")
                     elif target_type == "FloatArray" and assigned_type != "Float":
+                        if generator["error_label"] != "":
+                            call emit_source_raise(generator, statement["value"], "TypeError", "FloatArray assignment requires a Float")
+                            return
+                        end
                         call unsupported(generator["path"], generator["lines"], statement["value"], "FloatArray assignment requires a Float", "convert the value with Float(...) before assignment")
                     elif target_type == "ByteArray" and assigned_type != "Int":
+                        if generator["error_label"] != "":
+                            call emit_source_raise(generator, statement["value"], "TypeError", "ByteArray assignment requires an Int")
+                            return
+                        end
                         call unsupported(generator["path"], generator["lines"], statement["value"], "ByteArray assignment requires an Int", "convert the value with Int(...) before assignment")
                     end
                     call emit_expression(generator, statement["value"])
@@ -5038,10 +5387,22 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                     combined = {"kind": "binary", "line": statement["line"], "column": statement["column"], "end_column": statement["end_column"], "operator": operator, "left": target, "right": statement["value"]}
                     combined_type = infer_expression_type(combined, generator["types"], generator["function_returns"])
                     if target_type == "IntArray" and combined_type != "Int":
+                        if generator["error_label"] != "":
+                            call emit_source_raise(generator, statement["value"], "TypeError", "IntArray assignment requires an Int result")
+                            return
+                        end
                         call unsupported(generator["path"], generator["lines"], statement["value"], "IntArray assignment requires an Int result", "use integer arithmetic for augmented assignment")
                     elif target_type == "FloatArray" and combined_type != "Float":
+                        if generator["error_label"] != "":
+                            call emit_source_raise(generator, statement["value"], "TypeError", "FloatArray assignment requires a Float result")
+                            return
+                        end
                         call unsupported(generator["path"], generator["lines"], statement["value"], "FloatArray assignment requires a Float result", "use Float arithmetic for augmented assignment")
                     elif target_type == "ByteArray" and combined_type != "Int":
+                        if generator["error_label"] != "":
+                            call emit_source_raise(generator, statement["value"], "TypeError", "ByteArray assignment requires an Int result")
+                            return
+                        end
                         call unsupported(generator["path"], generator["lines"], statement["value"], "ByteArray assignment requires an Int result", "use integer arithmetic for augmented assignment")
                     end
                     call emit_expression(generator, combined)
@@ -5069,6 +5430,10 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 call assembler.emit(generator["builder"], x86_64.pop(6))
                 call assembler.emit(generator["builder"], x86_64.pop(7))
                 if target_type == "Tuple":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, statement, "TypeError", "Tuple items are immutable")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], statement, "Tuple items are immutable", "use List or RealArray for indexed mutation")
                 elif target_type == "Dictionary":
                     call assembler.relative(generator["builder"], [232], "runtime_dict_set")
@@ -5115,6 +5480,10 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             elif target["kind"] == "member":
                 target_type = infer_expression_type(target["target"], generator["types"], generator["function_returns"])
                 if not target_type.startswith("Class:") and not target_type.startswith("Instance:"):
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, statement, "TypeError", "member assignment requires a class instance")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], statement, "member assignment requires a class instance", "assign to self.field or an instance field")
                 end
                 call emit_expression(generator, target["target"])
@@ -5212,6 +5581,10 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 call emit_expression(generator, iterable)
                 iterable_type = infer_expression_type(iterable, generator["types"], generator["function_returns"])
                 if iterable_type != "Any" and iterable_type != "Dictionary" and iterable_type != "Set" and not is_sequence_type(iterable_type):
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, iterable, "TypeError", "value of type " + iterable_type + " is not iterable")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], iterable, "value of type " + iterable_type + " is not iterable", "iterate a String, collection, typed array, or Dictionary")
                 end
                 if iterable_type == "Dictionary":
@@ -5290,9 +5663,17 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             end
             arguments = iterable["arguments"]
             if "argument_names" in iterable:
+                if generator["error_label"] != "":
+                    call emit_source_raise(generator, iterable, "TypeError", "rang does not accept keyword arguments")
+                    return
+                end
                 call unsupported(generator["path"], generator["lines"], iterable, "rang does not accept keyword arguments", "use positional arguments")
             end
             if len(arguments) < 1 or len(arguments) > 3:
+                if generator["error_label"] != "":
+                    call emit_source_raise(generator, statement, "TypeError", "rang expects one to three arguments")
+                    return
+                end
                 call unsupported(generator["path"], generator["lines"], statement, "rang expects one to three arguments", "use rang(stop), rang(start, stop), or rang(start, stop, step)")
             end
             if len(arguments) == 1:
@@ -5314,6 +5695,10 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 step_syntax = arguments[2]
                 step_type = infer_expression_type(step_syntax, generator["types"], generator["function_returns"])
                 if step_type != "Int" and step_type != "Any":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, step_syntax, "TypeError", "rang step must be an Int")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], step_syntax, "rang step must be an Int", "pass an Int expression with a non-zero value")
                 end
                 call emit_expression(generator, step_syntax)
@@ -5379,8 +5764,10 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             call emit_statements(generator, statement["body"], break_label, continue_label, return_label)
         elif kind == "safe":
             safe_end = label_name(generator, "safe_end")
+            safe_failure = label_name(generator, "safe_failure")
             old_error_label = generator["error_label"]
-            generator["error_label"] = safe_end
+            generator["error_label"] = safe_failure
+            generator["error_handlers"].append([safe_failure, safe_end, generator["frame_size"]])
             call emit_statements(generator, statement["body"], break_label, continue_label, return_label)
             generator["error_label"] = old_error_label
             call assembler.label(generator["builder"], safe_end)
@@ -5393,6 +5780,7 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             call emit_statements(generator, statement["body"], break_label, continue_label, return_label)
             call assembler.relative(generator["builder"], [233], try_end)
             call assembler.label(generator["builder"], try_failure)
+            call assembler.emit(generator["builder"], x86_64.lea_base(4, 5, -generator["frame_size"]))
             call assembler.emit(generator["builder"], x86_64.store_fs_imm32(8, 0))
             generator["error_label"] = old_error_label
             call emit_statements(generator, statement["otherwise"], break_label, continue_label, return_label)
@@ -5421,24 +5809,23 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             if generator["error_label"] != "":
                 call assembler.relative(generator["builder"], [233], generator["error_label"])
             else:
-                message = "LSL runtime error: " + statement["error_kind"] + chr(10)
-                if statement["message"]["kind"] == "literal":
-                    if statement["message"]["literal_kind"] == "string":
-                        message = "LSL runtime error: " + statement["error_kind"] + ": " + statement["message"]["value"] + chr(10)
-                    end
-                end
-                call emit_static_write_fd(generator, message, 2)
-                call assembler.emit(generator["builder"], x86_64.mov_imm64(7, 1))
-                call assembler.emit(generator["builder"], x86_64.mov_imm64(0, 231))
-                call assembler.emit(generator["builder"], x86_64.syscall())
+                call emit_uncaught_runtime_error(generator)
             end
         elif kind == "delete":
             target = statement["target"]
             if target["kind"] == "index":
                 target_type = infer_expression_type(target["target"], generator["types"], generator["function_returns"])
                 if target_type == "Tuple" or target_type == "RealArray":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, statement, "TypeError", "fixed collection does not support del")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], statement, "fixed collection does not support del", "convert it with List(value) before deleting")
                 elif target_type == "ByteArray":
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, statement, "TypeError", "ByteArray deletion is not implemented")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], statement, "ByteArray deletion is not implemented", "use clear or overwrite indexed bytes")
                 end
                 if target_type == "List" or target_type == "IntArray" or target_type == "FloatArray":
@@ -5462,6 +5849,10 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                         call emit_pending_error(generator)
                     end
                 else:
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, statement, "TypeError", "value of type " + target_type + " does not support indexed deletion")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], statement, "value of type " + target_type + " does not support indexed deletion", "delete from a List, typed array, or Dictionary")
                 end
             elif target["kind"] == "name":
@@ -5469,11 +5860,19 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 if target["name"] in generator["variables"] or target["name"] in generator["global_variables"]:
                     call emit_store_local(generator, target["name"], 0)
                 else:
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, statement, "NameError", "cannot delete unknown name " + target["name"])
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], statement, "cannot delete unknown name " + target["name"], "assign the name before deleting it")
                 end
             elif target["kind"] == "member":
                 target_type = infer_expression_type(target["target"], generator["types"], generator["function_returns"])
                 if not target_type.startswith("Class:") and not target_type.startswith("Instance:"):
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, statement, "TypeError", "member deletion requires a class instance")
+                        return
+                    end
                     call unsupported(generator["path"], generator["lines"], statement, "member deletion requires a class instance", "delete a field from an LSL class or instance")
                 end
                 call emit_expression(generator, target["target"])
@@ -6290,6 +6689,8 @@ function emit_function(generator, declaration):
     old_register_locals = generator.get("register_locals", {})
     generator["register_locals"] = register_locals
     old_variables = generator["variables"]
+    old_frame_size = generator["frame_size"]
+    generator["frame_size"] = aligned_frame(variables)
     old_types = generator["types"]
     old_error_label = generator["error_label"]
     old_current_return_type = generator.get("current_return_type", "Any")
@@ -6340,6 +6741,7 @@ function emit_function(generator, declaration):
     call assembler.emit(generator["builder"], x86_64.function_epilogue())
     generator["register_locals"] = old_register_locals
     generator["variables"] = old_variables
+    generator["frame_size"] = old_frame_size
     generator["types"] = old_types
     generator["error_label"] = old_error_label
     generator["current_return_type"] = old_current_return_type
@@ -6382,6 +6784,8 @@ function generate_mode(path, source, program, internal_abi):
     end
     globals_bytes = aligned_frame(main_variables)
     generator = {"path": path, "internal_abi": internal_abi, "unchecked_intarray": unchecked_intarray, "lines": lines, "variables": {}, "types": {}, "global_variables": global_offsets, "global_types": main_types, "functions": functions, "classes": classes, "function_returns": function_returns, "function_parameters": parameter_types, "builder": output, "data": [], "string_offsets": {}, "relocations": [], "counter": 0, "error_label": "", "current_class_name": ""}
+    generator["frame_size"] = 16
+    generator["error_handlers"] = []
     registry_bytes = 524288
     registry_mask = 65535
     if generator["internal_abi"]:
@@ -6509,6 +6913,12 @@ function generate_mode(path, source, program, internal_abi):
     if generator.get("help_used", False):
         call emit_function(generator, functions["__lsl_help_text"])
         call emit_function(generator, functions["__lsl_help"])
+    end
+    # Úklid rozpracovaných výrazů pouze při chybě, mimo úspěšnou cestu safe.
+    for handler in generator["error_handlers"]:
+        call assembler.label(output, handler[0])
+        call assembler.emit(output, x86_64.lea_base(4, 5, -handler[2]))
+        call assembler.relative(output, [233], handler[1])
     end
     program_code = assembler.finish(output)
     for relocation in generator["relocations"]:

@@ -34,7 +34,7 @@ function module_prefix(index):
 end
 
 function builtin_module(name):
-    builtins = "|_random_hash|ai|bigint|config|configure|css|cuda|display|env|fd|gfx|http|httpserver|input|json|lconf|lux|luxos|math|native|os|plugin|process|random|sandbox|system|tensor|time|tui|ui|unixsock|wayland|x11|"
+    builtins = "|_random_hash|ai|bigint|config|configure|cuda|env|fd|http|httpserver|json|lconf|lux|luxos|math|native|os|plugin|process|random|sandbox|system|tensor|time|tui|unixsock|"
     return "|" + String(name) + "|" in builtins
 end
 
@@ -85,6 +85,13 @@ function module_path_with_home(name, owner_path, home):
     end
     # Development compiler copied outside the tree: cwd is an explicit fallback,
     # never a precedence path for installed binaries.
+    if not installed_layout:
+        for extension_root in [binary_directory + "/extensions/", dirname(dirname(dirname(executable))) + "/extensions/", "extensions/"]:
+            if exists(extension_root + relative_name):
+                return extension_root + relative_name
+            end
+        end
+    end
     if exists(standard_path):
         return standard_path
     end

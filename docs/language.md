@@ -170,6 +170,17 @@ end
 
 `safe` při runtime chybě přeskočí zbytek svého bloku. `try/else` spustí `else` pouze tehdy, když `try` selže. `Error(Type: message)` vyvolá vlastní chybu. `check(condition, message)` vyvolá chybu při nepravdivé podmínce. Syntaktické chyby při parsování nelze zachytit uvnitř stejného zdroje.
 
+Od 0.8.2 se neznámá funkce/proměnná, neexistující metoda a podporované
+staticky zjistitelné chyby typů či argumentů uvnitř `safe`/`try` přeloží
+na běhové `NameError`/`AttributeError`/`TypeError`. Totéž platí v tělech
+funkcí, aby chybu mohl zachytit volající. Mimo funkce a ochranné bloky
+zůstává přímá statická diagnostika. Chyba vzniká jen při dosažení vadného
+výrazu; zbytek bloku se neprovede. Známá volání nepoužívají nový dynamický
+lookup ani další kontroly. Zásobník se při zachycení vrátí na hranici rámce.
+Syntaktické chyby, chybějící importy, nepodporované konstrukce, porušení
+safe/sandbox pravidel, vyčerpání alokátoru, signály OS a `exit()` nejsou
+potlačované. `safe` nevrací zpět již provedené I/O ani změny kolekcí.
+
 ## Funkce
 
 ```lsl

@@ -7,6 +7,20 @@ Všechny komponenty (X11 protokol, rasterizace, widgety) jsou napsány v
 
 ## Co budete potřebovat
 
+Od LSL 0.8.2 jsou grafické knihovny volitelná rozšíření:
+
+```text
+lsl install ui
+lsl install display
+lsl install css
+```
+
+`ui` automaticky nainstaluje `gfx` a `input`; `display` přidá `x11` a
+`input`, `css` vyžaduje `gfx`. Samostatně lze nainstalovat `gfx`, `x11`
+nebo `wayland`. Základní LSL grafické moduly neobsahuje, ani po aktualizaci
+z 0.8.1. Dříve zkompilované samostatné programy zůstávají funkční.
+Grafické moduly obsahují explicitní `unsafe` a nelze je překládat v sandboxu.
+
 - **X11 server** (linuxové desktopové prostředí) — nastavená proměnná
   `DISPLAY`. Aplikace automaticky otevře okno.
 - **Nebo framebuffer** (`/dev/fb0`) — pro běh bez grafického prostředí

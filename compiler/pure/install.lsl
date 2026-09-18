@@ -25,9 +25,9 @@ function reinstall_managed(prefix):
             call update_install.health(active, previous_version, work)
         end
         generation = update_install.private_work(store + "/generations")
-        call update_install.install_stage(executable_path(), generation, "0.8.1", work)
+        call update_install.install_stage(executable_path(), generation, "0.8.2", work)
         call update_install.prepare(prefix, prefix + "/bin/lsl", previous_version, work)
-        call update_install.activate(store, generation, "0.8.1", work)
+        call update_install.activate(store, generation, "0.8.2", work)
     else:
         failure = last_error()
     end
@@ -43,7 +43,7 @@ function reinstall_managed(prefix):
     elif cleanup_failure != None:
         Error(InstallError: String(cleanup_failure))
     end
-    print "Installed LSL 0.8.1 atomically; previous version retained for rollback."
+    print "Installed LSL 0.8.2 atomically; previous version retained for rollback."
 end
 
 function dirname(path):
@@ -180,7 +180,7 @@ for name in sources:
     call copy_text(source_path("compiler/pure/" + name), prefix + "/lib/lsl/compiler/pure/" + name)
 end
 
-standard_modules = ["_random_hash.lsl", "ai.lsl", "bigint.lsl", "config.lsl", "configure.lsl", "css.lsl", "cuda.lsl", "display.lsl", "env.lsl", "fd.lsl", "gfx.lsl", "http.lsl", "httpserver.lsl", "input.lsl", "json.lsl", "lconf.lsl", "lux.lsl", "luxos.lsl", "math.lsl", "native.lsl", "os.lsl", "plugin.lsl", "process.lsl", "random.lsl", "sandbox.lsl", "system.lsl", "tensor.lsl", "time.lsl", "tui.lsl", "ui.lsl", "unixsock.lsl", "wayland.lsl", "x11.lsl"]
+standard_modules = ["_random_hash.lsl", "ai.lsl", "bigint.lsl", "config.lsl", "configure.lsl", "cuda.lsl", "env.lsl", "fd.lsl", "http.lsl", "httpserver.lsl", "json.lsl", "lconf.lsl", "lux.lsl", "luxos.lsl", "math.lsl", "native.lsl", "os.lsl", "plugin.lsl", "process.lsl", "random.lsl", "sandbox.lsl", "system.lsl", "tensor.lsl", "time.lsl", "tui.lsl", "unixsock.lsl"]
 for name in standard_modules:
     call copy_text(source_path("stdlib/" + name), prefix + "/lib/lsl/stdlib/" + name)
 end

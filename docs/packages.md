@@ -1,5 +1,14 @@
 # Instalace a původ LSL knihoven
 
+Od 0.8.2 jsou `gfx`, `x11`, `wayland`, `display`, `input`, `ui` a `css`
+volitelné balíčky. Například `lsl install ui` ověří a nainstaluje také
+`gfx` a `input`. První řádek `# lsl: requires NAME ...` je součástí
+hashovaného zdroje; klient zpracovává závislosti teprve po ověření SHA-256.
+Odmítne neplatná jména, cykly a příliš hluboký/velký graf. Jednotlivé
+balíčky se instalují atomicky, ale při selhání rodiče mohou již ověřené
+závislosti zůstat. Instalační skripty se nepoužívají. Pro tuto funkcionalitu
+nejprve aktualizujte samotné LSL na 0.8.2.
+
 LSL umí instalovat jednosouborové zdrojové moduly bez sudo a uchovává
 jejich ověřený původ:
 

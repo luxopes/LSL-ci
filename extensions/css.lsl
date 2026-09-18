@@ -1,3 +1,4 @@
+# lsl: requires gfx
 # A small CSS-subset parser so LuxOS apps can describe their look
 # declaratively instead of hard-coding colors. Supports:
 #   .selector { property: value; ... }
@@ -149,63 +150,65 @@ end
 
 # Parse a stylesheet String into selector -> {property: value}.
 function parse(text):
-    if type(text) != "String":
-        Error(TypeError: "css.parse expects a String")
-    elif __lsl_text_byte_length(String(text)) > MAX_CSS_BYTES:
-        Error(CSSError: "stylesheet exceeds 1 MiB")
-    end
-    sheet = {}
-    block_count = 0
-    declaration_count = 0
-    for block in text.split("}"):
-        brace = block.find("{")
-        if brace < 0:
-            continue
+    unsafe:
+        if type(text) != "String":
+            Error(TypeError: "css.parse expects a String")
+        elif __lsl_text_byte_length(String(text)) > MAX_CSS_BYTES:
+            Error(CSSError: "stylesheet exceeds 1 MiB")
         end
-        block_count += 1
-        if block_count > MAX_CSS_BLOCKS:
-            Error(CSSError: "stylesheet has too many blocks")
-        end
-        selector = block[0:brace].strip()
-        if selector.startswith("."):
-            selector = selector[1:len(selector)]
-        end
-        if len(selector) == 0 or len(selector) > 256:
-            Error(CSSError: "selector has an invalid length")
-        end
-        for character in selector:
-            code = ord(character)
-            if not ((code >= 48 and code <= 57) or (code >= 65 and code <= 90) or (code >= 97 and code <= 122) or character == "-" or character == "_"):
-                Error(CSSError: "selector contains an invalid character")
-            end
-        end
-        body = block[brace + 1:len(block)]
-        rules = {}
-        for declaration in body.split(";"):
-            colon = declaration.find(":")
-            if colon < 0:
+        sheet = {}
+        block_count = 0
+        declaration_count = 0
+        for block in text.split("}"):
+            brace = block.find("{")
+            if brace < 0:
                 continue
             end
-            declaration_count += 1
-            if declaration_count > MAX_CSS_DECLARATIONS:
-                Error(CSSError: "stylesheet has too many declarations")
+            block_count += 1
+            if block_count > MAX_CSS_BLOCKS:
+                Error(CSSError: "stylesheet has too many blocks")
             end
-            key = declaration[0:colon].strip()
-            property_value = declaration[colon + 1:len(declaration)].strip()
-            if len(key) == 0 or len(key) > 128 or len(property_value) > 4096:
-                Error(CSSError: "CSS declaration has an invalid length")
+            selector = block[0:brace].strip()
+            if selector.startswith("."):
+                selector = selector[1:len(selector)]
             end
-            for character in key:
+            if len(selector) == 0 or len(selector) > 256:
+                Error(CSSError: "selector has an invalid length")
+            end
+            for character in selector:
                 code = ord(character)
-                if not ((code >= 65 and code <= 90) or (code >= 97 and code <= 122) or character == "-"):
-                    Error(CSSError: "CSS property contains an invalid character")
+                if not ((code >= 48 and code <= 57) or (code >= 65 and code <= 90) or (code >= 97 and code <= 122) or character == "-" or character == "_"):
+                    Error(CSSError: "selector contains an invalid character")
                 end
             end
-            rules[key] = property_value
+            body = block[brace + 1:len(block)]
+            rules = {}
+            for declaration in body.split(";"):
+                colon = declaration.find(":")
+                if colon < 0:
+                    continue
+                end
+                declaration_count += 1
+                if declaration_count > MAX_CSS_DECLARATIONS:
+                    Error(CSSError: "stylesheet has too many declarations")
+                end
+                key = declaration[0:colon].strip()
+                property_value = declaration[colon + 1:len(declaration)].strip()
+                if len(key) == 0 or len(key) > 128 or len(property_value) > 4096:
+                    Error(CSSError: "CSS declaration has an invalid length")
+                end
+                for character in key:
+                    code = ord(character)
+                    if not ((code >= 65 and code <= 90) or (code >= 97 and code <= 122) or character == "-"):
+                        Error(CSSError: "CSS property contains an invalid character")
+                    end
+                end
+                rules[key] = property_value
+            end
+            sheet[selector] = rules
         end
-        sheet[selector] = rules
+        return sheet
     end
-    return sheet
 end
 
 function rule(sheet, selector):

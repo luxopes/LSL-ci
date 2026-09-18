@@ -35,6 +35,27 @@ ale program **pokračuje** dál za `end` — jako by se nic nestalo.
 
 ### Kdy to použít
 
+Od 0.8.2 funguje také:
+
+```lsl
+safe:
+    call nonexist()
+end
+print last_error()  # NameError s místem chyby
+print "Program pokračuje"
+```
+
+Stejným způsobem lze zachytit neznámou proměnnou/metodu, chybný počet
+argumentů a podporované statické typové chyby. Chyby z volaných funkcí
+se předají volajícímu. `try/else` používá stejný mechanismus. Bez ochranného
+bloku na nejvyšší úrovni compiler dál vypíše statickou chybu.
+
+Nejde o potlačení všech možných selhání: parser, chybějící importy,
+nepodporovaná syntaxe, bezpečnostní kontroly compileru, fatální nedostatek
+paměti, signály operačního systému ani výslovné `exit()` se nezachytávají.
+`safe` rovněž neprovádí rollback souborů nebo rozpracovaných změn dat.
+Známá volání zůstávají přímá; úklid zásobníku běží pouze při chybě.
+
 Když operace není kritická — například mazání dočasného souboru, který
 třeba už neexistuje. Nebo když zkoušíte načíst soubor, který možná není.
 

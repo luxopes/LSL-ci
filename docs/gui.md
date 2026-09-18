@@ -1,6 +1,6 @@
 # GUI a 2D grafika
 
-LSL staví GUI ze stdlib modulů v čistém LSL bez nativních knihoven:
+LSL staví GUI z volitelných modulů v čistém LSL bez nativních knihoven:
 `gfx` (pixelová plocha, rasterizace, alpha blending, gradienty, zaoblené
 anti-aliased tvary), `display` (okno na X11 nebo Linux framebuffer),
 `ui` (jednoduché widgety), `css` (deklarativní styl), `input` (evdev
@@ -10,6 +10,11 @@ na framebufferu LuxOS. Ukázka „liquid glass" designu (frosted panely,
 gradientní tlačítka, měkké stíny) je `examples/gui_glass_calc.lsl`.
 
 ## Liquid glass / compositing (gfx)
+
+Od 0.8.2 nejprve spusťte `lsl install ui`, `lsl install display` a případně
+`lsl install css`. Závislosti se nainstalují automaticky. `gfx`, `x11`,
+`wayland`, `display`, `input`, `ui` a `css` nejsou předinstalované. Vývojové
+kopie jsou v `extensions/`; knihovny používají explicitní `unsafe`.
 
 Pro moderní vzhled má `gfx` compositing primitiva pracující v celo­číselné
 fixed-point matematice (žádné boxované Floaty, ~450x rychlejší než naivní

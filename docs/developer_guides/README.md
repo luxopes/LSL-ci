@@ -1,19 +1,20 @@
 # LSL — Vývojářské příručky
 
-> **LSL 0.8.1 — sorted, množiny Set a dedup.**
+> **LSL 0.8.2 — opravený safe, barevné chyby a volitelná grafika.**
 > [Historie verzí](/releases/) · [Manuál 0.5](/releases/0.5/) ·
 > [Manuál 0.6](/releases/0.6/) · [Manuál 0.6.5](/releases/0.6.5/) ·
 > [Changelog](CHANGELOG.md)
 > [Stáhnout binárky nebo zdrojový kód](index.html#downloads).
 
-Podrobné průvodce LSL (Lux Simple Lang) 0.8.1. Každá kapitola
+Podrobné průvodce LSL (Lux Simple Lang) 0.8.2. Každá kapitola
 vysvětluje jednu oblast od základů — text předpokládá, že s programováním
 teprve začínáte. Všechny konstrukty jsou popsány srozumitelně: co dělají,
 k čemu slouží, jak se zapisují a jak fungují.
 
 ## Obsah
 
-Nově: `sorted`, Set a `dedup` v kapitole [Kolekce](04-collections.md).
+Nově: rozšířené [zpracování chyb](05-error-handling.md) a volitelné
+[grafické balíčky](09-gui-programming.md).
 Dále: [CLI, knihovny a terminálový manuál](17-cli-and-packages.md).
 Dále: [Random — náhodná čísla a výběry](16-random.md),
 list/dict comprehensions v kapitole [Kolekce](04-collections.md) a

@@ -4,6 +4,20 @@ Na této stránce jsou uživatelsky významné změny vydaných verzí. Stabiln�
 manuály a soubory ke stažení zůstávají dostupné v
 [historii vydání](/releases/).
 
+## 0.8.2 — 18. 9. 2026
+
+- `safe` a `try` zachytí neznámé volání/proměnnou, neexistující metodu
+  a podporované statické chyby typů a argumentů; chyby probublávají z funkcí.
+- Opravený úklid zásobníku po selhání složeného výrazu. Známá volání
+  a úspěšná cesta `safe` nemají nové kontroly ani instrukce.
+- `last_error()` vrací použitelný String i pro nativní chybové zprávy.
+- Barevná runtime diagnostika a zvýrazněné zdrojové chyby; `NO_COLOR`,
+  `TERM=dumb` a `FORCE_COLOR=1/0` s konzistentní prioritou.
+- Opravená příliš dlouhá fontová tabulka `gfx`, včetně české diakritiky.
+- `gfx`, `x11`, `wayland`, `display`, `input`, `ui`, `css` jsou volitelné
+  balíčky. Ověřené závislosti se instalují automaticky; základní instalace
+  je neobsahuje. Grafické zdroje používají explicitní `unsafe`.
+
 ## 0.8.1 — 6. 9. 2026
 
 - `sorted(iterable)` vrací stabilně vzestupně seřazený nový List.

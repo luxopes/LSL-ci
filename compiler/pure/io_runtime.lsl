@@ -1513,6 +1513,103 @@ function emit_terminal_state(output):
     call assembler.emit(output, x86_64.function_epilogue())
 end
 
+# Barvy se vyhodnocují až na nezachycené chybové cestě, bez alokací a GC.
+function emit_error_output(output):
+    call assembler.label(output, "runtime_error_color")
+    call assembler.emit(output, x86_64.function_prologue(16))
+    call assembler.emit(output, x86_64.load_memory(9, 3, 120))
+    call assembler.emit(output, x86_64.load_memory(8, 9, 0))
+    call assembler.emit(output, x86_64.lea_indexed(9, 9, 8, 3))
+    call assembler.emit(output, x86_64.add_reg_imm8(9, 16))
+    call assembler.emit(output, x86_64.xor_reg_reg(8, 8))
+    call assembler.label(output, "error_color_environment")
+    call assembler.emit(output, x86_64.load_memory(10, 9, 0))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(10, 0))
+    call assembler.relative(output, [15, 132], "error_color_policy")
+    for setting in ["NO_COLOR=", "FORCE_COLOR=", "TERM=dumb" + chr(0)]:
+        next_setting = "error_color_next_" + String(len(setting))
+        for index in rang(len(setting)):
+            call assembler.emit(output, x86_64.load_byte_zero_extend(0, 10, index))
+            call assembler.emit(output, x86_64.cmp_reg_imm32(0, ord(setting[index])))
+            call assembler.relative(output, [15, 133], next_setting)
+        end
+        if setting == "NO_COLOR=":
+            call assembler.relative(output, [233], "error_color_off")
+        elif setting == "FORCE_COLOR=":
+            call assembler.emit(output, x86_64.load_byte_zero_extend(0, 10, len(setting)))
+            call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+            call assembler.relative(output, [15, 132], "error_color_next_entry")
+            call assembler.emit(output, x86_64.cmp_reg_imm8(0, 48))
+            call assembler.relative(output, [15, 133], "error_color_force")
+            call assembler.emit(output, x86_64.load_byte_zero_extend(0, 10, len(setting) + 1))
+            call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+            call assembler.relative(output, [15, 132], "error_color_off")
+            call assembler.label(output, "error_color_force")
+            call assembler.emit(output, x86_64.mov_imm64(0, 1))
+            call assembler.emit(output, x86_64.or_reg_reg(8, 0))
+        else:
+            call assembler.emit(output, x86_64.mov_imm64(0, 2))
+            call assembler.emit(output, x86_64.or_reg_reg(8, 0))
+        end
+        call assembler.relative(output, [233], "error_color_next_entry")
+        call assembler.label(output, next_setting)
+    end
+    call assembler.label(output, "error_color_next_entry")
+    call assembler.emit(output, x86_64.add_reg_imm8(9, 8))
+    call assembler.relative(output, [233], "error_color_environment")
+    call assembler.label(output, "error_color_policy")
+    call assembler.emit(output, x86_64.move_reg_reg(0, 8))
+    call assembler.emit(output, x86_64.mov_imm64(1, 1))
+    call assembler.emit(output, x86_64.and_reg_reg(0, 1))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+    call assembler.relative(output, [15, 133], "error_color_return")
+    call assembler.emit(output, x86_64.cmp_reg_imm8(8, 0))
+    call assembler.relative(output, [15, 133], "error_color_off")
+    call assembler.emit(output, x86_64.mov_imm64(7, 2))
+    call assembler.relative(output, [232], "runtime_isatty")
+    call assembler.relative(output, [233], "error_color_return")
+    call assembler.label(output, "error_color_off")
+    call assembler.emit(output, x86_64.xor_reg_reg(0, 0))
+    call assembler.label(output, "error_color_return")
+    call assembler.emit(output, x86_64.function_epilogue())
+
+    call assembler.label(output, "runtime_uncaught_error")
+    call assembler.relative(output, [232], "runtime_error_color")
+    call assembler.emit(output, x86_64.push(0))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+    call assembler.relative(output, [15, 132], "uncaught_plain")
+    call emit_error_literal(output, "uncaught_red", chr(27) + "[1;31m")
+    call assembler.label(output, "uncaught_plain")
+    call emit_error_literal(output, "uncaught_prefix", "LSL runtime error: ")
+    call assembler.emit(output, x86_64.load_fs(6, 0))
+    call assembler.emit(output, x86_64.load_memory(2, 6, 8))
+    call assembler.emit(output, x86_64.lea_base(6, 6, 16))
+    call assembler.emit(output, x86_64.mov_imm64(7, 2))
+    call assembler.emit(output, x86_64.mov_imm64(0, 1))
+    call assembler.emit(output, x86_64.syscall())
+    call assembler.emit(output, x86_64.pop(0))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+    call assembler.relative(output, [15, 132], "uncaught_newline")
+    call emit_error_literal(output, "uncaught_reset", chr(27) + "[0m")
+    call assembler.label(output, "uncaught_newline")
+    call emit_error_literal(output, "uncaught_lf", chr(10))
+    call assembler.emit(output, x86_64.mov_imm64(7, 1))
+    call assembler.emit(output, x86_64.mov_imm64(0, 231))
+    call assembler.emit(output, x86_64.syscall())
+end
+
+function emit_error_literal(output, label, message):
+    call assembler.relative(output, x86_64.lea_rip_prefix(6), label)
+    call assembler.emit(output, x86_64.mov_imm64(2, len(bytes.utf8(message))))
+    call assembler.emit(output, x86_64.mov_imm64(7, 2))
+    call assembler.emit(output, x86_64.mov_imm64(0, 1))
+    call assembler.emit(output, x86_64.syscall())
+    call assembler.relative(output, [233], label + "_end")
+    call assembler.label(output, label)
+    call assembler.emit(output, bytes.utf8(message))
+    call assembler.label(output, label + "_end")
+end
+
 function emit_all(output):
     call emit_heap_type_validation(output)
     call emit_path_validation(output)
@@ -1531,4 +1628,5 @@ function emit_all(output):
     call emit_paths(output)
     call emit_exists(output)
     call emit_terminal_state(output)
+    call emit_error_output(output)
 end

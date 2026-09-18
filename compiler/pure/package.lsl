@@ -403,9 +403,41 @@ function config_names(path):
 end
 
 function install(name, home, server, curl_path, sha256_path, move_path, chmod_path, lsl_path):
+    call install_graph(name, home, server, curl_path, sha256_path, move_path, chmod_path, lsl_path, {}, {})
+end
+
+# Hlavička je součástí ověřeného zdroje; nikdy ji nečteme před SHA-256.
+function dependencies(source):
+    first = String(source).split(chr(10))[0]
+    if not first.startswith("# lsl: requires "):
+        return []
+    end
+    result = first[16:len(first)].split(" ")
+    if len(result) > 32:
+        Error(PackageError: "too many package dependencies")
+    end
+    seen = {}
+    for name in result:
+        if not valid_name(name) or name in seen:
+            Error(PackageError: "invalid or duplicate package dependency")
+        end
+        seen[name] = True
+    end
+    return result
+end
+
+function install_graph(name, home, server, curl_path, sha256_path, move_path, chmod_path, lsl_path, active, completed):
     if not valid_name(name):
         Error(PackageError: "invalid library name: " + String(name))
     end
+    if name in active:
+        Error(PackageError: "cyclic package dependency: " + name)
+    elif name in completed:
+        return
+    elif len(active) >= 32 or len(completed) >= 128:
+        Error(PackageError: "package dependency limit exceeded")
+    end
+    active[name] = True
     server = normalize_server(server)
     directory = user_directory(home)
 
@@ -440,10 +472,21 @@ function install(name, home, server, curl_path, sha256_path, move_path, chmod_pa
     if not valid_hash(actual) or actual != expected:
         call fail_after_cleanup("SHA-256 mismatch for " + name, work, stage, check_path, origin_stage)
     end
+    dependency_failure = None
+    try:
+        for dependency in dependencies(source):
+            call install_graph(dependency, home, server, curl_path, sha256_path, move_path, chmod_path, lsl_path, active, completed)
+        end
+    else:
+        dependency_failure = last_error()
+    end
+    if dependency_failure != None:
+        call fail_after_cleanup(String(dependency_failure), work, stage, check_path, origin_stage)
+    end
     if run_clean(chmod_path, ["0644", "--", stage]) != 0:
         call fail_after_cleanup("cannot set safe library permissions", work, stage, check_path, origin_stage)
     end
-    if run_clean(lsl_path, ["compile", stage, check_path]) != 0:
+    if run_clean("/usr/bin/env", ["-i", "HOME=" + home, lsl_path, "compile", stage, check_path]) != 0:
         call fail_after_cleanup("downloaded library does not compile", work, stage, check_path, origin_stage)
     end
     call remove_if_exists(check_path)
@@ -476,6 +519,8 @@ function install(name, home, server, curl_path, sha256_path, move_path, chmod_pa
     end
     call release_package_lock(lock)
     call rmdir(work)
+    del(active[name])
+    completed[name] = True
     call console.success("Installed " + name + " into " + destination + ".")
 end
 

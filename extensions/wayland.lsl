@@ -143,54 +143,58 @@ end
 
 # A protocol string: length including the NUL, the bytes, NUL padding to 4.
 function w_append_string(out, text):
-    t = String(text)
-    count = __lsl_text_byte_length(t)
-    if count > MAX_WIRE_STRING:
-        count = MAX_WIRE_STRING
-    end
-    n = count + 1
-    call w_append32(out, n)
-    i = 0
-    while i < count:
-        call out.append(__lsl_text_byte(t, i))
-        i = i + 1
-    end
-    call out.append(0)
-    pad = (4 - n % 4) % 4
-    i = 0
-    while i < pad:
+    unsafe:
+        t = String(text)
+        count = __lsl_text_byte_length(t)
+        if count > MAX_WIRE_STRING:
+            count = MAX_WIRE_STRING
+        end
+        n = count + 1
+        call w_append32(out, n)
+        i = 0
+        while i < count:
+            call out.append(__lsl_text_byte(t, i))
+            i = i + 1
+        end
         call out.append(0)
-        i = i + 1
+        pad = (4 - n % 4) % 4
+        i = 0
+        while i < pad:
+            call out.append(0)
+            i = i + 1
+        end
+        return None
     end
-    return None
 end
 
 function w_read_string(buffer, offset):
-    if type(buffer) != "ByteArray":
-        return ""
-    end
-    b = ByteArray(buffer)
-    start = Int(offset)
-    if start < 0 or start > len(b) - 4:
-        return ""
-    end
-    n = Int(w_get32(b, start))
-    if n < 1 or n > MAX_WIRE_STRING + 1 or n > len(b) - start - 4:
-        return ""
-    end
-    if Int(b[start + 4 + n - 1]) != 0:
-        return ""
-    end
-    out = __lsl_byte_zeros(n - 1)
-    i = 0
-    while i + 1 < n:
-        if Int(b[start + 4 + i]) == 0:
+    unsafe:
+        if type(buffer) != "ByteArray":
             return ""
         end
-        out[i] = b[start + 4 + i]
-        i = i + 1
+        b = ByteArray(buffer)
+        start = Int(offset)
+        if start < 0 or start > len(b) - 4:
+            return ""
+        end
+        n = Int(w_get32(b, start))
+        if n < 1 or n > MAX_WIRE_STRING + 1 or n > len(b) - start - 4:
+            return ""
+        end
+        if Int(b[start + 4 + n - 1]) != 0:
+            return ""
+        end
+        out = __lsl_byte_zeros(n - 1)
+        i = 0
+        while i + 1 < n:
+            if Int(b[start + 4 + i]) == 0:
+                return ""
+            end
+            out[i] = b[start + 4 + i]
+            i = i + 1
+        end
+        return __lsl_text_from_bytes(out, 0, n - 1)
     end
-    return __lsl_text_from_bytes(out, 0, n - 1)
 end
 
 # String length on the wire (4 + padded payload).
@@ -260,80 +264,82 @@ CL_OUTID = []
 # A client slot, reusing the first dead one: without this the server stops
 # accepting after MAX_CLIENTS launches, however many have since quit.
 function cl_new(handle):
-    i = 0
-    while i < len(CL_FD):
-        if Int(CL_ALIVE[i]) == 0:
-            CL_FD[i] = Int(handle)
-            CL_ALIVE[i] = 1
-            CL_INBUF[i] = ByteArray()
-            CL_FDS[i] = []
-            kinds = __lsl_int_zeros(MAX_OBJECTS)
-            IntArray(kinds)[1] = WO_DISPLAY
-            CL_KIND[i] = kinds
-            CL_A[i] = __lsl_int_zeros(MAX_OBJECTS)
-            CL_B[i] = __lsl_int_zeros(MAX_OBJECTS)
-            CL_C[i] = __lsl_int_zeros(MAX_OBJECTS)
-            CL_D[i] = __lsl_int_zeros(MAX_OBJECTS)
-            CL_E[i] = __lsl_int_zeros(MAX_OBJECTS)
-            CL_F[i] = __lsl_int_zeros(MAX_OBJECTS)
-            CL_G[i] = __lsl_int_zeros(MAX_OBJECTS)
-            CL_H[i] = __lsl_int_zeros(MAX_OBJECTS)
-            CL_D0[i] = __lsl_int_zeros(MAX_OBJECTS)
-            CL_D1[i] = __lsl_int_zeros(MAX_OBJECTS)
-            CL_D2[i] = __lsl_int_zeros(MAX_OBJECTS)
-            CL_D3[i] = __lsl_int_zeros(MAX_OBJECTS)
-            CL_TITLE[i] = ""
-            CL_OUT[i] = ByteArray()
-            CL_OUTOFF[i] = 0
-            CL_FDPOS[i] = []
-            CL_FDVAL[i] = []
-            CL_FDKEEP[i] = []
-            CL_MAXID[i] = 2
-            CL_SEATV[i] = 1
-            CL_PTRL[i] = []
-            CL_KBDL[i] = []
-            CL_OUTID[i] = 0
-            CL_DDEV[i] = 0
-            CL_SRVID[i] = 0
-            CL_OFFER[i] = 0
-            return i
+    unsafe:
+        i = 0
+        while i < len(CL_FD):
+            if Int(CL_ALIVE[i]) == 0:
+                CL_FD[i] = Int(handle)
+                CL_ALIVE[i] = 1
+                CL_INBUF[i] = ByteArray()
+                CL_FDS[i] = []
+                kinds = __lsl_int_zeros(MAX_OBJECTS)
+                IntArray(kinds)[1] = WO_DISPLAY
+                CL_KIND[i] = kinds
+                CL_A[i] = __lsl_int_zeros(MAX_OBJECTS)
+                CL_B[i] = __lsl_int_zeros(MAX_OBJECTS)
+                CL_C[i] = __lsl_int_zeros(MAX_OBJECTS)
+                CL_D[i] = __lsl_int_zeros(MAX_OBJECTS)
+                CL_E[i] = __lsl_int_zeros(MAX_OBJECTS)
+                CL_F[i] = __lsl_int_zeros(MAX_OBJECTS)
+                CL_G[i] = __lsl_int_zeros(MAX_OBJECTS)
+                CL_H[i] = __lsl_int_zeros(MAX_OBJECTS)
+                CL_D0[i] = __lsl_int_zeros(MAX_OBJECTS)
+                CL_D1[i] = __lsl_int_zeros(MAX_OBJECTS)
+                CL_D2[i] = __lsl_int_zeros(MAX_OBJECTS)
+                CL_D3[i] = __lsl_int_zeros(MAX_OBJECTS)
+                CL_TITLE[i] = ""
+                CL_OUT[i] = ByteArray()
+                CL_OUTOFF[i] = 0
+                CL_FDPOS[i] = []
+                CL_FDVAL[i] = []
+                CL_FDKEEP[i] = []
+                CL_MAXID[i] = 2
+                CL_SEATV[i] = 1
+                CL_PTRL[i] = []
+                CL_KBDL[i] = []
+                CL_OUTID[i] = 0
+                CL_DDEV[i] = 0
+                CL_SRVID[i] = 0
+                CL_OFFER[i] = 0
+                return i
+            end
+            i = i + 1
         end
-        i = i + 1
+        call CL_FD.append(Int(handle))
+        call CL_ALIVE.append(1)
+        call CL_INBUF.append(ByteArray())
+        call CL_FDS.append([])
+        kinds = __lsl_int_zeros(MAX_OBJECTS)
+        IntArray(kinds)[1] = WO_DISPLAY
+        call CL_KIND.append(kinds)
+        call CL_A.append(__lsl_int_zeros(MAX_OBJECTS))
+        call CL_B.append(__lsl_int_zeros(MAX_OBJECTS))
+        call CL_C.append(__lsl_int_zeros(MAX_OBJECTS))
+        call CL_D.append(__lsl_int_zeros(MAX_OBJECTS))
+        call CL_E.append(__lsl_int_zeros(MAX_OBJECTS))
+        call CL_F.append(__lsl_int_zeros(MAX_OBJECTS))
+        call CL_G.append(__lsl_int_zeros(MAX_OBJECTS))
+        call CL_H.append(__lsl_int_zeros(MAX_OBJECTS))
+        call CL_D0.append(__lsl_int_zeros(MAX_OBJECTS))
+        call CL_D1.append(__lsl_int_zeros(MAX_OBJECTS))
+        call CL_D2.append(__lsl_int_zeros(MAX_OBJECTS))
+        call CL_D3.append(__lsl_int_zeros(MAX_OBJECTS))
+        call CL_TITLE.append("")
+        call CL_OUT.append(ByteArray())
+        call CL_OUTOFF.append(0)
+        call CL_FDPOS.append([])
+        call CL_FDVAL.append([])
+        call CL_FDKEEP.append([])
+        call CL_MAXID.append(2)
+        call CL_SEATV.append(1)
+        call CL_PTRL.append([])
+        call CL_KBDL.append([])
+        call CL_OUTID.append(0)
+        call CL_DDEV.append(0)
+        call CL_SRVID.append(0)
+        call CL_OFFER.append(0)
+        return len(CL_FD) - 1
     end
-    call CL_FD.append(Int(handle))
-    call CL_ALIVE.append(1)
-    call CL_INBUF.append(ByteArray())
-    call CL_FDS.append([])
-    kinds = __lsl_int_zeros(MAX_OBJECTS)
-    IntArray(kinds)[1] = WO_DISPLAY
-    call CL_KIND.append(kinds)
-    call CL_A.append(__lsl_int_zeros(MAX_OBJECTS))
-    call CL_B.append(__lsl_int_zeros(MAX_OBJECTS))
-    call CL_C.append(__lsl_int_zeros(MAX_OBJECTS))
-    call CL_D.append(__lsl_int_zeros(MAX_OBJECTS))
-    call CL_E.append(__lsl_int_zeros(MAX_OBJECTS))
-    call CL_F.append(__lsl_int_zeros(MAX_OBJECTS))
-    call CL_G.append(__lsl_int_zeros(MAX_OBJECTS))
-    call CL_H.append(__lsl_int_zeros(MAX_OBJECTS))
-    call CL_D0.append(__lsl_int_zeros(MAX_OBJECTS))
-    call CL_D1.append(__lsl_int_zeros(MAX_OBJECTS))
-    call CL_D2.append(__lsl_int_zeros(MAX_OBJECTS))
-    call CL_D3.append(__lsl_int_zeros(MAX_OBJECTS))
-    call CL_TITLE.append("")
-    call CL_OUT.append(ByteArray())
-    call CL_OUTOFF.append(0)
-    call CL_FDPOS.append([])
-    call CL_FDVAL.append([])
-    call CL_FDKEEP.append([])
-    call CL_MAXID.append(2)
-    call CL_SEATV.append(1)
-    call CL_PTRL.append([])
-    call CL_KBDL.append([])
-    call CL_OUTID.append(0)
-    call CL_DDEV.append(0)
-    call CL_SRVID.append(0)
-    call CL_OFFER.append(0)
-    return len(CL_FD) - 1
 end
 
 function cl_kind(ci, oid):
@@ -528,7 +534,9 @@ end
 
 WL_NCLIENTS = [0]
 WL_SERVER = [0 - 1]
-WL_RXBUF = [__lsl_byte_zeros(65536)]
+unsafe:
+    WL_RXBUF = [__lsl_byte_zeros(65536)]
+end
 WL_SOCKET_PATH = [""]
 WL_SERIAL = [16]
 WL_TIME = [0]
@@ -611,24 +619,26 @@ function wl_buffer_valid(ci, buffer):
 end
 
 function wl_buffer_snapshot(ci, buffer):
-    c = Int(ci)
-    b = Int(buffer)
-    if not wl_buffer_valid(c, b):
-        return -22
+    unsafe:
+        c = Int(ci)
+        b = Int(buffer)
+        if not wl_buffer_valid(c, b):
+            return -22
+        end
+        pool = Int(IntArray(CL_A[c])[b])
+        offset = Int(IntArray(CL_B[c])[b])
+        width = Int(IntArray(CL_C[c])[b])
+        height = Int(IntArray(CL_D[c])[b])
+        stride = Int(IntArray(CL_E[c])[b])
+        span = (height - 1) * stride + width * 4
+        address = __lsl_fd_snapshot(Int(PL_FD[pool]), offset, span)
+        if address >= 0:
+            call REAP_ADDR.append(address)
+            call REAP_SIZE.append(span)
+            call REAP_FD.append(0 - 1)
+        end
+        return address
     end
-    pool = Int(IntArray(CL_A[c])[b])
-    offset = Int(IntArray(CL_B[c])[b])
-    width = Int(IntArray(CL_C[c])[b])
-    height = Int(IntArray(CL_D[c])[b])
-    stride = Int(IntArray(CL_E[c])[b])
-    span = (height - 1) * stride + width * 4
-    address = __lsl_fd_snapshot(Int(PL_FD[pool]), offset, span)
-    if address >= 0:
-        call REAP_ADDR.append(address)
-        call REAP_SIZE.append(span)
-        call REAP_FD.append(0 - 1)
-    end
-    return address
 end
 
 # A client is gone (EOF, send error, flooded buffer): release everything it
@@ -983,68 +993,70 @@ WL_KM_FD = [0 - 1]
 WL_KM_SIZE = [0]
 
 function wl_set_keymap(path):
-    data = ByteArray()
-    safe:
-        h = fd.open(String(path), fd.read_only)
-        if h >= 0:
-            chunk = __lsl_byte_zeros(8192)
-            cb = ByteArray(chunk)
-            more = 1
-            while more == 1:
-                got = fd.read(h, cb, 8192)
-                if got <= 0:
-                    more = 0
-                else:
-                    i = 0
-                    while i < got:
-                        call data.append(cb[i])
-                        i = i + 1
+    unsafe:
+        data = ByteArray()
+        safe:
+            h = fd.open(String(path), fd.read_only)
+            if h >= 0:
+                chunk = __lsl_byte_zeros(8192)
+                cb = ByteArray(chunk)
+                more = 1
+                while more == 1:
+                    got = fd.read(h, cb, 8192)
+                    if got <= 0:
+                        more = 0
+                    else:
+                        i = 0
+                        while i < got:
+                            call data.append(cb[i])
+                            i = i + 1
+                        end
                     end
                 end
-            end
-            call fd.close(h)
-        end
-    end
-    if len(data) == 0:
-        return 0 - 1
-    end
-    call data.append(0)
-    m = unixsock.memfd("luxos-keymap", len(data))
-    if m < 0:
-        return m
-    end
-    # fd.write raises on failure and returns nothing, so a short write is
-    # not something to test for here.
-    ok = 1
-    safe:
-        call fd.write(m, data, len(data))
-        ok = 2
-    end
-    if ok != 2:
-        call unixsock.close_fd(m)
-        call wl_log("keymap write failed for " + String(path))
-        return 0 - 1
-    end
-    old = Int(WL_KM_FD[0])
-    WL_KM_FD[0] = m
-    WL_KM_SIZE[0] = len(data)
-    if old >= 0:
-        call unixsock.close_fd(old)
-    end
-    # A layout switch reaches every connected keyboard immediately.
-    i = 0
-    while i < len(CL_FD):
-        if Int(CL_ALIVE[i]) == 1:
-            kl = CL_KBDL[i]
-            ki = 0
-            while ki < len(kl):
-                call wl_send_keymap(i, Int(kl[ki]))
-                ki = ki + 1
+                call fd.close(h)
             end
         end
-        i = i + 1
+        if len(data) == 0:
+            return 0 - 1
+        end
+        call data.append(0)
+        m = unixsock.memfd("luxos-keymap", len(data))
+        if m < 0:
+            return m
+        end
+        # fd.write raises on failure and returns nothing, so a short write is
+        # not something to test for here.
+        ok = 1
+        safe:
+            call fd.write(m, data, len(data))
+            ok = 2
+        end
+        if ok != 2:
+            call unixsock.close_fd(m)
+            call wl_log("keymap write failed for " + String(path))
+            return 0 - 1
+        end
+        old = Int(WL_KM_FD[0])
+        WL_KM_FD[0] = m
+        WL_KM_SIZE[0] = len(data)
+        if old >= 0:
+            call unixsock.close_fd(old)
+        end
+        # A layout switch reaches every connected keyboard immediately.
+        i = 0
+        while i < len(CL_FD):
+            if Int(CL_ALIVE[i]) == 1:
+                kl = CL_KBDL[i]
+                ki = 0
+                while ki < len(kl):
+                    call wl_send_keymap(i, Int(kl[ki]))
+                    ki = ki + 1
+                end
+            end
+            i = i + 1
+        end
+        return 0
     end
-    return 0
 end
 
 # keymap(format=1 xkb_v1, fd, size), queued in stream order like any other
@@ -2333,27 +2345,29 @@ end
 
 # The desktop copied something: it becomes the selection owner.
 function wl_set_clipboard(text):
-    if Int(SEL_OWNER[0]) >= 0:
-        # cancelled: the previous owner must drop its source.
-        call cl_post(Int(SEL_OWNER[0]), Int(SEL_SRC[0]), 1, ByteArray())
-    end
-    value = String(text)
-    if __lsl_text_byte_length(value) > 262144:
+    unsafe:
+        if Int(SEL_OWNER[0]) >= 0:
+            # cancelled: the previous owner must drop its source.
+            call cl_post(Int(SEL_OWNER[0]), Int(SEL_SRC[0]), 1, ByteArray())
+        end
+        value = String(text)
+        if __lsl_text_byte_length(value) > 262144:
+            return None
+        end
+        WL_CLIP[0] = value
+        SEL_OWNER[0] = 0 - 2
+        SEL_SRC[0] = 0
+        while len(SEL_MIMES) > 0:
+            call SEL_MIMES.pop(len(SEL_MIMES) - 1)
+        end
+        call SEL_MIMES.append("text/plain;charset=utf-8")
+        call SEL_MIMES.append("text/plain")
+        call SEL_MIMES.append("UTF8_STRING")
+        call SEL_MIMES.append("STRING")
+        call SEL_MIMES.append("TEXT")
+        call wl_broadcast_selection()
         return None
     end
-    WL_CLIP[0] = value
-    SEL_OWNER[0] = 0 - 2
-    SEL_SRC[0] = 0
-    while len(SEL_MIMES) > 0:
-        call SEL_MIMES.pop(len(SEL_MIMES) - 1)
-    end
-    call SEL_MIMES.append("text/plain;charset=utf-8")
-    call SEL_MIMES.append("text/plain")
-    call SEL_MIMES.append("UTF8_STRING")
-    call SEL_MIMES.append("STRING")
-    call SEL_MIMES.append("TEXT")
-    call wl_broadcast_selection()
-    return None
 end
 
 # Ask the owning client to write its selection into a pipe we then read
@@ -2393,47 +2407,49 @@ end
 
 # Drain that pipe a little every frame; EOF publishes the text.
 function wl_clip_tick():
-    h = Int(CLIP_FD[0])
-    if h < 0:
-        return None
-    end
-    chunk = __lsl_byte_zeros(4096)
-    cb = ByteArray(chunk)
-    rounds = 0
-    while rounds < 4:
-        rounds = rounds + 1
-        n = 0 - 1
-        safe:
-            n = fd.read(h, cb, 4096)
+    unsafe:
+        h = Int(CLIP_FD[0])
+        if h < 0:
+            return None
         end
-        if n > 0:
-            out = ByteArray(CLIP_BUF[0])
-            i = 0
-            while i < n:
-                call out.append(cb[i])
-                i = i + 1
+        chunk = __lsl_byte_zeros(4096)
+        cb = ByteArray(chunk)
+        rounds = 0
+        while rounds < 4:
+            rounds = rounds + 1
+            n = 0 - 1
+            safe:
+                n = fd.read(h, cb, 4096)
             end
-            CLIP_BUF[0] = out
-            if len(out) > 262144:
+            if n > 0:
+                out = ByteArray(CLIP_BUF[0])
+                i = 0
+                while i < n:
+                    call out.append(cb[i])
+                    i = i + 1
+                end
+                CLIP_BUF[0] = out
+                if len(out) > 262144:
+                    call unixsock.close_fd(h)
+                    CLIP_FD[0] = 0 - 1
+                    CLIP_BUF[0] = ByteArray()
+                    return None
+                end
+            end
+            if n == 0:
+                completed = ByteArray(CLIP_BUF[0])
+                WL_CLIP[0] = __lsl_text_from_bytes(completed, 0, len(completed))
+                CLIP_NEW[0] = 1
                 call unixsock.close_fd(h)
                 CLIP_FD[0] = 0 - 1
-                CLIP_BUF[0] = ByteArray()
+                return None
+            end
+            if n < 0:
                 return None
             end
         end
-        if n == 0:
-            completed = ByteArray(CLIP_BUF[0])
-            WL_CLIP[0] = __lsl_text_from_bytes(completed, 0, len(completed))
-            CLIP_NEW[0] = 1
-            call unixsock.close_fd(h)
-            CLIP_FD[0] = 0 - 1
-            return None
-        end
-        if n < 0:
-            return None
-        end
+        return None
     end
-    return None
 end
 
 function wl_ddm_request(cli, oid, opcode, body):
@@ -2495,20 +2511,22 @@ function wl_data_device_request(cli, oid, opcode, body):
 end
 
 function wl_valid_mime(value):
-    text = String(value)
-    count = __lsl_text_byte_length(text)
-    if count == 0 or count > 255:
-        return False
-    end
-    index = 0
-    while index < count:
-        code = __lsl_text_byte(text, index)
-        if code < 33 or code > 126:
+    unsafe:
+        text = String(value)
+        count = __lsl_text_byte_length(text)
+        if count == 0 or count > 255:
             return False
         end
-        index += 1
+        index = 0
+        while index < count:
+            code = __lsl_text_byte(text, index)
+            if code < 33 or code > 126:
+                return False
+            end
+            index += 1
+        end
+        return True
     end
-    return True
 end
 
 function wl_data_source_request(cli, oid, opcode, body):
@@ -2555,51 +2573,53 @@ end
 
 # Requests on a server-allocated wl_data_offer id.
 function wl_data_offer_request(cli, oid, opcode, body, fds):
-    ci = Int(cli)
-    if opcode == 1:
-        # receive(mime_type, fd): the pasting client handed us a pipe.
-        if len(fds) == 0:
-            return None
-        end
-        pfd = Int(fds[0])
-        call fds.pop(0)
-        mime = w_read_string(body, 0)
-        if Int(oid) != Int(CL_OFFER[ci]) or not wl_valid_mime(mime):
-            call unixsock.close_fd(pfd)
-            return None
-        end
-        owner = Int(SEL_OWNER[0])
-        if owner == 0 - 2:
-            # The desktop owns it: write the text and close.
-            text = String(WL_CLIP[0])
-            count = __lsl_text_byte_length(text)
-            data = __lsl_byte_zeros(count)
-            i = 0
-            while i < count:
-                data[i] = __lsl_text_byte(text, i)
-                i = i + 1
+    unsafe:
+        ci = Int(cli)
+        if opcode == 1:
+            # receive(mime_type, fd): the pasting client handed us a pipe.
+            if len(fds) == 0:
+                return None
             end
-            if len(data) > 0:
-                # A pasting client that goes away mid-write only raises here.
-                safe:
-                    call fd.write(pfd, data, len(data))
+            pfd = Int(fds[0])
+            call fds.pop(0)
+            mime = w_read_string(body, 0)
+            if Int(oid) != Int(CL_OFFER[ci]) or not wl_valid_mime(mime):
+                call unixsock.close_fd(pfd)
+                return None
+            end
+            owner = Int(SEL_OWNER[0])
+            if owner == 0 - 2:
+                # The desktop owns it: write the text and close.
+                text = String(WL_CLIP[0])
+                count = __lsl_text_byte_length(text)
+                data = __lsl_byte_zeros(count)
+                i = 0
+                while i < count:
+                    data[i] = __lsl_text_byte(text, i)
+                    i = i + 1
                 end
+                if len(data) > 0:
+                    # A pasting client that goes away mid-write only raises here.
+                    safe:
+                        call fd.write(pfd, data, len(data))
+                    end
+                end
+                call unixsock.close_fd(pfd)
+                return None
             end
-            call unixsock.close_fd(pfd)
-            return None
+            if owner < 0 or owner >= len(CL_FD) or Int(CL_ALIVE[owner]) == 0:
+                call unixsock.close_fd(pfd)
+                return None
+            end
+            # A client owns it: hand the descriptor straight to its source, so
+            # the two clients copy between themselves and no bytes pass here.
+            bd = ByteArray()
+            call w_append_string(bd, mime)
+            call cl_post_fd(owner, Int(SEL_SRC[0]), 1, bd, pfd, 0)
         end
-        if owner < 0 or owner >= len(CL_FD) or Int(CL_ALIVE[owner]) == 0:
-            call unixsock.close_fd(pfd)
-            return None
-        end
-        # A client owns it: hand the descriptor straight to its source, so
-        # the two clients copy between themselves and no bytes pass here.
-        bd = ByteArray()
-        call w_append_string(bd, mime)
-        call cl_post_fd(owner, Int(SEL_SRC[0]), 1, bd, pfd, 0)
+        # accept(0), destroy(2), finish(3), set_actions(4): nothing to do.
+        return None
     end
-    # accept(0), destroy(2), finish(3), set_actions(4): nothing to do.
-    return None
 end
 
 function wl_output_request(cli, oid, opcode, body):
@@ -2684,42 +2704,44 @@ end
 # body. Bodies are copied out per message (handlers keep no reference).
 # Returns the byte count consumed; an incomplete trailing message stays.
 function wl_parse_stream(index, data, limit):
-    ci = Int(index)
-    buf = ByteArray(data)
-    lim = Int(limit)
-    if lim < 0 or lim > len(buf):
-        call wl_client_drop(ci)
-        return 0
-    end
-    pos = 0
-    msgs = 0
-    run = 1
-    while run == 1 and lim - pos >= 8 and msgs < 512:
-        # Read the header from the typed local: a dynamically typed list
-        # element does not survive the ByteArray() cast inside a helper.
-        oid = Int(buf[pos]) + Int(buf[pos + 1]) * 256 + Int(buf[pos + 2]) * 65536 + Int(buf[pos + 3]) * 16777216
-        head = Int(buf[pos + 4]) + Int(buf[pos + 5]) * 256 + Int(buf[pos + 6]) * 65536 + Int(buf[pos + 7]) * 16777216
-        size = head // 65536
-        opcode = head % 65536
-        if size < 8 or size % 4 != 0 or oid == 0 or (oid < SERVER_ID_BASE and oid >= MAX_OBJECTS):
+    unsafe:
+        ci = Int(index)
+        buf = ByteArray(data)
+        lim = Int(limit)
+        if lim < 0 or lim > len(buf):
             call wl_client_drop(ci)
-            return lim
-        elif lim - pos < size:
-            run = 0
-        else:
-            body = __lsl_byte_zeros(size - 8)
-            bb = ByteArray(body)
-            k = 0
-            while k < size - 8:
-                bb[k] = buf[pos + 8 + k]
-                k = k + 1
-            end
-            call wl_dispatch(ci, oid, opcode, body, CL_FDS[ci])
-            pos = pos + size
-            msgs = msgs + 1
+            return 0
         end
+        pos = 0
+        msgs = 0
+        run = 1
+        while run == 1 and lim - pos >= 8 and msgs < 512:
+            # Read the header from the typed local: a dynamically typed list
+            # element does not survive the ByteArray() cast inside a helper.
+            oid = Int(buf[pos]) + Int(buf[pos + 1]) * 256 + Int(buf[pos + 2]) * 65536 + Int(buf[pos + 3]) * 16777216
+            head = Int(buf[pos + 4]) + Int(buf[pos + 5]) * 256 + Int(buf[pos + 6]) * 65536 + Int(buf[pos + 7]) * 16777216
+            size = head // 65536
+            opcode = head % 65536
+            if size < 8 or size % 4 != 0 or oid == 0 or (oid < SERVER_ID_BASE and oid >= MAX_OBJECTS):
+                call wl_client_drop(ci)
+                return lim
+            elif lim - pos < size:
+                run = 0
+            else:
+                body = __lsl_byte_zeros(size - 8)
+                bb = ByteArray(body)
+                k = 0
+                while k < size - 8:
+                    bb[k] = buf[pos + 8 + k]
+                    k = k + 1
+                end
+                call wl_dispatch(ci, oid, opcode, body, CL_FDS[ci])
+                pos = pos + size
+                msgs = msgs + 1
+            end
+        end
+        return pos
     end
-    return pos
 end
 
 function wl_read_client(index):

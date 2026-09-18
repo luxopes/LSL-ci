@@ -1,3 +1,4 @@
+# lsl: requires gfx input
 # Widget toolkit on top of gfx + display. Widgets are Dictionaries and
 # every entry point is a free function, because LSL only dispatches
 # methods on statically typed locals — a Surface or Display reached

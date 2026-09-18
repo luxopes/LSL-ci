@@ -221,7 +221,7 @@ end
 call require_success(run(compiler, ["compiler/pure/cli.lsl", cli_test]), "compile stdin CLI")
 call require_hardened_elf(cli_test)
 help_output = capture(cli_test, ["--help"])
-expected_help = "Lux Simple Lang (LSL) 0.8.1" + chr(10)
+expected_help = "Lux Simple Lang (LSL) 0.8.2" + chr(10)
 expected_help += chr(10)
 expected_help += "Usage:" + chr(10)
 expected_help += "  lsl [SOURCE [ARG...]]" + chr(10)
@@ -255,6 +255,14 @@ call require_output(catalog_test, [], "tests/compiler/catalog_conformance.out", 
 cli_080_test = test_path("cli-080-test")
 call require_success(run(compiler, ["tests/compiler/cli_080_conformance.lsl", cli_080_test]), "compile CLI 0.8.0 conformance")
 call require_output(cli_080_test, [cli_test, compiler], "tests/compiler/cli_080_conformance.out", "CLI 0.8.0 conformance differs")
+for release_test in ["color_conformance", "safe_codegen_conformance"]:
+    release_binary = test_path(release_test)
+    call require_success(run(compiler, ["tests/compiler/" + release_test + ".lsl", release_binary]), "compile " + release_test)
+    call require_output(release_binary, [cli_test], "tests/compiler/" + release_test + ".out", release_test + " differs")
+end
+dependency_test = test_path("package-dependencies")
+call require_success(run(compiler, ["tests/compiler/package_dependencies_conformance.lsl", dependency_test]), "compile package dependencies")
+call require_success(run(dependency_test, [cli_test]), "package dependency conformance")
 tui_keys_test = test_path("tui-keys-test")
 call require_success(run(compiler, ["tests/tui_keys_conformance.lsl", tui_keys_test]), "compile terminal keys conformance")
 tui_keys_output = capture_input(tui_keys_test, [], "ab" + chr(27) + "[A" + chr(27) + "[6~ž" + chr(10) + chr(3) + chr(4) + chr(27) + "q")
@@ -262,11 +270,11 @@ if capture_status() != 0 or tui_keys_output != "buffered terminal keys passed" +
     Error(TestFailure: "buffered terminal keys differ")
 end
 version_output = capture(cli_test, ["version"])
-if capture_status() != 0 or version_output != "0.8.1" + chr(10):
+if capture_status() != 0 or version_output != "0.8.2" + chr(10):
     Error(TestFailure: "CLI version output differs")
 end
 version_flag_output = capture(cli_test, ["--version"])
-if capture_status() != 0 or version_flag_output != "0.8.1" + chr(10):
+if capture_status() != 0 or version_flag_output != "0.8.2" + chr(10):
     Error(TestFailure: "CLI --version output differs")
 end
 config_output = capture(cli_test, ["config", "examples/config/system.lsl"])
@@ -614,6 +622,8 @@ end
 # typed collections. Run them in short-lived processes so their globals do not
 # consume the shared aggregate's object-table budget during later BigInt stress.
 boundary_tests = [
+    "safe_recovery_conformance",
+    "gfx_font_conformance",
     "collections_builtins_conformance",
     "collections_pointer_conformance",
     "help_conformance",
