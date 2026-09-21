@@ -483,6 +483,10 @@ function execute(current, settings, work, prefix):
         call console.heading("LSL " + manifest["version"] + " is available (installed " + current + ").")
         return None
     end
+    if prefix == None:
+        call fail("installation prefix is required for an update; use --check for a download-free check")
+    end
+    store = prefix + "/lib/lsl-updates"
     artifact = manifest["artifact"]
     call console.heading("Downloading verified LSL " + manifest["version"] + " for Linux x86_64.")
     call download(artifact["url"], work + "/release.tar.gz", artifact["size"])

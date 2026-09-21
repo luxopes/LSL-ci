@@ -206,11 +206,11 @@ call require_output(httpserver_test, [httpserver_root], "tests/httpserver_confor
 call require_success(run(compiler, ["tests/codegen_optimization_conformance.lsl", optimization_test]), "compile codegen optimization conformance")
 call require_hardened_elf(optimization_test)
 call require_output(optimization_test, [], "tests/codegen_optimization_conformance.out", "codegen optimization output differs")
-# Checked public Any dispatchers and Set's GC/equality/collection helpers are
-# linked into standalone programs. Set/sorted/dedup intentionally add ~7.3 KiB;
-# retain the previous tight (~400-byte) headroom over the measured baseline.
-if len(readbytes(optimization_test)) > 105500:
-    Error(TestFailure: "optimized standalone ELF exceeds 105500 bytes")
+# Readable UTC clock/strict declaration helpers and initialization safety add
+# about 3.2 KiB to the shared runtime. Measured baseline: 108317 bytes; keep
+# roughly 400 bytes of headroom, without relaxing the hot-path codegen tests.
+if len(readbytes(optimization_test)) > 108700:
+    Error(TestFailure: "optimized standalone ELF exceeds 108700 bytes")
 end
 for collection_negative in ["sorted()", "sorted([], [])", "sorted([], key=None)", "dedup()", "dedup([], [])", "set([], [])", "set(values=[])", "set()[0]", "set().append(1)", "set().add()", "set().pop(0)", "set().union()", "set().discard(1, 2)"]:
     collection_source = test_path("collection-arity-negative.lsl")
@@ -221,7 +221,7 @@ end
 call require_success(run(compiler, ["compiler/pure/cli.lsl", cli_test]), "compile stdin CLI")
 call require_hardened_elf(cli_test)
 help_output = capture(cli_test, ["--help"])
-expected_help = "Lux Simple Lang (LSL) 0.8.2" + chr(10)
+expected_help = "Lux Simple Lang (LSL) 0.8.3" + chr(10)
 expected_help += chr(10)
 expected_help += "Usage:" + chr(10)
 expected_help += "  lsl [SOURCE [ARG...]]" + chr(10)
@@ -255,7 +255,7 @@ call require_output(catalog_test, [], "tests/compiler/catalog_conformance.out", 
 cli_080_test = test_path("cli-080-test")
 call require_success(run(compiler, ["tests/compiler/cli_080_conformance.lsl", cli_080_test]), "compile CLI 0.8.0 conformance")
 call require_output(cli_080_test, [cli_test, compiler], "tests/compiler/cli_080_conformance.out", "CLI 0.8.0 conformance differs")
-for release_test in ["color_conformance", "safe_codegen_conformance"]:
+for release_test in ["color_conformance", "safe_codegen_conformance", "definite_assignment_conformance", "import_diagnostics_conformance", "language_safety_negative"]:
     release_binary = test_path(release_test)
     call require_success(run(compiler, ["tests/compiler/" + release_test + ".lsl", release_binary]), "compile " + release_test)
     call require_output(release_binary, [cli_test], "tests/compiler/" + release_test + ".out", release_test + " differs")
@@ -270,11 +270,11 @@ if capture_status() != 0 or tui_keys_output != "buffered terminal keys passed" +
     Error(TestFailure: "buffered terminal keys differ")
 end
 version_output = capture(cli_test, ["version"])
-if capture_status() != 0 or version_output != "0.8.2" + chr(10):
+if capture_status() != 0 or version_output != "0.8.3" + chr(10):
     Error(TestFailure: "CLI version output differs")
 end
 version_flag_output = capture(cli_test, ["--version"])
-if capture_status() != 0 or version_flag_output != "0.8.2" + chr(10):
+if capture_status() != 0 or version_flag_output != "0.8.3" + chr(10):
     Error(TestFailure: "CLI --version output differs")
 end
 config_output = capture(cli_test, ["config", "examples/config/system.lsl"])
@@ -622,6 +622,9 @@ end
 # typed collections. Run them in short-lived processes so their globals do not
 # consume the shared aggregate's object-table budget during later BigInt stress.
 boundary_tests = [
+    "language_safety_features",
+    "x11_transport_conformance",
+    "loop_binding_types_conformance",
     "safe_recovery_conformance",
     "gfx_font_conformance",
     "collections_builtins_conformance",

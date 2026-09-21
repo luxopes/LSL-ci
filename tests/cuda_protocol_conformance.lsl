@@ -24,10 +24,10 @@ for header in ["", "{\"abi\":1,\"bytes\":0,\"operation\":\"info\"}", "{\"abi\":2
     size = len(header)
     prefix = __lsl_byte_zeros(4)
     prefix[0] = size
-    call cuda.session_send(handle, __lsl_text_from_bytes(prefix, 0, 4) + String(header), clock() + 5.0)
+    call cuda.session_send(handle, __lsl_text_from_bytes(prefix, 0, 4) + String(header), monotonic() + 5.0)
     caught = False
     try:
-        call cuda.session_read(handle, 4, clock() + 5.0)
+        call cuda.session_read(handle, 4, monotonic() + 5.0)
     else:
         caught = True
     end

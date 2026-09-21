@@ -45,6 +45,8 @@ uvíznout, proto při auditu používejte i vnější časový limit.
 | `compiler/pure/lexer.lsl` | UTF-8 tokenizace a source spans |
 | `compiler/pure/parser.lsl` | AST a syntaktická diagnostika |
 | `compiler/pure/linker.lsl` | rekurzivní moduly, namespace lowering |
+| `compiler/pure/flow.lsl` | definite-assignment analýza a diagnostika E2002 |
+| `compiler/pure/declarations.lsl` | lexikální typové deklarace a kontrola zápisů |
 | `compiler/pure/codegen.lsl` | typový tok, optimalizace a native lowering |
 | `compiler/pure/x86_64.lsl` | auditable instruction encoder |
 | `compiler/pure/assembler.lsl` | labely, rel32 fixups, byte stream |
@@ -89,7 +91,7 @@ do runtime: převádějí se pouze podporované sémantické chyby výrazů.
 3. rekurzivní link modulů a přidání stabilních prefixů;
 4. sestavení class/function tables a fixed-point inference návratů;
 5. konzervativní inference parametrů přímých neunikajících funkcí;
-6. constant/control-flow optimalizace a x86_64 emission;
+6. definite-assignment analýza, typové deklarace, constant/control-flow optimalizace a x86_64 emission;
 7. label/fixup materializaci;
 8. připojení deduplikovaných literal dat;
 9. přímé vytvoření ELF image a `writebytes`.

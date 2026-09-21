@@ -507,7 +507,7 @@ function session_send(handle, text, deadline):
         if sent > 0:
             offset += sent
         elif sent == -11 or sent == -4:
-            if clock() >= Float(deadline):
+            if monotonic() >= Float(deadline):
                 Error(CudaTimeoutError: "CUDA session write timed out")
             end
             call time.sleep(0.001)
@@ -529,7 +529,7 @@ function session_read(handle, size, deadline):
         if received > 0:
             offset += received
         elif received == -11 or received == -4:
-            if clock() >= Float(deadline):
+            if monotonic() >= Float(deadline):
                 Error(CudaTimeoutError: "CUDA session read timed out")
             end
             call time.sleep(0.001)
@@ -749,7 +749,7 @@ function session_request(self, fields, payload):
     result = None
     caught = ""
     try:
-        deadline = clock() + 120.0
+        deadline = monotonic() + 120.0
         call session_send(self["handle"], __lsl_text_from_bytes(prefix, 0, 4), deadline)
         call session_send(self["handle"], encoded, deadline)
         call session_send(self["handle"], String(payload), deadline)

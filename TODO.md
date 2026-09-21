@@ -2,7 +2,18 @@
 
 Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktuální handoff, pořadí blockerů a ověřovací příkazy jsou v `COMPLETION_PLAN.md`.
 
-## 0.7.1 — audit chyb a bezpečnostní hardening
+## Opraveno v 0.8.3 — 21. 9. 2026
+
+- [x] Memory safety: čtení lokální proměnné před přiřazením vracelo obsah
+  neinicializovaného slotu, u referencí včetně pádu SIGSEGV. Doplněna statická
+  definite-assignment kontrola pro větve, smyčky, výjimky a opětovné použití
+  slotů; také ochrana globálů a nekolidující interní jména.
+- [x] Srozumitelná diagnostika chybějících importů a X11 backpressure (-11).
+- [x] Typové deklarace, inkrement/dekrement, builtin system a čitelný clock.
+- [x] Bitově shodný self-host build a úplná sada včetně hardwarové CUDA regrese
+  na GTX 1650; release binárky přegenerované.
+
+## Dokončený audit 0.7.1
 
 - [x] Auditovat nové hranice 0.7: HTTP/HTTPS, sandbox, provenance a safe/unsafe.
 - [x] Opravit nalezené chyby a ke každé přidat cílenou regresi.

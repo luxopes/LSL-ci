@@ -1,6 +1,48 @@
 # Pure-LSL migration
 
-## Aktuální vydání 0.8.2 — 18. 9. 2026
+## Aktuální vydání 0.8.3 — 21. 9. 2026
+
+Opraveno čtení lokálu před přiřazením: reprodukce `len(s)` před pozdějším
+`s = "ahoj"` končila SIGSEGV, nyní ji compiler odmítá E2002 se zdrojovým
+místem. `flow.lsl` provádí definite-assignment analýzu větví, smyček,
+break/continue, návratů, safe/try a del. Lokály nemají dodatečné běhové
+kontroly; globály čtené z funkcí mají inicializační příznak a zachytitelný
+NameError. Smazání globálu uvnitř funkce/callbacku se promítá i do následných
+čtení a reinicializace v modulu; běžné globály se touto kontrolou nezatěžují.
+Sjednocena reprezentace opakovaných `for` vazeb různých typů;
+interní iterátory a save sloty používají uživatelsky nezapsatelná jména.
+
+Přibylo `Int(x) = 10` a další vestavěné typy: lexikální omezení kontroluje
+i další zápisy a for vazby. Nesprávný typ nesmí změnit původní hodnotu.
+Známé správné typy se nekontrolují za běhu. `++`/`--` jsou prefixové i
+postfixové samostatné příkazy, nikoli hodnotové výrazy. Regrese porovnává
+celý ELF typované smyčky s netypovaným zápisem: jsou bitově stejné.
+
+Vestavěné `system` linker směruje na skutečné `os.run`, včetně String/List
+argumentů, PATH a first-class Function použití; bez shellu. `clock()` nyní
+formátuje UTC datum/čas do Stringu; původní numerický zdroj je `monotonic()`
+a nezměněné `time.monotonic/perf_counter`. CUDA a X11 timeouty migrovány.
+
+Importy hlásí E3001/E3002 s názvem, zdrojovou pozicí a návodem k instalaci
+nebo opravě; import nespouští žádné automatické stahování. X11 odesílá
+částečné zápisy s přesným offsetem, poll na EAGAIN, timeoutem a MSG_NOSIGNAL.
+Po přerušeném protokolu socket ukončí bez převzetí vlastnictví fd. Regrese
+ověřuje skutečné bytes PutImage, zaplnění socketu, timeout a zavřeného peera.
+Příklad `examples/snake.lsl` ověřen v Xvfb včetně směrových kláves, Escape
+a zmenšení odesílacího socket bufferu na 4 KiB.
+Kopie X11 v LSL-Packages je sjednocená. Před upgradem LSL aktualizujte
+nainstalované X11 příkazem `lsl update x11`; podporuje i starší 0.8.2.
+
+Ověřovací artefakty: `.build/release-0.8.3/build.log`.
+`LSL_CUDA_HARDWARE_TEST=1 ./tests/lsl-test full ./compiler/lslc` prošel
+pod 4 GiB včetně GTX 1650, instalátoru, updateru, fuzz/stress a resource-path
+fixed-point regresí. Compiler stage 2/3 jsou bitově shodné; všechny veřejné
+binárky přegenerovány sériově pod 2 GiB. Compiler SHA-256:
+`47cab6f07b00766a58331d75ea3d6a5a23f451b50c684574c2f54ecee79f50fc`;
+CLI: `4960cc01258f443aa91372e29b6a05f87c49cd15d2e52595315d4f6b04505911`.
+Podrobnosti a migrační poznámky: `docs/release-0.8.3.md`.
+
+## Vydání 0.8.2 — 18. 9. 2026
 
 Rozšířené `safe`/`try`: chyby jmen, metod, argumentů a podporovaných
 statických typových kontrol se uvnitř chráněného kódu a funkcí snižují na

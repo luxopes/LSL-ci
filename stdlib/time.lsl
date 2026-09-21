@@ -9,11 +9,11 @@ function now():
 end
 
 function monotonic():
-    return clock()
+    return __lsl_monotonic()
 end
 
 function perf_counter():
-    return clock()
+    return __lsl_monotonic()
 end
 
 function sleep(seconds):

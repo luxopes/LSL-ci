@@ -22,6 +22,34 @@ name = "Lux"
 nothing = None
 ```
 
+Lokální proměnná musí být přiřazená na každé dosažitelné cestě před čtením.
+Čtení před pozdějším přiřazením (také přes `+=`, `++`, větve, smyčky nebo
+`safe`) je chyba překladu E2002; obsah neinicializovaného slotu není hodnota.
+`del(x)` znovu zneplatní inicializaci. Parametry jsou inicializované při volání.
+
+Volitelně lze proměnnou omezit na konkrétní vestavěný typ:
+
+```lsl
+Int(i) = 10
+String(name) = "Lux"
+List(items) = [1, 2]
+i++
+--i
+```
+
+`Int(i) = ...` je deklarace, nikoli převod hodnoty. Omezení platí v celé
+lexikální oblasti i pro pozdější přiřazení, `+=` a vazbu ve `for`.
+Nesprávný typ vyvolá zachytitelný `TypeError` před změnou proměnné; pro
+konverzi napište například `Int(i) = Int("10")`. Známý správný typ nepřidává
+běhovou kontrolu. Podporované deklarace: `Int`, `Float`, `Bool`, `String`,
+`List`, `Tuple`, `Dictionary`, `Set`, `RealArray`, `IntArray`, `FloatArray`,
+`ByteArray`, `Function` a neomezující `Any`. Dvě různá omezení stejného jména
+jsou E2003. Parametr funkce takto znovu deklarovat nelze; použijte nový lokál.
+
+`i++`, `i--`, `++i`, `--i` jsou samostatné příkazy nad inicializovanou
+číselnou proměnnou, ekvivalentní `+= 1` / `-= 1`. Nemají hodnotu výrazu;
+`x = i++`, změna indexovaného prvku ani řetězení inkrementů nejsou podporované.
+
 Vestavěné typy a návratové hodnoty `type(value)`:
 
 | Hodnota | Typ |
@@ -405,6 +433,18 @@ print lux.version, value_type([1, 2])
 
 `load foo.bar` hledá `foo/bar.lsl` nejprve vedle zdrojového souboru, v compiler interních a built-in/system `lib/lsl/stdlib` cestách a teprve potom pod `~/.local/lib/lsl/stdlib`. `load foo.bar as baz` zpřístupní stejný staticky linkovaný modul pod prefixem `baz.`. Uživatelskou knihovnu lze získat přes `lsl install NAME`; built-in modul proto nelze uživatelskou kopií zastínit. Modulové symbols dostávají deterministický namespace prefix. Třídy označené `ctype Private` nejsou dostupné přes vnější namespace; public classes lze přímo konstruovat. `native` modul podporuje omezené self-contained Linux x86_64 ET_DYN Int64 kernels; obecné relocatable/libc pluginy nejsou součástí ABI v1.
 
+Chybějící knihovna hlásí E3001 s názvem a přesným místem importu, včetně
+importů uvnitř jiné knihovny. Výpis doporučí kontrolu místního souboru a pro
+registry jméno `lsl search NAME` / `lsl install NAME`; nic sám nestahuje.
+Chybějící built-in modul znamená poškozenou instalaci LSL, ne balíček k
+doinstalování. Existující, ale nečitelný modul má samostatnou chybu E3002.
+
+Grafický příklad [Snake](../examples/snake.lsl) potřebuje volitelné balíčky
+`display` a `gfx` (`lsl install display`, `lsl install gfx`). X11 zápis
+pokračuje i po částečném odeslání a čeká na uvolnění plného socketu. Odpojení
+nebo timeout hlásí zachytitelný `X11Error`; po přerušeném přenosu je třeba
+zavřít a znovu otevřít okno.
+
 Vestavěný modul `lux` exportuje `version`, `language` a `l` (alias `type`). Další standardní moduly jsou `json`, `lconf`, `http`, `httpserver`, `sandbox`, `env`, `config`, `time`, `os`, `system`, `math` a `bigint`; podrobnosti jsou v `configuration.md`, `lconf.md`, `ai.md`, `server.md`, `sandbox.md`, `time.md`, `os.md` a `system.md`.
 
 ## Standardní funkce
@@ -412,7 +452,8 @@ Vestavěný modul `lux` exportuje `version`, `language` a `l` (alias `type`). Da
 - matematika: `min`, `max`, `sum`, `abs`, `sqrt`; modul `math` přidává
   exponenciálu, logaritmy, goniometrii, Sigmoid a statistiku
 - znaky: `chr`, `ord`
-- čas: `clock()` — monotónní čas v sekundách; aplikační modul `time` přidává wall clock, pojmenovaný monotonic/perf counter a `sleep`
+- čas: `clock()` — čitelný String `YYYY-MM-DD HH:MM:SS UTC`; `monotonic()` — monotónní sekundy jako Float; modul `time` přidává Unix timestamp a `sleep`
+- procesy: `system(command)` — vestavěný alias `os.run(command)` bez `load os`; String nebo argv List, hledání v PATH, návratový exit status, bez shell expanze
 - soubory UTF-8: `readfile(path)`, `writefile(path, value)`, `appendfile(path, value)`, `exists(path)`
 - Linux/POSIX filesystem: `cwd()`, `chdir(path)`, `mkdir(path)`, `remove_path(path)`
 - proces: globální `args`, `arg(index)`, `arg_count()`, `run(program, arguments)`; modul `os` přidává bezpečné command String/List API a PATH lookup; dále `capture(program, arguments)`, `capture_stream(program, arguments, callback)`, `capture_input(program, arguments, input_text)`, `capture_status()`, `exit(status)`; `process.capture_result`/`process.capture_input_result` vrací `{stdout, stderr, status, ok}` a `process.check`/`process.check_input` vyvolá `ProcessError`; status je exit code, pro signál `128 + signal`, při selhání fork/wait 126 a při selhání exec 127

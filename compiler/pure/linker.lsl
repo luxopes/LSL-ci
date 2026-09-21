@@ -2,6 +2,7 @@
 # flattened to deterministic prefixed native symbols; no runtime loader exists.
 
 load parser
+load diagnostics
 
 function dirname(path):
     slash = -1
@@ -491,7 +492,8 @@ function transform_statements(statements, own_functions, imported_names, namespa
         if kind == "function":
             statement["name"] = own_functions[statement["name"]]
             local_names = scoped_names(own_functions, statement["parameters"], statement["body"])
-            call transform_statements(statement["body"], local_names, imported_names, namespaces)
+            local_imports = scoped_names(imported_names, statement["parameters"], statement["body"])
+            call transform_statements(statement["body"], local_names, local_imports, namespaces)
         elif kind == "assign":
             call transform_expression(statement["target"], own_functions, imported_names, namespaces)
             call transform_expression(statement["value"], own_functions, imported_names, namespaces)
@@ -534,7 +536,8 @@ function transform_statements(statements, own_functions, imported_names, namespa
             for member in statement["body"]:
                 if member["kind"] == "function":
                     local_names = scoped_names(own_functions, member["parameters"], member["body"])
-                    call transform_statements(member["body"], local_names, imported_names, namespaces)
+                    local_imports = scoped_names(imported_names, member["parameters"], member["body"])
+                    call transform_statements(member["body"], local_names, local_imports, namespaces)
                 elif member["kind"] == "assign":
                     call transform_expression(member["target"], own_functions, imported_names, namespaces)
                     call transform_expression(member["value"], own_functions, imported_names, namespaces)
@@ -544,7 +547,59 @@ function transform_statements(statements, own_functions, imported_names, namespa
     end
 end
 
-function collect_module(name, owner_path, cache, output, source_budget, internal_graph):
+function import_failure(name, path, owner_path, owner_source, statement, missing):
+    code = "E3002"
+    message = "cannot read library '" + name + "' from " + path
+    hint = "check that " + path + " is a readable .lsl file and that its parent directories are accessible"
+    if missing:
+        code = "E3001"
+        message = "library '" + name + "' was not found (not installed or missing local source)"
+        relative = name.replace(".", "/") + ".lsl"
+        hint = "check the name and local file " + dirname(owner_path) + "/" + relative
+        if builtin_module(name):
+            message = "built-in library '" + name + "' is missing from this LSL installation"
+            hint = "repair or reinstall LSL; expected " + path + "; built-in libraries are not installed with lsl install"
+        elif name.find(".") < 0 and len(name) <= 64 and name == name.lower() and not name.startswith("_"):
+            hint += "; for registry packages use: lsl search " + name + " ; lsl install " + name
+        end
+    end
+    lines = owner_source.split(chr(10))
+    line = statement.get("line", 1)
+    text = ""
+    if line >= 1 and line <= len(lines):
+        text = lines[line - 1]
+    end
+    call diagnostics.fail(owner_path, line, statement.get("module_column", statement.get("column", 1)), len(name), text, code, message, hint)
+end
+
+function mentions_system(value):
+    if type(value) == "List":
+        for item in value:
+            if mentions_system(item):
+                return True
+            end
+        end
+    elif type(value) == "Dictionary":
+        if value.get("kind", "") == "name" and value.get("name", "") == "system":
+            return True
+        end
+        for field in value.keys():
+            if mentions_system(value[field]):
+                return True
+            end
+        end
+    end
+    return False
+end
+
+function import_system(program, path, source, cache, output, budget, internal, own, imports, namespaces):
+    if "system" not in own and "system" not in imports and "system" not in namespaces and mentions_system(program):
+        prefix = collect_module("os", path, cache, output, budget, internal, source, {"line": 1, "column": 1, "module_column": 1})
+        imports["system"] = prefix + "run"
+    end
+end
+
+function collect_module(name, owner_path, cache, output, source_budget, internal_graph, owner_source, import_statement):
     path = module_path(name, owner_path)
     if path in cache:
         return cache[path]
@@ -552,7 +607,15 @@ function collect_module(name, owner_path, cache, output, source_budget, internal
     if len(cache) >= 256:
         Error(CompileError: "module graph exceeds 256 modules")
     end
-    source = readfile(path)
+    if not exists(path):
+        call import_failure(name, path, owner_path, owner_source, import_statement, True)
+    end
+    source = ""
+    try:
+        source = readfile(path)
+    else:
+        call import_failure(name, path, owner_path, owner_source, import_statement, False)
+    end
     source_bytes = __lsl_text_byte_length(source)
     if source_bytes > 16777216 - source_budget[0]:
         Error(CompileError: "linked source exceeds the 16 MiB compiler limit: " + path)
@@ -574,7 +637,7 @@ function collect_module(name, owner_path, cache, output, source_budget, internal
     for statement in program:
         if statement["kind"] == "load":
             dependency = statement["module"]
-            dependency_prefix = collect_module(dependency, path, cache, output, source_budget, internal_graph)
+            dependency_prefix = collect_module(dependency, path, cache, output, source_budget, internal_graph, source, statement)
             if statement["symbol"] == None:
                 namespaces[statement["alias"]] = dependency_prefix
             else:
@@ -584,6 +647,7 @@ function collect_module(name, owner_path, cache, output, source_budget, internal
     end
 
     own_functions = function_names(program)
+    call import_system(program, path, source, cache, output, source_budget, internal_graph, own_functions, imported_names, namespaces)
     names = own_functions.keys()
     for function_name in names:
         own_functions[function_name] = prefix + function_name
@@ -623,7 +687,7 @@ function link_mode_options(path, source, safety_mode, internal_graph):
     for statement in program:
         if statement["kind"] == "load":
             dependency = statement["module"]
-            prefix = collect_module(dependency, path, cache, linked, source_budget, internal_graph)
+            prefix = collect_module(dependency, path, cache, linked, source_budget, internal_graph, checked_source, statement)
             if statement["symbol"] == None:
                 namespaces[statement["alias"]] = prefix
             else:
@@ -632,6 +696,7 @@ function link_mode_options(path, source, safety_mode, internal_graph):
         end
     end
     own_functions = function_names(program)
+    call import_system(program, path, checked_source, cache, linked, source_budget, internal_graph, own_functions, imported_names, namespaces)
     filtered = []
     for statement in program:
         if statement["kind"] != "load":

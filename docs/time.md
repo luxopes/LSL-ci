@@ -30,8 +30,13 @@ zbývajícím časem.
 
 Pro intervaly a timeouty používejte `monotonic`/`perf_counter`, protože změna
 systémového času je nemůže posunout zpět. `time`/`now` používejte pouze pro
-kalendářní timestamp. Modul neobsahuje timezone ani formátování kalendáře.
+kalendářní timestamp.
+
+Vestavěný `clock()` vrací aktuální datum a čas jako String, například
+`2026-09-19 17:30:05 UTC`. Používá UTC, nikoli místní časovou zónu.
+Změna návratového typu oproti 0.8.2: pro původní číselné měření používejte
+`monotonic()` bez importu nebo `time.monotonic()` / `time.perf_counter()`.
+Časování grafiky a CUDA používá nadále monotónní zdroj.
 
 Čas je ambientní vstup, proto je `load time` v čistém `lsl config` režimu
-zakázán. Vestavěný `clock()` zůstává kompatibilním monotónním primitivem;
-aplikační kód má preferovat pojmenované API modulu.
+zakázán; stejně tak zde nejsou dostupné ambientní vestavěné hodiny.

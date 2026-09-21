@@ -4,6 +4,22 @@ Na této stránce jsou uživatelsky významné změny vydaných verzí. Stabiln�
 manuály a soubory ke stažení zůstávají dostupné v
 [historii vydání](/releases/).
 
+## 0.8.3 — 21. 9. 2026
+
+- Opraveno čtení neinicializovaných lokálů, které mohlo vracet obsah zásobníku
+  nebo způsobit SIGSEGV. Statická kontrola E2002 nezavádí běhové kontroly lokálů.
+  Globály čtené z funkcí mají kontrolovanou inicializaci a zachytitelný NameError.
+- Typové deklarace `Int(x) = 10` kontrolují i další zápisy; známé správné typy
+  nemají dodatečné běhové kontroly. Prefixové i postfixové `++`/`--` jsou
+  samostatné příkazy, nikoli hodnotové výrazy.
+- Vestavěné `system()` odpovídá `os.run()` a nespouští shell.
+- **Změna návratového typu:** `clock()` vrací `YYYY-MM-DD HH:MM:SS UTC`.
+  Pro intervaly použijte `monotonic()` nebo `time.monotonic/perf_counter`.
+- Importní chyby E3001/E3002 vysvětlují chybějící či nečitelnou knihovnu.
+- X11 zvládá částečné zápisy, EAGAIN a zavřený socket; přidán příklad Snake.
+  Před upgradem spusťte `lsl update x11`, pokud máte X11 nainstalované.
+  Nové X11 funguje také s 0.8.2 a již nepočítá s číselným `clock()`.
+
 ## 0.8.2 — 18. 9. 2026
 
 - `safe` a `try` zachytí neznámé volání/proměnnou, neexistující metodu

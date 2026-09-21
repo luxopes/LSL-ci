@@ -1,5 +1,10 @@
 # Modul `os`
 
+`system(command)` je dostupný i jako vestavěná funkce bez `load os`.
+Používá přesně `os.run`: přijme String nebo argv List, vyhledá program v
+PATH a vrátí exit status. Nevkládá shell; `;`, `|`, `$()` ani wildcardy
+nespouštějí další příkazy. Pro bezpečné předání argumentů preferujte List.
+
 Standardní modul `os` spouští Linux programy přes existující pure-LSL
 `fork`/`execve`/`wait4` runtime. Nespouští `/bin/sh -c`.
 

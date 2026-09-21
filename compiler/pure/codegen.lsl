@@ -3,7 +3,9 @@
 load assembler
 load bytes
 load diagnostics
+load declarations
 load elf_image
+load flow
 load native_runtime
 load parser
 load thread_runtime
@@ -112,9 +114,9 @@ function collect_variables(statements, variables):
             if name not in variables:
                 variables[name] = -(len(variables) + 1) * 8
             end
-            iterator_name = "__iterator_" + String(len(variables))
+            iterator_name = "@iterator@" + String(len(variables))
             variables[iterator_name] = -(len(variables) + 1) * 8
-            index_name = "__iterator_index_" + String(len(variables))
+            index_name = "@iterator_index@" + String(len(variables))
             variables[index_name] = -(len(variables) + 1) * 8
             statement["iterator_name"] = iterator_name
             statement["index_name"] = index_name
@@ -239,6 +241,9 @@ function infer_expression_type(syntax, types, function_returns):
         target = syntax["target"]
         if target["kind"] == "name":
             name = target["name"]
+            if name.startswith("__lsl_declared_"):
+                return name[15:len(name)]
+            end
             if name == "abs":
                 return infer_expression_type(syntax["arguments"][0], types, function_returns)
             end
@@ -265,6 +270,8 @@ function infer_expression_type(syntax, types, function_returns):
             elif name == "String" or name == "chr" or name == "arg" or name == "input" or name == "readfile" or name == "last_error" or name == "type" or name == "capture" or name == "__lsl_capture" or name == "capture_clean" or name == "__lsl_capture_clean" or name == "capture_stream" or name == "capture_stream_clean" or name == "capture_input" or name == "capture_input_clean" or name == "capture_input_stream" or name == "capture_input_stream_clean" or name == "capture_stderr" or name == "executable_path" or name == "__lsl_text_from_bytes" or name == "__lsl_floatarray_bytes":
                 return "String"
             elif name == "clock":
+                return "String"
+            elif name == "monotonic" or name == "__lsl_monotonic":
                 return "Float"
             elif name == "exists" or name == "native_name_equal":
                 return "Bool"
@@ -353,7 +360,9 @@ function collect_types(statements, types, function_returns):
                     combined = {"kind": "binary", "operator": operator, "left": statement["target"], "right": statement["value"]}
                     assigned_type = infer_expression_type(combined, types, function_returns)
                 end
-                if name in types and types[name] != assigned_type:
+                if "declared_type" in statement and statement["declared_type"] != "Any":
+                    types[name] = statement["declared_type"]
+                elif name in types and types[name] != assigned_type:
                     types[name] = "Any"
                 else:
                     types[name] = assigned_type
@@ -375,20 +384,26 @@ function collect_types(statements, types, function_returns):
             # allocator can keep hot counters and explicit steps off-stack.
             types[statement["index_name"]] = "Int"
             if for_is_range:
-                types[statement["name"]] = "Int"
+                binding_type = "Int"
                 types[statement["iterator_name"]] = "Int"
             elif iterable_type == "String":
-                types[statement["name"]] = "String"
+                binding_type = "String"
             elif iterable_type == "IntArray":
-                types[statement["name"]] = "Int"
+                binding_type = "Int"
             elif iterable_type == "FloatArray":
-                types[statement["name"]] = "Float"
+                binding_type = "Float"
             elif iterable_type == "ByteArray":
-                types[statement["name"]] = "Int"
+                binding_type = "Int"
             else:
                 # List/Tuple/RealArray/Dictionary/Any elements are dynamic; Int
                 # would miscompile boxed Float/None elements (e.g. sum of Floats).
-                types[statement["name"]] = "Any"
+                binding_type = "Any"
+            end
+            binding = statement["name"]
+            if binding in types and types[binding] != binding_type:
+                types[binding] = "Any"
+            else:
+                types[binding] = binding_type
             end
             call collect_types(statement["body"], types, function_returns)
         elif kind == "if":
@@ -1096,7 +1111,7 @@ function local_register(generator, name):
     return -1
 end
 
-function emit_load_local(generator, register, name):
+function emit_load_local(generator, register, name, syntax=None):
     # Named variable read: register home, stack slot, or a global in the
     # state block (rbx-relative; globals no longer pin r12).
     home = local_register(generator, name)
@@ -1107,11 +1122,24 @@ function emit_load_local(generator, register, name):
     elif name in generator["variables"]:
         call assembler.emit(generator["builder"], x86_64.load_stack(register, generator["variables"][name]))
     else:
+        # A function can run before module initialization (also via callbacks).
+        # Locals are proved statically; global reads need a guard at the actual
+        # read, not at function entry where an untaken branch could reject it.
+        if name in generator.get("global_reads", {}):
+            failure = label_name(generator, "uninitialized_global")
+            call assembler.emit(generator["builder"], x86_64.cmp_memory_imm8(3, generator["global_flags"][name], 0))
+            call assembler.relative(generator["builder"], [15, 132], failure)
+            location = syntax
+            if location == None:
+                location = generator["global_reads"][name]
+            end
+            generator["global_handlers"].append([failure, location, generator["error_label"]])
+        end
         call assembler.emit(generator["builder"], x86_64.load_memory(register, 3, generator["global_variables"][name]))
     end
 end
 
-function emit_store_local(generator, name, register):
+function emit_store_local(generator, name, register, initialize=False):
     home = local_register(generator, name)
     if home >= 0:
         if home != register:
@@ -1121,6 +1149,9 @@ function emit_store_local(generator, name, register):
         call assembler.emit(generator["builder"], x86_64.store_stack(generator["variables"][name], register))
     else:
         call assembler.emit(generator["builder"], x86_64.store_memory(3, generator["global_variables"][name], register))
+        if initialize or name in generator.get("mutable_globals", {}):
+            call assembler.emit(generator["builder"], x86_64.store_memory_imm32(3, generator["global_flags"][name], 1))
+        end
     end
 end
 
@@ -1661,7 +1692,7 @@ function emit_int_leaf(generator, syntax, register):
         call assembler.emit(output, x86_64.mov_imm64(register, integer_literal(syntax)))
     else:
         name = syntax["name"]
-        call emit_load_local(generator, register, name)
+        call emit_load_local(generator, register, name, syntax)
     end
 end
 
@@ -2177,7 +2208,7 @@ function emit_expression(generator, syntax):
     elif kind == "name":
         name = syntax["name"]
         if name in generator["variables"] or name in generator["global_variables"]:
-            call emit_load_local(generator, 0, name)
+            call emit_load_local(generator, 0, name, syntax)
         elif name in generator["functions"]:
             if "defaults" in generator["functions"][name]:
                 call unsupported(generator["path"], generator["lines"], syntax, "functions with defaults cannot be used as Function values yet", "wrap the call in a function with explicit parameters")
@@ -2913,6 +2944,8 @@ function emit_expression(generator, syntax):
             end
             builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "Dictionary": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sqrt": 1, "sum": 1, "float_zeros": 1, "float_fill": 2, "float_sum": 1, "float_dot": 2, "float_axpy": 3, "float_matmul": 5, "type": 1, "exit": 1, "input": 1, "readfile": 1, "readbytes": 1, "__lsl_getenv": 1, "mkdir": 1, "unlink": 1, "rmdir": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "help": 0, "run": 2, "run_clean": 2, "capture": 2, "capture_clean": 2, "capture_stream": 3, "capture_stream_clean": 3, "capture_input": 3, "capture_input_clean": 3, "capture_input_stream": 4, "capture_input_stream_clean": 4, "capture_status": 0, "capture_stderr": 0, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2, "native_open": 1, "native_size": 1, "native_u64": 2, "native_name_equal": 3, "native_function": 2, "native_call": 2, "native_close": 1, "__lsl_test_small_tables": 0, "__lsl_test_fd_fault": 1, "__lsl_object_table_mask": 0, "__lsl_intern_table_mask": 0, "__lsl_wall_time": 0, "__lsl_sleep": 1, "__lsl_isatty": 1, "__lsl_stdin_eof": 0, "__lsl_run": 2, "__lsl_run_clean": 2, "__lsl_capture": 2, "__lsl_capture_clean": 2, "__lsl_fd_open": 2, "__lsl_fd_read": 3, "__lsl_fd_write": 3, "__lsl_fd_seek": 2, "__lsl_fd_close": 1, "__lsl_fd_socket": 2, "__lsl_fd_connect": 3, "__lsl_checked_index": 1, "__lsl_int_zeros": 1, "__lsl_byte_zeros": 1, "__lsl_raster_pack": 5, "__lsl_raster_copy": 5, "__lsl_raster_fill": 4, "__lsl_fd_ioctl": 3, "__lsl_fd_mmap": 3, "__lsl_mem_pack": 5, "__lsl_data_address": 1, "__lsl_syscall": 5, "__lsl_mem_unpack": 4, "__lsl_text_from_bytes": 3, "__lsl_byte_copy": 5, "__lsl_text_byte": 2, "__lsl_text_byte_length": 1, "__lsl_floatarray_bytes": 1, "__lsl_floatarray_from_bytes": 1, "atomic_add": 3, "atomic_xchg": 3, "atomic_cas": 4, "atomic_pause": 0, "thread_spawn": 1, "thread_join": 1, "cpu_count": 0, "popcount": 1, "trailing_zeros": 1}
             builtin_arity["__lsl_mkdir_private"] = 1
+            builtin_arity["monotonic"] = 0
+            builtin_arity["__lsl_monotonic"] = 0
             builtin_arity["__lsl_fd_snapshot"] = 3
             builtin_arity["arg"] = 1
             builtin_arity["__lsl_address"] = 1
@@ -2975,7 +3008,27 @@ function emit_expression(generator, syntax):
                     call unsupported(generator["path"], generator["lines"], syntax, "builtin " + target["name"] + " expects zero or one argument", "pass no argument for a new array or an existing array as a checked cast")
                 end
             end
-            if target["name"] == "sorted" or target["name"] == "dedup" or target["name"] == "set":
+            if target["name"].startswith("__lsl_declared_"):
+                declared = target["name"][15:len(target["name"])]
+                value = syntax["arguments"][0]
+                actual = infer_expression_type(value, generator["types"], generator["function_returns"])
+                if actual == declared:
+                    call emit_expression(generator, value)
+                    return
+                end
+                required = {"kind": "literal", "literal_kind": "string", "value": declared, "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]}
+                check_call = {"kind": "call", "target": {"kind": "name", "name": "__lsl_require_declared"}, "arguments": [value, required], "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]}
+                call emit_expression(generator, check_call)
+                if declared == "Int" or declared == "Bool":
+                    call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                    if declared == "Int":
+                        call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+                    else:
+                        call assembler.relative(output, [232], "runtime_unbox_bool")
+                    end
+                end
+                return
+            elif target["name"] == "sorted" or target["name"] == "dedup" or target["name"] == "set":
                 collection_arguments = syntax["arguments"]
                 if len(collection_arguments) == 0:
                     collection_arguments = [{"kind": "list", "items": [], "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]}]
@@ -4102,8 +4155,13 @@ function emit_expression(generator, syntax):
                 call assembler.relative(output, [232], "runtime_input")
                 call emit_pending_error(generator)
                 return
-            elif target["name"] == "clock" or target["name"] == "__lsl_wall_time":
-                if target["name"] == "clock":
+            elif target["name"] == "clock":
+                wall = {"kind": "call", "target": {"kind": "name", "name": "__lsl_wall_time"}, "arguments": [], "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]}
+                formatted = {"kind": "call", "target": {"kind": "name", "name": "__lsl_clock_text"}, "arguments": [wall], "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]}
+                call emit_expression(generator, formatted)
+                return
+            elif target["name"] == "monotonic" or target["name"] == "__lsl_monotonic" or target["name"] == "__lsl_wall_time":
+                if target["name"] != "__lsl_wall_time":
                     call assembler.relative(output, [232], "runtime_clock")
                 else:
                     call assembler.relative(output, [232], "runtime_wall_time")
@@ -5213,6 +5271,12 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 home = local_register(generator, target["name"])
                 if statement["operator"] == "=":
                     value_syntax = statement["value"]
+                    if value_syntax["kind"] == "call" and value_syntax["target"]["kind"] == "name" and value_syntax["target"]["name"].startswith("__lsl_declared_"):
+                        inner = value_syntax["arguments"][0]
+                        if infer_expression_type(inner, generator["types"], generator["function_returns"]) == generator["types"].get(target["name"], "Any"):
+                            value_syntax = inner
+                        end
+                    end
                 else:
                     operator = statement["operator"][0:len(statement["operator"]) - 1]
                     value_syntax = {"kind": "binary", "line": statement["line"], "column": statement["column"], "end_column": statement["end_column"], "operator": operator, "left": target, "right": statement["value"]}
@@ -5236,20 +5300,20 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                     end
                 end
                 if statement["operator"] == "=":
-                    call emit_expression(generator, statement["value"])
+                    call emit_expression(generator, value_syntax)
                     if generator["types"].get(target["name"], "Any") == "Any" and not generator["internal_abi"]:
                         # Public Any locals use the same tagged representation
                         # as parameters, returns and collection slots. Keeping a
                         # raw scalar here made later dynamic dispatch ambiguous
                         # with a live heap address.
-                        call emit_collection_box(generator, statement["value"])
-                    elif infer_expression_type(statement["value"], generator["types"], generator["function_returns"]) == "Function":
-                        call emit_collection_box(generator, statement["value"])
+                        call emit_collection_box(generator, value_syntax)
+                    elif infer_expression_type(value_syntax, generator["types"], generator["function_returns"]) == "Function":
+                        call emit_collection_box(generator, value_syntax)
                     end
                 else:
                     call emit_expression(generator, value_syntax)
                 end
-                call emit_store_local(generator, target["name"], 0)
+                call emit_store_local(generator, target["name"], 0, statement.get("init_flag", False))
             elif target["kind"] == "index":
                 target_type = infer_expression_type(target["target"], generator["types"], generator["function_returns"])
                 index_type = infer_expression_type(target["index"], generator["types"], generator["function_returns"])
@@ -5651,7 +5715,11 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                         call assembler.relative(generator["builder"], [232], "runtime_get")
                     end
                 end
-                call emit_store_local(generator, value_name, 0)
+                if not generator["internal_abi"] and generator["types"].get(value_name, "Any") == "Any" and (iterable_type == "IntArray" or iterable_type == "ByteArray"):
+                    call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
+                    call assembler.relative(generator["builder"], [232], "runtime_box_int")
+                end
+                call emit_store_local(generator, value_name, 0, statement.get("init_flag", False))
                 call emit_statements(generator, statement["body"], end_label, continue_target, return_label)
                 call assembler.label(generator["builder"], continue_target)
                 call emit_load_local(generator, 0, index_name)
@@ -5686,8 +5754,13 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             loop_name = statement["name"]
             stop_name = statement["iterator_name"]
             step_name = statement["index_name"]
+            dynamic_counter = not generator["internal_abi"] and generator["types"].get(loop_name, "Any") == "Any"
             call emit_checked_int_expression(generator, start_expression, "rang start")
-            call emit_store_local(generator, loop_name, 0)
+            if dynamic_counter:
+                call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
+                call assembler.relative(generator["builder"], [232], "runtime_box_int")
+            end
+            call emit_store_local(generator, loop_name, 0, statement.get("init_flag", False))
             call emit_checked_int_expression(generator, stop_expression, "rang stop")
             call emit_store_local(generator, stop_name, 0)
             explicit_step = len(arguments) == 3
@@ -5725,6 +5798,11 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             end_label = label_name(generator, "for_end")
             call assembler.label(generator["builder"], start_label)
             call emit_load_local(generator, 0, loop_name)
+            if dynamic_counter:
+                call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
+                call assembler.relative(generator["builder"], [232], "function___lsl_require_rang_step")
+                call emit_pending_error(generator)
+            end
             call emit_load_local(generator, 1, stop_name)
             if explicit_step:
                 call emit_load_local(generator, 2, step_name)
@@ -5741,11 +5819,20 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             call emit_statements(generator, statement["body"], end_label, continue_target, return_label)
             call assembler.label(generator["builder"], continue_target)
             call emit_load_local(generator, 0, loop_name)
+            if dynamic_counter:
+                call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
+                call assembler.relative(generator["builder"], [232], "function___lsl_require_rang_step")
+                call emit_pending_error(generator)
+            end
             if explicit_step:
                 call emit_load_local(generator, 1, step_name)
                 call assembler.emit(generator["builder"], x86_64.add_reg_reg(0, 1))
             else:
                 call assembler.emit(generator["builder"], x86_64.increment(0))
+            end
+            if dynamic_counter:
+                call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
+                call assembler.relative(generator["builder"], [232], "runtime_box_int")
             end
             call emit_store_local(generator, loop_name, 0)
             call assembler.relative(generator["builder"], [233], start_label)
@@ -5859,6 +5946,9 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 call assembler.emit(generator["builder"], x86_64.mov_imm64(0, 0))
                 if target["name"] in generator["variables"] or target["name"] in generator["global_variables"]:
                     call emit_store_local(generator, target["name"], 0)
+                    if target["name"] not in generator["variables"]:
+                        call assembler.emit(generator["builder"], x86_64.store_memory_imm32(3, generator["global_flags"][target["name"]], 0))
+                    end
                 else:
                     if generator["error_label"] != "":
                         call emit_source_raise(generator, statement, "NameError", "cannot delete unknown name " + target["name"])
@@ -5888,7 +5978,7 @@ function emit_statements(generator, statements, break_label, continue_label, ret
         elif kind == "class":
             class_name_slot = statement["name"]
             call assembler.relative(generator["builder"], [232], "runtime_dict_new")
-            call emit_store_local(generator, class_name_slot, 0)
+            call emit_store_local(generator, class_name_slot, 0, statement.get("init_flag", False))
             class_end = label_name(generator, "class_end")
             if statement["condition"] != None:
                 call emit_expression(generator, statement["condition"])
@@ -6649,6 +6739,8 @@ function emit_function(generator, declaration):
         variables[parameter] = -(len(variables) + 1) * 8
     end
     call collect_variables(declaration["body"], variables)
+    old_global_reads = generator.get("global_reads", {})
+    generator["global_reads"] = flow.check(generator["path"], generator["lines"], declaration["body"], variables, declaration["parameters"], constant_truth_expression, constant_if_body, generator["noreturn"], generator["global_variables"])
     types = {}
     for global_name in generator["global_types"].keys():
         types[global_name] = generator["global_types"][global_name]
@@ -6680,7 +6772,7 @@ function emit_function(generator, declaration):
     register_locals = choose_register_locals(declaration, variables, types)
     save_slots = {}
     for local_name in register_locals.keys():
-        save_name = "__save_r" + String(register_locals[local_name])
+        save_name = "@save_r@" + String(register_locals[local_name])
         if save_name not in variables:
             variables[save_name] = -(len(variables) + 1) * 8
         end
@@ -6748,17 +6840,38 @@ function emit_function(generator, declaration):
     generator["current_internal_function"] = old_internal_function
     generator["internal_abi"] = old_internal_abi
     generator["current_class_name"] = old_current_class_name
+    generator["global_reads"] = old_global_reads
 end
 
 function generate_mode(path, source, program, internal_abi):
     lines = source
+    call declarations.lower(program, path, source)
     classes = class_table(path, lines, program)
     call validate_class_hierarchy(path, lines, classes)
     functions = function_table(path, lines, program)
+    noreturn = flow.noreturn_functions(functions)
     parameter_types = dynamic_parameter_types(functions)
     function_returns = infer_function_returns(functions, classes, parameter_types, {})
     main_variables = {}
     call collect_variables(program, main_variables)
+    main_reads = flow.check(path, source, program, main_variables, [], constant_truth_expression, constant_if_body, noreturn, main_variables, True)
+    # A called function may delete a global, including through a callback.
+    # Only such bindings need main-thread guards and repeated init stores;
+    # ordinary proved globals keep their existing hot path.
+    deleted = {}
+    for name in functions.keys():
+        call flow.deleted_names(functions[name]["body"], deleted)
+    end
+    mutable_globals = {}
+    guarded_main_reads = {}
+    for name in main_variables.keys():
+        if name in deleted:
+            mutable_globals[name] = True
+            if name in main_reads:
+                guarded_main_reads[name] = main_reads[name]
+            end
+        end
+    end
     main_types = {}
     call collect_types(program, main_types, function_returns)
     # Global types and return types depend on each other; one more round with
@@ -6783,9 +6896,19 @@ function generate_mode(path, source, program, internal_abi):
         global_offsets[global_name] = 1280 + len(global_offsets) * 8
     end
     globals_bytes = aligned_frame(main_variables)
+    global_flags = {}
+    for global_name in main_variables.keys():
+        global_flags[global_name] = global_offsets[global_name] + globals_bytes
+    end
+    globals_bytes *= 2
     generator = {"path": path, "internal_abi": internal_abi, "unchecked_intarray": unchecked_intarray, "lines": lines, "variables": {}, "types": {}, "global_variables": global_offsets, "global_types": main_types, "functions": functions, "classes": classes, "function_returns": function_returns, "function_parameters": parameter_types, "builder": output, "data": [], "string_offsets": {}, "relocations": [], "counter": 0, "error_label": "", "current_class_name": ""}
     generator["frame_size"] = 16
+    generator["noreturn"] = noreturn
     generator["error_handlers"] = []
+    generator["global_reads"] = guarded_main_reads
+    generator["mutable_globals"] = mutable_globals
+    generator["global_flags"] = global_flags
+    generator["global_handlers"] = []
     registry_bytes = 524288
     registry_mask = 65535
     if generator["internal_abi"]:
@@ -6919,6 +7042,11 @@ function generate_mode(path, source, program, internal_abi):
         call assembler.label(output, handler[0])
         call assembler.emit(output, x86_64.lea_base(4, 5, -handler[2]))
         call assembler.relative(output, [233], handler[1])
+    end
+    for handler in generator["global_handlers"]:
+        call assembler.label(output, handler[0])
+        generator["error_label"] = handler[2]
+        call emit_source_raise(generator, handler[1], "NameError", "global variable '" + String(handler[1]["name"]).split("@")[-1] + "' read before assignment")
     end
     program_code = assembler.finish(output)
     for relocation in generator["relocations"]:

@@ -183,6 +183,7 @@ function manual_loop(root, topic):
     selected = 0
     page = None
     content = ""
+    lines = []
     top = 0
     query = ""
     message = "Offline manual from lsl.lux-ai.cz; Enter opens a chapter."

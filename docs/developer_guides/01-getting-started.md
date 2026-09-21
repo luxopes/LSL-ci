@@ -146,7 +146,7 @@ Spusťte LSL bez argumentů:
 Objeví se:
 
 ```text
-Lux Simple Lang 0.8.2 interactive source mode
+Lux Simple Lang 0.8.3 interactive source mode
 Enter code; type exit on its own line to compile and run.
 >>>
 ```
@@ -434,7 +434,8 @@ LSL obsahuje řadu funkcí dostupných okamžitě, bez importování:
 | `readfile(cesta)` | Přečte textový soubor | `readfile("data.txt")` |
 | `writefile(cesta, text)` | Zapíše textový soubor | `writefile("out.txt", "ahoj")` |
 | `exists(cesta)` | Existuje soubor? | `exists("/etc/passwd")` |
-| `clock()` | Monotónní čas (sekundy) | `clock()` |
+| `clock()` | Čitelné datum a čas v UTC | `clock()` |
+| `monotonic()` | Monotónní čas (sekundy) | `monotonic()` |
 | `arg(n)` | Argument programu | `arg(1)` |
 | `arg_count()` | Počet argumentů | `arg_count()` |
 | `exit(kod)` | Ukončí program | `exit(0)` |

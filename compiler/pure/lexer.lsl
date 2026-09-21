@@ -266,7 +266,7 @@ function tokenize(path, source):
             end
             if len(value) == 1 and index + 1 < count:
                 pair = character + chars[index + 1]
-                if pair == "==" or pair == "!=" or pair == "<=" or pair == ">=" or pair == "//" or pair == "+=" or pair == "-=" or pair == "*=" or pair == "/=" or pair == "%=" or pair == "<<" or pair == ">>" or pair == "&=" or pair == "|=" or pair == "~=":
+                if pair == "==" or pair == "!=" or pair == "<=" or pair == ">=" or pair == "//" or pair == "+=" or pair == "-=" or pair == "*=" or pair == "/=" or pair == "%=" or pair == "<<" or pair == ">>" or pair == "&=" or pair == "|=" or pair == "~=" or pair == "++" or pair == "--":
                     value = pair
                 end
             end
@@ -290,7 +290,7 @@ function tokenize(path, source):
                 if depth < 0:
                     call diagnostics.fail(path, line, start_column, len(value), source_line(lines, line), "E0005", "unexpected closing delimiter", "remove it or add the matching opening delimiter")
                 end
-            elif value != "+" and value != "-" and value != "*" and value != "/" and value != "%" and value != "^" and value != "=" and value != "<" and value != ">" and value != "!" and value != ":" and value != "," and value != "." and value != "&" and value != "|" and value != "~" and value != "==" and value != "!=" and value != "<=" and value != ">=" and value != "//" and value != "+=" and value != "-=" and value != "*=" and value != "/=" and value != "%=" and value != "<<" and value != ">>" and value != "&=" and value != "|=" and value != "~=" and value != "<<=" and value != ">>=":
+            elif value != "+" and value != "-" and value != "*" and value != "/" and value != "%" and value != "^" and value != "=" and value != "<" and value != ">" and value != "!" and value != ":" and value != "," and value != "." and value != "&" and value != "|" and value != "~" and value != "==" and value != "!=" and value != "<=" and value != ">=" and value != "//" and value != "+=" and value != "-=" and value != "*=" and value != "/=" and value != "%=" and value != "<<" and value != ">>" and value != "&=" and value != "|=" and value != "~=" and value != "<<=" and value != ">>=" and value != "++" and value != "--":
                 call diagnostics.fail(path, line, start_column, len(value), source_line(lines, line), "E0006", "unexpected character", "remove the character or put it inside a String")
             end
             result.append(token("symbol", value, line, start_column, column))

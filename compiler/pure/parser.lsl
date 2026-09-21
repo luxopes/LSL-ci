@@ -1020,6 +1020,7 @@ function parse_statement_inner(parser):
         call consume_line_end(parser)
         result = node("load", opening)
         result["module"] = name
+        result["module_column"] = module["column"]
         result["symbol"] = None
         result["alias"] = alias
         return result
@@ -1043,6 +1044,7 @@ function parse_statement_inner(parser):
         call consume_line_end(parser)
         result = node("load", opening)
         result["module"] = name
+        result["module_column"] = module["column"]
         result["symbol"] = symbol["value"]
         result["alias"] = alias
         return result
@@ -1068,13 +1070,43 @@ function parse_statement_inner(parser):
     end
 
     call_prefix = match(parser, "call")
+    increment = ""
+    if check(parser, "++") or check(parser, "--"):
+        increment = advance(parser)["value"]
+    end
     left = parse_expression(parser)
+    if check(parser, "++") or check(parser, "--"):
+        if increment != "":
+            call fail_at(parser, current(parser), "E1243", "only one increment or decrement is allowed", "use i++ or --i as a separate statement")
+        end
+        increment = advance(parser)["value"]
+    end
+    if increment != "":
+        if left["kind"] != "name" or call_prefix:
+            call fail_at(parser, opening, "E1243", "increment/decrement requires a variable statement", "use i++ or --i on an initialized numeric variable; expressions are not supported")
+        end
+        call consume_line_end(parser)
+        result = synthetic_assign(opening, left, {"kind": "literal", "literal_kind": "number", "value": "1", "integer_value": 1, "line": opening["line"], "column": opening["column"], "end_column": opening["end_column"]})
+        result["operator"] = increment[0] + "="
+        return finish_node(result, parser)
+    end
     operator = current(parser)["value"]
     if operator == "=" or operator == "+=" or operator == "-=" or operator == "*=" or operator == "/=" or operator == "%=" or operator == "&=" or operator == "|=" or operator == "~=" or operator == "<<=" or operator == ">>=":
         call advance(parser)
         value = parse_expression(parser)
         call consume_line_end(parser)
         result = node("assign", opening)
+        if left["kind"] == "call":
+            if operator != "=" or left["target"]["kind"] != "name" or len(left["arguments"]) != 1 or "argument_names" in left or left["arguments"][0]["kind"] != "name":
+                call fail_at(parser, opening, "E1244", "invalid typed variable declaration", "use Int(x) = 10 or String(s) = \"text\"")
+            end
+            declared_type = left["target"]["name"]
+            if declared_type not in ["Int", "Float", "Bool", "String", "List", "Tuple", "Dictionary", "Set", "RealArray", "IntArray", "FloatArray", "ByteArray", "Function", "Any"]:
+                call fail_at(parser, opening, "E1244", "unknown declaration type: " + declared_type, "use a built-in type, for example Int, String, List or Dictionary")
+            end
+            result["declared_type"] = declared_type
+            left = left["arguments"][0]
+        end
         result["target"] = left
         result["operator"] = operator
         result["value"] = value

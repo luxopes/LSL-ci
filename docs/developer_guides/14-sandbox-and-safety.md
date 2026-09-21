@@ -28,6 +28,23 @@ není aplikována.
 
 ## Spuštění v sandboxu
 
+### Inicializace proměnných
+
+Ve vydání 0.8.3 byla opravena memory-safety chyba: lokál přiřazený až
+později dostal slot i statický typ, ale jeho dřívější čtení používalo obsah
+zásobníku. Referenční typ tak mohl způsobit SIGSEGV i bez `unsafe`.
+
+Compiler nyní před generováním kódu provádí definite-assignment analýzu
+včetně větví, návratů, smyček, výjimek a `del`. Porušení odmítne E2002 v
+režimu spuštění i při `lsl compile`; `safe` neopravuje neplatný tok programu.
+Lokály nepotřebují nulování ani běhové příznaky. Čtení globálů z funkcí
+navíc kontroluje inicializační příznak v místě čtení, protože funkce nebo
+callback může být zavolán před inicializací modulu. Chyba je `NameError`
+zachytitelný v `safe`/`try`. To nepředstavuje důkaz absence jiných chyb
+compileru ani synchronizaci sdílených dat mezi vlákny.
+
+### Procesové spuštění
+
 ```text
 lsl sandbox program.lsl
 lsl sandbox --timeout 10 --memory 536870912 program.lsl arg1

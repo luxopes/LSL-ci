@@ -451,6 +451,15 @@ function store_memory_imm32(base_register, displacement, value):
     return result
 end
 
+function cmp_memory_imm8(base_register, displacement, value):
+    mode = memory_mode(base_register, displacement)
+    result = [rex(True, False, False, base_register >= 8), 131]
+    result.extend(memory_tail(base_register, mode, 7))
+    call append_displacement(result, mode, displacement)
+    result.append(value & 255)
+    return result
+end
+
 function lea_base(destination, base_register, displacement):
     mode = memory_mode(base_register, displacement)
     result = [rex(True, destination >= 8, False, base_register >= 8), 141]

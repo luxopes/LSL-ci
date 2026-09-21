@@ -1,6 +1,6 @@
 # 📋 Referenční příručka všech funkcí LSL
 
-Kompletní seznam všech funkcí, metod a built-in příkazů LSL 0.7.
+Kompletní seznam všech funkcí, metod a built-in příkazů LSL 0.8.3.
 Každá položka obsahuje název, signaturu a stručný popis.
 
 ---
@@ -43,6 +43,22 @@ Nově v 0.7.8: modul [random](16-random.md),
 | `sorted(iterable)` | Vrátí stabilně vzestupně seřazený nový List; původní kolekci nemění. Jeden argument, bez `key`/`reverse`. |
 | `dedup(list)` | Vrátí mělký List bez duplicit, v pořadí prvních výskytů; podporuje i vnořené měnitelné kolekce. |
 
+### Proměnné a deklarace
+
+Lokální proměnná musí mít hodnotu na každé dosažitelné cestě před čtením;
+jinak compiler hlásí E2002, i uvnitř `safe`. `del(x)` inicializaci ruší.
+
+`Int(x) = 10` deklaruje typové omezení, nikoli převod. Omezení platí v celé
+lexikální oblasti, také pro další přiřazení, `+=` a vazby `for`. Nesprávný
+typ vyvolá zachytitelný TypeError bez změny původní hodnoty. Podporované typy:
+Int, Float, Bool, String, List, Tuple, Dictionary, Set, RealArray, IntArray,
+FloatArray, ByteArray, Function a neomezující Any. Konflikt deklarací je
+E2003; parametr funkce takto znovu deklarovat nelze.
+
+`i++`, `i--`, `++i`, `--i` jsou samostatné příkazy nad inicializovanou
+číselnou proměnnou, jako `+= 1` / `-= 1`. Nejsou hodnotové výrazy
+a nepodporují indexované ani členské cíle.
+
 ### <span class="badge badge-builtin">INTROSPEKCE</span> Zjištění typu
 
 | Funkce | Popis |
@@ -84,11 +100,13 @@ a `>>=` fungují stejně jako `+=`.
 | `chr(code)` | Vrátí znak (String) pro daný Unicode code point. |
 | `ord(char)` | Vrátí Unicode code point prvního znaku řetězce. |
 
-### Čas (základní)
+### Čas a procesy (základní)
 
 | Funkce | Popis |
 |---|---|
-| `clock()` | Vrátí monotónní čas v sekundách (Float). |
+| `clock()` | Čitelné datum a čas jako String `YYYY-MM-DD HH:MM:SS UTC`. |
+| `monotonic()` | Monotónní čas v sekundách (Float) pro intervaly a timeouty. |
+| `system(command)` | Alias `os.run(command)` bez importu; String/argv List, bez shellu, vrací exit status. |
 
 ### <span class="badge badge-builtin">VLÁKNA</span> Vlákna a atomické operace
 

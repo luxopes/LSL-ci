@@ -8,6 +8,7 @@
 
 load env
 load fd
+load time
 
 MAX_XAUTHORITY = 1048576
 MAX_X11_REPLY = 1048576
@@ -66,8 +67,69 @@ function get16be(data, offset):
     return typed[start] * 256 + typed[start + 1]
 end
 
+function write_failure(handle, message):
+    unsafe:
+        # A partially sent X11 request cannot be retried from the beginning.
+        # Shut down, but leave descriptor ownership with Display.close().
+        call __lsl_syscall(48, Int(handle), 2, 0, 0)
+    end
+    Error(X11Error: message)
+end
+
+function write_bytes(handle, buffer, count, timeout=10.0):
+    unsafe:
+        payload = ByteArray(buffer)
+        amount = Int(count)
+        descriptor = Int(handle)
+        seconds = Float(timeout)
+        if amount < 0 or amount > len(payload):
+            Error(X11Error: "invalid X11 write buffer length")
+        elif not (seconds > 0.0 and seconds <= 60.0):
+            Error(X11Error: "X11 write timeout must be in (0, 60] seconds")
+        end
+        offset = 0
+        deadline = time.monotonic() + seconds
+        readiness = None
+        while offset < amount:
+            # Per-call nonblocking + MSG_NOSIGNAL. Unlike fd.write, sendto
+            # returns each partial count, so no prefix is lost or duplicated.
+            sent = __lsl_syscall6(44, descriptor, __lsl_data_address(payload) + offset, amount - offset, 16448, 0, 0)
+            if sent > 0:
+                offset += sent
+                continue
+            elif sent != -11 and sent != -4:
+                call write_failure(descriptor, "X server connection failed while sending graphics (errno " + String(0 - sent) + "); reopen the window")
+            end
+            remaining = deadline - time.monotonic()
+            if remaining <= 0.0:
+                call write_failure(descriptor, "timed out sending graphics: the X server is not accepting data; reopen the window")
+            end
+            if sent == -4:
+                continue
+            end
+            # Allocate/poll only under backpressure, never busy-spin on EAGAIN.
+            if readiness == None:
+                readiness = __lsl_byte_zeros(8)
+                readiness[0] = descriptor % 256
+                readiness[1] = descriptor // 256 % 256
+                readiness[2] = descriptor // 65536 % 256
+                readiness[3] = descriptor // 16777216 % 256
+                readiness[4] = 4
+            end
+            wait_ms = min(60000, max(1, Int(remaining * 1000.0) + 1))
+            ready = __lsl_syscall(7, __lsl_data_address(readiness), 1, wait_ms, 0)
+            if ready < 0 and ready != -4:
+                call write_failure(descriptor, "cannot wait for the X server socket (errno " + String(0 - ready) + ")")
+            elif ready > 0 and (readiness[6] & 56) != 0:
+                call write_failure(descriptor, "X server connection closed while sending graphics; reopen the window")
+            end
+        end
+    end
+    return None
+end
+
 function send_bytes(handle, buffer):
-    call fd.write(handle, buffer, len(buffer))
+    call write_bytes(handle, buffer, len(buffer))
     return None
 end
 
@@ -84,11 +146,11 @@ function read_exact(handle, count):
             index += 1
         end
         collected = ByteArray()
-        deadline = clock() + 10.0
+        deadline = time.monotonic() + 10.0
         while len(collected) < count:
             got = fd.read(handle, chunk, count - len(collected))
             if got == fd.again:
-                if clock() >= deadline:
+                if time.monotonic() >= deadline:
                     Error(X11Error: "timed out waiting for the X server")
                 end
                 call __lsl_sleep(0.001)
@@ -232,9 +294,9 @@ function intern_atom(handle, name):
         index += 1
     end
     call send_bytes(handle, request)
-    deadline = clock() + 10.0
+    deadline = time.monotonic() + 10.0
     loop:
-        if clock() >= deadline:
+        if time.monotonic() >= deadline:
             Error(X11Error: "timed out waiting for InternAtom")
         end
         message = ByteArray(read_exact(handle, 32))
@@ -495,7 +557,7 @@ end
 # 24-byte header and strip payload are written into the caller's reusable
 # `request` buffer by index assignment (no per-strip allocation), so a
 # redraw loop produces no garbage for the conservative GC to retain. Each
-# strip stays small so one fd.write drains without a write/read deadlock.
+# strip stays small and the writer preserves partial-send progress.
 function put_image(handle, window_id, gc_id, depth, width, rows, packed, request):
     window_width = Int(width)
     row_count = Int(rows)
@@ -550,7 +612,7 @@ function put_image(handle, window_id, gc_id, depth, width, rows, packed, request
             out[24 + i] = buffer[start + i]
             i += 1
         end
-        call fd.write(handle, out, 24 + length)
+        call write_bytes(handle, out, 24 + length)
         row += count
     end
     return None

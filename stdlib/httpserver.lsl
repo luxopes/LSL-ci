@@ -797,13 +797,9 @@ function serve_listener(listener, root_handle, handler, maximum_requests, announ
             else:
                 # Application failures are request-local. Always close the
                 # client and keep the bounded listener usable for later work.
-                handler_failed = False
                 try:
                     response = normalize_app_response(handler(request))
                 else:
-                    handler_failed = True
-                end
-                if handler_failed:
                     response = {"status": 500, "reason": "Internal Server Error", "body": "500 Internal Server Error" + chr(10), "content_type": "text/plain; charset=utf-8"}
                 end
             end

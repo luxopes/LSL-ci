@@ -1,5 +1,61 @@
 # Dynamic operations implemented in LSL and compiled by the direct backend.
 
+function __lsl_require_declared(value, expected):
+    actual = type(value)
+    if actual != expected:
+        Error(TypeError: "typed variable requires " + expected + ", got " + actual)
+    end
+    return value
+end
+
+function __lsl_clock_digits(value, width):
+    result = String(value)
+    while len(result) < width:
+        result = "0" + result
+    end
+    return result
+end
+
+function __lsl_clock_leap(year):
+    return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
+end
+
+function __lsl_clock_text(seconds):
+    value = Float(seconds)
+    if not (value >= -62135596800.0 and value < 253402300800.0):
+        Error(ValueError: "clock date is outside years 0001..9999")
+    end
+    stamp = Int(value // 1.0)
+    days = stamp // 86400
+    within_day = stamp % 86400
+    # Gregorian dates repeat every 400 years (146097 days). At most 399
+    # year steps remain, including for negative Unix timestamps.
+    cycles = days // 146097
+    year = 1970 + cycles * 400
+    days -= cycles * 146097
+    loop:
+        count = 365
+        if __lsl_clock_leap(year):
+            count = 366
+        end
+        if days < count:
+            break
+        end
+        days -= count
+        year += 1
+    end
+    months = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    if __lsl_clock_leap(year):
+        months[1] = 29
+    end
+    month = 0
+    while days >= months[month]:
+        days -= Int(months[month])
+        month += 1
+    end
+    return __lsl_clock_digits(year, 4) + "-" + __lsl_clock_digits(month + 1, 2) + "-" + __lsl_clock_digits(days + 1, 2) + " " + __lsl_clock_digits(within_day // 3600, 2) + ":" + __lsl_clock_digits(within_day // 60 % 60, 2) + ":" + __lsl_clock_digits(within_day % 60, 2) + " UTC"
+end
+
 function __lsl_is_space(character):
     return character == " " or character == "\t" or character == "\r" or character == "\n"
 end
@@ -268,7 +324,9 @@ function __lsl_help_text(topic):
         "arg_count": "arg_count() -> Int\nReturn the number of program arguments including the executable name.",
         "last_error": "last_error() -> String\nReturn the most recent caught LSL error text.",
         "gc": "gc()\nRequest garbage collection. References still reachable from the program remain alive.",
-        "clock": "clock() -> Float\nReturn the runtime clock value for timing. See the time module for sleep and wall time.",
+        "clock": "clock() -> String\nReadable current UTC date and time: YYYY-MM-DD HH:MM:SS UTC. For elapsed time use monotonic() or time.perf_counter().",
+        "monotonic": "monotonic() -> Float\nMonotonic seconds for measuring durations, timeouts and frame pacing. Never use clock() for elapsed-time arithmetic.",
+        "system": "system(command) -> Int\nBuilt-in alias of os.run(command). Accept a command String or an argv List; resolve PATH and return the exit status. No shell expansion or pipes. No load os is required.",
         "chr": "chr(CODEPOINT) -> String\nConstruct a one-character Unicode String.",
         "ord": "ord(CHARACTER) -> Int\nReturn the Unicode codepoint of one character.",
         "random": "load random\nPython-style MT19937 Random and OS-backed SystemRandom. Supports seed/state,\nrandom/randrange/randint/getrandbits/randbytes, choice/choices/sample/shuffle,\nand probability distributions. Example: rng = random.Random(42)\nSee lsl man random for compatibility and exact limits.",
@@ -288,7 +346,7 @@ function __lsl_help_text(topic):
     if topic == "":
         names = topics.keys()
         call names.sort()
-        return "Lux Simple Lang (LSL) 0.8.2" + chr(10) + "Use help(\"TOPIC\") for details; lsl man opens the full offline manual." + chr(10) + "topics: " + " ".join(names)
+        return "Lux Simple Lang (LSL) 0.8.3" + chr(10) + "Use help(\"TOPIC\") for details; lsl man opens the full offline manual." + chr(10) + "topics: " + " ".join(names)
     end
     if topic not in topics:
         Error(HelpError: "unknown help topic; call help() to list supported topics")
@@ -1189,7 +1247,6 @@ function __lsl_format_float(value):
         parsed_bits = __lsl_float_candidate_bits(significand, 17, exponent)
         attempts += 1
         if parsed_bits != target_bits:
-            crossed = False
             if previous_bits < target_bits and parsed_bits > target_bits:
                 low_bits = previous_bits
                 low_significand = previous_significand
@@ -1197,7 +1254,6 @@ function __lsl_format_float(value):
                 high_bits = parsed_bits
                 high_significand = significand
                 high_exponent = exponent
-                crossed = True
             elif previous_bits > target_bits and parsed_bits < target_bits:
                 low_bits = parsed_bits
                 low_significand = significand
@@ -1205,18 +1261,17 @@ function __lsl_format_float(value):
                 high_bits = previous_bits
                 high_significand = previous_significand
                 high_exponent = previous_exponent
-                crossed = True
+            else:
+                continue
             end
-            if crossed:
-                if target_bits - low_bits <= high_bits - target_bits:
-                    significand = low_significand
-                    exponent = low_exponent
-                else:
-                    significand = high_significand
-                    exponent = high_exponent
-                end
-                break
+            if target_bits - low_bits <= high_bits - target_bits:
+                significand = low_significand
+                exponent = low_exponent
+            else:
+                significand = high_significand
+                exponent = high_exponent
             end
+            break
         end
     end
 
