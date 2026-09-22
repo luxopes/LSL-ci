@@ -323,7 +323,7 @@ function __lsl_help_text(topic):
         "arg": "arg(INDEX) -> String or None\nRead a program argument; arg(1) is the first user argument.",
         "arg_count": "arg_count() -> Int\nReturn the number of program arguments including the executable name.",
         "last_error": "last_error() -> String\nReturn the most recent caught LSL error text.",
-        "gc": "gc()\nRequest garbage collection. References still reachable from the program remain alive.",
+        "gc": "gc()\nRequest an immediate garbage collection. Normally memory is collected automatically according to allocation pressure; manual calls are optional. Reachable references remain alive. The main thread coordinates collection; worker calls return 0.",
         "clock": "clock() -> String\nReadable current UTC date and time: YYYY-MM-DD HH:MM:SS UTC. For elapsed time use monotonic() or time.perf_counter().",
         "monotonic": "monotonic() -> Float\nMonotonic seconds for measuring durations, timeouts and frame pacing. Never use clock() for elapsed-time arithmetic.",
         "system": "system(command) -> Int\nBuilt-in alias of os.run(command). Accept a command String or an argv List; resolve PATH and return the exit status. No shell expansion or pipes. No load os is required.",
@@ -346,7 +346,7 @@ function __lsl_help_text(topic):
     if topic == "":
         names = topics.keys()
         call names.sort()
-        return "Lux Simple Lang (LSL) 0.8.3" + chr(10) + "Use help(\"TOPIC\") for details; lsl man opens the full offline manual." + chr(10) + "topics: " + " ".join(names)
+        return "Lux Simple Lang (LSL) 0.8.4" + chr(10) + "Use help(\"TOPIC\") for details; lsl man opens the full offline manual." + chr(10) + "topics: " + " ".join(names)
     end
     if topic not in topics:
         Error(HelpError: "unknown help topic; call help() to list supported topics")

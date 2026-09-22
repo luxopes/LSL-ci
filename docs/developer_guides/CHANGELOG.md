@@ -4,6 +4,18 @@ Na této stránce jsou uživatelsky významné změny vydaných verzí. Stabiln�
 manuály a soubory ke stažení zůstávají dostupné v
 [historii vydání](/releases/).
 
+## 0.8.4 — 22. 9. 2026
+
+- Automatický GC podle alokovaných bajtů, nikoli pouze při formátování Float;
+  herní smyčky nepotřebují ruční `gc()`.
+- Adaptivní rozpočet a opětovné použití paměti, nealokující číselné smyčky
+  bez GC kontrol.
+- Iterativní průchod hlubokých a cyklických kolekcí bez alokace či rekurze.
+- Bezpečné rozlišení raw bufferů, zachování kořenů a výjimek při úklidu.
+- GC pokračuje během `thread_join()`; interní signál nezpůsobuje falešné
+  chyby `run()` / `capture()` při čekání na podproces.
+- Samostatné dříve zkompilované programy je nutné znovu přeložit.
+
 ## 0.8.3 — 21. 9. 2026
 
 - Opraveno čtení neinicializovaných lokálů, které mohlo vracet obsah zásobníku

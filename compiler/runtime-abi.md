@@ -1,10 +1,10 @@
 # Pure-LSL native runtime ABI
 
-Stav: interní Linux x86_64 ABI verze 0.6. Není to veřejné plugin ABI.
+Stav: interní Linux x86_64 ABI vydání 0.8.4. Není to veřejné plugin ABI.
 
 ## Strojová hranice
 
-Compiler generuje SysV-like volání: prvních šest argumentů je v `rdi`, `rsi`, `rdx`, `rcx`, `r8`, `r9`, další argumenty jsou na zásobníku a výsledek je v `rax`. `r12` ukazuje na main/global frame, `r13` drží poslední error String, `r14` error flag, `r15` původní process stack a `rbx` adresu 96-byte allocator/GC/process/input state bloku rezervovaného přes `brk`.
+Compiler generuje SysV-like volání: prvních šest argumentů je v `rdi`, `rsi`, `rdx`, `rcx`, `r8`, `r9`, další argumenty jsou na zásobníku a výsledek je v `rax`. `r12` až `r15` jsou callee-saved registry pro statické Int/Bool lokály. `rbx` drží runtime state; `fs:0`, `fs:8`, `fs:16` nesou pending error, error flag a stack top vlákna. Stav a free-list hlavičky zabírají 1280 bajtů před globály.
 
 Runtime je emitován přímo jako x86_64 bytes z LSL modulů. Nepoužívá libc, C ABI runtime, assembler ani linker.
 
@@ -54,10 +54,24 @@ Object identity se neurčuje hranicí ELF adresy. Každá alokace se zapisuje do
 Heap používá conservative mark-sweep:
 
 - roots jsou globální frame a aktivní native stack;
-- List/Tuple/RealArray a Dictionary hrany se procházejí rekurzivně;
+- hrany kolekcí se procházejí iterativním intrusive worklistem bez alokace;
 - cycles jsou podporované;
 - sweep bloky vrací do size-aware free listu;
-- `gc()` spouští collection explicitně.
+- collection je automatická podle byte-pressure; `gc()` ji může vyžádat výslovně.
+
+GC hlavička bloku má kapacitu (+0), další heap blok (+8), druh/stav
+(+16: 0 objekt, 1 volný, 2 raw buffer) a mark/free-list word (+24).
+Raw buffer se pouze označuje, nikdy se jeho obsah neinterpretuje jako objekt.
+Během mark fáze +24 zároveň nese intrusive worklist link (1 značí konec);
+state+184 drží jeho hlavu. State+8 indikuje nehotový buffer pozastaveného
+workeru: takový sweep nic neuvolní. State+144 počítá alokované bajty,
+state+152 je rozpočet `max(4 MiB, 2 * live_bytes)`.
+
+Automatické safepointy jsou na dokončených source-expression hranicích,
+ne v alokátoru; explicitní unsafe a interní helpery je nemají. Slow path
+ukládá registry do skenovaného stack frame. Koordinátorem je hlavní vlákno,
+včetně timed-futex čekání v join; worker GC sám nespouští. Graf se prochází
+až po pozastavení workerů. SIGUSR1 má SA_RESTART; process wait4 opakuje EINTR.
 
 ELF image je statický PIE `ET_DYN` s nulovou virtuální bází, jediným RX
 `PT_LOAD` a explicitním RW `PT_GNU_STACK`; nemá interpreter, dynamic sekci ani

@@ -365,6 +365,11 @@ vlákno: zastaví workery signálem `SIGUSR1`, konzervativně projde jejich živ
 zásobníky (včetně registrů uložených v signal frame) a po sweepu je probudí.
 Ve workeru `gc()` vrátí `0` bez akce.
 
+Od 0.8.4 se úklid spouští automaticky podle objemu alokací, včetně reuse.
+Hlavní vlákno jej obsluhuje také během `thread_join()`. Normální program
+nepotřebuje ruční `gc()`; dlouhá jiná blokující operace může úklid odložit.
+Kořeny a kolekce se procházejí iterativně bez omezení hloubkou rekurze.
+
 ## Mazání
 
 ```lsl

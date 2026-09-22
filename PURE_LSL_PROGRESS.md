@@ -1,6 +1,30 @@
 # Pure-LSL migration
 
-## Aktuální vydání 0.8.3 — 21. 9. 2026
+## Aktuální vydání 0.8.4 — 22. 9. 2026
+
+Automatický GC podle alokovaných bajtů včetně reuse; adaptivní rozpočet
+4 MiB / dvojnásobek živých bloků. Compiler vynechává kontroly u prokázaných
+nealokujících výrazů. Kořeny v registrech se ukládají na pomalé cestě.
+Iterativní intrusive worklist nahrazuje omezenou rekurzi, raw buffery mají
+samostatný alokační druh a rozpracované buffery odloží sweep bezpečně.
+Hlavní vlákno obsluhuje GC i při join; interní signál restartuje blokující
+syscally a process wait4 opakuje EINTR. Přidány samostatné paměťové,
+kořenové, thread/process a codegen regrese bez ručního gc v herním testu.
+
+Compiler uklízí mezivýsledky po parse/link fázi a dávkách 32 emitovaných
+funkcí. Stage 2/3 je bitově shodný; všechny veřejné nástroje sestaveny
+sériově pod 2 GiB. Plná sada pod 4 GiB včetně skutečné GTX 1650 prošla.
+Compiler SHA-256:
+`86d7487bbeaf6afdfc356e82fc77cbdccf1563b99f10756d9c574de18e261ed9`;
+CLI: `2c2e081b0d86dee46831f2e82070b7703cd4ced0978a55e0b3b5ff15c86b2b92`.
+Pět sériových měření stejného Snake bez gc: medián 200 snímků
+4,172 -> 0,715 s, RSS 668 276 -> 5 956 KiB. Po 10 000 snímcích
+zůstává RSS 5 956 KiB. Int smyčka: 0,2541 -> 0,2543 s (prakticky shodné).
+
+Podrobnosti: `docs/release-0.8.4.md`. Release ověření a měření:
+`.build/release-0.8.4/`.
+
+## Vydání 0.8.3 — 21. 9. 2026
 
 Opraveno čtení lokálu před přiřazením: reprodukce `len(s)` před pozdějším
 `s = "ahoj"` končila SIGSEGV, nyní ji compiler odmítá E2002 se zdrojovým

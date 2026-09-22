@@ -1,0 +1,1 @@
+allocation-free loops have no GC polls; allocating paths have safepoints

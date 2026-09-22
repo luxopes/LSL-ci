@@ -3598,10 +3598,10 @@ function emit_expression(generator, syntax):
                 elif argument_type == "Float":
                     format_float_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_format_float"}, "arguments": syntax["arguments"]}
                     call emit_expression(generator, format_float_call)
-                    # Root the returned String while a bounded post-format GC
-                    # reclaims the formatter's temporary Float/String objects.
+                    # Root the returned String while a post-format pressure
+                    # poll reclaims formatter temporaries at a safe boundary.
                     call assembler.emit(output, x86_64.push(0))
-                    call assembler.relative(output, [232], "runtime_maybe_gc")
+                    call emit_gc_poll(generator)
                     call assembler.emit(output, x86_64.pop(0))
                 elif argument_type == "Int":
                     call emit_expression(generator, syntax["arguments"][0])
@@ -5236,7 +5236,7 @@ function emit_print_value(generator, expression):
             call emit_expression(generator, format_float_call)
             call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
             call assembler.relative(generator["builder"], [232], "runtime_print_string")
-            call assembler.relative(generator["builder"], [232], "runtime_maybe_gc")
+            call emit_gc_poll(generator)
             return
         end
         call emit_expression(generator, expression)
@@ -5262,9 +5262,117 @@ function emit_print_value(generator, expression):
     end
 end
 
+function expression_may_allocate(generator, syntax):
+    # Conservative effect test: only omit a poll when the entire expression
+    # is known not to allocate. Unknown calls and dynamic values stay covered.
+    kind = syntax["kind"]
+    if kind == "name":
+        return False
+    elif kind == "literal":
+        value_type = infer_expression_type(syntax, generator["types"], generator["function_returns"])
+        return value_type != "Int" and value_type != "Bool" and value_type != "None"
+    elif kind == "unary":
+        operand_type = infer_expression_type(syntax["operand"], generator["types"], generator["function_returns"])
+        return (operand_type != "Int" and operand_type != "Bool") or expression_may_allocate(generator, syntax["operand"])
+    elif kind == "binary":
+        left_type = infer_expression_type(syntax["left"], generator["types"], generator["function_returns"])
+        right_type = infer_expression_type(syntax["right"], generator["types"], generator["function_returns"])
+        result_type = infer_expression_type(syntax, generator["types"], generator["function_returns"])
+        if (left_type == "Int" or left_type == "Bool") and (right_type == "Int" or right_type == "Bool") and (result_type == "Int" or result_type == "Bool"):
+            return expression_may_allocate(generator, syntax["left"]) or expression_may_allocate(generator, syntax["right"])
+        end
+    elif kind == "compare":
+        for operand in syntax["operands"]:
+            operand_type = infer_expression_type(operand, generator["types"], generator["function_returns"])
+            if (operand_type != "Int" and operand_type != "Bool") or expression_may_allocate(generator, operand):
+                return True
+            end
+        end
+        return False
+    elif kind == "index":
+        target_type = infer_expression_type(syntax["target"], generator["types"], generator["function_returns"])
+        index_type = infer_expression_type(syntax["index"], generator["types"], generator["function_returns"])
+        if (target_type == "IntArray" or target_type == "ByteArray") and index_type == "Int":
+            return expression_may_allocate(generator, syntax["target"]) or expression_may_allocate(generator, syntax["index"])
+        end
+    elif kind == "call" and syntax["target"]["kind"] == "name":
+        name = syntax["target"]["name"]
+        arguments = syntax["arguments"]
+        if len(arguments) == 1:
+            argument_type = infer_expression_type(arguments[0], generator["types"], generator["function_returns"])
+            if (name == "Int" or name == "__lsl_declared_Int") and argument_type == "Int":
+                return expression_may_allocate(generator, arguments[0])
+            elif name == "__lsl_declared_Bool" and argument_type == "Bool":
+                return expression_may_allocate(generator, arguments[0])
+            elif name == "len" and argument_type != "Any":
+                return expression_may_allocate(generator, arguments[0])
+            end
+        end
+    end
+    return True
+end
+
+function emit_gc_poll(generator):
+    if generator["internal_abi"] or generator.get("current_internal_function", False) or generator.get("gc_unsafe", False):
+        return
+    end
+    # The fast path is two loads, a compare and a normally taken branch.
+    # No call, register spills or heap scan until the byte budget is reached.
+    output = generator["builder"]
+    done = label_name(generator, "gc_poll_done")
+    call assembler.emit(output, x86_64.load_memory(10, 3, 144))
+    call assembler.emit(output, x86_64.load_memory(11, 3, 152))
+    call assembler.emit(output, x86_64.cmp_reg_reg(10, 11))
+    call assembler.relative(output, [15, 140], done)
+    call assembler.relative(output, [232], "runtime_maybe_gc")
+    call assembler.label(output, done)
+end
+
+function emit_statement_gc_poll(generator, statement):
+    if generator["internal_abi"] or generator.get("current_internal_function", False) or generator.get("gc_unsafe", False):
+        return
+    end
+    kind = statement["kind"]
+    needed = False
+    if kind == "assign":
+        target = statement["target"]
+        needed = expression_may_allocate(generator, statement["value"])
+        if target["kind"] == "name":
+            target_type = generator["types"].get(target["name"], "Any")
+            needed = needed or (target_type != "Int" and target_type != "Bool")
+        elif target["kind"] == "index":
+            target_type = infer_expression_type(target["target"], generator["types"], generator["function_returns"])
+            needed = needed or expression_may_allocate(generator, target) or (target_type != "IntArray" and target_type != "ByteArray")
+        else:
+            needed = True
+        end
+    elif kind == "expression":
+        needed = expression_may_allocate(generator, statement["expression"])
+    elif kind == "print":
+        for expression in statement["expressions"]:
+            value_type = infer_expression_type(expression, generator["types"], generator["function_returns"])
+            needed = needed or expression_may_allocate(generator, expression) or (value_type != "Int" and value_type != "Bool" and value_type != "String")
+        end
+    elif kind == "return":
+        expression = statement["expression"]
+        needed = generator.get("current_return_type", "Any") == "Any"
+        if expression != None:
+            needed = needed or expression_may_allocate(generator, expression)
+        end
+    elif kind == "error" or kind == "delete" or kind == "class":
+        needed = True
+    elif kind == "for":
+        needed = expression_may_allocate(generator, statement["iterable"])
+    end
+    if needed:
+        call emit_gc_poll(generator)
+    end
+end
+
 function emit_statements(generator, statements, break_label, continue_label, return_label):
     for statement in statements:
         kind = statement["kind"]
+        call emit_statement_gc_poll(generator, statement)
         if kind == "assign":
             target = statement["target"]
             if target["kind"] == "name":
@@ -5594,6 +5702,9 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 while branch_index < len(statement["branches"]):
                     next_label = label_name(generator, "if_next")
                     branch = statement["branches"][branch_index]
+                    if not generator["internal_abi"] and expression_may_allocate(generator, branch[0]):
+                        call emit_gc_poll(generator)
+                    end
                     if not emit_branch_if_false(generator, branch[0], next_label):
                         call emit_condition(generator, branch[0])
                         call assembler.emit(generator["builder"], x86_64.cmp_reg_imm8(0, 0))
@@ -5619,6 +5730,9 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             end_label = label_name(generator, "loop_end")
             call assembler.label(generator["builder"], start_label)
             if kind == "while" and not constant_condition[0]:
+                if not generator["internal_abi"] and expression_may_allocate(generator, statement["condition"]):
+                    call emit_gc_poll(generator)
+                end
                 if not emit_branch_if_false(generator, statement["condition"], end_label):
                     call emit_condition(generator, statement["condition"])
                     call assembler.emit(generator["builder"], x86_64.cmp_reg_imm8(0, 0))
@@ -5676,6 +5790,9 @@ function emit_statements(generator, statements, break_label, continue_label, ret
                 continue_target = label_name(generator, "iter_continue")
                 end_label = label_name(generator, "iter_end")
                 call assembler.label(generator["builder"], start_label)
+                if iterable_type == "Any" or iterable_type == "String" or iterable_type == "FloatArray" or generator["types"].get(value_name, "Any") == "Any":
+                    call emit_gc_poll(generator)
+                end
                 call emit_load_local(generator, 7, iterator_name)
                 if iterable_type == "Any" and not generator["internal_abi"]:
                     call assembler.relative(generator["builder"], [232], "runtime_dynamic_length")
@@ -5797,6 +5914,9 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             continue_target = label_name(generator, "for_continue")
             end_label = label_name(generator, "for_end")
             call assembler.label(generator["builder"], start_label)
+            if dynamic_counter:
+                call emit_gc_poll(generator)
+            end
             call emit_load_local(generator, 0, loop_name)
             if dynamic_counter:
                 call assembler.emit(generator["builder"], x86_64.move_reg_reg(7, 0))
@@ -5848,7 +5968,10 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             end
             call assembler.relative(generator["builder"], [233], continue_label)
         elif kind == "unsafe":
+            old_gc_unsafe = generator.get("gc_unsafe", False)
+            generator["gc_unsafe"] = True
             call emit_statements(generator, statement["body"], break_label, continue_label, return_label)
+            generator["gc_unsafe"] = old_gc_unsafe
         elif kind == "safe":
             safe_end = label_name(generator, "safe_end")
             safe_failure = label_name(generator, "safe_failure")
@@ -6920,19 +7043,33 @@ function generate_mode(path, source, program, internal_abi):
     call native_runtime.emit_all(output)
     call thread_runtime.emit_all(output)
 
+    emitted_functions = 0
     for statement in program:
         if statement["kind"] == "function":
             # Topic help is optional runtime data. Do not grow every unrelated
             # standalone program by embedding the complete help catalog.
             if statement["name"] != "__lsl_help" and statement["name"] != "__lsl_help_text":
                 call emit_function(generator, statement)
+                emitted_functions += 1
             end
         elif statement["kind"] == "class":
             for member in statement["body"]:
                 if member["kind"] == "function":
                     call emit_function(generator, member)
+                    emitted_functions += 1
+                    if emitted_functions >= 32:
+                        call gc()
+                        emitted_functions = 0
+                    end
                 end
             end
+        end
+        # Compiler-host GC, not an instruction in the compiled program.
+        # A completed function has no half-built runtime buffers. Reclaim
+        # emission temporaries in batches while keeping AST/builder roots.
+        if emitted_functions >= 32:
+            call gc()
+            emitted_functions = 0
         end
     end
 
@@ -6952,8 +7089,8 @@ function generate_mode(path, source, program, internal_abi):
     # 96/104 heap/thread-table mutexes, 112 thread
     # table, 120 main stack top, 128 gc gate, 136 threads flag, 160..183 the
     # main thread's thread-local block (fs base: pending error, error flag,
-    # stack top), 144 the next bounded-GC object threshold, 152 its Float
-    # formatting counter and 184 the bounded mark depth; 192..1279 the 136
+    # stack top), 144 allocated bytes since collection, 152 the adaptive GC
+    # byte budget and 184 the GC worklist head; 192..1279 the 136
     # segregated free-list heads (128 exact 8-byte bins up to 1 KiB plus 8
     # range classes) (never GC roots); then the program
     # globals (globals_bytes) and the 1 MiB
@@ -6985,6 +7122,7 @@ function generate_mode(path, source, program, internal_abi):
     call assembler.emit(output, x86_64.store_memory(3, 56, 10))
     # Main-thread identity for gc() and envp lookup: the initial stack top.
     call assembler.emit(output, x86_64.store_memory(3, 120, 15))
+    call assembler.emit(output, x86_64.store_memory_imm32(3, 152, 4194304))
     # Thread-local block for the main thread: arch_prctl(ARCH_SET_FS, state+160),
     # then fs:16 = stack top (fs:0/fs:8 pending error state start zeroed).
     call assembler.emit(output, x86_64.mov_imm64(7, 4098))
@@ -7007,11 +7145,13 @@ function generate_mode(path, source, program, internal_abi):
     call assembler.relative(output, [15, 140], "runtime_fatal_allocation")
     call assembler.emit(output, x86_64.store_memory(3, 112, 0))
     # SIGUSR1 stop-the-world handler for gc(); it only ever fires in workers.
-    # rt_sigaction(SIGUSR1, {handler, SA_RESTORER, restorer, mask 0}, 0, 8).
+    # Restart blocking IO/wait4 after a GC suspension; an internal collection
+    # must not surface EINTR as a user-visible process or file failure.
+    # rt_sigaction(SIGUSR1, {handler, SA_RESTORER|SA_RESTART, restorer, 0}, 0, 8).
     call assembler.emit(output, x86_64.sub_reg_imm(4, 32))
     call assembler.relative(output, x86_64.lea_rip_prefix(0), "thread_signal_handler")
     call assembler.emit(output, x86_64.store_memory(4, 0, 0))
-    call assembler.emit(output, x86_64.mov_imm64(0, 67108864))
+    call assembler.emit(output, x86_64.mov_imm64(0, 335544320))
     call assembler.emit(output, x86_64.store_memory(4, 8, 0))
     call assembler.relative(output, x86_64.lea_rip_prefix(0), "thread_signal_restorer")
     call assembler.emit(output, x86_64.store_memory(4, 16, 0))

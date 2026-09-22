@@ -206,11 +206,11 @@ call require_output(httpserver_test, [httpserver_root], "tests/httpserver_confor
 call require_success(run(compiler, ["tests/codegen_optimization_conformance.lsl", optimization_test]), "compile codegen optimization conformance")
 call require_hardened_elf(optimization_test)
 call require_output(optimization_test, [], "tests/codegen_optimization_conformance.out", "codegen optimization output differs")
-# Readable UTC clock/strict declaration helpers and initialization safety add
-# about 3.2 KiB to the shared runtime. Measured baseline: 108317 bytes; keep
-# roughly 400 bytes of headroom, without relaxing the hot-path codegen tests.
-if len(readbytes(optimization_test)) > 108700:
-    Error(TestFailure: "optimized standalone ELF exceeds 108700 bytes")
+# Automatic GC, iterative tracing, raw-buffer metadata and EINTR recovery add
+# about 1.3 KiB over 0.8.3's 108317-byte baseline. Keep about 400 bytes of
+# headroom; the allocation-free and safe success-path instruction tests stay strict.
+if len(readbytes(optimization_test)) > 110000:
+    Error(TestFailure: "optimized standalone ELF exceeds 110000 bytes")
 end
 for collection_negative in ["sorted()", "sorted([], [])", "sorted([], key=None)", "dedup()", "dedup([], [])", "set([], [])", "set(values=[])", "set()[0]", "set().append(1)", "set().add()", "set().pop(0)", "set().union()", "set().discard(1, 2)"]:
     collection_source = test_path("collection-arity-negative.lsl")
@@ -221,7 +221,7 @@ end
 call require_success(run(compiler, ["compiler/pure/cli.lsl", cli_test]), "compile stdin CLI")
 call require_hardened_elf(cli_test)
 help_output = capture(cli_test, ["--help"])
-expected_help = "Lux Simple Lang (LSL) 0.8.3" + chr(10)
+expected_help = "Lux Simple Lang (LSL) 0.8.4" + chr(10)
 expected_help += chr(10)
 expected_help += "Usage:" + chr(10)
 expected_help += "  lsl [SOURCE [ARG...]]" + chr(10)
@@ -255,7 +255,7 @@ call require_output(catalog_test, [], "tests/compiler/catalog_conformance.out", 
 cli_080_test = test_path("cli-080-test")
 call require_success(run(compiler, ["tests/compiler/cli_080_conformance.lsl", cli_080_test]), "compile CLI 0.8.0 conformance")
 call require_output(cli_080_test, [cli_test, compiler], "tests/compiler/cli_080_conformance.out", "CLI 0.8.0 conformance differs")
-for release_test in ["color_conformance", "safe_codegen_conformance", "definite_assignment_conformance", "import_diagnostics_conformance", "language_safety_negative"]:
+for release_test in ["color_conformance", "safe_codegen_conformance", "automatic_gc_codegen_conformance", "definite_assignment_conformance", "import_diagnostics_conformance", "language_safety_negative"]:
     release_binary = test_path(release_test)
     call require_success(run(compiler, ["tests/compiler/" + release_test + ".lsl", release_binary]), "compile " + release_test)
     call require_output(release_binary, [cli_test], "tests/compiler/" + release_test + ".out", release_test + " differs")
@@ -270,11 +270,11 @@ if capture_status() != 0 or tui_keys_output != "buffered terminal keys passed" +
     Error(TestFailure: "buffered terminal keys differ")
 end
 version_output = capture(cli_test, ["version"])
-if capture_status() != 0 or version_output != "0.8.3" + chr(10):
+if capture_status() != 0 or version_output != "0.8.4" + chr(10):
     Error(TestFailure: "CLI version output differs")
 end
 version_flag_output = capture(cli_test, ["--version"])
-if capture_status() != 0 or version_flag_output != "0.8.3" + chr(10):
+if capture_status() != 0 or version_flag_output != "0.8.4" + chr(10):
     Error(TestFailure: "CLI --version output differs")
 end
 config_output = capture(cli_test, ["config", "examples/config/system.lsl"])
@@ -671,6 +671,11 @@ call require_success(run(compiler, ["tests/json_fuzz_conformance.lsl", json_fuzz
 call require_output(json_fuzz_test, [], "tests/json_fuzz_conformance.out", "JSON fuzz conformance output differs")
 call require_success(run(compiler, ["tests/gc_stress_conformance.lsl", gc_stress_test]), "compile GC stress conformance")
 call require_output(gc_stress_test, [], "tests/gc_stress_conformance.out", "GC stress conformance output differs")
+for gc_test in ["automatic_gc_conformance", "gc_raw_buffer_conformance", "automatic_gc_threads_conformance"]:
+    gc_binary = test_path(gc_test)
+    call require_success(run(compiler, ["tests/" + gc_test + ".lsl", gc_binary]), "compile " + gc_test)
+    call require_output(gc_binary, [], "tests/" + gc_test + ".out", gc_test + " differs")
+end
 call require_success(run(compiler, ["tests/compiler/frontend_fuzz.lsl", frontend_fuzz_test]), "compile frontend fuzz conformance")
 call require_output(frontend_fuzz_test, [], "tests/frontend_fuzz.out", "frontend fuzz conformance output differs")
 call require_success(run(compiler, ["tests/process_fault_conformance.lsl", process_fault_test]), "compile process fault conformance")

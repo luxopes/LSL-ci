@@ -1,6 +1,6 @@
 # 📋 Referenční příručka všech funkcí LSL
 
-Kompletní seznam všech funkcí, metod a built-in příkazů LSL 0.8.3.
+Kompletní seznam všech funkcí, metod a built-in příkazů LSL 0.8.4.
 Každá položka obsahuje název, signaturu a stručný popis.
 
 ---

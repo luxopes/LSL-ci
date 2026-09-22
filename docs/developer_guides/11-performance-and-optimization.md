@@ -6,6 +6,14 @@ maximální výkon.
 
 ## Než začnete optimalizovat
 
+Od LSL 0.8.4 probíhá úklid nepoužívané paměti automaticky podle objemu
+alokací. Do běžné herní smyčky není potřeba přidávat `gc()`.
+Rozpočet začíná na 4 MiB a přizpůsobuje se živému heapu; není to limit RSS.
+Nealokující číselné smyčky nemají GC kontroly. GC vrací bloky do alokátoru
+pro další použití, nikoli nutně ihned operačnímu systému. Není to hard-real-time
+collector: prodleva závisí na heapu a dlouhá jednotlivá operace může odložit
+další bezpečný bod. Hlavní vlákno obsluhuje úklid i během `thread_join()`.
+
 První pravidlo optimalizace: **neměřit znamená nevědět**. Než začnete
 kód zrychlovat, změřte, kde tráví čas. LSL k tomu poskytuje
 `time.perf_counter()` — monotónní čas s vysokým rozlišením.
@@ -553,10 +561,10 @@ kandidáta a porovnání raw IEEE-754 bitů. Korekční ani zkracovací smyčka 
 nevytváří pomocný heapový String a Float pro každý pokus. Veřejný
 `Float(String)` při čtení číslic mutuje jeden privátní akumulátor.
 
-Dlouhá smyčka s opakovaným formátováním může vytvářet výsledné Stringy, ale
-runtime po kombinaci alespoň 256 převodů a růstu registru objektů o 4 096
-adres spustí omezenou kolekci. Reprodukce se 60 000 převody tak drží RSS kolem
-31 MiB místo přibližně 5,1 GiB. Pro numerické hot pathy přesto dál preferujte
+Dlouhá smyčka s opakovaným formátováním vytváří výsledné Stringy. Od 0.8.4
+ji pokrývá stejný automatický byte-pressure GC jako ostatní alokující smyčky;
+dřívější podmínka 256 převodů a 4 096 nových adres již neplatí.
+Pro numerické hot pathy přesto dál preferujte
 `FloatArray` bulk kernely; optimalizace převodu není náhradou za neboxovaná
 pole.
 

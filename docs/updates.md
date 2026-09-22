@@ -111,7 +111,7 @@ Nezasahuje do skutečné uživatelské ani systémové instalace.
 HTTPS přenos a upgrade. Používá testovací frontend
 `tests/compiler/update_cli_fixture.lsl`, který pouze hlásí starou verzi 0.7.6;
 updater, podpis, archiv i installer jsou skutečné. Test očekává veřejnou
-stabilní 0.8.3 a argumenty: bezpečný rodičovský adresář pro dočasný testovací
+stabilní 0.8.4 a argumenty: bezpečný rodičovský adresář pro dočasný testovací
 HOME (ne pod world-writable `/tmp`), přeložený testovací frontend a cestu
 k `lsl-install`; volitelný čtvrtý argument změní očekávanou verzi.
 Nevytváří ani nepodepisuje produkční release.

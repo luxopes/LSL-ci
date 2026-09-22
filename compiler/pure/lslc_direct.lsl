@@ -75,5 +75,8 @@ if internal_abi:
 else:
     program.extend(linker.link(source_path, source))
 end
+# The compiler trust core uses raw temporaries, so it collects at explicit
+# phase boundaries rather than inside its low-level construction helpers.
+call gc()
 image = codegen.generate_mode(source_path, source, program, internal_abi)
 call writebytes(output_path, image)

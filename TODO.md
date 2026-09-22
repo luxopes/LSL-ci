@@ -2,6 +2,13 @@
 
 Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktuální handoff, pořadí blockerů a ověřovací příkazy jsou v `COMPLETION_PLAN.md`.
 
+## Opraveno v 0.8.4 — 22. 9. 2026
+
+- [x] Automatický GC i bez formátování Float a bez ručního `gc()` ve hře.
+- [x] Byte-pressure rozpočet, reuse a vynechání kontrol v čistých číselných smyčkách.
+- [x] Iterativní průchod hlubokých/cyklických grafů a rozlišení raw bufferů.
+- [x] Kořeny callbacků/výjimek, GC během join a odolné čekání na podprocesy.
+
 ## Opraveno v 0.8.3 — 21. 9. 2026
 
 - [x] Memory safety: čtení lokální proměnné před přiřazením vracelo obsah

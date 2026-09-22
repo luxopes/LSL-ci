@@ -354,6 +354,15 @@ function emit_join(output):
     call assembler.emit(output, x86_64.store_stack(-16, 9))
     call assembler.relative(output, [232], "runtime_table_unlock")
     call assembler.label(output, "join_wait")
+    # The main thread must still service allocation pressure while waiting
+    # for a worker that creates garbage. A bounded futex wait supplies a safe
+    # polling point; workers themselves remain non-collecting coordinators.
+    call assembler.emit(output, x86_64.load_memory(10, 3, 144))
+    call assembler.emit(output, x86_64.load_memory(11, 3, 152))
+    call assembler.emit(output, x86_64.cmp_reg_reg(10, 11))
+    call assembler.relative(output, [15, 140], "join_gc_ready")
+    call assembler.relative(output, [232], "runtime_maybe_gc")
+    call assembler.label(output, "join_gc_ready")
     call assembler.emit(output, x86_64.load_stack(9, -16))
     call assembler.emit(output, x86_64.load_memory(2, 9, 16))
     call assembler.emit(output, x86_64.cmp_reg_imm8(2, 0))
@@ -361,7 +370,9 @@ function emit_join(output):
     call assembler.emit(output, x86_64.lea_base(7, 9, 16))
     call assembler.emit(output, x86_64.xor_reg_reg(6, 6))
     call assembler.emit(output, x86_64.mov_imm64(0, 202))
-    call assembler.emit(output, x86_64.xor_reg_reg(10, 10))
+    call assembler.emit(output, x86_64.store_memory_imm32(5, -32, 0))
+    call assembler.emit(output, x86_64.store_memory_imm32(5, -24, 10000000))
+    call assembler.emit(output, x86_64.lea_base(10, 5, -32))
     call assembler.emit(output, x86_64.xor_reg_reg(8, 8))
     call assembler.emit(output, x86_64.syscall())
     call assembler.relative(output, [233], "join_wait")

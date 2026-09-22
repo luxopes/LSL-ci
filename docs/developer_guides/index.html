@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
-<meta name="description" content="Lux Simple Lang (LSL) je jednoduchý kompilovaný programovací jazyk. Prohlédněte si českou dokumentaci, příklady a stáhněte LSL 0.8.3 pro Linux.">
+<meta name="description" content="Lux Simple Lang (LSL) je jednoduchý kompilovaný programovací jazyk. Prohlédněte si českou dokumentaci, příklady a stáhněte LSL 0.8.4 pro Linux.">
 <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
 <link rel="canonical" href="https://lsl.lux-ai.cz/">
 <meta property="og:type" content="website">
@@ -18,7 +18,7 @@
 <meta name="twitter:title" content="Lux Simple Lang — dokumentace a stažení LSL">
 <meta name="twitter:description" content="Jednoduchý kompilovaný jazyk s českou dokumentací, příklady a stažením pro Linux.">
 <title>Lux Simple Lang — dokumentace a stažení LSL</title>
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Lux Simple Lang","alternateName":"LSL","url":"https://lsl.lux-ai.cz/","applicationCategory":"DeveloperApplication","operatingSystem":"Linux","softwareVersion":"0.8.3","description":"Jednoduchý kompilovaný programovací jazyk s českou dokumentací, nativním během, sandboxem a podporou GPU."}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Lux Simple Lang","alternateName":"LSL","url":"https://lsl.lux-ai.cz/","applicationCategory":"DeveloperApplication","operatingSystem":"Linux","softwareVersion":"0.8.4","description":"Jednoduchý kompilovaný programovací jazyk s českou dokumentací, nativním během, sandboxem a podporou GPU."}</script>
 <style>
   :root {
     --bg: #0d1117;
@@ -428,8 +428,8 @@
 <button id="menu-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
 
 <nav id="sidebar">
-  <div class="logo">LSL <span>0.8.3</span></div>
-  <a href="./" data-home="home">🚀 Vydání 0.8.3</a>
+  <div class="logo">LSL <span>0.8.4</span></div>
+  <a href="./" data-home="home">🚀 Vydání 0.8.4</a>
   <a href="./#downloads" data-home="downloads">↓ Ke stažení</a>
   <a href="/releases/">◷ Historie vydání</a>
   <a href="#" data-page="CHANGELOG">✦ Changelog</a>
@@ -463,45 +463,45 @@
 <main id="content">
   <div class="release-shell">
     <section class="welcome-hero">
-      <div class="release-kicker"><span class="release-version">0.8.3</span> Bezpečné proměnné, typy a X11</div>
+      <div class="release-kicker"><span class="release-version">0.8.4</span> Automatický úklid paměti</div>
       <h1>Lux Simple Lang</h1>
-      <p>Kontrola inicializace proměnných, typové deklarace, ++/--, vestavěné system() a opravené X11. clock() vrací čitelný UTC čas; intervaly měřte pomocí monotonic(). Před upgradem aktualizujte nainstalované x11 příkazem lsl update x11.</p>
+      <p>Automatický GC podle objemu alokací: hry a dlouhoběžící programy nepotřebují ruční gc(). Hluboké i cyklické kolekce se uklízejí bez rekurze; prokazatelně nealokující číselné smyčky zůstávají bez GC kontrol.</p>
       <div class="release-actions">
-        <a class="release-button primary" href="downloads/lsl-0.8.3-linux-x86_64.tar.gz" download>Stáhnout pro Linux x86_64</a>
+        <a class="release-button primary" href="downloads/lsl-0.8.4-linux-x86_64.tar.gz" download>Stáhnout pro Linux x86_64</a>
         <a class="release-button" href="#README" data-page="README">Otevřít manuál</a>
         <a class="release-button" href="/releases/">Historie verzí</a>
         <a class="release-button" href="#CHANGELOG" data-page="CHANGELOG">Co se změnilo</a>
       </div>
-      <div class="release-command"><span class="prompt">$</span> tar -xzf lsl-0.8.3-linux-x86_64.tar.gz
-<span class="prompt">$</span> ./lsl-0.8.3/bin/lsl version
-0.8.3</div>
+      <div class="release-command"><span class="prompt">$</span> tar -xzf lsl-0.8.4-linux-x86_64.tar.gz
+<span class="prompt">$</span> ./lsl-0.8.4/bin/lsl version
+0.8.4</div>
     </section>
 
     <section class="release-section" id="downloads">
       <h2>Ke stažení</h2>
       <p class="release-lead">Vydání obsahuje bootstrapping binárky, úplný zdrojový strom a aktualizovaný živý český manuál.</p>
       <div class="download-grid">
-        <a class="download-card" href="downloads/lsl-0.8.3-linux-x86_64.tar.gz" download>
+        <a class="download-card" href="downloads/lsl-0.8.4-linux-x86_64.tar.gz" download>
           <span class="download-icon">⬡</span>
           <h3>Binární balík</h3>
           <p>Spustitelné <code>lsl</code>, <code>lslc</code>, nástroje, CUDA worker a kompletní standardní knihovna.</p>
           <span class="download-meta">Linux · x86_64 · tar.gz ↓</span>
         </a>
-        <a class="download-card" href="downloads/lsl-0.8.3-source.tar.gz" download>
+        <a class="download-card" href="downloads/lsl-0.8.4-source.tar.gz" download>
           <span class="download-icon">⌘</span>
           <h3>Repozitář</h3>
           <p>Zdroj compileru, runtime, stdlib, testy, příklady a auditovatelný binary seed.</p>
-          <span class="download-meta">LSL 0.8.3 · source · tar.gz ↓</span>
+          <span class="download-meta">LSL 0.8.4 · source · tar.gz ↓</span>
         </a>
         <a class="download-card" href="#README" data-page="README">
           <span class="download-icon">▤</span>
           <h3>Aktuální manuál</h3>
-          <p>Všech 17 kapitol, reference a výslovný bezpečnostní model LSL 0.8.3.</p>
+          <p>Všech 17 kapitol, reference a výslovný bezpečnostní model LSL 0.8.4.</p>
           <span class="download-meta">Čeština · online manuál →</span>
         </a>
       </div>
       <a class="checksum-link" href="downloads/SHA256SUMS">Ověřit SHA-256 kontrolní součty →</a>
-      <a class="checksum-link" href="downloads/lsl-0.8.3-manual.zip" download>Stáhnout český manuál (ZIP) →</a>
+      <a class="checksum-link" href="downloads/lsl-0.8.4-manual.zip" download>Stáhnout český manuál (ZIP) →</a>
     </section>
 
     <div class="release-facts">
@@ -521,7 +521,7 @@
       <div class="welcome-grid" id="welcome-grid"></div>
     </section>
 
-    <footer class="release-footer">LSL 0.8.3 · Bezpečné proměnné, typy a X11 · Linux x86_64 · MIT License</footer>
+    <footer class="release-footer">LSL 0.8.4 · Automatický úklid paměti · Linux x86_64 · MIT License</footer>
   </div>
 </main>
 
@@ -540,7 +540,7 @@ function guidePageName(href) {
     '../server.md': '13-server-and-origin',
     '../sandbox.md': '14-sandbox-and-safety',
     '../release-0.8.2.md': 'README',
-    '../release-0.8.3.md': 'README',
+    '../release-0.8.4.md': 'README',
     '../release-0.7.md': 'README',
     '../release-0.6.9.md': 'README',
     '../release-0.6.8.md': 'README',

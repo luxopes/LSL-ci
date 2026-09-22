@@ -32,6 +32,11 @@ Kořenové CLI při release buildu 0.7.1 už může překročit dřívější li
 každý artefakt samostatně; limit 2 GiB ponechává rezervu, ale stále ukončí
 nekontrolovaný růst.
 
+Od 0.8.4 trust core uklízí po parsování/linkování a po dávkách 32 emitovaných
+funkcí. Jsou to hranice uvnitř compiler procesu, nikoli GC instrukce v cílovém
+programu. Zachovejte je i při úpravě pipeline; raw konstrukční helpery nemají
+obecné automatické safepointy.
+
 Samotná plná testovací sada obsahuje 9 MiB HTTP/GC stress z 0.7.6, který
 při naplnění pracovního heapu potřebuje více než 2 GiB. Pro běh suite použijte
 samostatný subshell s `ulimit -v 4194304`; pro sériové compiler/stage buildy
@@ -159,10 +164,9 @@ Volání je SysV-like: `rdi`, `rsi`, `rdx`, `rcx`, `r8`, `r9`, další argumenty
 stacku, výsledek v `rax`. Rezervované hodnoty:
 
 - `rbx` — allocator/GC/process state;
-- `r12` — main/global frame;
-- `r13` — pending error String;
-- `r14` — pending error flag;
-- `r15` — původní process stack.
+- `r12` až `r15` — callee-saved registrové Int/Bool lokály;
+- `fs:0`, `fs:8`, `fs:16` — pending error String, error flag a stack top vlákna;
+- `rbx+120` — původní process stack / identita hlavního vlákna.
 
 Veřejné dynamické hranice boxují Int/Bool/None/Function; staticky známá lokální
 aritmetika a trusted self-host cesta mohou držet raw skaláry. Heap type codes a
