@@ -4,6 +4,16 @@ Na této stránce jsou uživatelsky významné změny vydaných verzí. Stabiln�
 manuály a soubory ke stažení zůstávají dostupné v
 [historii vydání](/releases/).
 
+## 0.8.5 — 25. 9. 2026
+
+- Rychlejší compiler: emit vrstva a ELF obraz v `ByteArray`, lexer nad
+  UTF-8 bajty bez jednoznakových Stringů, úklid v codegenu po dávkách
+  funkcí úměrných velikosti programu. Self-host build je ~1,4× rychlejší.
+- Generovaný kód, runtime ani jazyk se nemění; binárky z 0.8.4 a 0.8.5 jsou
+  pro stejný zdroj shodné a není nutné je znovu překládat.
+- Přeplněné („overlong“) UTF-8 sekvence ve zdroji už nejsou přijímány jako
+  znaky identifikátoru; hlásí se jako `E0006 unexpected character`.
+
 ## 0.8.4 — 22. 9. 2026
 
 - Automatický GC podle alokovaných bajtů, nikoli pouze při formátování Float;

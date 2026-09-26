@@ -1,4 +1,6 @@
-# Byte-buffer helpers represented entirely as LSL List[Int].
+# Byte-buffer helpers. Encoders build short List[Int] values; the assembler,
+# the data section and the ELF image accumulate them in ByteArray buffers.
+# append_little and patch_little accept either representation.
 
 function append(buffer, value):
     if value < 0 or value > 255:
@@ -7,9 +9,26 @@ function append(buffer, value):
     buffer.append(value)
 end
 
+# Append every element of a List[Int] to a ByteArray. ByteArray.append is a
+# typed store and rejects values outside 0..255 itself. Elements arrive as
+# boxed or raw Ints depending on the caller's ABI; __lsl_typed_int accepts
+# both, unlike the dynamic Int() conversion.
 function extend(buffer, values):
+    out = ByteArray(buffer)
     for value in values:
-        call append(buffer, value)
+        call out.append(__lsl_typed_int(value))
+    end
+end
+
+# Append the whole content of one ByteArray to another.
+function extend_bytes(buffer, values):
+    out = ByteArray(buffer)
+    source = ByteArray(values)
+    count = len(source)
+    index = 0
+    while index < count:
+        call out.append(source[index])
+        index += 1
     end
 end
 
@@ -43,7 +62,7 @@ function patch_little(buffer, offset, value, width):
     encoded = little(value, width)
     index = 0
     while index < width:
-        buffer[offset + index] = encoded[index]
+        buffer[offset + index] = __lsl_typed_int(encoded[index])
         index += 1
     end
 end

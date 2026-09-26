@@ -1,14 +1,19 @@
 # Tiny label/fixup assembler data structure implemented in LSL. It emits bytes;
 # it never invokes an assembler executable.
+#
+# The code buffer is a ByteArray: it stores raw bytes instead of one boxed Int
+# per byte, so the collector never has to traverse the emitted program and
+# appending is a plain store. Instruction encoders still hand over short
+# List[Int] values; emit copies them in a typed loop.
 
 load bytes
 
 function builder():
-    return {"code": [], "labels": {}, "fixups": []}
+    return {"code": ByteArray(), "labels": {}, "fixups": []}
 end
 
 function position(value):
-    return len(value["code"])
+    return len(ByteArray(value["code"]))
 end
 
 function emit(value, data):
@@ -24,7 +29,7 @@ function emit(value, data):
         end
         data = [rex, 133, 192 + register * 8 + register]
     end
-    value["code"].extend(data)
+    call bytes.extend(value["code"], data)
 end
 
 function label(value, name):
@@ -36,20 +41,25 @@ function label(value, name):
 end
 
 function relative(value, opcode, name):
-    value["code"].extend(opcode)
-    patch = position(value)
-    value["code"].extend([0, 0, 0, 0])
+    code = ByteArray(value["code"])
+    call bytes.extend(code, opcode)
+    patch = len(code)
+    call code.append(0)
+    call code.append(0)
+    call code.append(0)
+    call code.append(0)
     value["fixups"].append([patch, name])
 end
 
 function finish(value):
+    code = ByteArray(value["code"])
     for fixup in value["fixups"]:
         if fixup[1] not in value["labels"]:
             Error(AssemblerError: "unknown label")
         end
         target = value["labels"][fixup[1]]
         displacement = target - (fixup[0] + 4)
-        call bytes.patch_little(value["code"], fixup[0], displacement, 4)
+        call bytes.patch_little(code, fixup[0], displacement, 4)
     end
-    return value["code"]
+    return code
 end

@@ -1,23 +1,22 @@
 # Full token-span lexer for the direct compiler.
+#
+# The source is scanned as UTF-8 bytes through the text intrinsics instead of
+# materializing one String per code point. Columns still count code points:
+# every byte that is not a continuation byte (10xxxxxx) starts a new column.
+# Identifiers, numbers and operators are ASCII; other bytes only occur inside
+# String literals and comments, or end in the unexpected-character diagnostic.
 
 load diagnostics
 
-function is_space(character):
-    return character == " " or character == "\t" or character == "\r"
-end
-
-function is_digit(character):
-    code = ord(character)
+function is_digit(code):
     return code >= 48 and code <= 57
 end
 
-function is_alpha(character):
-    code = ord(character)
+function is_alpha(code):
     return (code >= 97 and code <= 122) or (code >= 65 and code <= 90) or code == 95
 end
 
-function digit_value(character):
-    code = ord(character)
+function digit_value(code):
     if code >= 48 and code <= 57:
         return code - 48
     elif code >= 97 and code <= 102:
@@ -26,6 +25,18 @@ function digit_value(character):
         return code - 55
     end
     return -1
+end
+
+# Byte length of the UTF-8 sequence introduced by its first byte.
+function char_width(code):
+    if code < 128:
+        return 1
+    elif code < 224:
+        return 2
+    elif code < 240:
+        return 3
+    end
+    return 4
 end
 
 function decimal_scale_add(digits, base, addend):
@@ -64,43 +75,47 @@ function token(kind, value, line, column, end_column):
     return {"kind": kind, "value": value, "line": line, "column": column, "end_column": end_column}
 end
 
+# Byte value of the character an escape sequence stands for.
 function decode_escape(path, lines, line, column, escaped):
-    if escaped == "n":
-        return chr(10)
-    elif escaped == "r":
-        return chr(13)
-    elif escaped == "t":
-        return chr(9)
-    elif escaped == "0":
-        return chr(0)
-    elif escaped == "\"":
-        return "\""
-    elif escaped == "'":
-        return "'"
-    elif escaped == "\\":
-        return "\\"
+    if escaped == 110:
+        return 10
+    elif escaped == 114:
+        return 13
+    elif escaped == 116:
+        return 9
+    elif escaped == 48:
+        return 0
+    elif escaped == 34:
+        return 34
+    elif escaped == 39:
+        return 39
+    elif escaped == 92:
+        return 92
     end
     call diagnostics.fail(path, line, column, 2, source_line(lines, line), "E0003", "unknown escape sequence", "supported escapes: n, r, t, 0, quote, backslash")
-    return ""
+    return 0
 end
 
-function join_chars(chars, start, stop):
-    result = []
+# The String spelled by the source bytes start..stop. The caller's scratch
+# buffer is reused for every token instead of allocating one per token.
+function text_slice(text, start, stop, buffer):
+    call buffer.clear()
     index = start
     while index < stop:
-        result.append(chars[index])
+        call buffer.append(__lsl_text_byte(text, index))
         index += 1
     end
-    return "".join(result)
+    return __lsl_text_from_bytes(buffer, 0, len(buffer))
 end
 
 function tokenize(path, source):
-    if __lsl_text_byte_length(String(source)) > 4194304:
+    text = String(source)
+    count = __lsl_text_byte_length(text)
+    if count > 4194304:
         Error(CompileError: "source exceeds the 4 MiB compiler limit: " + path)
     end
     result = []
-    chars = __lsl_string_chars(source)
-    count = len(chars)
+    scratch = ByteArray()
     # Diagnostics materialize lines only on failure.
     lines = source
     newline = chr(10)
@@ -109,78 +124,85 @@ function tokenize(path, source):
     column = 1
     depth = 0
     while index < count:
-        character = chars[index]
-        if character == newline:
+        code = __lsl_text_byte(text, index)
+        if code == 10:
             if depth == 0:
                 result.append(token("newline", newline, line, column, column + 1))
             end
             index += 1
             line += 1
             column = 1
-        elif is_space(character):
+        elif code == 32 or code == 9 or code == 13:
             index += 1
             column += 1
-        elif character == "#":
-            while index < count and chars[index] != newline:
-                index += 1
+        elif code == 35:
+            while index < count and __lsl_text_byte(text, index) != 10:
+                index += char_width(__lsl_text_byte(text, index))
                 column += 1
             end
-        elif character == "\"" or character == "'" or (character == "l" and index + 1 < count and (chars[index + 1] == "\"" or chars[index + 1] == "'")):
-            lux_string = character == "l"
+        elif code == 34 or code == 39 or (code == 108 and index + 1 < count and (__lsl_text_byte(text, index + 1) == 34 or __lsl_text_byte(text, index + 1) == 39)):
+            lux_string = code == 108
             start_line = line
             start_column = column
-            value_chars = []
+            value_bytes = scratch
+            call value_bytes.clear()
+            value_length = 0
             if lux_string:
                 index += 1
                 column += 1
-                character = chars[index]
+                code = __lsl_text_byte(text, index)
             end
-            quote = character
+            quote = code
             index += 1
             column += 1
             closed = False
             while index < count:
-                character = chars[index]
-                if character == quote:
+                code = __lsl_text_byte(text, index)
+                if code == quote:
                     index += 1
                     column += 1
                     closed = True
                     break
-                elif character == "\\":
+                elif code == 92:
                     if index + 1 >= count:
                         call diagnostics.fail(path, line, column, 1, source_line(lines, line), "E0002", "unfinished escape sequence", "add a character after the backslash")
                     end
-                    escaped = chars[index + 1]
-                    value_chars.append(decode_escape(path, lines, line, column, escaped))
+                    call value_bytes.append(decode_escape(path, lines, line, column, __lsl_text_byte(text, index + 1)))
+                    value_length += 1
                     index += 2
                     column += 2
-                elif character == newline:
+                elif code == 10:
                     call diagnostics.fail(path, start_line, start_column, max(1, column - start_column), source_line(lines, start_line), "E0001", "unterminated String literal", "close the String before the end of the line")
                 else:
-                    value_chars.append(character)
-                    index += 1
+                    width = char_width(code)
+                    stop = index + width
+                    while index < stop:
+                        call value_bytes.append(__lsl_text_byte(text, index))
+                        index += 1
+                    end
+                    value_length += 1
                     column += 1
                 end
-                if len(value_chars) > 1048576:
+                if value_length > 1048576:
                     call diagnostics.fail(path, start_line, start_column, max(1, column - start_column), source_line(lines, start_line), "E0010", "String literal exceeds 1 MiB", "load large data from a file at runtime")
                 end
             end
             if not closed:
                 call diagnostics.fail(path, start_line, start_column, max(1, column - start_column), source_line(lines, start_line), "E0001", "unterminated String literal", "add the matching quote")
             end
-            value = "".join(value_chars)
+            value = __lsl_text_from_bytes(value_bytes, 0, len(value_bytes))
             kind = "string"
             if lux_string:
                 kind = "lux_string"
             end
             result.append(token(kind, value, start_line, start_column, column))
-        elif is_digit(character) and character == "0" and index + 1 < count and (chars[index + 1] == "x" or chars[index + 1] == "X" or chars[index + 1] == "b" or chars[index + 1] == "B" or chars[index + 1] == "o" or chars[index + 1] == "O"):
+        elif code == 48 and index + 1 < count and (__lsl_text_byte(text, index + 1) == 120 or __lsl_text_byte(text, index + 1) == 88 or __lsl_text_byte(text, index + 1) == 98 or __lsl_text_byte(text, index + 1) == 66 or __lsl_text_byte(text, index + 1) == 111 or __lsl_text_byte(text, index + 1) == 79):
             start_column = column
-            marker = chars[index + 1]
+            marker = __lsl_text_byte(text, index + 1)
             base = 16
-            if marker == "b" or marker == "B":
+            if marker == 98 or marker == 66:
                 base = 2
-            elif marker == "o" or marker == "O":
+            elif marker == 111 or marker == 79:
                 base = 8
             end
             index += 2
@@ -193,11 +215,11 @@ function tokenize(path, source):
             elif base == 8:
                 digit_limit = 22
             end
-            while index < count and (is_alpha(chars[index]) or is_digit(chars[index])):
+            while index < count and (is_alpha(__lsl_text_byte(text, index)) or is_digit(__lsl_text_byte(text, index))):
                 if index - digits_start >= digit_limit:
                     call diagnostics.fail(path, line, start_column, max(1, column - start_column), source_line(lines, line), "E0011", "based numeric literal exceeds the Int64 width", "use at most " + String(digit_limit) + " digits for this base")
                 end
-                digit = digit_value(chars[index])
+                digit = digit_value(__lsl_text_byte(text, index))
                 if digit < 0 or digit >= base:
                     call diagnostics.fail(path, line, column, 1, source_line(lines, line), "E0008", "digit is out of range for the literal base", "use only digits the 0b, 0o, or 0x prefix allows")
                 end
@@ -209,26 +231,26 @@ function tokenize(path, source):
                 call diagnostics.fail(path, line, start_column, max(1, column - start_column), source_line(lines, line), "E0009", "base prefix without digits", "add at least one digit after 0b, 0o, or 0x")
             end
             result.append(token("number", value, line, start_column, column))
-        elif is_digit(character):
+        elif is_digit(code):
             start = index
             start_column = column
             dots = 0
-            while index < count and (is_digit(chars[index]) or chars[index] == "."):
-                if chars[index] == ".":
+            while index < count and (is_digit(__lsl_text_byte(text, index)) or __lsl_text_byte(text, index) == 46):
+                if __lsl_text_byte(text, index) == 46:
                     dots += 1
                 end
                 index += 1
                 column += 1
             end
-            if index < count and (chars[index] == "e" or chars[index] == "E"):
+            if index < count and (__lsl_text_byte(text, index) == 101 or __lsl_text_byte(text, index) == 69):
                 index += 1
                 column += 1
-                if index < count and (chars[index] == "+" or chars[index] == "-"):
+                if index < count and (__lsl_text_byte(text, index) == 43 or __lsl_text_byte(text, index) == 45):
                     index += 1
                     column += 1
                 end
                 exponent_start = index
-                while index < count and is_digit(chars[index]):
+                while index < count and is_digit(__lsl_text_byte(text, index)):
                     index += 1
                     column += 1
                 end
@@ -236,7 +258,7 @@ function tokenize(path, source):
                     call diagnostics.fail(path, line, start_column, max(1, index - start), source_line(lines, line), "E0004", "invalid Float exponent", "add decimal digits after the exponent marker")
                 end
             end
-            value = join_chars(chars, start, index)
+            value = text_slice(text, start, index, scratch)
             if len(value) > 4096:
                 call diagnostics.fail(path, line, start_column, len(value), source_line(lines, line), "E0011", "numeric literal is too long", "use at most 4096 digits")
             end
@@ -244,28 +266,29 @@ function tokenize(path, source):
                 call diagnostics.fail(path, line, start_column, len(value), source_line(lines, line), "E0004", "invalid numeric literal", "a Float may contain only one decimal point")
             end
             result.append(token("number", value, line, start_column, column))
-        elif is_alpha(character):
+        elif is_alpha(code):
             start = index
             start_column = column
-            while index < count and (is_alpha(chars[index]) or is_digit(chars[index])):
+            while index < count and (is_alpha(__lsl_text_byte(text, index)) or is_digit(__lsl_text_byte(text, index))):
                 index += 1
                 column += 1
                 if index - start > 255:
                     call diagnostics.fail(path, line, start_column, max(1, column - start_column), source_line(lines, line), "E0013", "identifier exceeds 255 characters", "use a shorter identifier")
                 end
             end
-            result.append(token("name", join_chars(chars, start, index), line, start_column, column))
+            result.append(token("name", text_slice(text, start, index, scratch), line, start_column, column))
         else:
             start_column = column
-            value = character
-            if index + 2 < count:
-                triple = character + chars[index + 1] + chars[index + 2]
+            width = char_width(code)
+            value = text_slice(text, index, index + width, scratch)
+            if width == 1 and index + 2 < count:
+                triple = value + chr(__lsl_text_byte(text, index + 1)) + chr(__lsl_text_byte(text, index + 2))
                 if triple == "<<=" or triple == ">>=":
                     value = triple
                 end
             end
-            if len(value) == 1 and index + 1 < count:
-                pair = character + chars[index + 1]
+            if len(value) == 1 and width == 1 and index + 1 < count:
+                pair = value + chr(__lsl_text_byte(text, index + 1))
                 if pair == "==" or pair == "!=" or pair == "<=" or pair == ">=" or pair == "//" or pair == "+=" or pair == "-=" or pair == "*=" or pair == "/=" or pair == "%=" or pair == "<<" or pair == ">>" or pair == "&=" or pair == "|=" or pair == "~=" or pair == "++" or pair == "--":
                     value = pair
                 end
@@ -277,7 +300,7 @@ function tokenize(path, source):
                 index += 2
                 column += 2
             else:
-                index += 1
+                index += width
                 column += 1
             end
             if value == "(" or value == "[" or value == "{":

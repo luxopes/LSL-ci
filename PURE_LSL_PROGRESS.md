@@ -1,6 +1,29 @@
 # Pure-LSL migration
 
-## Aktuální vydání 0.8.4 — 22. 9. 2026
+## Aktuální vydání 0.8.5 — 25. 9. 2026
+
+Rychlejší compiler beze změny generovaného kódu: emit vrstva (`assembler`,
+`bytes`, `elf_image`) skládá kód, datovou sekci i ELF obraz v `ByteArray`
+místo `List[Int]`; lexer čte zdroj po UTF-8 bajtech přes textové intrinsics
+bez seznamu jednoznakových Stringů (tokeny shodné s 0.8.4 na 353 zdrojích
+a 1 500 fuzz vstupech); dávka úklidu v codegenu úměrná počtu funkcí
+(32 až F/5; u self-hostu 18 → 4 úklidy po ~150 ms, malé programy zůstávají
+na 32). Profil ukázal, že dominantní cenou byl úklid paměti, ne emitování
+bajtů. Přeplněné UTF-8 sekvence ve zdroji už nejsou přijímány jako znaky
+identifikátoru (E0006).
+
+Stage 1/2/3 bitově shodné; stage 1 vytvořený compilerem 0.8.4 je shodný se
+stage 2, takže výstup compileru se nezměnil. Compiler SHA-256:
+`015c5aa2dacde8bce692255103ec971ee6201a9ce802ebb1ba60eab08605502c`;
+CLI: `474a824eabff7f82cb104e7c9eadb3e80f2fd13309efb981fb8e23962961d14b`.
+Self-host build (medián 5 běhů): 8,235 -> 5,711 s (1,44×), CLI 10,870 ->
+7,236 s, RSS self-hostu 787 -> 679 MiB; malý program 0,450 -> 0,384 s.
+Plná sada a fixed-point prošly.
+
+Podrobnosti: `docs/release-0.8.5.md`. Release ověření a měření:
+`.build/release-0.8.5/`.
+
+## Vydání 0.8.4 — 22. 9. 2026
 
 Automatický GC podle alokovaných bajtů včetně reuse; adaptivní rozpočet
 4 MiB / dvojnásobek živých bloků. Compiler vynechává kontroly u prokázaných

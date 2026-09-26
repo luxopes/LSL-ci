@@ -551,8 +551,9 @@ function comparison_opcode(operator):
 end
 
 function align_data(generator):
-    while len(generator["data"]) % 8 != 0:
-        generator["data"].append(0)
+    data = ByteArray(generator["data"])
+    while len(data) % 8 != 0:
+        call data.append(0)
     end
 end
 
@@ -563,10 +564,11 @@ function emit_string_pointer(generator, text):
         call align_data(generator)
         offset = len(generator["data"])
         payload = bytes.utf8(text)
-        generator["data"].extend(bytes.little(1, 8))
-        generator["data"].extend(bytes.little(len(payload), 8))
-        generator["data"].extend(payload)
-        generator["data"].append(0)
+        data = ByteArray(generator["data"])
+        call bytes.extend(data, bytes.little(1, 8))
+        call bytes.extend(data, bytes.little(len(payload), 8))
+        call bytes.extend(data, payload)
+        call data.append(0)
         generator["string_offsets"][text] = offset
     end
     lea_start = assembler.position(generator["builder"])
@@ -5209,7 +5211,7 @@ function emit_static_write_fd(generator, text, descriptor):
     generator["relocations"].append([lea_start + 3, lea_start + 7, len(generator["data"])])
     call assembler.emit(output, x86_64.mov_imm64(2, len(payload)))
     call assembler.emit(output, x86_64.syscall())
-    generator["data"].extend(payload)
+    call bytes.extend(generator["data"], payload)
 end
 
 function emit_static_write(generator, text):
@@ -7024,7 +7026,7 @@ function generate_mode(path, source, program, internal_abi):
         global_flags[global_name] = global_offsets[global_name] + globals_bytes
     end
     globals_bytes *= 2
-    generator = {"path": path, "internal_abi": internal_abi, "unchecked_intarray": unchecked_intarray, "lines": lines, "variables": {}, "types": {}, "global_variables": global_offsets, "global_types": main_types, "functions": functions, "classes": classes, "function_returns": function_returns, "function_parameters": parameter_types, "builder": output, "data": [], "string_offsets": {}, "relocations": [], "counter": 0, "error_label": "", "current_class_name": ""}
+    generator = {"path": path, "internal_abi": internal_abi, "unchecked_intarray": unchecked_intarray, "lines": lines, "variables": {}, "types": {}, "global_variables": global_offsets, "global_types": main_types, "functions": functions, "classes": classes, "function_returns": function_returns, "function_parameters": parameter_types, "builder": output, "data": ByteArray(), "string_offsets": {}, "relocations": [], "counter": 0, "error_label": "", "current_class_name": ""}
     generator["frame_size"] = 16
     generator["noreturn"] = noreturn
     generator["error_handlers"] = []
@@ -7043,6 +7045,15 @@ function generate_mode(path, source, program, internal_abi):
     call native_runtime.emit_all(output)
     call thread_runtime.emit_all(output)
 
+    # Compiler-host GC cadence. Every collection marks the whole live AST, so
+    # its cost grows with the program while the garbage per emitted function
+    # does not: a small program is fastest recycling memory every 32
+    # functions, the self-host build (about 650 functions, ~150 ms per
+    # collection) every 128. Scale the batch with the function count.
+    gc_batch = 32
+    if len(functions) // 5 > gc_batch:
+        gc_batch = len(functions) // 5
+    end
     emitted_functions = 0
     for statement in program:
         if statement["kind"] == "function":
@@ -7057,7 +7068,7 @@ function generate_mode(path, source, program, internal_abi):
                 if member["kind"] == "function":
                     call emit_function(generator, member)
                     emitted_functions += 1
-                    if emitted_functions >= 32:
+                    if emitted_functions >= gc_batch:
                         call gc()
                         emitted_functions = 0
                     end
@@ -7067,7 +7078,7 @@ function generate_mode(path, source, program, internal_abi):
         # Compiler-host GC, not an instruction in the compiled program.
         # A completed function has no half-built runtime buffers. Reclaim
         # emission temporaries in batches while keeping AST/builder roots.
-        if emitted_functions >= 32:
+        if emitted_functions >= gc_batch:
             call gc()
             emitted_functions = 0
         end

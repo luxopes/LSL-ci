@@ -1,5 +1,7 @@
-# General ELF64 image builder over List[Int]. Unlike the bootstrap ASCII writer,
-# this module supports every byte value and is materialized by the direct writer.
+# General ELF64 image builder. The header is assembled as List[Int]; the final
+# image is a ByteArray holding header, code and data. Unlike the bootstrap
+# ASCII writer, this module supports every byte value and is materialized by
+# the direct writer.
 
 load bytes
 
@@ -53,9 +55,10 @@ function header(code_size, data_size, entry_offset):
 end
 
 function image_entry(code, data, entry_offset):
-    result = header(len(code), len(data), entry_offset)
-    result.extend(code)
-    result.extend(data)
+    result = ByteArray()
+    call bytes.extend(result, header(len(code), len(data), entry_offset))
+    call bytes.extend_bytes(result, code)
+    call bytes.extend_bytes(result, data)
     return result
 end
 

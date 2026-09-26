@@ -32,10 +32,14 @@ Kořenové CLI při release buildu 0.7.1 už může překročit dřívější li
 každý artefakt samostatně; limit 2 GiB ponechává rezervu, ale stále ukončí
 nekontrolovaný růst.
 
-Od 0.8.4 trust core uklízí po parsování/linkování a po dávkách 32 emitovaných
-funkcí. Jsou to hranice uvnitř compiler procesu, nikoli GC instrukce v cílovém
-programu. Zachovejte je i při úpravě pipeline; raw konstrukční helpery nemají
-obecné automatické safepointy.
+Od 0.8.4 trust core uklízí po parsování/linkování a po dávkách emitovaných
+funkcí (od 0.8.5 po 32 funkcích, u větších programů po pětině počtu funkcí;
+každý úklid značkuje celý živý AST, pevná dávka 32 stála u self-host buildu
+čtyřnásobek času, pevná dávka 128 naopak zpomalila malé programy). Jsou
+to hranice uvnitř compiler procesu, nikoli GC instrukce v cílovém programu.
+Zachovejte je i při úpravě pipeline; raw konstrukční helpery nemají obecné
+automatické safepointy. Emit vrstva, datová sekce a ELF obraz jsou od 0.8.5
+`ByteArray`; kodéry v `x86_64.lsl` dál vracejí `List[Int]`.
 
 Samotná plná testovací sada obsahuje 9 MiB HTTP/GC stress z 0.7.6, který
 při naplnění pracovního heapu potřebuje více než 2 GiB. Pro běh suite použijte

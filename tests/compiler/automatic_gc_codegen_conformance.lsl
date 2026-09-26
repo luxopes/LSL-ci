@@ -3,7 +3,7 @@ load codegen
 load parser
 
 function state():
-    return {"path":"probe.lsl", "lines":"", "internal_abi":False, "variables":{}, "global_variables":{"i":1280,"total":1288,"text":1296}, "types":{"i":"Int","total":"Int","text":"String"}, "global_types":{}, "functions":{}, "classes":{}, "function_returns":{}, "function_parameters":{}, "builder":assembler.builder(), "error_label":"", "counter":0, "data":[], "string_offsets":{}, "relocations":[], "frame_size":16, "error_handlers":[]}
+    return {"path":"probe.lsl", "lines":"", "internal_abi":False, "variables":{}, "global_variables":{"i":1280,"total":1288,"text":1296}, "types":{"i":"Int","total":"Int","text":"String"}, "global_types":{}, "functions":{}, "classes":{}, "function_returns":{}, "function_parameters":{}, "builder":assembler.builder(), "error_label":"", "counter":0, "data":ByteArray(), "string_offsets":{}, "relocations":[], "frame_size":16, "error_handlers":[]}
 end
 
 function polls(generator):

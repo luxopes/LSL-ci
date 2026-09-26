@@ -1,6 +1,6 @@
 # Lux Simple Lang (LSL)
 
-**LSL 0.8.4** je vydání self-hostovaného jazyka pro běžné
+**LSL 0.8.5** je vydání self-hostovaného jazyka pro běžné
 programování, deklarativní konfiguraci, AI orchestrace a volitelné CUDA
 výpočty. Compiler i host runtime
 jsou pouze LSL: compiler přímo zapisuje statický Linux x86_64 ELF a runtime
@@ -11,16 +11,17 @@ pure-LSL a Tensor používá CPU fallback.
 
 ## Self-hosted vydání
 
-LSL 0.8.4 automaticky uklízí nepoužívanou paměť podle objemu alokací,
-včetně herních smyček bez ručního `gc()`. GC zvládá hluboké a cyklické
-kolekce bez rekurze; prokazatelně nealokující číselné smyčky nemají GC
-kontroly. Opraveno také čekání na podprocesy při úklidu paměti ve vláknech.
+LSL 0.8.5 zrychluje samotný compiler: emit vrstva a ELF obraz vznikají
+v `ByteArray`, lexer čte zdroj po UTF-8 bajtech a codegen uklízí po větších
+dávkách funkcí. Generovaný kód, runtime ani jazyk se nemění, binárky z 0.8.4
+a 0.8.5 jsou pro stejný zdroj shodné.
 Binární balík pro Linux x86_64,
 zdrojový archiv a aktualizovaný český manuál jsou na
 [lsl.lux-ai.cz](https://lsl.lux-ai.cz/). Stabilní manuály vydání jsou v
 [historii vydání](https://lsl.lux-ai.cz/releases/):
 
-- [LSL 0.8.4](https://lsl.lux-ai.cz/) — automatický GC, stabilní paměť a rychlejší dlouhoběžící programy;
+- [LSL 0.8.5](https://lsl.lux-ai.cz/) — rychlejší compiler se stejným generovaným kódem;
+- LSL 0.8.4 — automatický GC, stabilní paměť a rychlejší dlouhoběžící programy;
 - LSL 0.8.3 — paměťová bezpečnost, typové deklarace, čas a X11;
 - LSL 0.8.2 — opravy `safe`, barevné chyby a grafická rozšíření;
 - LSL 0.8.1 — `sorted`, Set a `dedup`;
@@ -219,6 +220,7 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 - [Poznámky k vydání 0.8.2](docs/release-0.8.2.md)
 - [Poznámky k vydání 0.8.3](docs/release-0.8.3.md)
 - [Poznámky k vydání 0.8.4](docs/release-0.8.4.md)
+- [Poznámky k vydání 0.8.5](docs/release-0.8.5.md)
 - [CLI, knihovny a terminálový manuál](docs/developer_guides/17-cli-and-packages.md)
 - [Poznámky k vydání 0.7.7](docs/release-0.7.7.md)
 - [Poznámky k vydání 0.7.6](docs/release-0.7.6.md)
