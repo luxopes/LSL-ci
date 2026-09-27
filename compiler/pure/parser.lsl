@@ -467,6 +467,9 @@ function parse_primary(parser):
                     break
                 end
                 call expect(parser, ",", "E1104", "expected comma in List literal")
+                if check(parser, "for") and current(parser)["kind"] == "name":
+                    call fail_at(parser, current(parser), "E1119", "unexpected comma before for in a List comprehension", "write [value for item in iterable] without a comma before for")
+                end
             end
         end
         result = node("list", token)

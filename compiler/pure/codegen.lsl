@@ -345,6 +345,31 @@ function infer_expression_type(syntax, types, function_returns):
     return "Any"
 end
 
+# One collect_types pass depends on statement order: `x = x // p` is typed
+# Int while p is still Int, and a later `for p in items` widens p to Any
+# without revisiting x. Emission then boxes the division result but stores
+# it into x's raw slot. Repeat until no variable type changes; widening only
+# moves towards Any, so the loop converges quickly.
+function collect_types_stable(statements, types, function_returns):
+    for round in rang(16):
+        before = Dictionary(types)
+        call collect_types(statements, types, function_returns)
+        changed = len(before) != len(types)
+        if not changed:
+            for name in types.keys():
+                if name not in before or before[name] != types[name]:
+                    changed = True
+                    break
+                end
+            end
+        end
+        if not changed:
+            return None
+        end
+    end
+    return None
+end
+
 function collect_types(statements, types, function_returns):
     for statement in statements:
         kind = statement["kind"]
@@ -6883,7 +6908,7 @@ function infer_function_returns(functions, classes, parameter_types, global_type
                     types["self"] = "Instance:" + declaration["class_name"]
                 end
             end
-            call collect_types(declaration["body"], types, result)
+            call collect_types_stable(declaration["body"], types, result)
             inferred = returned_type(declaration["body"], types, result)
             if inferred != result[name]:
                 result[name] = inferred
@@ -6932,7 +6957,7 @@ function emit_function(generator, declaration):
             types["origin"] = "Class:" + parent_name
         end
     end
-    call collect_types(declaration["body"], types, generator["function_returns"])
+    call collect_types_stable(declaration["body"], types, generator["function_returns"])
     register_locals = choose_register_locals(declaration, variables, types)
     save_slots = {}
     for local_name in register_locals.keys():
@@ -7053,19 +7078,19 @@ function generate_mode(path, source, program, internal_abi):
         end
     end
     main_types = {}
-    call collect_types(program, main_types, function_returns)
+    call collect_types_stable(program, main_types, function_returns)
     # Global types and return types depend on each other; one more round with
     # the globals visible resolves returns that read global state.
     function_returns = infer_function_returns(functions, classes, parameter_types, main_types)
     main_types = {}
-    call collect_types(program, main_types, function_returns)
+    call collect_types_stable(program, main_types, function_returns)
     if not internal_abi and has_specialization_candidate(functions) and not program_blocks_specialization(program):
         # Direct-call observations propagate parameter types through helper
         # chains. Escaping callbacks retain their dynamic ABI.
         parameter_types = infer_function_parameters(program, functions, function_returns, main_types)
         function_returns = infer_function_returns(functions, classes, parameter_types, main_types)
         main_types = {}
-        call collect_types(program, main_types, function_returns)
+        call collect_types_stable(program, main_types, function_returns)
     end
     output = assembler.builder()
     unchecked_intarray = source.find("# lsl: unchecked-intarray") >= 0

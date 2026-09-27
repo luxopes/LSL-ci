@@ -28,7 +28,8 @@ cases = [
     "load os, , time",
     "load os, time as",
     "print l\"{\"a}\"",
-    "print l\"{x\""
+    "print l\"{x\"",
+    "print [0, for x in rang(3)]"
 ]
 expected_details = [
     "missing required argument", "unknown keyword", "multiple values",
@@ -37,7 +38,8 @@ expected_details = [
     "immutable literal", "duplicate parameter", "keyword arguments", "keyword arguments",
     "keyword arguments", "", "", "", "", "",
     "expected module name", "expected module name", "expected module alias",
-    "unterminated String literal", "unterminated String literal"
+    "unterminated String literal", "unterminated String literal",
+    "unexpected comma before for"
 ]
 for i in rang(len(cases)):
     path = root + "/language-negative-" + String(i) + ".lsl"

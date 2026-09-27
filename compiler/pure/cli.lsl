@@ -18,7 +18,7 @@ load sandbox
 load tui
 load update
 
-VERSION = "0.8.7"
+VERSION = "0.8.8"
 
 function print_help():
     call console.heading("Lux Simple Lang (LSL) " + VERSION)

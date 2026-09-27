@@ -81,3 +81,4 @@ load comprehension_conformance
 load module_group_conformance
 load list_find_conformance
 load rang_value_conformance
+load type_widening_conformance

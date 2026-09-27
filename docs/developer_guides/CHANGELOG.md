@@ -4,6 +4,17 @@ Na této stránce jsou uživatelsky významné změny vydaných verzí. Stabiln�
 manuály a soubory ke stažení zůstávají dostupné v
 [historii vydání](/releases/).
 
+## 0.8.8 — 27. 9. 2026
+
+- Opraven chybný překlad, když proměnná dostane dynamickou hodnotu až
+  později v kódu (např. `zbytek = zbytek // p` a teprve potom
+  `for p in seznam`): typy se nyní rozšiřují až do fixpointu. Dřív mohl do
+  celočíselné proměnné dostat ukazatel (nesmyslné hodnoty, zacyklení).
+- Diagnostika `E1119` pro čárku před `for` v comprehension
+  (`[0, for x in rang(3)]`).
+- Manuál: kapitola 11 doporučuje `IntArray` místo `List` pro velké
+  číselné tabulky (síto na 1 000 000: 2,5 s → 0,03 s).
+
 ## 0.8.7 — 27. 9. 2026
 
 - `rang(...)` funguje i mimo `for` jako hodnota: `List(rang(2, 101))`,

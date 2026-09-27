@@ -347,7 +347,7 @@ function __lsl_help_text(topic):
     if topic == "":
         names = topics.keys()
         call names.sort()
-        return "Lux Simple Lang (LSL) 0.8.7" + chr(10) + "Use help(\"TOPIC\") for details; lsl man opens the full offline manual." + chr(10) + "topics: " + " ".join(names)
+        return "Lux Simple Lang (LSL) 0.8.8" + chr(10) + "Use help(\"TOPIC\") for details; lsl man opens the full offline manual." + chr(10) + "topics: " + " ".join(names)
     end
     about = __lsl_library_about(topic)
     if topic not in topics:
@@ -463,7 +463,7 @@ function __lsl_about_text(name):
         Error(TypeError: "about name must be a String")
     end
     if name == "":
-        return "Lux Simple Lang (LSL) 0.8.7" + chr(10) + "A small self-hosted programming language: the compiler writes static Linux x86_64 ELF binaries directly and the runtime uses plain syscalls, with no libc, assembler or linker. Programs read like scripts, run as native code, and can use declarative configuration, AI clients, GUI packages and optional CUDA tensors." + chr(10) + "Website and manual: https://lsl.lux-ai.cz/  (offline: lsl man)" + chr(10) + "License: MIT"
+        return "Lux Simple Lang (LSL) 0.8.8" + chr(10) + "A small self-hosted programming language: the compiler writes static Linux x86_64 ELF binaries directly and the runtime uses plain syscalls, with no libc, assembler or linker. Programs read like scripts, run as native code, and can use declarative configuration, AI clients, GUI packages and optional CUDA tensors." + chr(10) + "Website and manual: https://lsl.lux-ai.cz/  (offline: lsl man)" + chr(10) + "License: MIT"
     end
     about = __lsl_library_about(name)
     if about == "":

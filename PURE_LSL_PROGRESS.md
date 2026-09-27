@@ -1,6 +1,20 @@
 # Pure-LSL migration
 
-## Aktuální vydání 0.8.7 — 27. 9. 2026
+## Aktuální vydání 0.8.8 — 27. 9. 2026
+
+Oprava order-dependent inference typů: `collect_types_stable` opakuje průchod
+do fixpointu (max. 16 kol; rozšíření jen k Any). Reprodukce: `zbytek // p`
+typované Int, pozdější `for p in seznam` rozšířilo `p` na Any, emise pak
+uložila boxovaný výsledek do raw slotu (ukazatel v proměnné, zacyklení).
+Diagnostika E1119 pro `[x, for ...]`. Kapitola 11: List vs IntArray.
+
+Stage 2/3 bitově shodné. Compiler SHA-256: `376e9eda08f15d1f83c08e763ddc532f2b82db0dbd729303efba6bb1047cb6e4`;
+CLI: `1888bfe7e31badd6872de8975b42b8baa94758647aa895596b19cdd4c91f3c93`. Plná sada (nový `type_widening_conformance`) a fixed-point
+prošly.
+
+Podrobnosti: `docs/release-0.8.8.md`. Release ověření: `.build/release-0.8.8/`.
+
+## Vydání 0.8.7 — 27. 9. 2026
 
 `rang(...)` mimo `for` iterable je hodnota: codegen volání přepíše na
 `__lsl_rang_list(start, stop, step)` (List, Int argumenty, nenulový krok,

@@ -6,6 +6,24 @@ maximální výkon.
 
 ## Než začnete optimalizovat
 
+Největší rozdíl u číselných tabulek dělá volba kolekce: `List` ukládá
+každou hodnotu jako samostatný objekt, který se při každém čtení a zápisu
+rozbaluje a který musí procházet úklid paměti. `IntArray` (a `FloatArray`,
+`ByteArray`) ukládá surová čísla. Síto nejmenších dělitelů do 1 000 000:
+
+```lsl
+tabulka = [0 for _ in rang(limit + 1)]      # List: naplnění 0,57 s, síto 2,5 s
+
+tabulka = IntArray()                        # IntArray: naplnění 0,02 s, síto 0,03 s
+for _ in rang(limit + 1):
+    tabulka.append(0)
+end
+```
+
+Stejný algoritmus, ~80× rychleji — rychleji než naivní C++. `List`
+používejte pro smíšené hodnoty, `IntArray` pro čísla, `ByteArray` pro bajty.
+Pravdivostní tabulky ukládejte jako `0`/`1` do `IntArray`.
+
 Od LSL 0.8.4 probíhá úklid nepoužívané paměti automaticky podle objemu
 alokací. Do běžné herní smyčky není potřeba přidávat `gc()`.
 Rozpočet začíná na 4 MiB a přizpůsobuje se živému heapu; není to limit RSS.

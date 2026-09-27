@@ -1,6 +1,6 @@
 # Lux Simple Lang (LSL)
 
-**LSL 0.8.7** je vydání self-hostovaného jazyka pro běžné
+**LSL 0.8.8** je vydání self-hostovaného jazyka pro běžné
 programování, deklarativní konfiguraci, AI orchestrace a volitelné CUDA
 výpočty. Compiler i host runtime
 jsou pouze LSL: compiler přímo zapisuje statický Linux x86_64 ELF a runtime
@@ -11,8 +11,10 @@ pure-LSL a Tensor používá CPU fallback.
 
 ## Self-hosted vydání
 
-LSL 0.8.7 dělá z `rang(...)` hodnotu i mimo `for` (`List(rang(2, 101))`,
-`print rang(4)`) a přidává `List.find(hodnota)` vracející pozici nebo `-1`.
+LSL 0.8.8 opravuje překlad proměnných, které dostanou dynamickou hodnotu až
+později v kódu (typy se rozšiřují do fixpointu), a hlásí čárku před `for`
+v comprehension srozumitelně. 0.8.7 udělalo z `rang(...)` hodnotu i mimo `for`
+a přidalo `List.find(hodnota)`.
 Předchozí 0.8.6 přineslo hromadné importy, uvozovky uvnitř interpolace Lux
 Stringů, barevný interaktivní režim, editor `lsl --tui`, formátovaný manuál,
 `lsl about` a průběh instalace v procentech.
@@ -21,7 +23,8 @@ zdrojový archiv a aktualizovaný český manuál jsou na
 [lsl.lux-ai.cz](https://lsl.lux-ai.cz/). Stabilní manuály vydání jsou v
 [historii vydání](https://lsl.lux-ai.cz/releases/):
 
-- [LSL 0.8.7](https://lsl.lux-ai.cz/) — `rang` jako hodnota a `List.find`;
+- [LSL 0.8.8](https://lsl.lux-ai.cz/) — oprava typů proměnných (fixpoint) a diagnostika comprehension;
+- LSL 0.8.7 — `rang` jako hodnota a `List.find`;
 - LSL 0.8.6 — hromadné importy, editor `lsl --tui`, formátovaný manuál a `lsl about`;
 - LSL 0.8.5 — rychlejší compiler se stejným generovaným kódem;
 - LSL 0.8.4 — automatický GC, stabilní paměť a rychlejší dlouhoběžící programy;
@@ -226,6 +229,7 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 - [Poznámky k vydání 0.8.5](docs/release-0.8.5.md)
 - [Poznámky k vydání 0.8.6](docs/release-0.8.6.md)
 - [Poznámky k vydání 0.8.7](docs/release-0.8.7.md)
+- [Poznámky k vydání 0.8.8](docs/release-0.8.8.md)
 - [CLI, knihovny a terminálový manuál](docs/developer_guides/17-cli-and-packages.md)
 - [Poznámky k vydání 0.7.7](docs/release-0.7.7.md)
 - [Poznámky k vydání 0.7.6](docs/release-0.7.6.md)
