@@ -2,18 +2,23 @@
 # Public pure-LSL command frontend.
 
 load codegen
+load editor
+load fd
+load highlight
 load browser
 load catalog
 load console
 load httpserver
 load linker
 load manual
+load os
 load package
 load parser
 load sandbox
+load tui
 load update
 
-VERSION = "0.8.5"
+VERSION = "0.8.6"
 
 function print_help():
     call console.heading("Lux Simple Lang (LSL) " + VERSION)
@@ -30,6 +35,8 @@ function print_help():
     print "  lsl check NAME"
     print "  lsl man [--plain] [TOPIC]"
     print "  lsl help [TOPIC]"
+    print "  lsl about [NAME]"
+    print "  lsl --tui [FILE]"
     print "  lsl update [NAME]"
     print "  lsl update [--check | --rollback] [--system] [--allow-downgrade]"
     print "  lsl origin [NAME]"
@@ -270,10 +277,174 @@ function cleanup_config_snapshots(directory):
     end
 end
 
+# Interactive prompt: raw-mode line editor with syntax colours, history and
+# block-aware continuation prompts. Falls back to plain line input when the
+# terminal cannot be switched (no stty) or stdin is not a terminal.
+BLOCK_OPENERS = ["function", "if", "while", "for", "loop", "try", "safe", "unsafe", "class"]
+# One statically typed terminal owner for the prompt (method calls need a
+# typed receiver, so functions take it from this module-level binding).
+PROMPT_TERMINAL = tui.Terminal()
+
+function block_delta(line):
+    words = String(line).strip().split(" ")
+    first = words[0]
+    if first == "end":
+        return -1
+    elif first in BLOCK_OPENERS and String(line).strip().endswith(":"):
+        return 1
+    end
+    return 0
+end
+
+# Redraw the prompt line in place with the cursor at `cursor`.
+function draw_prompt_line(prompt, buffer, cursor, colors):
+    text = chr(13) + prompt + highlight.render(buffer, colors) + chr(27) + "[K"
+    back = len(buffer) - cursor
+    if back > 0:
+        text += chr(27) + "[" + String(back) + "D"
+    end
+    bytes = ByteArray()
+    for character in text:
+        code = ord(character)
+        if code < 128:
+            call bytes.append(code)
+        elif code < 2048:
+            call bytes.append(192 + code // 64)
+            call bytes.append(128 + code % 64)
+        elif code < 65536:
+            call bytes.append(224 + code // 4096)
+            call bytes.append(128 + code // 64 % 64)
+            call bytes.append(128 + code % 64)
+        else:
+            call bytes.append(240 + code // 262144)
+            call bytes.append(128 + code // 4096 % 64)
+            call bytes.append(128 + code // 64 % 64)
+            call bytes.append(128 + code % 64)
+        end
+    end
+    call fd.write(1, bytes, len(bytes))
+end
+
+# One edited line; None means end of input (Ctrl-D on an empty line).
+function edit_line(prompt, initial, history, colors):
+    term = PROMPT_TERMINAL
+    buffer = String(initial)
+    cursor = len(buffer)
+    position = len(history)
+    loop:
+        call draw_prompt_line(prompt, buffer, cursor, colors)
+        key = term.read_key()
+        if key == "enter":
+            print ""
+            return buffer
+        elif key == "none" or (key == "ctrl-d" and buffer.strip() == ""):
+            print ""
+            return None
+        elif key == "ctrl-c":
+            print "^C"
+            buffer = String(initial)
+            cursor = len(buffer)
+        elif key == "backspace":
+            if cursor > 0:
+                buffer = buffer[0:cursor - 1] + buffer[cursor:len(buffer)]
+                cursor -= 1
+            end
+        elif key == "delete":
+            if cursor < len(buffer):
+                buffer = buffer[0:cursor] + buffer[cursor + 1:len(buffer)]
+            end
+        elif key == "left":
+            cursor = max(0, cursor - 1)
+        elif key == "right":
+            cursor = min(len(buffer), cursor + 1)
+        elif key == "home":
+            cursor = 0
+        elif key == "end":
+            cursor = len(buffer)
+        elif key == "up" or key == "down":
+            if key == "up" and position > 0:
+                position -= 1
+            elif key == "down" and position < len(history):
+                position += 1
+            end
+            if position < len(history):
+                buffer = String(history[position])
+            else:
+                buffer = String(initial)
+            end
+            cursor = len(buffer)
+        elif key == "tab":
+            buffer = buffer[0:cursor] + "    " + buffer[cursor:len(buffer)]
+            cursor += 4
+        elif key.startswith("char:") and len(buffer) < 4096:
+            character = key[5:len(key)]
+            buffer = buffer[0:cursor] + character + buffer[cursor:len(buffer)]
+            cursor += 1
+        end
+    end
+end
+
+function read_interactive_source(stty):
+    colors = console.colors()
+    call console.heading("Lux Simple Lang " + VERSION + " interactive source mode")
+    print console.style("Enter code; type exit on its own line (or press Ctrl-D) to compile and run. Ctrl-C clears the line.", "2")
+    saved = os.capture_argv_clean(stty, ["-g"]).strip()
+    if capture_status() != 0 or len(saved) == 0 or len(saved) > 4096:
+        Error(CliError: "cannot read terminal state")
+    end
+    if os.run_argv_clean(stty, ["-echo", "-icanon", "min", "1", "time", "0"]) != 0:
+        Error(CliError: "cannot enter terminal raw mode")
+    end
+    lines = []
+    history = []
+    total = 0
+    depth = 0
+    failure = None
+    try:
+        loop:
+            prompt = console.style(">>> ", "1;36")
+            indent = ""
+            if depth > 0:
+                prompt = console.style("... ", "36")
+                indent = "    " * depth
+            end
+            line = edit_line(prompt, indent, history, colors)
+            if line == None or line.strip() == "exit":
+                break
+            end
+            if line.strip() != "":
+                history.append(line)
+            end
+            total += __lsl_text_byte_length(String(line)) + 1
+            if total > 4194304:
+                Error(CompileError: "stdin source exceeds the 4 MiB compiler limit")
+            end
+            lines.append(line)
+            depth = max(0, depth + block_delta(line))
+        end
+    else:
+        failure = last_error()
+    end
+    call os.run_argv_clean(stty, [saved])
+    if failure != None:
+        Error(CliError: String(failure))
+    end
+    if len(lines) == 0:
+        return ""
+    end
+    return chr(10).join(lines) + chr(10)
+end
+
 function read_stdin_source():
     lines = []
     total = 0
     terminal = __lsl_isatty(0)
+    if terminal and __lsl_isatty(1) and __lsl_getenv("TERM") != "dumb":
+        stty = os.which_trusted("stty")
+        if stty != None:
+            return read_interactive_source(stty)
+        end
+    end
     if terminal:
         print "Lux Simple Lang " + VERSION + " interactive source mode"
         print "Enter code; type exit on its own line to compile and run."
@@ -318,6 +489,15 @@ function main():
         exit(status)
     end
 
+    if command == "--tui":
+        if arg(3) != None:
+            print "usage: lsl --tui [FILE]"
+            exit(2)
+        end
+        call editor.edit(arg(2))
+        exit(0)
+    end
+
     if arg(2) == "--help" or arg(2) == "-h":
         if command in ["compile", "config", "update", "origin", "version"]:
             print __lsl_help_text(command)
@@ -341,6 +521,54 @@ function main():
         exit(0)
     elif command == "version" or command == "--version":
         print VERSION
+        exit(0)
+    elif command == "about":
+        name = arg(2)
+        if name == "--help" or name == "-h":
+            print __lsl_help_text("about")
+            exit(0)
+        elif arg(3) != None:
+            print "usage: lsl about [NAME]"
+            exit(2)
+        elif name == None:
+            lines = __lsl_about_text("").split(chr(10))
+            call console.heading(lines[0])
+            for index in rang(1, len(lines)):
+                print console.clean(lines[index])
+            end
+            exit(0)
+        end
+        if not package.valid_name(name):
+            call console.error("invalid library name: " + console.clean(name))
+            exit(1)
+        end
+        about = ""
+        try:
+            about = __lsl_about_text(name)
+        else:
+            about = ""
+        end
+        if about == "":
+            # Bundled inventory covers an installed prefix that is not the
+            # per-user directory the runtime helper checks.
+            inventory = catalog.installed(__lsl_getenv("HOME"), resource_path("stdlib"))
+            found = catalog.find_installed(inventory, name)
+            if found != None:
+                header = __lsl_comment_header(fd.read_text_limit(found["path"], 1048576))
+                if header != "":
+                    about = name + ": " + header
+                else:
+                    about = name + ": installed library without a descriptive header comment."
+                end
+            end
+        end
+        if about == "":
+            call console.warning(console.clean(name) + " is not a bundled or installed library. Use lsl search " + console.clean(name) + ".")
+            exit(1)
+        end
+        colon = about.find(":")
+        call console.heading(about[0:colon])
+        print console.clean(about[colon + 1:len(about)].strip())
         exit(0)
     elif command == "compile":
         source_path = arg(2)

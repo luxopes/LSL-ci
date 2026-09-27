@@ -459,6 +459,19 @@ detail = l"Délka jména: {len(jmeno)}"
 literal = l"Doslovné závorky: {{jmeno}}"
 ```
 
+Výraz v závorkách smí obsahovat i řetězce se stejnými uvozovkami, jaké
+ohraničují celý Lux String — od 0.8.6 není potřeba je escapovat. Lexer
+uvnitř `{...}` sleduje vnořené závorky i vnitřní řetězce:
+
+```lsl
+cara = l"{"-" * 20}"
+slovnik = l"{ {"klic": 1}["klic"] }"
+vnoreny = l"{l"uvnitř {vek}"}"
+```
+
+Starší zápis `l"{x + \"a\"}"` funguje dál. Neuzavřená interpolace je chyba
+`E0001 unterminated String literal`.
+
 Kompatibilní zkratka `printl "Ahoj {jmeno}"` interpoluje a rovnou vypíše
 řádek. Pro nový kód, který potřebuje s textem dál pracovat, používejte
 first-class tvar `l"..."`.

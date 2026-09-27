@@ -38,6 +38,19 @@ matrix = t.from_values([1, 2, 3, 4], [2, 2])
 Alias mění pouze jméno viditelné v importujícím souboru; interní namespace
 modulu zůstává deterministický.
 
+Více modulů lze načíst jedním řádkem (nejvýše 32) a případně jim dát
+společný alias:
+
+```lsl
+load os, time              # os.which(...) a time.time()
+load time, os as a         # a.monotonic() i a.which(...)
+```
+
+U společného aliasu se člen hledá v uvedených modulech v pořadí; použije se
+první modul, který jméno exportuje. Pokud jméno neexportuje žádný, chyba
+ukazuje na první modul. `from modul load jmeno [as alias]` zůstává pro
+import jednoho symbolu.
+
 ### Pravidla vyhledávání
 
 Při `load jmeno` se soubor hledá v tomto pořadí:

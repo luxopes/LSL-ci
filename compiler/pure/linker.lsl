@@ -445,7 +445,7 @@ function transform_expression(expression, own_functions, imported_names, namespa
                 transformed_namespace = True
             elif target["name"] in namespaces:
                 expression["kind"] = "name"
-                expression["name"] = namespaces[target["name"]] + expression["name"]
+                expression["name"] = namespace_prefix(namespaces[target["name"]], expression["name"]) + expression["name"]
                 transformed_namespace = True
             end
         end
@@ -594,11 +594,14 @@ end
 
 function import_system(program, path, source, cache, output, budget, internal, own, imports, namespaces):
     if "system" not in own and "system" not in imports and "system" not in namespaces and mentions_system(program):
-        prefix = collect_module("os", path, cache, output, budget, internal, source, {"line": 1, "column": 1, "module_column": 1})
-        imports["system"] = prefix + "run"
+        entry = collect_module("os", path, cache, output, budget, internal, source, {"line": 1, "column": 1, "module_column": 1})
+        imports["system"] = entry[0] + "run"
     end
 end
 
+# Returns the module entry [prefix, exports]: exports maps every public name
+# of the module to its prefixed form, so a shared alias can pick the module
+# that defines a member.
 function collect_module(name, owner_path, cache, output, source_budget, internal_graph, owner_source, import_statement):
     path = module_path(name, owner_path)
     if path in cache:
@@ -630,18 +633,19 @@ function collect_module(name, owner_path, cache, output, source_budget, internal
     end
     call mark_internal_abi(program, internal_module)
     prefix = module_prefix(len(cache))
-    cache[path] = prefix
+    entry = [prefix, {}]
+    cache[path] = entry
     namespaces = {}
     imported_names = {}
 
     for statement in program:
         if statement["kind"] == "load":
             dependency = statement["module"]
-            dependency_prefix = collect_module(dependency, path, cache, output, source_budget, internal_graph, source, statement)
+            dependency_entry = collect_module(dependency, path, cache, output, source_budget, internal_graph, source, statement)
             if statement["symbol"] == None:
-                namespaces[statement["alias"]] = dependency_prefix
+                call bind_namespace(namespaces, statement["alias"], dependency_entry)
             else:
-                imported_names[statement["alias"]] = dependency_prefix + statement["symbol"]
+                imported_names[statement["alias"]] = dependency_entry[0] + statement["symbol"]
             end
         end
     end
@@ -657,6 +661,7 @@ function collect_module(name, owner_path, cache, output, source_budget, internal
             own_functions[declaration["name"]] = prefix + "__private__" + declaration["name"]
         end
     end
+    entry[1] = own_functions
     filtered = []
     for statement in program:
         if statement["kind"] != "load":
@@ -665,7 +670,25 @@ function collect_module(name, owner_path, cache, output, source_budget, internal
     end
     call transform_statements(filtered, own_functions, imported_names, namespaces)
     output.extend(filtered)
-    return prefix
+    return entry
+end
+
+# An alias names a list of module entries. `load a, b as x` appends both, so
+# `x.member` resolves to the first listed module that exports the member.
+function bind_namespace(namespaces, alias, entry):
+    if alias not in namespaces:
+        namespaces[alias] = []
+    end
+    namespaces[alias].append(entry)
+end
+
+function namespace_prefix(entries, member):
+    for entry in entries:
+        if member in entry[1]:
+            return entry[0]
+        end
+    end
+    return entries[0][0]
 end
 
 function link_mode_options(path, source, safety_mode, internal_graph):
@@ -687,11 +710,11 @@ function link_mode_options(path, source, safety_mode, internal_graph):
     for statement in program:
         if statement["kind"] == "load":
             dependency = statement["module"]
-            prefix = collect_module(dependency, path, cache, linked, source_budget, internal_graph, checked_source, statement)
+            entry = collect_module(dependency, path, cache, linked, source_budget, internal_graph, checked_source, statement)
             if statement["symbol"] == None:
-                namespaces[statement["alias"]] = prefix
+                call bind_namespace(namespaces, statement["alias"], entry)
             else:
-                imported_names[statement["alias"]] = prefix + statement["symbol"]
+                imported_names[statement["alias"]] = entry[0] + statement["symbol"]
             end
         end
     end

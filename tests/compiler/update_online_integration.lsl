@@ -1,6 +1,6 @@
 # Optional network test, independent of the default/offline suite.
 # Args: secure parent directory, compiled update_cli_fixture, lsl-install,
-#       optional expected stable version (default 0.8.5).
+#       optional expected stable version (default 0.8.6).
 load fd
 load update_install
 
@@ -13,7 +13,7 @@ end
 function main():
     expected_version = arg(4)
     if expected_version == None:
-        expected_version = "0.8.5"
+        expected_version = "0.8.6"
     end
     work = update_install.private_work(arg(1))
     print "Isolated online updater test:", work

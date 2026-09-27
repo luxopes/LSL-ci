@@ -23,6 +23,38 @@ function row(number, text, selected):
     call term.reset_style()
 end
 
+# A rendered manual line: spans keep their style unless the row is selected.
+function row_spans(number, spans, selected):
+    term = TERMINAL
+    call term.move(number, 1)
+    call term.clear_line()
+    if selected:
+        call term.invert()
+    end
+    room = max(1, term.cols - 1)
+    for item in spans:
+        if room <= 0:
+            break
+        end
+        text = console.clean(item[0])
+        if len(text) > room:
+            text = text[0:room]
+        end
+        room -= len(text)
+        if item[1] != "" and console.colors():
+            call term.emit(chr(27) + "[" + String(item[1]) + "m")
+            call term.emit(text)
+            call term.emit(chr(27) + "[0m")
+            if selected:
+                call term.invert()
+            end
+        else:
+            call term.emit(text)
+        end
+    end
+    call term.reset_style()
+end
+
 function frame(title, footer, status):
     term = TERMINAL
     call gc()
@@ -206,16 +238,11 @@ function manual_loop(root, topic):
                 call row(index - start + 3, chapters[index][1], index == selected)
             end
         else:
-            lines = manual.lines(content, max(1, term.cols - 1))
+            rendered = manual.render(content, max(1, term.cols - 1))
+            lines = [manual.text_of(spans) for spans in rendered]
             top = clamp(top, len(lines))
             for index in rang(top, min(len(lines), top + page_size)):
-                if String(lines[index]).startswith("#"):
-                    call term.bold()
-                    if console.colors():
-                        call term.set_fg(tui.color_cyan)
-                    end
-                end
-                call row(index - top + 3, lines[index], query != "" and String(query).lower() in String(lines[index]).lower())
+                call row_spans(index - top + 3, rendered[index], query != "" and String(query).lower() in String(lines[index]).lower())
             end
         end
         call term.flush()

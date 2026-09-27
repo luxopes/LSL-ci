@@ -2934,7 +2934,7 @@ function emit_expression(generator, syntax):
     elif kind == "call":
         target = syntax["target"]
         if target["kind"] == "name":
-            if target["name"] == "help" or target["name"] == "__lsl_help" or target["name"] == "__lsl_help_text":
+            if target["name"] == "help" or help_family(target["name"]):
                 generator["help_used"] = True
             end
             if "argument_names" in syntax and target["name"] not in generator["functions"] and target["name"] not in generator["classes"]:
@@ -6968,6 +6968,14 @@ function emit_function(generator, declaration):
     generator["global_reads"] = old_global_reads
 end
 
+# Runtime functions emitted only when a program uses help() or the CLI's
+# about text; they carry the help catalog and library descriptions.
+HELP_FAMILY = ["__lsl_help_text", "__lsl_help", "__lsl_about_table", "__lsl_comment_header", "__lsl_library_about", "__lsl_about_text"]
+
+function help_family(name):
+    return name in HELP_FAMILY
+end
+
 function generate_mode(path, source, program, internal_abi):
     lines = source
     call declarations.lower(program, path, source)
@@ -7057,9 +7065,9 @@ function generate_mode(path, source, program, internal_abi):
     emitted_functions = 0
     for statement in program:
         if statement["kind"] == "function":
-            # Topic help is optional runtime data. Do not grow every unrelated
-            # standalone program by embedding the complete help catalog.
-            if statement["name"] != "__lsl_help" and statement["name"] != "__lsl_help_text":
+            # Topic help and library descriptions are optional runtime data.
+            # Do not grow every unrelated standalone program by embedding them.
+            if not help_family(statement["name"]):
                 call emit_function(generator, statement)
                 emitted_functions += 1
             end
@@ -7185,8 +7193,9 @@ function generate_mode(path, source, program, internal_abi):
     call assembler.emit(output, x86_64.mov_imm64(7, 0))
     call assembler.emit(output, x86_64.syscall())
     if generator.get("help_used", False):
-        call emit_function(generator, functions["__lsl_help_text"])
-        call emit_function(generator, functions["__lsl_help"])
+        for name in HELP_FAMILY:
+            call emit_function(generator, functions[name])
+        end
     end
     # Úklid rozpracovaných výrazů pouze při chybě, mimo úspěšnou cestu safe.
     for handler in generator["error_handlers"]:

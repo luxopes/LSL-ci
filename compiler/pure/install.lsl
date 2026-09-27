@@ -25,9 +25,9 @@ function reinstall_managed(prefix):
             call update_install.health(active, previous_version, work)
         end
         generation = update_install.private_work(store + "/generations")
-        call update_install.install_stage(executable_path(), generation, "0.8.5", work)
+        call update_install.install_stage(executable_path(), generation, "0.8.6", work)
         call update_install.prepare(prefix, prefix + "/bin/lsl", previous_version, work)
-        call update_install.activate(store, generation, "0.8.5", work)
+        call update_install.activate(store, generation, "0.8.6", work)
     else:
         failure = last_error()
     end
@@ -43,7 +43,7 @@ function reinstall_managed(prefix):
     elif cleanup_failure != None:
         Error(InstallError: String(cleanup_failure))
     end
-    print "Installed LSL 0.8.5 atomically; previous version retained for rollback."
+    print "Installed LSL 0.8.6 atomically; previous version retained for rollback."
 end
 
 function dirname(path):
@@ -103,6 +103,25 @@ function executable_source(relative, installed_name):
     return repository
 end
 
+# Installation progress: an in-place percentage on a terminal, or plain
+# "progress NN" lines when captured (lsl update relays them).
+function report_progress(done, total):
+    percent = min(100, done * 100 // max(1, total))
+    if __lsl_isatty(1):
+        text = chr(13) + "Installing " + String(percent) + " %"
+        if percent >= 100:
+            text += chr(10)
+        end
+        bytes = __lsl_byte_zeros(__lsl_text_byte_length(text))
+        for index in rang(len(bytes)):
+            bytes[index] = __lsl_text_byte(text, index)
+        end
+        call __lsl_fd_write(1, bytes, len(bytes))
+    elif percent % 10 == 0 or percent == 100:
+        print "progress", percent
+    end
+end
+
 function copy_text(source, destination):
     call writefile(destination, readfile(source))
 end
@@ -138,14 +157,10 @@ call mkdir(prefix + "/lib/lsl/compiler")
 call mkdir(prefix + "/lib/lsl/compiler/pure")
 call mkdir(prefix + "/lib/lsl/stdlib")
 
-call copy_executable(executable_source("compiler/pure/lsl-cli", "lsl"), prefix + "/bin/lsl")
-call copy_executable(executable_source("compiler/pure/lslc-direct", "lslc"), prefix + "/bin/lslc")
-call copy_executable(executable_source("compiler/pure/lsl-configure", "lsl-configure"), prefix + "/bin/lsl-configure")
-call copy_executable(executable_source("tests/lsl-test", "lsl-test"), prefix + "/bin/lsl-test")
-call copy_executable(executable_source("compiler/pure/lsl-install", "lsl-install"), prefix + "/bin/lsl-install")
+executables = [["compiler/pure/lsl-cli", "lsl", "lsl"], ["compiler/pure/lslc-direct", "lslc", "lslc"], ["compiler/pure/lsl-configure", "lsl-configure", "lsl-configure"], ["tests/lsl-test", "lsl-test", "lsl-test"], ["compiler/pure/lsl-install", "lsl-install", "lsl-install"]]
 cuda_worker = executable_source("cuda/lsl-cuda-worker", "lsl-cuda-worker")
 if exists(cuda_worker):
-    call copy_executable(cuda_worker, prefix + "/bin/lsl-cuda-worker")
+    executables.append(["cuda/lsl-cuda-worker", "lsl-cuda-worker", "lsl-cuda-worker"])
 end
 
 sources = [
@@ -159,9 +174,11 @@ sources = [
     "diagnostics.lsl",
     "dynamic_stdlib.lsl",
     "elf_image.lsl",
+    "editor.lsl",
     "flow.lsl",
     "declarations.lsl",
     "heap_runtime.lsl",
+    "highlight.lsl",
     "install.lsl",
     "io_runtime.lsl",
     "lexer.lsl",
@@ -178,20 +195,33 @@ sources = [
     "update_install.lsl",
     "x86_64.lsl"
 ]
-for name in sources:
-    call copy_text(source_path("compiler/pure/" + name), prefix + "/lib/lsl/compiler/pure/" + name)
-end
-
 standard_modules = ["_random_hash.lsl", "ai.lsl", "bigint.lsl", "config.lsl", "configure.lsl", "cuda.lsl", "env.lsl", "fd.lsl", "http.lsl", "httpserver.lsl", "json.lsl", "lconf.lsl", "lux.lsl", "luxos.lsl", "math.lsl", "native.lsl", "os.lsl", "plugin.lsl", "process.lsl", "random.lsl", "sandbox.lsl", "system.lsl", "tensor.lsl", "time.lsl", "tui.lsl", "unixsock.lsl"]
-for name in standard_modules:
-    call copy_text(source_path("stdlib/" + name), prefix + "/lib/lsl/stdlib/" + name)
-end
-
+manual_pages = ["README", "01-getting-started", "02-language-basics", "03-functions-and-classes", "04-collections", "05-error-handling", "06-modules-and-imports", "07-files-io-and-processes", "08-configuration-system", "09-gui-programming", "10-ai-applications", "11-performance-and-optimization", "12-compiler-internals", "13-server-and-origin", "14-sandbox-and-safety", "15-cuda", "16-random", "17-cli-and-packages", "reference", "security", "CHANGELOG"]
 call mkdir(prefix + "/lib/lsl/docs")
 call mkdir(prefix + "/lib/lsl/docs/developer_guides")
-manual_pages = ["README", "01-getting-started", "02-language-basics", "03-functions-and-classes", "04-collections", "05-error-handling", "06-modules-and-imports", "07-files-io-and-processes", "08-configuration-system", "09-gui-programming", "10-ai-applications", "11-performance-and-optimization", "12-compiler-internals", "13-server-and-origin", "14-sandbox-and-safety", "15-cuda", "16-random", "17-cli-and-packages", "reference", "security", "CHANGELOG"]
+
+total = len(executables) + len(sources) + len(standard_modules) + len(manual_pages)
+done = 0
+call report_progress(done, total)
+for entry in executables:
+    call copy_executable(executable_source(entry[0], entry[1]), prefix + "/bin/" + entry[2])
+    done += 1
+    call report_progress(done, total)
+end
+for name in sources:
+    call copy_text(source_path("compiler/pure/" + name), prefix + "/lib/lsl/compiler/pure/" + name)
+    done += 1
+    call report_progress(done, total)
+end
+for name in standard_modules:
+    call copy_text(source_path("stdlib/" + name), prefix + "/lib/lsl/stdlib/" + name)
+    done += 1
+    call report_progress(done, total)
+end
 for name in manual_pages:
     call copy_text(source_path("docs/developer_guides/" + name + ".md"), prefix + "/lib/lsl/docs/developer_guides/" + name + ".md")
+    done += 1
+    call report_progress(done, total)
 end
 
 print "installed pure LSL into", prefix

@@ -2,6 +2,23 @@
 
 Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktuální handoff, pořadí blockerů a ověřovací příkazy jsou v `COMPLETION_PLAN.md`.
 
+## Hotovo v 0.8.6 — 27. 9. 2026
+
+- [x] Více importů na jednom řádku: `load term, time`.
+- [x] Společný alias pro všechny knihovny na řádku: `load term, time as a`;
+  člen se hledá v uvedených knihovnách v pořadí.
+- [x] Stejné uvozovky uvnitř interpolace l-stringu bez escapování:
+  `l"{"a" * x}"`, včetně vnoření a chybových případů (regresní testy).
+- [x] Interaktivní `lsl`: zvýrazňování syntaxe, historie, barevné prompty
+  `>>>`/`...` s automatickým odsazením bloků.
+- [x] `lsl --tui [SOUBOR]`: terminálový editor ve stylu Vimu se zvýrazňováním.
+- [x] Průběh v procentech při instalaci (`lsl-install`) i aktualizaci
+  (`lsl update`: stahování i instalace).
+- [x] `lsl man` formátuje Markdown (nadpisy, seznamy, kódové bloky, tabulky,
+  inline kód, odkazy) v terminálovém prohlížeči i v `--plain` režimu.
+- [x] `lsl about [KNIHOVNA]` a about text knihoven v `help("knihovna")`;
+  registrové balíčky se popisují úvodním komentářem zdroje.
+
 ## Opraveno v 0.8.4 — 22. 9. 2026
 
 - [x] Automatický GC i bez formátování Float a bez ručního `gc()` ve hře.

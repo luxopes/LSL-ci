@@ -1,6 +1,30 @@
 # Pure-LSL migration
 
-## Aktuální vydání 0.8.5 — 25. 9. 2026
+## Aktuální vydání 0.8.6 — 27. 9. 2026
+
+Jazyk: `load a, b` načte více modulů jedním řádkem (nejvýše 32) a
+`load a, b as x` jim dá společný alias; linker drží pro alias seznam
+modulových záznamů `[prefix, exporty]` a člen hledá v pořadí. Lexer uvnitř
+interpolace Lux Stringu sleduje vnořené závorky a vnitřní řetězce, takže
+`l"{"a" * x}"` je jeden token; parser interpolaci dělí podle stejných
+pravidel. CLI: interaktivní režim s řádkovým editorem (zvýrazňování přes
+`highlight.lsl`, historie, bloky s `...`), editor `lsl --tui` (`editor.lsl`
+nad `tui`), Markdown renderer pro `lsl man` (`manual.render`, spany se
+styly, tabulky), `lsl about [NAME]` s tabulkou popisů vestavěných knihoven
+a úvodním komentářem u registrových balíčků (stejný text v `help(NAME)`),
+průběh v procentech (`update_install.bounded_stream` přes `capture_stream`,
+`update.download_progress`, installer hlásí `progress NN`). Funkce nápovědy
+a popisů se emitují jen při použití (`HELP_FAMILY`), optimalizační fixture
+zůstává 109 608 B pod limitem 110 000.
+
+Stage 1/2/3 bitově shodné. Compiler SHA-256: `2ae3d194d2d42c2827bb947ceda76bdfab9a5abc54acddd809d0aa20f617ba95`;
+CLI: `2cd75783a01e557ab6894b9931a964eb08851d09406c8ee9135ba154a6909c84`. Plná sada (včetně nového
+`module_group_conformance`, rozšířených negativních případů a CLI kontrol
+`about`/`--tui`/formátovaného manuálu) a fixed-point prošly.
+
+Podrobnosti: `docs/release-0.8.6.md`. Release ověření: `.build/release-0.8.6/`.
+
+## Vydání 0.8.5 — 25. 9. 2026
 
 Rychlejší compiler beze změny generovaného kódu: emit vrstva (`assembler`,
 `bytes`, `elf_image`) skládá kód, datovou sekci i ELF obraz v `ByteArray`

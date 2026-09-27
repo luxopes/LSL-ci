@@ -78,3 +78,4 @@ load plugin_process_conformance
 load http_security_conformance
 load language_06_conformance
 load comprehension_conformance
+load module_group_conformance

@@ -4,6 +4,19 @@ Na této stránce jsou uživatelsky významné změny vydaných verzí. Stabiln�
 manuály a soubory ke stažení zůstávají dostupné v
 [historii vydání](/releases/).
 
+## 0.8.6 — 27. 9. 2026
+
+- Jazyk: `load os, time` načte více modulů najednou; `load time, os as a`
+  sdílí alias pro všechny uvedené moduly (člen se hledá v pořadí).
+- Lux String: uvozovky uvnitř interpolace bez escapování, `l"{"a" * x}"`,
+  včetně vnořených závorek a vnořených l-stringů.
+- Interaktivní `lsl`: zvýrazňování syntaxe, historie, barevné prompty a
+  automatické odsazení bloků.
+- `lsl --tui [SOUBOR]`: terminálový editor ve stylu Vimu se zvýrazňováním.
+- `lsl man` formátuje Markdown; `lsl about [KNIHOVNA]` a popisy knihoven
+  v `help("knihovna")`, včetně nainstalovaných registrových balíčků.
+- `lsl-install` a `lsl update` zobrazují průběh v procentech.
+
 ## 0.8.5 — 25. 9. 2026
 
 - Rychlejší compiler: emit vrstva a ELF obraz v `ByteArray`, lexer nad

@@ -1,6 +1,6 @@
 # 📋 Referenční příručka všech funkcí LSL
 
-Kompletní seznam všech funkcí, metod a built-in příkazů LSL 0.8.5.
+Kompletní seznam všech funkcí, metod a built-in příkazů LSL 0.8.6.
 Každá položka obsahuje název, signaturu a stručný popis.
 
 ---
@@ -172,7 +172,7 @@ a `>>=` fungují stejně jako `+=`.
 | Funkce | Popis |
 |---|---|
 | `len(value)` | Vrátí délku řetězce, seznamu, slovníku nebo pole. |
-| `help()` / `help("TOPIC")` | Vypíše seznam témat / nápovědu k příkazu, konstruktu či modulu. Přijímá runtime String, vrací None; neznámé téma vyvolá HelpError. Úplný manuál: `lsl man`. |
+| `help()` / `help("TOPIC")` | Vypíše seznam témat / nápovědu k příkazu, konstruktu či modulu. Přijímá runtime String, vrací None; neznámé téma vyvolá HelpError. U knihovny začíná výstup krátkým popisem (stejným jako `lsl about NAME`) a funguje i pro nainstalované uživatelské knihovny. Úplný manuál: `lsl man`. |
 
 ---
 

@@ -78,6 +78,12 @@ výběru. TUI vyžaduje interaktivní stdin/stdout a terminál jiný než `dumb`
 
 ## Offline manuál a nápověda
 
+Od 0.8.6 prohlížeč i `lsl man --plain` formátují Markdown: nadpisy, odrážky,
+kódové bloky, tabulky se zarovnanými sloupci, inline kód a odkazy se zobrazí
+jako terminálové formátování. Bez terminálu zůstává struktura bez barev.
+Instalátor a `lsl update` zobrazují průběh v procentech (na terminálu se
+přepisuje na místě; v pipe se nevypisuje).
+
 ```bash
 lsl man
 lsl man random
@@ -109,6 +115,39 @@ LSL. Přijímá nula nebo jeden argument typu String a vrací None. Neznámé t�
 vyvolá zachytitelný HelpError; `help()` vypíše seznam podporovaných témat.
 Detailní reference všech API je v manuálu.
 
+## Editor lsl --tui
+
+`lsl --tui [SOUBOR]` otevře terminálový editor ve stylu Vimu se zvýrazňováním
+syntaxe LSL. Bez souboru začne s prázdným bufferem a `:w SOUBOR` jej uloží.
+
+| Mód | Klávesy |
+| --- | --- |
+| Normální | `h j k l` nebo šipky, `w` / `b` slovo vpřed / zpět, `0` / `$` začátek / konec řádku, `gg` / `G` začátek / konec souboru, PgUp / PgDn |
+| Normální | `x` smaže znak, `dd` smaže řádek (do schránky), `yy` zkopíruje řádek, `p` / `P` vloží pod / nad, `u` vrátí poslední změnu |
+| Normální | `i` / `a` / `A` / `I` vkládání na kurzoru / za ním / na konci / na začátku řádku, `o` / `O` nový řádek pod / nad |
+| Normální | `/text` hledá, `n` další výskyt, `:` příkazový řádek |
+| Příkazy | `:w [SOUBOR]` uloží, `:q` ukončí (odmítne neuložené změny), `:q!` ukončí bez uložení, `:wq` uloží a ukončí |
+| Vkládací | text, Enter (převezme odsazení řádku), Backspace (na začátku řádku spojí s předchozím), Delete, Tab = čtyři mezery, šipky, Esc zpět do normálního módu |
+
+Stavový řádek ukazuje mód, název souboru, `[+]` u neuložených změn a pozici
+kurzoru. Editor pracuje se soubory do 4 MiB, nic nespouští a nevolá shell;
+program spustíte po uložení příkazem `lsl SOUBOR`.
+
+## lsl about
+
+`lsl about` vypíše, co LSL je, jeho verzi, web a licenci. `lsl about NAME`
+vypíše krátký popis knihovny: vestavěné knihovny (`random`, `os`, `tui`, …)
+mají popisy zabudované, knihovny z registru se popisují úvodním komentářem
+svého zdroje (`# ...` řádky na začátku souboru až po první prázdný řádek).
+Stejný popis začíná výstup `help("NAME")` v programu, takže `help()` funguje
+i pro nainstalované uživatelské knihovny.
+
+```text
+lsl about
+lsl about random
+lsl about term
+```
+
 ## Barvy a systémové aktualizace
 
 Nápověda, stav instalace a diagnostika používají barvy jen na terminálu.
@@ -135,18 +174,18 @@ interní ABI CLI (nejen veřejné testovací drivery).
 Z 0.7.8 proto jednou použijte instalační program z nového archivu:
 
 ```bash
-curl -fSLO https://lsl.lux-ai.cz/downloads/lsl-0.8.5-linux-x86_64.tar.gz
+curl -fSLO https://lsl.lux-ai.cz/downloads/lsl-0.8.6-linux-x86_64.tar.gz
 curl -fSLO https://lsl.lux-ai.cz/downloads/SHA256SUMS
 sha256sum --ignore-missing -c SHA256SUMS
-tar -xzf lsl-0.8.5-linux-x86_64.tar.gz
-sudo ./lsl-0.8.5/bin/lsl-install /usr/local
+tar -xzf lsl-0.8.6-linux-x86_64.tar.gz
+sudo ./lsl-0.8.6/bin/lsl-install /usr/local
 ```
 
-Instalátor 0.8.5 rozpozná stávající spravovanou instalaci a nepřepisuje
+Instalátor 0.8.6 rozpozná stávající spravovanou instalaci a nepřepisuje
 soubory přes symlinky: připraví novou generaci, otestuje ji a atomicky přepne
 aktivní verzi. Zachová předchozí verzi pro rollback. U legacy instalace
 v `/usr/local` nebo `~/.local` nejprve vytvoří její snapshot. Pro uživatelskou
-instalaci použijte bez sudo `./lsl-0.8.5/bin/lsl-install "$HOME/.local"`.
+instalaci použijte bez sudo `./lsl-0.8.6/bin/lsl-install "$HOME/.local"`.
 
 Při přechodu z 0.8.2 aktualizujte nainstalované X11 příkazem `lsl update x11`,
 ideálně před `lsl update`. X11 0.8.3 používá `time.monotonic()` místo

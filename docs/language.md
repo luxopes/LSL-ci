@@ -141,7 +141,7 @@ text = l"ahoj {name}, je ti {1 + 10}"
 print text
 ```
 
-`print` odděluje hodnoty mezerou a přidá nový řádek. Prefix `l` vytváří first-class Lux String: výrazy v `{...}` vyhodnotí hned na místě a výsledek lze přiřadit, vrátit z funkce nebo předat jako argument. `{{` a `}}` zapisují doslovné složené závorky. `printl "..."` zůstává kompatibilní zkratka. Původní zkrácená syntaxe `input "prompt"` i obecná call syntaxe `input("prompt")` vypíšou prompt bez newline, přečtou jeden celý stdin řádek do dynamicky rostoucího bufferu, odstraní koncové LF/CRLF a vrátí UTF-8 `String`.
+`print` odděluje hodnoty mezerou a přidá nový řádek. Prefix `l` vytváří first-class Lux String: výrazy v `{...}` vyhodnotí hned na místě a výsledek lze přiřadit, vrátit z funkce nebo předat jako argument. `{{` a `}}` zapisují doslovné složené závorky. Výraz v `{...}` smí od 0.8.6 obsahovat řetězce se stejnými uvozovkami bez escapování (`l"{"a" * n}"`); lexer uvnitř interpolace sleduje vnořené závorky i vnitřní řetězce. `printl "..."` zůstává kompatibilní zkratka. Původní zkrácená syntaxe `input "prompt"` i obecná call syntaxe `input("prompt")` vypíšou prompt bez newline, přečtou jeden celý stdin řádek do dynamicky rostoucího bufferu, odstraní koncové LF/CRLF a vrátí UTF-8 `String`.
 
 Veřejné CLI bez argumentů čte jednu translation unit ze stdin. Na TTY zobrazuje banner a `>>>`; samostatný řádek `exit` nebo Ctrl-D vstup ukončí. Pipe končí pouze EOF a heredoc pouze svým shellovým delimiterem — nepřidává se do něj ještě `exit`. Poté se celek jednou přeloží a spustí. V pipe/heredoc režimu se prompty nevypisují. Interaktivní terminátor `exit` není součást jazyka a nesmí se zaměňovat s voláním `exit(status)`.
 
@@ -432,11 +432,13 @@ i `dedup` mají v nejhorším případě kvadratický počet porovnání.
 ```lsl
 load lux
 load tensor as t
+load os, time
+load time, os as a
 from lux load l as value_type
-print lux.version, value_type([1, 2])
+print lux.version, value_type([1, 2]), a.monotonic() > 0.0
 ```
 
-`load foo.bar` hledá `foo/bar.lsl` nejprve vedle zdrojového souboru, v compiler interních a built-in/system `lib/lsl/stdlib` cestách a teprve potom pod `~/.local/lib/lsl/stdlib`. `load foo.bar as baz` zpřístupní stejný staticky linkovaný modul pod prefixem `baz.`. Uživatelskou knihovnu lze získat přes `lsl install NAME`; built-in modul proto nelze uživatelskou kopií zastínit. Modulové symbols dostávají deterministický namespace prefix. Třídy označené `ctype Private` nejsou dostupné přes vnější namespace; public classes lze přímo konstruovat. `native` modul podporuje omezené self-contained Linux x86_64 ET_DYN Int64 kernels; obecné relocatable/libc pluginy nejsou součástí ABI v1.
+`load foo.bar` hledá `foo/bar.lsl` nejprve vedle zdrojového souboru, v compiler interních a built-in/system `lib/lsl/stdlib` cestách a teprve potom pod `~/.local/lib/lsl/stdlib`. `load foo.bar as baz` zpřístupní stejný staticky linkovaný modul pod prefixem `baz.`. Od 0.8.6 načte `load a, b` více modulů (nejvýše 32) jedním řádkem a `load a, b as x` jim dá společný alias: člen `x.jmeno` se hledá v uvedených modulech v pořadí a použije se první, který jej exportuje. Uživatelskou knihovnu lze získat přes `lsl install NAME`; built-in modul proto nelze uživatelskou kopií zastínit. Modulové symbols dostávají deterministický namespace prefix. Třídy označené `ctype Private` nejsou dostupné přes vnější namespace; public classes lze přímo konstruovat. `native` modul podporuje omezené self-contained Linux x86_64 ET_DYN Int64 kernels; obecné relocatable/libc pluginy nejsou součástí ABI v1.
 
 Chybějící knihovna hlásí E3001 s názvem a přesným místem importu, včetně
 importů uvnitř jiné knihovny. Výpis doporučí kontrolu místního souboru a pro

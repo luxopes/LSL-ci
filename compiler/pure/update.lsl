@@ -203,6 +203,41 @@ function download(url, path, maximum):
     end
 end
 
+# Download with an in-place percentage: curl streams the body to stdout and
+# reports the HTTP status on stderr; every chunk is appended to `path`.
+DOWNLOAD = {"path": "", "received": 0, "expected": 0, "shown": -1}
+
+function download_chunk(chunk):
+    progress = DOWNLOAD
+    call appendfile(progress["path"], chunk)
+    progress["received"] += __lsl_text_byte_length(String(chunk))
+    percent = min(100, progress["received"] * 100 // max(1, progress["expected"]))
+    if percent != progress["shown"]:
+        progress["shown"] = percent
+        call update_install.show_progress("Downloading", percent)
+    end
+    return None
+end
+
+function download_progress(url, path, expected):
+    call allowed_url(url)
+    progress = DOWNLOAD
+    progress["path"] = path
+    progress["received"] = 0
+    progress["expected"] = expected
+    progress["shown"] = -1
+    call writefile(path, "")
+    arguments = ["-q", "--fail", "--silent", "--show-error", "--globoff", "--proto", "=https", "--proto-redir", "=https", "--tlsv1.2", "--max-redirs", "0", "--connect-timeout", "15", "--max-time", "120", "--max-filesize", String(expected), "--output", "-", "--write-out", "%{stderr}%{http_code}", "--url", url]
+    stderr = update_install.bounded_stream(update_install.tool("curl"), arguments, expected, 125, download_chunk)
+    if stderr.strip() != "200":
+        call fail("update server must return HTTP 200 without redirection")
+    end
+    info = update_install.metadata(path)
+    if info == None or info["size"] < 1 or info["size"] > expected:
+        call fail("download size outside limit")
+    end
+end
+
 function verify_signature(work):
     info = update_install.metadata(work + "/manifest.sig")
     if info == None or info["size"] != 64:
@@ -489,7 +524,7 @@ function execute(current, settings, work, prefix):
     store = prefix + "/lib/lsl-updates"
     artifact = manifest["artifact"]
     call console.heading("Downloading verified LSL " + manifest["version"] + " for Linux x86_64.")
-    call download(artifact["url"], work + "/release.tar.gz", artifact["size"])
+    call download_progress(artifact["url"], work + "/release.tar.gz", artifact["size"])
     installer = extract_archive(work, artifact)
     generation = update_install.private_work(store + "/generations")
     call update_install.install_stage(installer, generation, manifest["version"], work)

@@ -771,7 +771,13 @@ function block(parser, terminators):
         if check_kind(parser, "name") and current(parser)["value"] in terminators:
             break
         end
-        statements.append(parse_statement(parser))
+        parsed = parse_statement(parser)
+        statements.append(parsed)
+        if parsed["kind"] == "load" and "extra_loads" in parsed:
+            for extra in parsed["extra_loads"]:
+                statements.append(extra)
+            end
+        end
         call skip_newlines(parser)
     end
     parser[5] -= 1
@@ -1002,27 +1008,54 @@ function parse_statement_inner(parser):
         call consume_line_end(parser)
         return node(opening["value"], opening)
     elif match(parser, "load"):
-        module = expect_kind(parser, "name", "E1215", "expected module name")
-        name = module["value"]
-        components = 1
-        while match(parser, "."):
-            name += "." + expect_kind(parser, "name", "E1216", "expected module path component")["value"]
-            components += 1
-            if components > 64 or len(name) > 1024:
-                call fail_at(parser, current(parser), "E1235", "module path is too long", "use at most 64 components and 1024 characters")
+        # `load a, b as x` imports several modules in one statement; the
+        # linker sees one load node per module. Without `as`, every module
+        # keeps its own name; with it, all of them share the alias.
+        modules = []
+        loop:
+            module = expect_kind(parser, "name", "E1215", "expected module name")
+            name = module["value"]
+            components = 1
+            while match(parser, "."):
+                name += "." + expect_kind(parser, "name", "E1216", "expected module path component")["value"]
+                components += 1
+                if components > 64 or len(name) > 1024:
+                    call fail_at(parser, current(parser), "E1235", "module path is too long", "use at most 64 components and 1024 characters")
+                end
+            end
+            modules.append([name, module["column"]])
+            if len(modules) > 32:
+                call fail_at(parser, module, "E1236", "too many modules in one load statement", "use at most 32 modules per load")
+            end
+            if not match(parser, ","):
+                break
             end
         end
-        module_parts = name.split(".")
-        alias = module_parts[len(module_parts) - 1]
+        shared_alias = None
         if match(parser, "as"):
-            alias = expect_kind(parser, "name", "E1232", "expected module alias")["value"]
+            shared_alias = expect_kind(parser, "name", "E1232", "expected module alias")["value"]
         end
         call consume_line_end(parser)
-        result = node("load", opening)
-        result["module"] = name
-        result["module_column"] = module["column"]
-        result["symbol"] = None
-        result["alias"] = alias
+        result = None
+        for entry in modules:
+            item = node("load", opening)
+            item["module"] = entry[0]
+            item["module_column"] = entry[1]
+            item["symbol"] = None
+            module_parts = String(entry[0]).split(".")
+            item["alias"] = module_parts[len(module_parts) - 1]
+            item["shared_alias"] = False
+            if shared_alias != None:
+                item["alias"] = shared_alias
+                item["shared_alias"] = len(modules) > 1
+            end
+            if result == None:
+                result = item
+                result["extra_loads"] = []
+            else:
+                result["extra_loads"].append(item)
+            end
+        end
         return result
     elif match(parser, "from"):
         module = expect_kind(parser, "name", "E1217", "expected module name")

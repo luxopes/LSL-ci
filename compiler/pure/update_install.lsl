@@ -150,6 +150,64 @@ function bounded(executable, arguments, maximum, seconds):
     return output
 end
 
+# Like bounded(), but the tool's stdout is streamed to on_chunk while it
+# runs instead of being collected; the return value is the tool's stderr.
+function bounded_stream(executable, arguments, maximum, seconds, on_chunk):
+    limits = ["--signal=TERM", "--kill-after=2s", "--", String(seconds) + "s", tool("prlimit"), "--as=1073741824", "--cpu=" + String(seconds), "--fsize=" + String(maximum), "--core=0", "--nofile=64", "--", executable]
+    limits.extend(arguments)
+    call capture_stream(tool("timeout"), limits, on_chunk)
+    status = capture_status()
+    if status != 0:
+        call fail("tool failed (" + String(status) + "): " + executable + ": " + capture_stderr().strip())
+    end
+    return capture_stderr()
+end
+
+# Progress line on a terminal: "\r<label> NN %" rewritten in place. Pipes and
+# non-terminals get nothing, so scripted output stays clean.
+function show_progress(label, percent):
+    if not __lsl_isatty(1):
+        return None
+    end
+    text = chr(13) + label + " " + String(percent) + " %"
+    if percent >= 100:
+        text += chr(10)
+    end
+    bytes = __lsl_byte_zeros(__lsl_text_byte_length(text))
+    for index in rang(len(bytes)):
+        bytes[index] = __lsl_text_byte(text, index)
+    end
+    call __lsl_fd_write(1, bytes, len(bytes))
+    return None
+end
+
+# The installer reports "progress NN" lines on its stdout; relay them as an
+# in-place percentage while the stage is built. Chunks may split a line, so
+# the incomplete tail is carried over to the next chunk.
+RELAY = {"carry": ""}
+
+function relay_installer_progress(chunk):
+    text = String(RELAY["carry"]) + String(chunk)
+    lines = text.split(chr(10))
+    RELAY["carry"] = lines[len(lines) - 1]
+    for index in rang(len(lines) - 1):
+        line = String(lines[index]).strip()
+        if line.startswith("progress "):
+            digits = line[9:len(line)].strip()
+            valid = len(digits) > 0 and len(digits) <= 3
+            for character in digits:
+                if ord(character) < 48 or ord(character) > 57:
+                    valid = False
+                end
+            end
+            if valid:
+                call show_progress("Installing", Int(digits))
+            end
+        end
+    end
+    return None
+end
+
 function lock(store):
     path = cstring(store + "/lock")
     handle = __lsl_syscall(2, __lsl_data_address(path), 2 + 64 + 524288 + 131072, 384, 0)
@@ -260,8 +318,9 @@ function install_stage(installer, generation, version, scratch):
     # system users when the administrator's personal umask is 077.
     previous_mask = __lsl_syscall(95, 18, 0, 0, 0)
     install_failure = None
+    RELAY["carry"] = ""
     try:
-        call bounded(installer, [generation], 16777216, 120)
+        call bounded_stream(installer, [generation], 16777216, 120, relay_installer_progress)
     else:
         install_failure = last_error()
     end

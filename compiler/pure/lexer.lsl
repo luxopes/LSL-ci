@@ -156,21 +156,69 @@ function tokenize(path, source):
             index += 1
             column += 1
             closed = False
+            # Inside a Lux String interpolation `{...}` the quote that opened
+            # the literal does not end it: braces nest and inner String
+            # literals (either quote) are skipped, so l"{"a" * n}" is one
+            # token. The parser later splits the value on the same rules.
+            brace_depth = 0
+            inner_quote = 0
             while index < count:
                 code = __lsl_text_byte(text, index)
-                if code == quote:
+                if code == 92:
+                    if index + 1 >= count:
+                        call diagnostics.fail(path, line, column, 1, source_line(lines, line), "E0002", "unfinished escape sequence", "add a character after the backslash")
+                    end
+                    decoded = decode_escape(path, lines, line, column, __lsl_text_byte(text, index + 1))
+                    call value_bytes.append(decoded)
+                    if brace_depth > 0 and (decoded == 34 or decoded == 39):
+                        if inner_quote == decoded:
+                            inner_quote = 0
+                        elif inner_quote == 0:
+                            inner_quote = decoded
+                        end
+                    end
+                    value_length += 1
+                    index += 2
+                    column += 2
+                elif brace_depth > 0 and code != 10:
+                    if inner_quote != 0:
+                        if code == inner_quote:
+                            inner_quote = 0
+                        end
+                    elif code == 34 or code == 39:
+                        inner_quote = code
+                    elif code == 123:
+                        brace_depth += 1
+                    elif code == 125:
+                        brace_depth -= 1
+                    end
+                    width = char_width(code)
+                    stop = index + width
+                    while index < stop:
+                        call value_bytes.append(__lsl_text_byte(text, index))
+                        index += 1
+                    end
+                    value_length += 1
+                    column += 1
+                elif code == quote:
                     index += 1
                     column += 1
                     closed = True
                     break
-                elif code == 92:
-                    if index + 1 >= count:
-                        call diagnostics.fail(path, line, column, 1, source_line(lines, line), "E0002", "unfinished escape sequence", "add a character after the backslash")
-                    end
-                    call value_bytes.append(decode_escape(path, lines, line, column, __lsl_text_byte(text, index + 1)))
+                elif lux_string and code == 123:
+                    call value_bytes.append(123)
                     value_length += 1
-                    index += 2
-                    column += 2
+                    index += 1
+                    column += 1
+                    if index < count and __lsl_text_byte(text, index) == 123:
+                        call value_bytes.append(123)
+                        value_length += 1
+                        index += 1
+                        column += 1
+                    else:
+                        brace_depth = 1
+                        inner_quote = 0
+                    end
                 elif code == 10:
                     call diagnostics.fail(path, start_line, start_column, max(1, column - start_column), source_line(lines, start_line), "E0001", "unterminated String literal", "close the String before the end of the line")
                 else:

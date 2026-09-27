@@ -23,14 +23,21 @@ cases = [
     "print [x for x [1]]",
     "print {x:x for x in [1]",
     "print [x for x in [1], 2]",
-    "print x" + newline + "data=[x for x in [1]]"
+    "print x" + newline + "data=[x for x in [1]]",
+    "load os,",
+    "load os, , time",
+    "load os, time as",
+    "print l\"{\"a}\"",
+    "print l\"{x\""
 ]
 expected_details = [
     "missing required argument", "unknown keyword", "multiple values",
     "duplicate keyword", "positional argument after keyword", "Function values",
     "class without init", "required parameter after a default", "immutable literal",
     "immutable literal", "duplicate parameter", "keyword arguments", "keyword arguments",
-    "keyword arguments"
+    "keyword arguments", "", "", "", "", "",
+    "expected module name", "expected module name", "expected module alias",
+    "unterminated String literal", "unterminated String literal"
 ]
 for i in rang(len(cases)):
     path = root + "/language-negative-" + String(i) + ".lsl"

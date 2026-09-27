@@ -146,17 +146,25 @@ Spusťte LSL bez argumentů:
 Objeví se:
 
 ```text
-Lux Simple Lang 0.8.5 interactive source mode
-Enter code; type exit on its own line to compile and run.
+Lux Simple Lang 0.8.6 interactive source mode
+Enter code; type exit on its own line (or press Ctrl-D) to compile and run. Ctrl-C clears the line.
 >>>
 ```
 
 Tři zobáčky `>>>` jsou **výzva** (prompt) — LSL čeká, až něco napíšete.
-Funguje to takto:
+Kód se během psaní barevně zvýrazňuje, šipky nahoru a dolů procházejí
+historii řádků, šipky vlevo a vpravo, Home a End pohybují kurzorem a Tab
+vloží čtyři mezery. Funguje to takto:
 
 - Každý řádek, který napíšete, se uloží (ale ještě neprovede).
-- Až napíšete řádek se slovem `exit`, LSL vše najednou přeloží a spustí.
+- Uvnitř bloku (`if`, `function`, `while`, …) se výzva změní na `...` a
+  řádek je předodsazený; `end` blok uzavře.
+- Až napíšete řádek se slovem `exit` nebo stisknete Ctrl-D, LSL vše
+  najednou přeloží a spustí. Ctrl-C smaže rozepsaný řádek.
 - Výsledek se vypíše a program skončí.
+
+Delší program pohodlněji napíšete v editoru `lsl --tui soubor.lsl`
+(popsaný v kapitole 17) a spustíte `lsl soubor.lsl`.
 
 Příklad:
 
