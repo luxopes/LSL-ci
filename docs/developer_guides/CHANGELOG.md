@@ -4,6 +4,14 @@ Na této stránce jsou uživatelsky významné změny vydaných verzí. Stabiln�
 manuály a soubory ke stažení zůstávají dostupné v
 [historii vydání](/releases/).
 
+## 0.8.7 — 27. 9. 2026
+
+- `rang(...)` funguje i mimo `for` jako hodnota: `List(rang(2, 101))`,
+  `print rang(4)`, `len(rang(0, 10, 3))`. Smyčky `for` dál nealokují.
+- `List.find(hodnota)` (i Tuple a RealArray) vrátí pozici nebo `-1`;
+  `find` na runtime hodnotě rozliší String a List.
+- Manuál: knihovny a `sudo` (per-user knihovny nejsou vidět pod `sudo`).
+
 ## 0.8.6 — 27. 9. 2026
 
 - Jazyk: `load os, time` načte více modulů najednou; `load time, os as a`

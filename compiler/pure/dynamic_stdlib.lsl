@@ -300,7 +300,7 @@ function __lsl_help_text(topic):
         "set": "set() or set(ITERABLE) -> Set\nCreate a mutable collection of unique immutable values (scalars and recursively immutable Tuples).\nSupports len, Bool, in, for, equality, add, discard, remove, pop, clear, copy, update,\nunion, intersection, difference, symmetric_difference, issubset, issuperset, isdisjoint.\nSet equality ignores order. Iteration keeps insertion order; there is no indexing or Set literal.\nUse List(s) or sorted(s) to obtain a list. Membership currently uses a linear scan.",
         "min": "min(ITERABLE) or min(A, B)\nReturn the smallest element or operand.",
         "max": "max(ITERABLE) or max(A, B)\nReturn the largest element or operand.",
-        "rang": "rang(STOP), rang(START, STOP), rang(START, STOP, STEP)\nConstruct an integer range excluding STOP; STEP must not be zero.",
+        "rang": "rang(STOP), rang(START, STOP), rang(START, STOP, STEP)\nIntegers from START (default 0) up to but excluding STOP; STEP must not be zero.\nIn `for i in rang(...)` no List is built; anywhere else rang(...) is a List value,\nso List(rang(2, 101)), len(rang(10)) or print rang(3) work. At most 100000000 elements.",
         "range": "range(...) is an alias of rang(...). See help(\"rang\") for start/stop/step.",
         "String": "String(VALUE)\nConvert a value to text. Strings are UTF-8; indexing uses Unicode characters.",
         "Int": "Int(VALUE)\nConvert a supported numeric value or decimal String to a signed 64-bit integer.",
@@ -347,7 +347,7 @@ function __lsl_help_text(topic):
     if topic == "":
         names = topics.keys()
         call names.sort()
-        return "Lux Simple Lang (LSL) 0.8.6" + chr(10) + "Use help(\"TOPIC\") for details; lsl man opens the full offline manual." + chr(10) + "topics: " + " ".join(names)
+        return "Lux Simple Lang (LSL) 0.8.7" + chr(10) + "Use help(\"TOPIC\") for details; lsl man opens the full offline manual." + chr(10) + "topics: " + " ".join(names)
     end
     about = __lsl_library_about(topic)
     if topic not in topics:
@@ -463,7 +463,7 @@ function __lsl_about_text(name):
         Error(TypeError: "about name must be a String")
     end
     if name == "":
-        return "Lux Simple Lang (LSL) 0.8.6" + chr(10) + "A small self-hosted programming language: the compiler writes static Linux x86_64 ELF binaries directly and the runtime uses plain syscalls, with no libc, assembler or linker. Programs read like scripts, run as native code, and can use declarative configuration, AI clients, GUI packages and optional CUDA tensors." + chr(10) + "Website and manual: https://lsl.lux-ai.cz/  (offline: lsl man)" + chr(10) + "License: MIT"
+        return "Lux Simple Lang (LSL) 0.8.7" + chr(10) + "A small self-hosted programming language: the compiler writes static Linux x86_64 ELF binaries directly and the runtime uses plain syscalls, with no libc, assembler or linker. Programs read like scripts, run as native code, and can use declarative configuration, AI clients, GUI packages and optional CUDA tensors." + chr(10) + "Website and manual: https://lsl.lux-ai.cz/  (offline: lsl man)" + chr(10) + "License: MIT"
     end
     about = __lsl_library_about(name)
     if about == "":
@@ -695,6 +695,46 @@ function __lsl_dynamic_count(target, value):
         return __lsl_list_count(target, value)
     end
     Error(TypeError: "count requires a String, List, Tuple, or RealArray")
+end
+
+# find on a runtime-typed receiver: substring position for String, element
+# position for List, Tuple and RealArray; -1 when absent.
+function __lsl_dynamic_find(target, value):
+    target_type = __lsl_type_code(target)
+    if target_type == 1:
+        return __lsl_find(target, value)
+    elif target_type == 2 or target_type == 7 or target_type == 8:
+        return __lsl_list_find(target, value)
+    end
+    Error(TypeError: "find requires a String, List, Tuple, or RealArray")
+end
+
+# rang(...) used as a value: the List of integers a for loop would visit.
+function __lsl_rang_list(start, stop, step):
+    if type(start) != "Int" or type(stop) != "Int" or type(step) != "Int":
+        Error(TypeError: "rang expects Int arguments")
+    end
+    if step == 0:
+        Error(ValueError: "rang step must not be zero")
+    end
+    span = stop - start
+    if (step > 0 and span > 0 and span // step > 100000000) or (step < 0 and span < 0 and span // step > 100000000):
+        Error(ValueError: "rang value exceeds 100000000 elements")
+    end
+    result = []
+    value = start
+    if step > 0:
+        while value < stop:
+            result.append(value)
+            value += step
+        end
+    else:
+        while value > stop:
+            result.append(value)
+            value += step
+        end
+    end
+    return result
 end
 
 function __lsl_dynamic_index(target, value):

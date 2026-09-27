@@ -79,3 +79,5 @@ load http_security_conformance
 load language_06_conformance
 load comprehension_conformance
 load module_group_conformance
+load list_find_conformance
+load rang_value_conformance

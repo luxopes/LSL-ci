@@ -520,13 +520,13 @@ function method_supported(receiver_type, name):
     elif receiver_type == "String":
         return name == "strip" or name == "lstrip" or name == "rstrip" or name == "lower" or name == "upper" or name == "title" or name == "capitalize" or name == "startswith" or name == "endswith" or name == "find" or name == "index" or name == "count" or name == "split" or name == "join" or name == "replace"
     elif receiver_type == "List":
-        return name == "append" or name == "extend" or name == "insert" or name == "pop" or name == "remove" or name == "clear" or name == "index" or name == "count" or name == "sort" or name == "reverse" or name == "copy"
+        return name == "append" or name == "extend" or name == "insert" or name == "pop" or name == "remove" or name == "clear" or name == "find" or name == "index" or name == "count" or name == "sort" or name == "reverse" or name == "copy"
     elif receiver_type == "Dictionary":
         return name == "get" or name == "keys" or name == "values" or name == "items" or name == "update" or name == "pop" or name == "clear" or name == "setdefault" or name == "copy"
     elif receiver_type == "Tuple":
-        return name == "index" or name == "count"
+        return name == "find" or name == "index" or name == "count"
     elif receiver_type == "RealArray":
-        return name == "index" or name == "count" or name == "copy"
+        return name == "find" or name == "index" or name == "count" or name == "copy"
     elif receiver_type == "IntArray" or receiver_type == "FloatArray" or receiver_type == "ByteArray":
         return name == "append" or name == "clear"
     end
@@ -2215,6 +2215,9 @@ function emit_expression(generator, syntax):
             if "defaults" in generator["functions"][name]:
                 call unsupported(generator["path"], generator["lines"], syntax, "functions with defaults cannot be used as Function values yet", "wrap the call in a function with explicit parameters")
             end
+            if lazy_runtime(name):
+                generator["lazy_used"][name] = True
+            end
             call assembler.relative(output, x86_64.lea_rip_prefix(0), "function_" + name)
         else:
             if generator["error_label"] != "":
@@ -2936,6 +2939,9 @@ function emit_expression(generator, syntax):
         if target["kind"] == "name":
             if target["name"] == "help" or help_family(target["name"]):
                 generator["help_used"] = True
+            end
+            if lazy_runtime(target["name"]):
+                generator["lazy_used"][target["name"]] = True
             end
             if "argument_names" in syntax and target["name"] not in generator["functions"] and target["name"] not in generator["classes"]:
                 if generator["error_label"] != "":
@@ -4716,6 +4722,8 @@ function emit_expression(generator, syntax):
                         method_target = "__lsl_dynamic_count"
                     elif target["name"] == "index":
                         method_target = "__lsl_dynamic_index"
+                    elif target["name"] == "find":
+                        method_target = "__lsl_dynamic_find"
                     elif target["name"] == "copy":
                         method_target = "__lsl_dynamic_copy"
                     elif target["name"] == "extend" or target["name"] == "insert" or target["name"] == "remove" or target["name"] == "sort" or target["name"] == "reverse":
@@ -4743,6 +4751,8 @@ function emit_expression(generator, syntax):
                         method_target = "__lsl_list_index"
                     elif target["name"] == "count":
                         method_target = "__lsl_list_count"
+                    elif target["name"] == "find":
+                        method_target = "__lsl_list_find"
                     end
                 elif receiver_type == "String" and target["name"] == "index":
                     method_target = "__lsl_string_index"
@@ -4773,6 +4783,9 @@ function emit_expression(generator, syntax):
                     while method_index >= 0:
                         call assembler.emit(output, x86_64.pop(__lsl_typed_int(method_registers[method_index])))
                         method_index -= 1
+                    end
+                    if lazy_runtime(method_target):
+                        generator["lazy_used"][method_target] = True
                     end
                     call assembler.relative(output, [232], "function_" + method_target)
                     call emit_pending_error(generator)
@@ -4859,6 +4872,29 @@ function emit_expression(generator, syntax):
         if target["name"] not in generator["functions"]:
             if target["name"] in generator["variables"] or target["name"] in generator["global_variables"]:
                 indirect_call = True
+            elif target["name"] == "rang" or target["name"] == "range":
+                # rang(...) outside a for iterable is an ordinary value: build
+                # the List at run time. Loops keep their allocation-free path.
+                count = len(syntax["arguments"])
+                if count < 1 or count > 3 or "argument_names" in syntax:
+                    if generator["error_label"] != "":
+                        call emit_source_raise(generator, syntax, "TypeError", "rang expects 1 to 3 positional arguments")
+                        return
+                    end
+                    call unsupported(generator["path"], generator["lines"], syntax, "rang expects 1 to 3 positional arguments", "use rang(STOP), rang(START, STOP) or rang(START, STOP, STEP)")
+                end
+                zero = {"kind": "literal", "literal_kind": "number", "value": "0", "integer_value": 0, "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]}
+                one = {"kind": "literal", "literal_kind": "number", "value": "1", "integer_value": 1, "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]}
+                range_arguments = [zero, syntax["arguments"][0], one]
+                if count >= 2:
+                    range_arguments = [syntax["arguments"][0], syntax["arguments"][1], one]
+                end
+                if count == 3:
+                    range_arguments[2] = syntax["arguments"][2]
+                end
+                range_call = {"kind": "call", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"], "target": {"kind": "name", "name": "__lsl_rang_list", "line": syntax["line"], "column": syntax["column"], "end_column": syntax["end_column"]}, "arguments": range_arguments}
+                call emit_expression(generator, range_call)
+                return
             else:
                 if generator["error_label"] != "":
                     call emit_source_raise(generator, syntax, "NameError", "unknown native function: " + target["name"])
@@ -4948,6 +4984,9 @@ function emit_expression(generator, syntax):
             end
             call assembler.emit(output, x86_64.call_reg(11))
         else:
+            if lazy_runtime(target["name"]):
+                generator["lazy_used"][target["name"]] = True
+            end
             call assembler.relative(output, [232], "function_" + target["name"])
         end
         stack_count = len(arguments) - register_count
@@ -6976,6 +7015,14 @@ function help_family(name):
     return name in HELP_FAMILY
 end
 
+# Runtime helpers emitted only when a program calls them, so ordinary
+# binaries do not grow: rang(...) as a value and find on runtime receivers.
+LAZY_RUNTIME = ["__lsl_rang_list", "__lsl_dynamic_find"]
+
+function lazy_runtime(name):
+    return name in LAZY_RUNTIME
+end
+
 function generate_mode(path, source, program, internal_abi):
     lines = source
     call declarations.lower(program, path, source)
@@ -7038,6 +7085,7 @@ function generate_mode(path, source, program, internal_abi):
     generator["frame_size"] = 16
     generator["noreturn"] = noreturn
     generator["error_handlers"] = []
+    generator["lazy_used"] = {}
     generator["global_reads"] = guarded_main_reads
     generator["mutable_globals"] = mutable_globals
     generator["global_flags"] = global_flags
@@ -7067,7 +7115,7 @@ function generate_mode(path, source, program, internal_abi):
         if statement["kind"] == "function":
             # Topic help and library descriptions are optional runtime data.
             # Do not grow every unrelated standalone program by embedding them.
-            if not help_family(statement["name"]):
+            if not help_family(statement["name"]) and not lazy_runtime(statement["name"]):
                 call emit_function(generator, statement)
                 emitted_functions += 1
             end
@@ -7194,6 +7242,11 @@ function generate_mode(path, source, program, internal_abi):
     call assembler.emit(output, x86_64.syscall())
     if generator.get("help_used", False):
         for name in HELP_FAMILY:
+            call emit_function(generator, functions[name])
+        end
+    end
+    for name in LAZY_RUNTIME:
+        if name in generator["lazy_used"]:
             call emit_function(generator, functions[name])
         end
     end

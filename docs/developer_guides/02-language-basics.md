@@ -626,6 +626,10 @@ Jak to funguje:
 4. Do `i` se dosadí další hodnota (1).
 5. Tělo se provede znovu.
 6. Takto se pokračuje pro všechny hodnoty.
+
+Od 0.8.7 lze `rang(...)` použít i mimo smyčku jako hodnotu — vznikne
+obyčejný List: `cisla = List(rang(2, 101))`, `print rang(4)` vypíše
+`[0, 1, 2, 3]`. Ve smyčce `for` se žádný seznam nevytváří.
 7. Po poslední hodnotě smyčka skončí a program pokračuje za `end`.
 
 **`rang()` podrobně**:

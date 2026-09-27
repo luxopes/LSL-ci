@@ -140,6 +140,8 @@ ukoly.remove("c")           # odstraní první výskyt "c"; seznam je ["b"]
 ukoly.clear()               # vyprázdní celý seznam
 ```
 
+- `find(hodnota)` — vrátí pozici prvního výskytu, nebo `-1`, když prvek chybí
+  (stejně jako `find` u Stringu; `index` místo toho vyvolá chybu).
 - `pop()` — vrátí a odstraní poslední prvek.
 - `pop(index)` — vrátí a odstraní prvek na dané pozici.
 - `remove(hodnota)` — odstraní první výskyt dané hodnoty.

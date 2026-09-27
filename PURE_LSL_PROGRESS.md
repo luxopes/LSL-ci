@@ -1,6 +1,21 @@
 # Pure-LSL migration
 
-## Aktuální vydání 0.8.6 — 27. 9. 2026
+## Aktuální vydání 0.8.7 — 27. 9. 2026
+
+`rang(...)` mimo `for` iterable je hodnota: codegen volání přepíše na
+`__lsl_rang_list(start, stop, step)` (List, Int argumenty, nenulový krok,
+nejvýše 100 000 000 prvků); smyčky a comprehensions zůstávají na cestě bez
+alokace, uživatelská funkce nebo proměnná `rang` má přednost. `List.find`
+(i Tuple, RealArray) přes `__lsl_list_find`, runtime receiver přes nový
+`__lsl_dynamic_find` (String vs. List). Kapitola 17: knihovny a `sudo`.
+
+Stage 2/3 bitově shodné. Compiler SHA-256: `b4d94b6fd4f4c6cdb7d6aa80b9288ce8d340d9ed29a9ec4990884f50c8381214`;
+CLI: `2ce10a10bebee53d8d1e03de00975f7fdf5d6c2694bbb1f7749329aff2b1bd81`. Plná sada (nové `rang_value_conformance`
+a `list_find_conformance`) a fixed-point prošly.
+
+Podrobnosti: `docs/release-0.8.7.md`. Release ověření: `.build/release-0.8.7/`.
+
+## Vydání 0.8.6 — 27. 9. 2026
 
 Jazyk: `load a, b` načte více modulů jedním řádkem (nejvýše 32) a
 `load a, b as x` jim dá společný alias; linker drží pro alias seznam

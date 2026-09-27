@@ -18,7 +18,7 @@ function main():
     for attempt in rang(2):
         output = capture_clean("/usr/bin/env", ["-i", "HOME=" + work, arg(3), prefix])
         call require(capture_status() == 0, "installer migration/reinstall failed: " + output + capture_stderr())
-        call update_install.health(prefix, "0.8.6", work)
+        call update_install.health(prefix, "0.8.7", work)
         store = prefix + "/lib/lsl-updates"
         call require(fd.read_text_limit(store + "/previous/version", 64).strip() == old_version, "installer did not retain previous version")
         output = capture_clean("/usr/bin/env", ["-i", "HOME=" + work, prefix + "/bin/lsl", "update", "--rollback"])
