@@ -212,7 +212,7 @@ souběžná volání z více vláken nesdílejí parser nebo textový callback.
 `tools`, `tool_choice`, `top_p`, `stop` a další neuvedené parametry nejsou
 součástí `options`. Použijte `http.post` s vlastním JSON tělem a následně
 `ai.decode_response`. Kompletní příklad nástrojů je v kapitole
-[AI aplikace](10-ai-applications.md#ai-s-nástroji-function-calling).
+[AI aplikace](10-ai-applications.md).
 
 Přístup k síti a prostředí patří do běžného programovacího režimu;
 `lsl config` tyto operace nepovoluje.
