@@ -207,10 +207,13 @@ call require_success(run(compiler, ["tests/codegen_optimization_conformance.lsl"
 call require_hardened_elf(optimization_test)
 call require_output(optimization_test, [], "tests/codegen_optimization_conformance.out", "codegen optimization output differs")
 # Automatic GC, iterative tracing, raw-buffer metadata and EINTR recovery add
-# about 1.3 KiB over 0.8.3's 108317-byte baseline. Keep about 400 bytes of
-# headroom; the allocation-free and safe success-path instruction tests stay strict.
-if len(readbytes(optimization_test)) > 110000:
-    Error(TestFailure: "optimized standalone ELF exceeds 110000 bytes")
+# about 1.3 KiB over 0.8.3's 108317-byte baseline; buffered stdout, the
+# reserved-brk allocator and the native String helpers behind split/Int add
+# about 400 bytes more in 0.8.8 (input() and its stdin buffer are emitted
+# only for programs that read stdin). Keep about 400 bytes of headroom; the
+# allocation-free and safe success-path instruction tests stay strict.
+if len(readbytes(optimization_test)) > 110400:
+    Error(TestFailure: "optimized standalone ELF exceeds 110400 bytes")
 end
 for collection_negative in ["sorted()", "sorted([], [])", "sorted([], key=None)", "dedup()", "dedup([], [])", "set([], [])", "set(values=[])", "set()[0]", "set().append(1)", "set().add()", "set().pop(0)", "set().union()", "set().discard(1, 2)"]:
     collection_source = test_path("collection-arity-negative.lsl")
@@ -553,6 +556,7 @@ servers = [
     ["tests/capture_result_server.lsl", test_path("capture-result-server")],
     ["tests/input_conformance.lsl", test_path("input-server")],
     ["tests/input_bare_server.lsl", test_path("input-bare-server")],
+    ["tests/stdio_buffer_server.lsl", test_path("stdio-buffer-server")],
     ["tests/process_status_server.lsl", test_path("process-status-server")],
     ["tests/plugin_process_server.lsl", test_path("plugin-process-server")],
     ["tests/fd_inherit_server.lsl", test_path("fd-inherit-server")],

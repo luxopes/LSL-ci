@@ -43,7 +43,7 @@ automatické safepointy. Emit vrstva, datová sekce a ELF obraz jsou od 0.8.5
 
 Samotná plná testovací sada obsahuje 9 MiB HTTP/GC stress z 0.7.6, který
 při naplnění pracovního heapu potřebuje více než 2 GiB. Pro běh suite použijte
-samostatný subshell s `ulimit -v 4194304`; pro sériové compiler/stage buildy
+samostatný subshell bez limitu virtuální paměti; pro sériové compiler/stage buildy
 ponechte 2 GiB. Pod 2 GiB může tento starší stress při vyčerpání paměti
 uvíznout, proto při auditu používejte i vnější časový limit.
 
@@ -205,6 +205,15 @@ cmp /tmp/lslc-s2 /tmp/lslc-s3
 
 Stage 1 se může lišit, protože jej emitoval předchozí compiler. Stage 2 a 3 se
 musí shodovat bit po bitu.
+
+Přidává-li změna nový nativní builtin, který volá `compiler/pure/dynamic_stdlib.lsl`
+(stdlib se překládá do každé binárky včetně compileru), předchozí compiler
+stage 1 nepřeloží (`NameError: unknown native function`). Bootstrap je pak
+dvoufázový: nejprve stage 0 = nový codegen se stdlib z předchozího vydání
+(`git show HEAD:compiler/pure/dynamic_stdlib.lsl`), teprve stage 0 přeloží
+stage 1 s novou stdlib. Tento postup vyžadovalo i aktualizované sestavení
+0.8.8 s nativními helpery pro řetězce.
+
 
 ### 3. Cílené a úplné testy
 

@@ -4,8 +4,20 @@ Na této stránce jsou uživatelsky významné změny vydaných verzí. Stabiln�
 manuály a soubory ke stažení zůstávají dostupné v
 [historii vydání](/releases/).
 
-## 0.8.8 — 27. 9. 2026
+## 0.8.8 — 27. 9. 2026, aktualizováno 28. 9. 2026
 
+- Rychlejší vstup a výstup: `input()` čte soubor po 64 KiB (nepřečtený
+  zbytek vrací potomkům i při ukončení), `print` do souboru, roury nebo
+  `/dev/null` se bufferuje a vyprazdňuje před vším, kde záleží na pořadí
+  (vstup, fd, syscally, sleep, fork, vlákna, stderr, exit). Terminál se
+  chová jako dosud.
+- Bufferovaný `input()` zachovává pozici také při střídání s `fd.read`,
+  `fd.seek` a přesměrování stdin.
+- Alokátor rezervuje haldu po 1 MiB; rozpočet GC už nepočítá surová data
+  typovaných polí.
+- `split` s jednoznakovým oddělovačem a `Int(String)` jsou nativní.
+- Původní instalaci 0.8.8 je třeba přeinstalovat z nového archivu;
+  `lsl update` při shodném čísle verze změnu neinstaluje.
 - Opraven chybný překlad, když proměnná dostane dynamickou hodnotu až
   později v kódu (např. `zbytek = zbytek // p` a teprve potom
   `for p in seznam`): typy se nyní rozšiřují až do fixpointu. Dřív mohl do

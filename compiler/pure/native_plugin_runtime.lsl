@@ -419,6 +419,7 @@ end
 
 function emit_call_close(output):
     call assembler.label(output, "runtime_native_call")
+    call assembler.relative(output, [232], "runtime_stdio_direct")
     call assembler.emit(output, x86_64.function_prologue(128))
     call assembler.emit(output, x86_64.store_stack(-8, 7))
     call assembler.emit(output, x86_64.store_stack(-16, 6))

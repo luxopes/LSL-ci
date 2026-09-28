@@ -1,0 +1,37 @@
+file 0
+start|read line1 line2|line3|line4|line5|cat 0|
+pipe 0
+start|read line1 line2|line3|line4|line5|cat 0|
+error 1
+before error|LSL runtime error: ValueError: boom|
+exit 3
+before exit|
+stderr 0
+to stdout|to stderr|after stderr|
+prompt 0
+name? hello Lux|
+big 498890 30001 0 x True 1.5 29999 x True 1.5 True
+big-file 0
+True
+null 0
+['a', 'b', 'c'] ['a', '', 'b'] [''] ['abc']
+['a'] ['', 'a', ''] ['ab', 'cd', ''] ['', '']
+['a-b', 'c'] ['žluť', 'ouš'] ['žlu', 'oučký'] ['', 'a']
+42 -7 3 0 7 0
+9223372036854775807 -9223372036854775808 7766279631452241919
+err 4x ValueError: invalid Int String
+err  ValueError: invalid Int String
+err ž ValueError: invalid Int String
+err - ValueError: invalid Int String
+err + ValueError: invalid Int String
+err  1 ValueError: invalid Int String
+err 1  ValueError: invalid Int String
+err --1 ValueError: invalid Int String
+err 1.0 ValueError: invalid Int String
+alloc 60000 1800258890
+mixed 0
+line1|raw 6 108 10|line3|seek line1|
+redirect 0
+line1|dup 0|redirect other|reopen 0 other|
+reopen 0
+line1|reopen 0 other|

@@ -242,7 +242,27 @@ function emit_allocator(output):
     call assembler.emit(output, x86_64.increment(1))
     call assembler.emit(output, x86_64.store_stack(-32, 1))
     call assembler.relative(output, [233], "alloc_class_loop")
+    # Fresh blocks come from a reserved brk region (state+1296 bump
+    # pointer, +1304 reserved end) that grows by the request plus 1 MiB at
+    # a time. The earlier brk(0)/brk(new) pair per block cost two syscalls
+    # for every fresh allocation, which dominated allocation-heavy programs.
+    # Untouched reserve costs no resident memory. The heap mutex held here
+    # guards both slots.
     call assembler.label(output, "alloc_new")
+    call assembler.emit(output, x86_64.load_stack(1, -8))
+    call assembler.emit(output, x86_64.add_reg_imm8(1, 32))
+    call assembler.emit(output, x86_64.load_memory(8, 3, 1296))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(8, 0))
+    call assembler.relative(output, [15, 132], "alloc_reserve")
+    call assembler.emit(output, x86_64.move_reg_reg(0, 8))
+    call assembler.emit(output, x86_64.add_reg_reg(0, 1))
+    call assembler.emit(output, x86_64.load_memory(9, 3, 1304))
+    call assembler.emit(output, x86_64.cmp_reg_reg(0, 9))
+    call assembler.relative(output, [15, 143], "alloc_reserve")
+    call assembler.emit(output, x86_64.store_memory(3, 1296, 0))
+    call assembler.emit(output, x86_64.store_stack(-16, 8))
+    call assembler.relative(output, [233], "alloc_new_fill")
+    call assembler.label(output, "alloc_reserve")
     call assembler.emit(output, x86_64.mov_imm64(0, 12))
     call assembler.emit(output, x86_64.mov_imm64(7, 0))
     call assembler.emit(output, x86_64.syscall())
@@ -250,11 +270,28 @@ function emit_allocator(output):
     call assembler.emit(output, x86_64.load_stack(1, -8))
     call assembler.emit(output, x86_64.add_reg_imm8(1, 32))
     call assembler.emit(output, x86_64.add_reg_reg(0, 1))
+    call assembler.emit(output, x86_64.store_stack(-24, 0))
+    call assembler.emit(output, x86_64.add_reg_imm32(0, 1048576))
     call assembler.emit(output, x86_64.move_reg_reg(7, 0))
     call assembler.emit(output, x86_64.mov_imm64(0, 12))
     call assembler.emit(output, x86_64.syscall())
     call assembler.emit(output, x86_64.cmp_reg_reg(0, 7))
+    call assembler.relative(output, [15, 132], "alloc_reserve_ready")
+    # Near an address-space limit the slack may be what fails: retry with
+    # exactly this block, as the unreserved allocator always requested.
+    call assembler.emit(output, x86_64.load_stack(7, -24))
+    call assembler.emit(output, x86_64.mov_imm64(0, 12))
+    call assembler.emit(output, x86_64.syscall())
+    call assembler.emit(output, x86_64.cmp_reg_reg(0, 7))
     call assembler.relative(output, [15, 133], "runtime_fatal_allocation")
+    call assembler.label(output, "alloc_reserve_ready")
+    call assembler.emit(output, x86_64.store_memory(3, 1304, 7))
+    call assembler.emit(output, x86_64.load_stack(8, -16))
+    call assembler.emit(output, x86_64.load_stack(1, -8))
+    call assembler.emit(output, x86_64.add_reg_imm8(1, 32))
+    call assembler.emit(output, x86_64.add_reg_reg(1, 8))
+    call assembler.emit(output, x86_64.store_memory(3, 1296, 1))
+    call assembler.label(output, "alloc_new_fill")
     call assembler.emit(output, x86_64.load_stack(8, -16))
     call assembler.emit(output, x86_64.load_stack(1, -8))
     call assembler.emit(output, x86_64.store_memory(8, 0, 1))
@@ -1715,6 +1752,13 @@ function emit_gc(output):
     call assembler.relative(output, [15, 132], "gc_free_block")
     call assembler.label(output, "gc_keep_block")
     call assembler.emit(output, x86_64.store_memory_imm32(8, 24, 0))
+    # Raw backing blocks (typed arrays, IO buffers) are never traced, so
+    # they cost a collection nothing; counting their bytes as live only
+    # inflated the budget and made programs holding a large IntArray churn
+    # through tens of megabytes of cold memory between collections.
+    call assembler.emit(output, x86_64.load_memory(2, 8, 16))
+    call assembler.emit(output, x86_64.cmp_reg_imm8(2, 2))
+    call assembler.relative(output, [15, 132], "gc_sweep_next")
     call assembler.emit(output, x86_64.load_stack(1, -104))
     call assembler.emit(output, x86_64.load_memory(2, 8, 0))
     call assembler.emit(output, x86_64.add_reg_reg(1, 2))

@@ -130,6 +130,7 @@ function emit_spawn(output):
     # is held across clone so the kernel tid is published before anyone can
     # observe the entry; the child takes no lock before the parent releases.
     call assembler.label(output, "runtime_thread_spawn")
+    call assembler.relative(output, [232], "runtime_stdio_direct")
     call assembler.emit(output, x86_64.function_prologue(64))
     call assembler.emit(output, x86_64.store_stack(-8, 7))
     # Public callers must supply a live tagged Function.  Treating an arbitrary

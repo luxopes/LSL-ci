@@ -11,19 +11,22 @@ pure-LSL a Tensor používá CPU fallback.
 
 ## Self-hosted vydání
 
-LSL 0.8.8 opravuje překlad proměnných, které dostanou dynamickou hodnotu až
-později v kódu (typy se rozšiřují do fixpointu), a hlásí čárku před `for`
-v comprehension srozumitelně. 0.8.7 udělalo z `rang(...)` hodnotu i mimo `for`
-a přidalo `List.find(hodnota)`.
+LSL 0.8.8 zrychluje vstup a výstup: `input()` čte soubory po 64 KiB,
+`print` do souboru či roury se bufferuje, alokátor rezervuje haldu po 1 MiB
+a `split`/`Int(String)` jsou nativní. Součástí vydání je i oprava překladu
+proměnných, které dostanou
+dynamickou hodnotu až později v kódu (typy do fixpointu).
 Předchozí 0.8.6 přineslo hromadné importy, uvozovky uvnitř interpolace Lux
 Stringů, barevný interaktivní režim, editor `lsl --tui`, formátovaný manuál,
 `lsl about` a průběh instalace v procentech.
 Binární balík pro Linux x86_64,
 zdrojový archiv a aktualizovaný český manuál jsou na
-[lsl.lux-ai.cz](https://lsl.lux-ai.cz/). Stabilní manuály vydání jsou v
+[lsl.lux-ai.cz](https://lsl.lux-ai.cz/). Původní 0.8.8 přeinstalujte z nového
+archivu podle [poznámek k vydání](docs/release-0.8.8.md#přechod);
+`lsl update` shodnou verzi přeskočí. Stabilní manuály vydání jsou v
 [historii vydání](https://lsl.lux-ai.cz/releases/):
 
-- [LSL 0.8.8](https://lsl.lux-ai.cz/) — oprava typů proměnných (fixpoint) a diagnostika comprehension;
+- [LSL 0.8.8](https://lsl.lux-ai.cz/) — bufferovaný stdin/stdout, rezerva haldy, nativní `split` a `Int`, oprava typů proměnných a diagnostika comprehension;
 - LSL 0.8.7 — `rang` jako hodnota a `List.find`;
 - LSL 0.8.6 — hromadné importy, editor `lsl --tui`, formátovaný manuál a `lsl about`;
 - LSL 0.8.5 — rychlejší compiler se stejným generovaným kódem;

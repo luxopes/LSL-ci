@@ -492,13 +492,7 @@ function __lsl_byte_piece(s, start, count):
     if count <= 0:
         return ""
     end
-    buffer = __lsl_byte_zeros(count)
-    index = 0
-    while index < count:
-        buffer[index] = __lsl_text_byte(s, start + index)
-        index += 1
-    end
-    return __lsl_text_from_bytes(buffer, 0, count)
+    return __lsl_text_piece(s, start, count)
 end
 
 function __lsl_split(text, separator):
@@ -506,6 +500,16 @@ function __lsl_split(text, separator):
     # bytes but sliced by code points, which returned wrong pieces for any
     # multi-byte String and cost a code-point walk from the start per
     # piece (quadratic on large inputs).
+    # One-byte separator on a String: a single native call, before any of
+    # the checks below (which the native split repeats) and without the
+    # List and length work that made this common case cost several times
+    # the split itself. Non-Strings fall through to the diagnostics.
+    if __lsl_type_code(text) == 1 and __lsl_type_code(separator) == 1:
+        first_byte = __lsl_text_byte(separator, 0)
+        if first_byte >= 0 and __lsl_text_byte(separator, 1) < 0:
+            return __lsl_text_split_byte(text, first_byte)
+        end
+    end
     s = __lsl_require_string(text)
     sep = __lsl_require_string_value(separator)
     n = __lsl_text_byte_length(String(s))
@@ -1464,31 +1468,29 @@ function __lsl_format_float(value):
 end
 
 function __lsl_parse_int(text):
-    length = len(text)
-    if length > 4096:
+    # Byte probes throughout: digits and signs are single bytes, so this
+    # neither counts code points nor allocates a one-character String per
+    # digit. Any multi-byte character fails the digit test exactly as its
+    # code point did; the 4096 limit still counts characters.
+    byte_length = __lsl_text_byte_length(String(text))
+    if byte_length > 4096 and len(text) > 4096:
         Error(ValueError: "Int String exceeds 4096 characters")
     end
     index = 0
     sign = 1
-    if length > 0 and text[0] == "-":
-        sign = -1
-        index = 1
-    elif length > 0 and text[0] == "+":
-        index = 1
+    if byte_length > 0:
+        first = __lsl_text_byte(text, 0)
+        if first == 45:
+            sign = -1
+            index = 1
+        elif first == 43:
+            index = 1
+        end
     end
-    if index >= length:
+    if index >= byte_length or __lsl_text_scan_digits(text, index) != byte_length:
         Error(ValueError: "invalid Int String")
     end
-    value = 0
-    while index < length:
-        code = ord(text[index])
-        if code < 48 or code > 57:
-            Error(ValueError: "invalid Int String")
-        end
-        value = value * 10 + (code - 48)
-        index += 1
-    end
-    return value * sign
+    return __lsl_text_digits(text, index, byte_length) * sign
 end
 
 function __lsl_int_any(value):

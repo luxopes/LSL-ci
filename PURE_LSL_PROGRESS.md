@@ -1,6 +1,24 @@
 # Pure-LSL migration
 
-## Aktuální vydání 0.8.8 — 27. 9. 2026
+## Aktuální vydání 0.8.8 — aktualizace 28. 9. 2026
+
+I/O runtime: bufferovaný stdin pro obyčejný soubor (64 KiB, `lseek` hand-back
+před fork/exit), bufferovaný stdout mimo terminál (flush před input/fd/syscall/
+sleep/fork/thread/native/stderr/exit), alokátor s 1 MiB brk rezervou (fallback
+na přesnou velikost), GC rozpočet bez surových bloků, nativní
+`__lsl_text_piece`/`__lsl_text_scan_digits`/`__lsl_text_digits`/
+`__lsl_text_split_byte`. Ověřena souhra bufferu s přímým FD čtením, seek,
+zavřením a přesměrováním stdin; přímé syscally, nativní kód a vlákna
+přepínají standardní I/O na přímý režim. Stav 1280–1343, globály od 1344. Dvoufázový bootstrap
+(stage0 = nový codegen + stdlib původního sestavení 0.8.8).
+
+Stage 2/3 bitově shodné. Compiler SHA-256: `e580dddad61ea9bf2bedbd4a001a774479b6a8e0ca6196aa08768a56a1e1e522`;
+CLI: `60387e90801dc2f27723553c0064faf70028e082b2e697a47556580718b30481`. Plná sada (nový `stdio_buffer_conformance`) a fixed-point
+prošly.
+
+Podrobnosti: `docs/release-0.8.8.md`. Release ověření: `.build/release-0.8.8-refresh/`.
+
+## Původní sestavení 0.8.8 — 27. 9. 2026
 
 Oprava order-dependent inference typů: `collect_types_stable` opakuje průchod
 do fixpointu (max. 16 kol; rozšíření jen k Any). Reprodukce: `zbytek // p`

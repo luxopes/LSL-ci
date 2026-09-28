@@ -197,6 +197,27 @@ end
 print len(data)                 # ~4-10× rychlejší, méně paměti
 ```
 
+### Vstup a výstup
+
+Od aktualizovaného sestavení 0.8.8 z 28. 9. 2026 runtime bufferuje standardní vstup i výstup tam, kde to nemění
+chování: `input()` čte obyčejný soubor (`./prog < data.txt`) po 64 KiB a
+nepřečtený zbytek vrací před `run`/`capture` i při ukončení, `print` do
+souboru, roury nebo `/dev/null` se sbírá do 64 KiB a vyprazdňuje před
+`input()`, `fd.*`, `sleep`, `run`/`capture`, vlákny, každým zápisem na
+stderr a `exit`. Terminál a roura na vstupu se čtou po bajtech jako dosud.
+Program, který čte 200 000 řádků, dělí je `split(" ")` a převádí `Int(...)`,
+tak při vstupu z obyčejného souboru potřebuje desítky volání `read` místo
+milionů. Počet zápisů závisí i na střídání čtení a výpisu: každé `input()`
+nejprve vyprázdní stdout. `split` s jednobajtovým oddělovačem a `Int(String)`
+jsou nativní. Pro zpracování velkých vstupů čtěte řádky přes `input()`, převádějte přes
+`Int(...)` a ukládejte do `IntArray`, ne do `List`.
+
+
+Při kombinaci `input()` s přímými `fd.read`/`fd.write`/`fd.seek`/`fd.close`
+runtime nejprve vrátí nepřečtená data. Po přímém syscallu, nativním volání,
+spuštění dalšího vlákna nebo zavření standardního deskriptoru přejde
+standardní I/O na přímý režim, aby fungovalo i přesměrování deskriptorů.
+
 ## Nativní kernely
 
 Pro maximální výkon numerických výpočtů používejte nativní runtime kernely.

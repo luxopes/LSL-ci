@@ -19,11 +19,16 @@ function main():
         output = capture_clean("/usr/bin/env", ["-i", "HOME=" + work, arg(3), prefix])
         call require(capture_status() == 0, "installer migration/reinstall failed: " + output + capture_stderr())
         call update_install.health(prefix, "0.8.8", work)
+        # Při shodné verzi musí instalátor skutečně vyměnit i obsah binárky.
+        expected_cli = arg(3)[:len(arg(3)) - len("lsl-install")] + "lsl"
+        call require(readbytes(prefix + "/bin/lsl") == readbytes(expected_cli), "same-version reinstall retained the old CLI")
         store = prefix + "/lib/lsl-updates"
         call require(fd.read_text_limit(store + "/previous/version", 64).strip() == old_version, "installer did not retain previous version")
         output = capture_clean("/usr/bin/env", ["-i", "HOME=" + work, prefix + "/bin/lsl", "update", "--rollback"])
         call require(capture_status() == 0, "rollback after reinstall failed: " + output + capture_stderr())
         call update_install.health(prefix, old_version, work)
+        original_cli = arg(2)[:len(arg(2)) - len("lsl-install")] + "lsl"
+        call require(readbytes(prefix + "/bin/lsl") == readbytes(original_cli), "rollback did not restore original CLI bytes")
     end
     call update_install.cleanup_scratch(work)
     print "Legacy migration, managed reinstall and rollback passed."
