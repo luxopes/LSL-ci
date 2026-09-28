@@ -1,23 +1,22 @@
 # AI aplikace v LSL
 
-LSL odděluje orchestrace od numerických kernelů:
+Samostatná AI knihovna `aikit` 1.0.0 funguje s LSL 0.8.9 a novějšími.
+Instalace: `lsl install aikit`, další aktualizace: `lsl update aikit`.
+Ve skriptu použijte `load aikit as ai`; vestavěný název `ai` má v LSL 0.8.9
+přednost před uživatelskými balíčky, proto se tímto importem vybírá nová kopie.
 
-- `ai` poskytuje OpenAI-compatible `request`, validaci response a `content`;
-- `json` poskytuje `encode`, `decode`, `pretty`;
-- `http` poskytuje `get(url)` a `post(url, body, headers, timeout)`; odpověď je Dictionary s `status`, `text`, `ok`;
-- `env` poskytuje runtime hranici pro secrets: `get`, `require`, `has`;
-- čistý config režim síť a environment staticky zakazuje.
+`ai.request` vrací JSON Dictionary. `ai.stream` předává textové části
+callbacku už během HTTP přenosu a vrací jejich počet. Podporuje timeout,
+cancel, surový transportní callback a omezené retry před prvním textem.
+`temperature` a `max_tokens` se posílají i ve streamovací variantě.
+Parser zpracovává rozdělené UTF-8/JSON, LF/CRLF/CR, BOM a víceřádkové SSE.
+Neúplný živý stream bez `[DONE]` vyvolá `AIProviderError`.
 
-HTTP(S) transport používá systémový `/usr/bin/curl` spuštěný přímým `execve`;
-shell se nespouští. V argv je pouze `--config -`, zatímco endpoint, body a
-hlavičky s tokenem jdou validovaným configem přes stdin. stdout zachytává
-pure-LSL `pipe`/`dup2` runtime. Vzdálený endpoint musí používat HTTPS.
+Podrobné API, limity, chování při chybách a celý chatbot:
+[manuál AI knihovny](developer_guides/ai.md).
+Krátká offline nápověda je přímo v balíčku: `print ai.help()`.
 
-`ai.request(endpoint, token, model, messages, options)` podporuje timeout, omezený počet retry pro transport/408/429/5xx, cancellation callback před každým pokusem a strukturované `AIProviderError`/`AICancelled` výjimky. Response je validované JSON Dictionary; `ai.content(response)` bezpečně získá první textovou odpověď. `ai.stream` a `ai.stream_text` validují OpenAI SSE `data:` events, `[DONE]`, provider errors a předávají content chunks do callbacku s cancellation mezi eventy. `http.post_stream` používá curl `--no-buffer` a `capture_stream`, takže volitelný `transport_chunk` callback dostává raw síťové chunks už během přenosu; finální SSE content parser současně zachovává deterministickou kontrolu celé response.
-
-OpenAI-compatible příklad je v `examples/ai_client.lsl` a čistým compilerem se překládá do samostatného ELF.
-
-Pure-LSL Tensor s volitelným CUDA workerem a omezený self-contained ET_DYN
-Int64 kernel ABI jsou podporované; obecné libc/shared-object relocations a
-přímý in-process GPU driver ABI nikoli. Přesný scope je v
-`docs/native-plugins.md` a `docs/cuda.md`.
+Knihovna používá `http`, `json` a `time`; token předává curlu přes konfiguraci
+na stdin, bez shellu a bez tajných údajů v argumentech procesu.
+AI knihovnu lze aktualizovat bez vydání nové verze LSL. Samostatně přeložené
+programy je po změně knihovny nutné přeložit znovu.

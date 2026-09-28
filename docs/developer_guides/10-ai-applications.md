@@ -4,11 +4,16 @@ Tato kapitola vysvětluje, jak v LSL pracovat s AI modely přes
 OpenAI-compatible API — od jednoduchého dotazu přes streaming až po
 function calling a správu secrets.
 
+Tato kapitola používá AI knihovnu `aikit` 1.0.0 pro LSL 0.8.9+.
+Nainstalujte ji přes `lsl install aikit`, později aktualizujte přes
+`lsl update aikit`. Import `load aikit as ai` zachová jméno `ai` v příkladech.
+Podrobnosti a hotový streamovací chatbot: [manuál AI](ai.md).
+
 ## Co k tomu potřebujete
 
 - **API klíč** k OpenAI nebo kompatibilní službě (např. OpenAI,
   Groq, lokální Ollama).
-- **Moduly `ai`, `json`, `http`, `env`** — všechny jsou vestavěné.
+- **Balíček `aikit`** a vestavěné moduly `json`, `http`, `env`.
 - **`/usr/bin/curl`** — LSL ho používá jako HTTP transport (bezpečně,
   přes přímé argv, ne přes shell).
 
@@ -33,7 +38,7 @@ function calling a správu secrets.
 ## Rychlý start: jednoduchý AI dotaz
 
 ```lsl
-load ai
+load aikit as ai
 load json
 load env
 
@@ -122,11 +127,12 @@ call ai.stream(
 print "Celá odpověď:", "".join(parts)
 ```
 
-`ai.stream` posílá `stream: True` a parsuje SSE události. Textové callbacky
-v této verzi zpracovává až po načtení celé HTTP odpovědi. Volitelný callback
-`transport_chunk` dostává surové části těla už během přenosu. `timeout` a
-`cancel` řídí přenos a parsování; `temperature`, `max_tokens` a `retries`
-se ve streamovací variantě zatím neuplatňují.
+`ai.stream` posílá `stream: True` a předává textové callbacky už během
+HTTP přenosu. Posílá také `temperature` a `max_tokens`; `timeout`, `cancel`
+a `retries` řídí přenos. Retry se provádí pouze před prvním textovým
+callbackem, aby se odpověď nezdvojovala. Volitelný `transport_chunk` dostává
+surové části těla, které mohou končit uprostřed JSON nebo UTF-8 znaku.
+Živý stream musí skončit značkou `[DONE]`, jinak vyvolá chybu.
 
 `ai.stream_text(text, on_event, cancel)` je samostatný parser již načteného
 SSE textu; neposílá HTTP požadavek. Obě varianty rozpoznávají `data:`,
@@ -272,7 +278,7 @@ OPENAI_API_KEY="sk-..." lsl muj_ai_program.lsl
 ## Praktický příklad: AI chatbot
 
 ```lsl
-load ai
+load aikit as ai
 load json
 load env
 
@@ -328,7 +334,7 @@ parametry podporuje, sestavte JSON přes `http.post`. Následující příklad
 obsahuje demonstrační údaje o počasí, nikoli skutečnou předpověď.
 
 ```lsl
-load ai
+load aikit as ai
 load http
 load json
 load env
@@ -447,7 +453,7 @@ response = ai.request(endpoint, token, model, messages, options)
 ## Sledování SSE odpovědi
 
 ```lsl
-load ai
+load aikit as ai
 
 chunks = []
 progress = {"characters": 0}
@@ -466,8 +472,8 @@ full_text = "".join(chunks)
 print "Dokončeno:", len(full_text), "znaků"
 ```
 
-Zde se sleduje zpracování textu po přijetí odpovědi. Pro průběh síťového
-přenosu slouží `transport_chunk`; jeho vstup je surové SSE, nikoli čistý text.
+Textové části se zpracovávají průběžně během příjmu odpovědi. Pro surový
+průběh přenosu slouží `transport_chunk`; jeho vstup je SSE, nikoli čistý text.
 Příklad chatbota výše uložte například jako `ai_client.lsl` a přeložte:
 
 ```bash

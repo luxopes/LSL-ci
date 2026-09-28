@@ -538,11 +538,15 @@ přednost. [Podrobný manuál env](env.md).
 
 ### <span class="badge badge-module">ai</span> ai — AI orchestrace (OpenAI-compatible)
 
+Samostatná knihovna `aikit` 1.0.0: `lsl install aikit`, ve skriptu
+`load aikit as ai`. Aktualizace pouze knihovny: `lsl update aikit`.
+[Úplný manuál a streamovací chatbot](ai.md).
+
 | Funkce | Popis |
 |---|---|
 | `ai.request(endpoint, token, model, messages, options)` | Odešle požadavek na AI API, vrátí Dictionary s odpovědí. |
-| `ai.stream(endpoint, token, model, messages, options, on_event)` | Streamovaná varianta — `on_event(event)` je callback. |
-| `ai.stream_text(text, on_chunk, cancel)` | Parsuje SSE stream na textové chunky. |
+| `ai.stream(endpoint, token, model, messages, options, on_event)` | Průběžně volá `on_event(text)` během přenosu; vrací počet neprázdných textových částí. |
+| `ai.stream_text(text, on_chunk, cancel=None)` | Parsuje již načtený SSE text; vrací počet textových callbacků. |
 | `ai.content(response)` | Extrahuje text první odpovědi z AI response Dictionary. |
 
 ### <span class="badge badge-module">display</span> display — otevření okna (X11 / framebuffer)
