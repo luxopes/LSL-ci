@@ -250,6 +250,9 @@ function infer_expression_type(syntax, types, function_returns):
             if name == "__lsl_fd_snapshot":
                 return "Int"
             end
+            if name == "__lsl_entry_source":
+                return "String"
+            end
             if name == "min" or name == "max":
                 if len(syntax["arguments"]) == 2:
                     if infer_expression_type(syntax["arguments"][0], types, function_returns) == "Int" and infer_expression_type(syntax["arguments"][1], types, function_returns) == "Int":
@@ -2977,6 +2980,7 @@ function emit_expression(generator, syntax):
             end
             builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "Dictionary": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sqrt": 1, "sum": 1, "float_zeros": 1, "float_fill": 2, "float_sum": 1, "float_dot": 2, "float_axpy": 3, "float_matmul": 5, "type": 1, "exit": 1, "input": 1, "readfile": 1, "readbytes": 1, "__lsl_getenv": 1, "mkdir": 1, "unlink": 1, "rmdir": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "help": 0, "run": 2, "run_clean": 2, "capture": 2, "capture_clean": 2, "capture_stream": 3, "capture_stream_clean": 3, "capture_input": 3, "capture_input_clean": 3, "capture_input_stream": 4, "capture_input_stream_clean": 4, "capture_status": 0, "capture_stderr": 0, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2, "native_open": 1, "native_size": 1, "native_u64": 2, "native_name_equal": 3, "native_function": 2, "native_call": 2, "native_close": 1, "__lsl_test_small_tables": 0, "__lsl_test_fd_fault": 1, "__lsl_object_table_mask": 0, "__lsl_intern_table_mask": 0, "__lsl_wall_time": 0, "__lsl_sleep": 1, "__lsl_isatty": 1, "__lsl_stdin_eof": 0, "__lsl_run": 2, "__lsl_run_clean": 2, "__lsl_capture": 2, "__lsl_capture_clean": 2, "__lsl_fd_open": 2, "__lsl_fd_read": 3, "__lsl_fd_write": 3, "__lsl_fd_seek": 2, "__lsl_fd_close": 1, "__lsl_fd_socket": 2, "__lsl_fd_connect": 3, "__lsl_checked_index": 1, "__lsl_int_zeros": 1, "__lsl_byte_zeros": 1, "__lsl_raster_pack": 5, "__lsl_raster_copy": 5, "__lsl_raster_fill": 4, "__lsl_fd_ioctl": 3, "__lsl_fd_mmap": 3, "__lsl_mem_pack": 5, "__lsl_data_address": 1, "__lsl_syscall": 5, "__lsl_mem_unpack": 4, "__lsl_text_from_bytes": 3, "__lsl_byte_copy": 5, "__lsl_text_byte": 2, "__lsl_text_byte_length": 1, "__lsl_text_piece": 3, "__lsl_text_scan_digits": 2, "__lsl_text_digits": 3, "__lsl_text_split_byte": 2, "__lsl_floatarray_bytes": 1, "__lsl_floatarray_from_bytes": 1, "atomic_add": 3, "atomic_xchg": 3, "atomic_cas": 4, "atomic_pause": 0, "thread_spawn": 1, "thread_join": 1, "cpu_count": 0, "popcount": 1, "trailing_zeros": 1}
             builtin_arity["__lsl_mkdir_private"] = 1
+            builtin_arity["__lsl_entry_source"] = 0
             builtin_arity["monotonic"] = 0
             builtin_arity["__lsl_monotonic"] = 0
             builtin_arity["__lsl_fd_snapshot"] = 3
@@ -3856,6 +3860,10 @@ function emit_expression(generator, syntax):
                 call emit_checked_int_expression(generator, syntax["arguments"][0], "thread_join tid")
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 call assembler.relative(output, [232], "runtime_thread_join")
+                return
+            elif target["name"] == "__lsl_entry_source":
+                # CLI předává pouze cestu skriptu; obsah .env se čte až za běhu.
+                call emit_string_pointer(generator, generator["entry_source"])
                 return
             elif target["name"] == "executable_path":
                 call assembler.relative(output, [232], "runtime_executable_path")
@@ -7095,7 +7103,7 @@ function lazy_runtime(name):
     return name in LAZY_RUNTIME
 end
 
-function generate_mode(path, source, program, internal_abi):
+function generate_mode(path, source, program, internal_abi, entry_source=""):
     lines = source
     call declarations.lower(program, path, source)
     classes = class_table(path, lines, program)
@@ -7153,7 +7161,7 @@ function generate_mode(path, source, program, internal_abi):
         global_flags[global_name] = global_offsets[global_name] + globals_bytes
     end
     globals_bytes *= 2
-    generator = {"path": path, "internal_abi": internal_abi, "unchecked_intarray": unchecked_intarray, "lines": lines, "variables": {}, "types": {}, "global_variables": global_offsets, "global_types": main_types, "functions": functions, "classes": classes, "function_returns": function_returns, "function_parameters": parameter_types, "builder": output, "data": ByteArray(), "string_offsets": {}, "relocations": [], "counter": 0, "error_label": "", "current_class_name": ""}
+    generator = {"path": path, "entry_source": entry_source, "internal_abi": internal_abi, "unchecked_intarray": unchecked_intarray, "lines": lines, "variables": {}, "types": {}, "global_variables": global_offsets, "global_types": main_types, "functions": functions, "classes": classes, "function_returns": function_returns, "function_parameters": parameter_types, "builder": output, "data": ByteArray(), "string_offsets": {}, "relocations": [], "counter": 0, "error_label": "", "current_class_name": ""}
     generator["frame_size"] = 16
     generator["noreturn"] = noreturn
     generator["error_handlers"] = []

@@ -1,6 +1,6 @@
 # 📋 Referenční příručka všech funkcí LSL
 
-Kompletní seznam všech funkcí, metod a built-in příkazů LSL 0.8.8.
+Kompletní seznam všech funkcí, metod a built-in příkazů LSL 0.8.9.
 Každá položka obsahuje název, signaturu a stručný popis.
 
 ---
@@ -384,7 +384,7 @@ nezáporný, `x.power(0)` je `1` (včetně `0.power(0)`) a záporný exponent vy
 
 | Funkce | Popis |
 |---|---|
-| `http.get(url)` | HTTP GET, vrátí `{status, text, ok}`. |
+| `http.get(url, headers=None, timeout=None)` | HTTP GET, vrátí `{status, text, ok}`. |
 | `http.post(url, body, headers, timeout)` | HTTPS POST (HTTP jen loopback); `body` se automaticky serializuje a s hlavičkami jde curlu přes stdin. |
 | `http.post_stream(url, body, headers, timeout, on_chunk)` | Streamovaný POST — `on_chunk(chunk)` je callback. |
 
@@ -406,11 +406,30 @@ nezáporný, `x.power(0)` je `1` (včetně `0.power(0)`) a záporný exponent vy
 | `sandbox.profile()` | Vrátí `strict`, `server`, nebo `None`. |
 | `sandbox.input_path(n)` / `output_path(n)` | Vrátí `/input/N`, resp. `/output/N`. |
 
+### requests — HTTP klient
+
+`load requests`; podrobný manuál: [requests](requests.md), `lsl man requests`.
+
+| Funkce | Popis |
+|--------|-------|
+| `requests.get(url, headers=None, timeout=None)` | GET s objektem Response. |
+| `requests.post/put/patch/delete(url, data=None, headers=None, timeout=None)` | Požadavek s tělem; List/Dictionary se kódují jako JSON. |
+| `requests.head(url, headers=None, timeout=None)` | HEAD bez těla odpovědi. |
+| `requests.request(method, url, data=None, headers=None, timeout=None)` | Vlastní metoda. |
+| `requests.post_stream(url, data, headers, timeout, on_chunk, method="POST")` | Streamuje tělo do callbacku. |
+| `Response(status, text)` | `status`, `status_code`, `text`, `ok`, `json()`, `raise_for_status()`. |
+
 ### <span class="badge badge-module">env</span> env — proměnné prostředí
+
+`load env` automaticky načítá `.env` vedle skriptu; při přímém běhu binárky
+vedle executable a při stdin v pracovním adresáři. Exportované hodnoty mají
+přednost. [Podrobný manuál env](env.md).
+
+`env.load_dotenv(path=None)` explicitně načte další nebo znovu výchozí soubor.
 
 | Funkce | Popis |
 |---|---|
-| `env.get(name, default)` | Vrátí hodnotu proměnné prostředí, nebo `default`. |
+| `env.get(name, default)` | Vrátí proměnnou procesu, jinak hodnotu z `.env`, jinak `default`. |
 | `env.has(name)` | Vrátí `True`, pokud proměnná existuje. |
 | `env.require(name)` | Vrátí hodnotu; pokud neexistuje, vyvolá chybu. |
 

@@ -1,0 +1,14 @@
+200 True GET
+POST:{"a":1}
+DELETE:payload
+PUT
+PATCH:p
+200 0
+200 POST:stream-body True
+HTTPStatusError: HTTP 418: teapot
+JsonError: invalid value
+JsonError: empty response body cannot be decoded as JSON
+200 True 1
+ConnectionError: HTTP request failed: curl failed
+HTTPError: invalid HTTP header name: Bad Header
+requests conformance passed

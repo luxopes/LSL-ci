@@ -18,7 +18,7 @@ load sandbox
 load tui
 load update
 
-VERSION = "0.8.8"
+VERSION = "0.8.9"
 
 function print_help():
     call console.heading("Lux Simple Lang (LSL) " + VERSION)
@@ -106,7 +106,7 @@ function decimal_option(value, minimum, maximum, label):
     return result
 end
 
-function compile_image_mode(source_path, source, safety_mode):
+function compile_image_mode(source_path, source, safety_mode, running=False):
     stdlib_name = "compiler/pure/dynamic_stdlib.lsl"
     stdlib_path = resource_path(stdlib_name)
     stdlib_source = readfile(stdlib_path)
@@ -121,7 +121,11 @@ function compile_image_mode(source_path, source, safety_mode):
         end
         program.extend(linker.link_checked(source_path, source, safety_mode == 2))
     end
-    return codegen.generate(source_path, source, program)
+    entry_source = ""
+    if running:
+        entry_source = source_path
+    end
+    return codegen.generate_mode(source_path, source, program, False, entry_source)
 end
 
 function compile_source_mode(source_path, source, output_path, safety_mode):
@@ -145,7 +149,7 @@ function compile_file_sandbox(source_path, output_path):
 end
 
 function compile_file_image(source_path, safety_mode):
-    return compile_image_mode(source_path, readfile(source_path), safety_mode)
+    return compile_image_mode(source_path, readfile(source_path), safety_mode, True)
 end
 
 function dirname(path):
@@ -483,7 +487,7 @@ function main():
         if source == "":
             exit(0)
         end
-        scratch = materialize_scratch(compile_image_mode("<stdin>", source, 1))
+        scratch = materialize_scratch(compile_image_mode("<stdin>", source, 1, True))
         status = run(scratch, [])
         call cleanup_program(scratch)
         exit(status)

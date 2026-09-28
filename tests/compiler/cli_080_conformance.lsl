@@ -53,7 +53,7 @@ for topic in ["install", "list", "search", "check", "man", "update", "print"]:
     require(capture_status() == 0 and len(output) > 30 and chr(27) not in output, "topic CLI help")
 end
 output = invoke(["about"])
-require(capture_status() == 0 and "Lux Simple Lang (LSL) 0.8.8" in output and "MIT" in output and chr(27) not in output, "lsl about")
+require(capture_status() == 0 and "Lux Simple Lang (LSL) 0.8.9" in output and "MIT" in output and chr(27) not in output, "lsl about")
 output = invoke(["about", "random"])
 require(capture_status() == 0 and output.startswith("random") and "MT19937" in output, "lsl about random")
 output = invoke(["about", "probe"])
@@ -76,7 +76,7 @@ require(capture_status() == 0 and "```" not in output and "• " in output and "
 output = capture_input("/usr/bin/env", base, "help(\"random\")" + chr(10) + "help(\"described\")" + chr(10))
 require(capture_status() == 0 and output.startswith("random: ") and "Described probe library." in output, "help() shows library about")
 output = capture_input(cli, [], "help()" + chr(10))
-require(capture_status() == 0 and "Lux Simple Lang (LSL) 0.8.8" in output and "topics:" in output, "help() index")
+require(capture_status() == 0 and "Lux Simple Lang (LSL) 0.8.9" in output and "topics:" in output, "help() index")
 for source in ["help(\"print\", \"len\")", "help(topic=\"print\")"]:
     call writefile(work + "/bad-help.lsl", source + chr(10))
     call capture(compiler, [work + "/bad-help.lsl", work + "/bad-help"])

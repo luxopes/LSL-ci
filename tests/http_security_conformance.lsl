@@ -23,6 +23,10 @@ function receive(chunk):
 end
 streamed = http.post_stream_with(transport, "https://api.example.test/stream", "payload", {}, 9, receive)
 print streamed["status"], streamed["ok"], len(chunks) > 0
+if "".join(chunks) != streamed["text"] or "test warning" in streamed["text"]:
+    Error(TestFailure: "HTTP status or stderr leaked into the streamed body")
+end
+call json.decode(streamed["text"])
 
 try:
     call http.get_with(transport, "http://example.test/plain")

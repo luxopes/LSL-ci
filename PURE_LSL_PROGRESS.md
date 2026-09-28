@@ -1396,3 +1396,28 @@ konformanci. Compiler hash je
 hash `ebc29e380ad01880bd09337e35dd2d63204d0cd59d9ae1437ad9a7c02437ae0f` a
 test runner hash
 `d613672eb70c905c4c2ea912e54b3ecaf242e757dfc9559c15d1c6ebb647a31a`.
+
+## 2026-09-28 — LSL 0.8.9: env, requests a offline manuály
+
+- `env` načítá `.env` výhradně za běhu vedle skriptu/binárky (stdin: cwd),
+  s předností proměnných procesu a s explicitním `load_dotenv`.
+- `requests` poskytuje běžné HTTP metody, JSON, hlavičky, timeouty,
+  Response a streamování. Tělo je oddělené od stavového kódu i stderr.
+- Přidány a do instalátoru zapojeny manuály všech 26 veřejných knihoven.
+- Opraven očekávaný seznam témat `help()` po přidání requests.
+- Regenerovány všechny tracked ELF z vydaného 0.8.8 compileru.
+- Prošel self-host fixed point, celá `./tests/lsl-test` sada (včetně
+  negativních testů, config a fixed pointu), cílené env/requests testy,
+  skutečný TUI prohlížeč a všech 26 nainstalovaných manuálů offline.
+- Registr: všech 11 knihoven se přeložilo; instalace requests přes lokální
+  HTTP registr ověřila hash, provenance i spuštění staženého zdroje.
+
+SHA-256 regenerovaných nástrojů:
+
+```text
+a7902b73151fdd706233121856319fde4522bc893d142a93e2e318540526505a  compiler/pure/lslc-direct
+d3b47791e9a0e11db240158859b935e7af39b7f54d423308d5efd505be2af6fa  lsl
+067f4cb4a4da8f370499cf900c1c47f2d5e31d98d4972d01705c8803ec67e0a0  compiler/pure/lsl-install
+143d61d803c9bbd2898fe81dd32ad6bd1164f67875fce427ed38f15dad4f0993  compiler/pure/lsl-configure
+41ac2a1a9c7d0c185d550fe637f7f84094dbe586fc0960e60d09d714d5ff8799  tests/lsl-test
+```

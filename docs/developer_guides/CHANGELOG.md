@@ -4,6 +4,21 @@ Na této stránce jsou uživatelsky významné změny vydaných verzí. Stabiln�
 manuály a soubory ke stažení zůstávají dostupné v
 [historii vydání](/releases/).
 
+## 0.8.9 — 28. 9. 2026
+
+- `load env` automaticky načítá `.env` vedle skriptu. Samostatně
+  zkompilované programy hledají `.env` vedle binárky, stdin v pracovním
+  adresáři. Exportované proměnné mají přednost i při prázdné hodnotě.
+  Explicitní `env.load_dotenv(path)`; uvozovky, komentáře a `export`.
+  Hodnoty se čtou za běhu, bez shellu a bez vložení tajemství do binárky.
+- Nová knihovna `requests`: GET/POST/PUT/PATCH/DELETE/HEAD, obecný request,
+  JSON, hlavičky, timeouty a streamování; Response obsahuje `status`,
+  `status_code`, `text`, `ok`, `json()` a `raise_for_status()`.
+- `lsl man env`, `lsl man requests` a dalších 24 manuálů standardních
+  knihoven funguje offline, také po instalaci a v TUI prohlížeči.
+- HTTP transport odděluje tělo od stavového kódu a stderr; streamovací
+  callback dostává pouze tělo odpovědi. HEAD nečeká na tělo odpovědi.
+
 ## 0.8.8 — 27. 9. 2026, aktualizováno 28. 9. 2026
 
 - Rychlejší vstup a výstup: `input()` čte soubor po 64 KiB (nepřečtený

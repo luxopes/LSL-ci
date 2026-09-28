@@ -1,17 +1,20 @@
 # LSL — Vývojářské příručky
 
-> **LSL 0.8.3 — bezpečné proměnné, typové deklarace a opravené X11.**
+> **LSL 0.8.9 — automatické .env, requests a manuály knihoven.**
 > [Historie verzí](/releases/) · [Manuál 0.5](/releases/0.5/) ·
 > [Manuál 0.6](/releases/0.6/) · [Manuál 0.6.5](/releases/0.6.5/) ·
 > [Changelog](CHANGELOG.md)
 > [Stáhnout binárky nebo zdrojový kód](index.html#downloads).
 
-Podrobné průvodce LSL (Lux Simple Lang) 0.8.3. Každá kapitola
+Podrobné průvodce LSL (Lux Simple Lang) 0.8.9. Každá kapitola
 vysvětluje jednu oblast od základů — text předpokládá, že s programováním
 teprve začínáte. Všechny konstrukty jsou popsány srozumitelně: co dělají,
 k čemu slouží, jak se zapisují a jak fungují.
 
 ## Obsah
+
+Nově: [env a automatické .env](env.md), [HTTP klient requests](requests.md)
+a samostatné manuály všech veřejných standardních knihoven v `lsl man KNIHOVNA`.
 
 Nově: [kontrola inicializace, typové deklarace, ++/-- a system()](reference.md).
 `clock()` nyní vrací čitelný UTC String; pro intervaly použijte `monotonic()`

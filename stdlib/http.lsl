@@ -49,6 +49,13 @@ function transport_response(output):
     status = capture_status()
     if status != 0:
         message = capture_stderr()
+        # Závěrečný stavový kód curl není součástí chybové zprávy.
+        if len(message) >= 4:
+            tail = message[len(message) - 4:len(message)]
+            if tail[0] == chr(10) and tail[1] >= "0" and tail[1] <= "9" and tail[2] >= "0" and tail[2] <= "9" and tail[3] >= "0" and tail[3] <= "9":
+                message = message[0:len(message) - 4]
+            end
+        end
         if len(message) == 0:
             message = "curl exited with status " + String(status)
         elif len(message) > 4096:
@@ -56,7 +63,10 @@ function transport_response(output):
         end
         return {"status": 0, "text": message, "ok": False}
     end
-    return response(output)
+    # Stav je na stderr; případná varování nesmějí znečistit tělo odpovědi.
+    result = response(capture_stderr())
+    result["text"] = output
+    return result
 end
 
 function url_port(text):
@@ -256,16 +266,47 @@ function common_config(url, timeout, streaming):
     else:
         result += config_line("proto", "=http")
     end
-    result += config_line("write-out", chr(10) + "%{http_code}")
+    result += config_line("write-out", "%{stderr}" + chr(10) + "%{http_code}")
     result += config_line("url", checked_url)
     return result
 end
 
-function get_config(url):
-    return common_config(url, 60, False)
+function method_name(method):
+    value = String(method)
+    if len(value) == 0 or len(value) > 32:
+        Error(HTTPError: "HTTP method must contain 1..32 characters")
+    end
+    allowed = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!#$%&'*+-.^_`|~"
+    for character in value:
+        if character not in allowed:
+            Error(HTTPError: "HTTP method contains an invalid character")
+        end
+    end
+    return value
 end
 
-function post_config(url, body, headers, timeout, streaming):
+function headers_config(headers):
+    if headers == None:
+        return ""
+    end
+    if __lsl_type_code(headers) != 3 or len(headers) > 256:
+        Error(HTTPError: "HTTP headers must be a Dictionary with at most 256 entries")
+    end
+    result = ""
+    for key in headers:
+        result += config_line("header", header_name(key) + ": " + header_value(headers[key]))
+    end
+    return result
+end
+
+function get_config(url, headers=None, timeout=None):
+    if timeout == None:
+        timeout = 60
+    end
+    return common_config(url, timeout, False) + headers_config(headers)
+end
+
+function post_config(url, body, headers, timeout, streaming, method="POST"):
     encoded_body = ""
     if __lsl_type_code(body) == 3 or __lsl_type_code(body) == 2:
         encoded_body = json.encode(body)
@@ -275,45 +316,46 @@ function post_config(url, body, headers, timeout, streaming):
     if __lsl_text_byte_length(String(encoded_body)) > 4000000:
         Error(HTTPError: "HTTP request body exceeds the secure curl-config limit")
     end
-    if __lsl_type_code(headers) != 3 or len(headers) > 256:
-        Error(HTTPError: "HTTP headers must be a Dictionary with at most 256 entries")
-    end
-    pieces = [common_config(url, timeout, streaming)]
-    pieces.append(config_line("request", "POST"))
-    pieces.append(config_line("data-raw", encoded_body))
-    for key in headers:
-        pieces.append(config_line("header", header_name(key) + ": " + header_value(headers[key])))
+    pieces = [common_config(url, timeout, streaming), headers_config(headers)]
+    checked_method = method_name(method)
+    pieces.append(config_line("request", checked_method))
+    if checked_method == "HEAD":
+        # HEAD nečeká na tělo podle Content-Length a nevypisuje hlavičky.
+        pieces.append("head" + chr(10))
+        pieces.append(config_line("output", "/dev/null"))
+    else:
+        pieces.append(config_line("data-raw", encoded_body))
     end
     return "".join(pieces)
 end
 
 # Transport-injection helpers keep conformance hermetic. Production callers
 # normally use get/post/post_stream below with /usr/bin/curl.
-function get_with(curl_path, url):
-    output = capture_input_clean(curl_path, ["-q", "--config", "-"], get_config(url))
+function get_with(curl_path, url, headers=None, timeout=None):
+    output = capture_input_clean(curl_path, ["-q", "--config", "-"], get_config(url, headers, timeout))
     return transport_response(output)
 end
 
-function post_with(curl_path, url, body, headers, timeout):
-    config = post_config(url, body, headers, timeout, False)
+function post_with(curl_path, url, body, headers, timeout, method="POST"):
+    config = post_config(url, body, headers, timeout, False, method)
     output = capture_input_clean(curl_path, ["-q", "--config", "-"], config)
     return transport_response(output)
 end
 
-function post_stream_with(curl_path, url, body, headers, timeout, on_chunk):
-    config = post_config(url, body, headers, timeout, True)
+function post_stream_with(curl_path, url, body, headers, timeout, on_chunk, method="POST"):
+    config = post_config(url, body, headers, timeout, True, method)
     output = capture_input_stream_clean(curl_path, ["-q", "--config", "-"], config, on_chunk)
     return transport_response(output)
 end
 
-function get(url):
-    return get_with("/usr/bin/curl", url)
+function get(url, headers=None, timeout=None):
+    return get_with("/usr/bin/curl", url, headers, timeout)
 end
 
-function post(url, body, headers, timeout):
-    return post_with("/usr/bin/curl", url, body, headers, timeout)
+function post(url, body, headers, timeout, method="POST"):
+    return post_with("/usr/bin/curl", url, body, headers, timeout, method)
 end
 
-function post_stream(url, body, headers, timeout, on_chunk):
-    return post_stream_with("/usr/bin/curl", url, body, headers, timeout, on_chunk)
+function post_stream(url, body, headers, timeout, on_chunk, method="POST"):
+    return post_stream_with("/usr/bin/curl", url, body, headers, timeout, on_chunk, method)
 end

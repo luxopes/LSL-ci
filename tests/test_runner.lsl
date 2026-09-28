@@ -209,7 +209,7 @@ call require_output(optimization_test, [], "tests/codegen_optimization_conforman
 # Automatic GC, iterative tracing, raw-buffer metadata and EINTR recovery add
 # about 1.3 KiB over 0.8.3's 108317-byte baseline; buffered stdout, the
 # reserved-brk allocator and the native String helpers behind split/Int add
-# about 400 bytes more in 0.8.8 (input() and its stdin buffer are emitted
+# about 400 bytes more in 0.8.9 (input() and its stdin buffer are emitted
 # only for programs that read stdin). Keep about 400 bytes of headroom; the
 # allocation-free and safe success-path instruction tests stay strict.
 if len(readbytes(optimization_test)) > 110400:
@@ -224,7 +224,7 @@ end
 call require_success(run(compiler, ["compiler/pure/cli.lsl", cli_test]), "compile stdin CLI")
 call require_hardened_elf(cli_test)
 help_output = capture(cli_test, ["--help"])
-expected_help = "Lux Simple Lang (LSL) 0.8.8" + chr(10)
+expected_help = "Lux Simple Lang (LSL) 0.8.9" + chr(10)
 expected_help += chr(10)
 expected_help += "Usage:" + chr(10)
 expected_help += "  lsl [SOURCE [ARG...]]" + chr(10)
@@ -258,6 +258,9 @@ catalog_test = test_path("catalog-test")
 call require_success(run(compiler, ["tests/compiler/catalog_conformance.lsl", catalog_test]), "compile catalog/manual conformance")
 call require_output(catalog_test, [], "tests/compiler/catalog_conformance.out", "catalog/manual conformance differs")
 cli_080_test = test_path("cli-080-test")
+env_integration = test_path("env-integration")
+call require_success(run(compiler, ["tests/compiler/env_integration.lsl", env_integration]), "compile env integration")
+call require_output(env_integration, [cli_test, compiler, test_root], "tests/compiler/env_integration.out", "env integration differs")
 call require_success(run(compiler, ["tests/compiler/cli_080_conformance.lsl", cli_080_test]), "compile CLI 0.8.0 conformance")
 call require_output(cli_080_test, [cli_test, compiler], "tests/compiler/cli_080_conformance.out", "CLI 0.8.0 conformance differs")
 for release_test in ["color_conformance", "safe_codegen_conformance", "automatic_gc_codegen_conformance", "definite_assignment_conformance", "import_diagnostics_conformance", "language_safety_negative"]:
@@ -275,11 +278,11 @@ if capture_status() != 0 or tui_keys_output != "buffered terminal keys passed" +
     Error(TestFailure: "buffered terminal keys differ")
 end
 version_output = capture(cli_test, ["version"])
-if capture_status() != 0 or version_output != "0.8.8" + chr(10):
+if capture_status() != 0 or version_output != "0.8.9" + chr(10):
     Error(TestFailure: "CLI version output differs")
 end
 version_flag_output = capture(cli_test, ["--version"])
-if capture_status() != 0 or version_flag_output != "0.8.8" + chr(10):
+if capture_status() != 0 or version_flag_output != "0.8.9" + chr(10):
     Error(TestFailure: "CLI --version output differs")
 end
 config_output = capture(cli_test, ["config", "examples/config/system.lsl"])
@@ -467,6 +470,12 @@ call require_success(run(compiler, ["compiler/pure/install.lsl", install_test]),
 install_test_prefix = test_path("install-prefix-test")
 call require_success(run(install_test, [install_test_prefix]), "run installer conformance")
 installed_thread_runtime = install_test_prefix + "/lib/lsl/compiler/pure/thread_runtime.lsl"
+for library in ["env", "requests", "http", "httpserver", "json", "os", "process", "time", "math", "random", "system", "ai", "bigint", "config", "configure", "lconf", "lux", "luxos", "fd", "native", "plugin", "sandbox", "tensor", "tui", "unixsock", "cuda"]:
+    page = capture(install_test_prefix + "/bin/lsl", ["man", "--plain", library])
+    if capture_status() != 0 or "Knihovna " + library not in page:
+        Error(TestFailure: "installed library manual missing: " + library)
+    end
+end
 if readfile(installed_thread_runtime) != readfile("compiler/pure/thread_runtime.lsl"):
     Error(TestFailure: "installed compiler source set is incomplete")
 end

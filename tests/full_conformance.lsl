@@ -76,6 +76,8 @@ load input_bare_conformance
 load process_status_conformance
 load plugin_process_conformance
 load http_security_conformance
+load requests_conformance
+load env_conformance
 load language_06_conformance
 load comprehension_conformance
 load module_group_conformance

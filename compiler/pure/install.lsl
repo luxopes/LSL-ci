@@ -25,9 +25,9 @@ function reinstall_managed(prefix):
             call update_install.health(active, previous_version, work)
         end
         generation = update_install.private_work(store + "/generations")
-        call update_install.install_stage(executable_path(), generation, "0.8.8", work)
+        call update_install.install_stage(executable_path(), generation, "0.8.9", work)
         call update_install.prepare(prefix, prefix + "/bin/lsl", previous_version, work)
-        call update_install.activate(store, generation, "0.8.8", work)
+        call update_install.activate(store, generation, "0.8.9", work)
     else:
         failure = last_error()
     end
@@ -43,7 +43,7 @@ function reinstall_managed(prefix):
     elif cleanup_failure != None:
         Error(InstallError: String(cleanup_failure))
     end
-    print "Installed LSL 0.8.8 atomically; previous version retained for rollback."
+    print "Installed LSL 0.8.9 atomically; previous version retained for rollback."
 end
 
 function dirname(path):
@@ -195,8 +195,8 @@ sources = [
     "update_install.lsl",
     "x86_64.lsl"
 ]
-standard_modules = ["_random_hash.lsl", "ai.lsl", "bigint.lsl", "config.lsl", "configure.lsl", "cuda.lsl", "env.lsl", "fd.lsl", "http.lsl", "httpserver.lsl", "json.lsl", "lconf.lsl", "lux.lsl", "luxos.lsl", "math.lsl", "native.lsl", "os.lsl", "plugin.lsl", "process.lsl", "random.lsl", "sandbox.lsl", "system.lsl", "tensor.lsl", "time.lsl", "tui.lsl", "unixsock.lsl"]
-manual_pages = ["README", "01-getting-started", "02-language-basics", "03-functions-and-classes", "04-collections", "05-error-handling", "06-modules-and-imports", "07-files-io-and-processes", "08-configuration-system", "09-gui-programming", "10-ai-applications", "11-performance-and-optimization", "12-compiler-internals", "13-server-and-origin", "14-sandbox-and-safety", "15-cuda", "16-random", "17-cli-and-packages", "reference", "security", "CHANGELOG"]
+standard_modules = ["_random_hash.lsl", "ai.lsl", "bigint.lsl", "config.lsl", "configure.lsl", "cuda.lsl", "env.lsl", "fd.lsl", "http.lsl", "httpserver.lsl", "json.lsl", "lconf.lsl", "lux.lsl", "luxos.lsl", "math.lsl", "native.lsl", "os.lsl", "plugin.lsl", "process.lsl", "random.lsl", "requests.lsl", "sandbox.lsl", "system.lsl", "tensor.lsl", "time.lsl", "tui.lsl", "unixsock.lsl"]
+manual_pages = ["README", "01-getting-started", "02-language-basics", "03-functions-and-classes", "04-collections", "05-error-handling", "06-modules-and-imports", "07-files-io-and-processes", "08-configuration-system", "09-gui-programming", "10-ai-applications", "11-performance-and-optimization", "12-compiler-internals", "13-server-and-origin", "14-sandbox-and-safety", "15-cuda", "16-random", "17-cli-and-packages", "env", "requests", "http", "httpserver", "json", "os", "process", "time", "math", "random", "system", "ai", "bigint", "config", "configure", "lconf", "lux", "luxos", "fd", "native", "plugin", "sandbox", "tensor", "tui", "unixsock", "cuda", "reference", "security", "CHANGELOG"]
 call mkdir(prefix + "/lib/lsl/docs")
 call mkdir(prefix + "/lib/lsl/docs/developer_guides")
 

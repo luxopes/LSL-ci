@@ -15,12 +15,13 @@ function main():
     call update_install.bounded(arg(2), [prefix], 16777216, 120)
     old_version = update_install.bounded(prefix + "/bin/lsl", ["version"], 1048576, 30).strip()
     call update_install.health(prefix, old_version, work)
+    expected_cli = arg(3)[:len(arg(3)) - len("lsl-install")] + "lsl"
+    new_version = update_install.bounded(expected_cli, ["version"], 1048576, 30).strip()
     for attempt in rang(2):
         output = capture_clean("/usr/bin/env", ["-i", "HOME=" + work, arg(3), prefix])
         call require(capture_status() == 0, "installer migration/reinstall failed: " + output + capture_stderr())
-        call update_install.health(prefix, "0.8.8", work)
+        call update_install.health(prefix, new_version, work)
         # Při shodné verzi musí instalátor skutečně vyměnit i obsah binárky.
-        expected_cli = arg(3)[:len(arg(3)) - len("lsl-install")] + "lsl"
         call require(readbytes(prefix + "/bin/lsl") == readbytes(expected_cli), "same-version reinstall retained the old CLI")
         store = prefix + "/lib/lsl-updates"
         call require(fd.read_text_limit(store + "/previous/version", 64).strip() == old_version, "installer did not retain previous version")

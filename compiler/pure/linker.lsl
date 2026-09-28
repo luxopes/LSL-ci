@@ -35,7 +35,7 @@ function module_prefix(index):
 end
 
 function builtin_module(name):
-    builtins = "|_random_hash|ai|bigint|config|configure|cuda|env|fd|http|httpserver|json|lconf|lux|luxos|math|native|os|plugin|process|random|sandbox|system|tensor|time|tui|unixsock|"
+    builtins = "|_random_hash|ai|bigint|config|configure|cuda|env|fd|http|httpserver|json|lconf|lux|luxos|math|native|os|plugin|process|random|requests|sandbox|system|tensor|time|tui|unixsock|"
     return "|" + String(name) + "|" in builtins
 end
 
