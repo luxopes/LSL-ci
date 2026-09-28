@@ -1,3 +1,4 @@
+load last_error_conformance
 # Aggregated positive regression corpus. Each loaded module keeps its original
 # source path/spans, while one generated runtime amortizes compiler startup.
 load boxed_int_infrastructure_conformance

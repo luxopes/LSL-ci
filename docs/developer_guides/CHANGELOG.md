@@ -6,6 +6,13 @@ manuály a soubory ke stažení zůstávají dostupné v
 
 ## 0.8.9 — 28. 9. 2026
 
+- Oprava `last_error()`: před první chybou bezpečně vrací `None`; úspěšný
+  `safe`/`try` maže starou chybu, také při `return`, `break` a `continue`.
+- Opravené čárky a spustitelné příklady v kapitole AI aplikací; popis
+  parametrů, SSE a nástrojů odpovídá skutečnému API.
+- Aktualizovaný build 0.8.9 vyžaduje přeinstalaci z nového archivu, pokud
+  už máte původní 0.8.9. `lsl update` při stejném čísle verze nepřeinstaluje.
+
 - `load env` automaticky načítá `.env` vedle skriptu. Samostatně
   zkompilované programy hledají `.env` vedle binárky, stdin v pracovním
   adresáři. Exportované proměnné mají přednost i při prázdné hodnotě.

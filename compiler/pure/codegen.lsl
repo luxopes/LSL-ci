@@ -270,7 +270,10 @@ function infer_expression_type(syntax, types, function_returns):
                 return "Float"
             elif name == "Bool" or name == "__lsl_isatty" or name == "__lsl_stdin_eof":
                 return "Bool"
-            elif name == "String" or name == "chr" or name == "arg" or name == "input" or name == "readfile" or name == "last_error" or name == "type" or name == "capture" or name == "__lsl_capture" or name == "capture_clean" or name == "__lsl_capture_clean" or name == "capture_stream" or name == "capture_stream_clean" or name == "capture_input" or name == "capture_input_clean" or name == "capture_input_stream" or name == "capture_input_stream_clean" or name == "capture_stderr" or name == "executable_path" or name == "__lsl_text_from_bytes" or name == "__lsl_text_piece" or name == "__lsl_floatarray_bytes":
+            elif name == "last_error":
+                # Zachycená chyba je String, ale před chybou a po úspěchu None.
+                return "Any"
+            elif name == "String" or name == "chr" or name == "arg" or name == "input" or name == "readfile" or name == "type" or name == "capture" or name == "__lsl_capture" or name == "capture_clean" or name == "__lsl_capture_clean" or name == "capture_stream" or name == "capture_stream_clean" or name == "capture_input" or name == "capture_input_clean" or name == "capture_input_stream" or name == "capture_input_stream_clean" or name == "capture_stderr" or name == "executable_path" or name == "__lsl_text_from_bytes" or name == "__lsl_text_piece" or name == "__lsl_floatarray_bytes":
                 return "String"
             elif name == "clock":
                 return "String"
@@ -4311,9 +4314,13 @@ function emit_expression(generator, syntax):
             elif target["name"] == "last_error":
                 call assembler.emit(output, x86_64.load_fs(0, 0))
                 error_value_ready = label_name(generator, "error_value_ready")
+                error_value_present = label_name(generator, "error_value_present")
                 error_value_heap = label_name(generator, "error_value_heap")
                 call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
-                call assembler.relative(output, [15, 132], error_value_ready)
+                call assembler.relative(output, [15, 133], error_value_present)
+                call assembler.relative(output, [232], "runtime_box_none")
+                call assembler.relative(output, [233], error_value_ready)
+                call assembler.label(output, error_value_present)
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))
                 call assembler.relative(output, [232], "runtime_is_heap_object")
                 call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
@@ -5490,6 +5497,16 @@ function emit_statement_gc_poll(generator, statement):
     end
 end
 
+function error_reset_target(generator, target):
+    if target == "":
+        return ""
+    end
+    # Úspěšný odchod přes break/continue/return musí mít stejný stav jako end.
+    reset = label_name(generator, "error_reset")
+    generator["error_resets"].append([reset, target])
+    return reset
+end
+
 function emit_statements(generator, statements, break_label, continue_label, return_label):
     for statement in statements:
         kind = statement["kind"]
@@ -6099,8 +6116,9 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             old_error_label = generator["error_label"]
             generator["error_label"] = safe_failure
             generator["error_handlers"].append([safe_failure, safe_end, generator["frame_size"]])
-            call emit_statements(generator, statement["body"], break_label, continue_label, return_label)
+            call emit_statements(generator, statement["body"], error_reset_target(generator, break_label), error_reset_target(generator, continue_label), error_reset_target(generator, return_label))
             generator["error_label"] = old_error_label
+            call assembler.emit(generator["builder"], x86_64.store_fs_imm32(0, 0))
             call assembler.label(generator["builder"], safe_end)
             call assembler.emit(generator["builder"], x86_64.store_fs_imm32(8, 0))
         elif kind == "try":
@@ -6108,7 +6126,8 @@ function emit_statements(generator, statements, break_label, continue_label, ret
             try_end = label_name(generator, "try_end")
             old_error_label = generator["error_label"]
             generator["error_label"] = try_failure
-            call emit_statements(generator, statement["body"], break_label, continue_label, return_label)
+            call emit_statements(generator, statement["body"], error_reset_target(generator, break_label), error_reset_target(generator, continue_label), error_reset_target(generator, return_label))
+            call assembler.emit(generator["builder"], x86_64.store_fs_imm32(0, 0))
             call assembler.relative(generator["builder"], [233], try_end)
             call assembler.label(generator["builder"], try_failure)
             call assembler.emit(generator["builder"], x86_64.lea_base(4, 5, -generator["frame_size"]))
@@ -7165,6 +7184,7 @@ function generate_mode(path, source, program, internal_abi, entry_source=""):
     generator["frame_size"] = 16
     generator["noreturn"] = noreturn
     generator["error_handlers"] = []
+    generator["error_resets"] = []
     generator["lazy_used"] = {}
     generator["global_reads"] = guarded_main_reads
     generator["mutable_globals"] = mutable_globals
@@ -7341,6 +7361,11 @@ function generate_mode(path, source, program, internal_abi, entry_source=""):
         call assembler.label(output, handler[0])
         call assembler.emit(output, x86_64.lea_base(4, 5, -handler[2]))
         call assembler.relative(output, [233], handler[1])
+    end
+    for reset in generator["error_resets"]:
+        call assembler.label(output, reset[0])
+        call assembler.emit(output, x86_64.store_fs_imm32(0, 0))
+        call assembler.relative(output, [233], reset[1])
     end
     for handler in generator["global_handlers"]:
         call assembler.label(output, handler[0])

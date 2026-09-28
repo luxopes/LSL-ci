@@ -13,7 +13,8 @@ guarded = state()
 call codegen.emit_statements(plain, parser.parse("probe.lsl", "call probe(42)" + chr(10)), "", "", "")
 call codegen.emit_statements(guarded, parser.parse("probe.lsl", "safe:" + chr(10) + "    call probe(42)" + chr(10) + "end" + chr(10)), "", "", "")
 expected = List(plain["builder"]["code"])
+call expected.extend(x86_64.store_fs_imm32(0, 0))
 call expected.extend(x86_64.store_fs_imm32(8, 0))
-check(expected == List(guarded["builder"]["code"]), "safe added success-path instructions beyond the existing flag clear")
+check(expected == List(guarded["builder"]["code"]), "safe success path must clear the error text and pending flag without call checks")
 check(len(guarded["error_handlers"]) == 1, "missing out-of-line error recovery")
-print "safe direct-call success path has no added checks or instructions"
+print "safe direct-call success path clears error state without call checks"

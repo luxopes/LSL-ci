@@ -270,7 +270,14 @@ end
 
 `last_error()` vrací:
 - Text chybové zprávy (String), pokud chyba nastala.
-- `None`, pokud žádná chyba nebyla zachycena.
+- `None` před první chybou a po úspěšném dokončení těla `safe` nebo `try`.
+
+Úspěch maže i starší chybu nebo chybu zachycenou uvnitř vnořeného bloku.
+Platí to také při odchodu z těla přes `return`, `break` a `continue`.
+Při selhání zůstává text dostupný v `else` a po zachycení chyby; stav je
+oddělený pro každé vlákno. Pokud v obsluze spouštíte další `safe`/`try`,
+uložte si původní text nejprve do proměnné. Samotné čtení `last_error()`
+stav nemaže.
 
 ### Příklad: logování chyb
 

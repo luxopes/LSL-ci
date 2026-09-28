@@ -263,7 +263,7 @@ call require_success(run(compiler, ["tests/compiler/env_integration.lsl", env_in
 call require_output(env_integration, [cli_test, compiler, test_root], "tests/compiler/env_integration.out", "env integration differs")
 call require_success(run(compiler, ["tests/compiler/cli_080_conformance.lsl", cli_080_test]), "compile CLI 0.8.0 conformance")
 call require_output(cli_080_test, [cli_test, compiler], "tests/compiler/cli_080_conformance.out", "CLI 0.8.0 conformance differs")
-for release_test in ["color_conformance", "safe_codegen_conformance", "automatic_gc_codegen_conformance", "definite_assignment_conformance", "import_diagnostics_conformance", "language_safety_negative"]:
+for release_test in ["color_conformance", "safe_codegen_conformance", "ai_manual_conformance", "automatic_gc_codegen_conformance", "definite_assignment_conformance", "import_diagnostics_conformance", "language_safety_negative"]:
     release_binary = test_path(release_test)
     call require_success(run(compiler, ["tests/compiler/" + release_test + ".lsl", release_binary]), "compile " + release_test)
     call require_output(release_binary, [cli_test], "tests/compiler/" + release_test + ".out", release_test + " differs")

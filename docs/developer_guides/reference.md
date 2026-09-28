@@ -165,7 +165,7 @@ a `>>=` fungují stejně jako `+=`.
 
 | Funkce | Popis |
 |---|---|
-| `last_error()` | Vrátí text poslední chyby zachycené `safe`/`try`, nebo `None`. |
+| `last_error()` | Vrátí text zachycené chyby; před první chybou a po úspěšném `safe`/`try` vrací `None`. |
 
 ### Ostatní
 

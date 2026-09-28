@@ -323,7 +323,7 @@ function __lsl_help_text(topic):
         "exit": "exit(STATUS)\nTerminate the program with an integer exit status.",
         "arg": "arg(INDEX) -> String or None\nRead a program argument; arg(1) is the first user argument.",
         "arg_count": "arg_count() -> Int\nReturn the number of program arguments including the executable name.",
-        "last_error": "last_error() -> String\nReturn the most recent caught LSL error text.",
+        "last_error": "last_error() -> String | None\nReturn the caught error text, or None before an error and after a successful safe/try body.",
         "gc": "gc()\nRequest an immediate garbage collection. Normally memory is collected automatically according to allocation pressure; manual calls are optional. Reachable references remain alive. The main thread coordinates collection; worker calls return 0.",
         "clock": "clock() -> String\nReadable current UTC date and time: YYYY-MM-DD HH:MM:SS UTC. For elapsed time use monotonic() or time.perf_counter().",
         "monotonic": "monotonic() -> Float\nMonotonic seconds for measuring durations, timeouts and frame pacing. Never use clock() for elapsed-time arithmetic.",

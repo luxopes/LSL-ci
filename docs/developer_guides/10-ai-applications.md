@@ -42,7 +42,7 @@ token = env.require("OPENAI_API_KEY")
 
 # Příprava messages
 messages = [
-    {"role": "system", "content": "Jsi užitečný asistent."}
+    {"role": "system", "content": "Jsi užitečný asistent."},
     {"role": "user", "content": "Vysvětli, co je LSL za 3 věty."}
 ]
 
@@ -73,19 +73,23 @@ response = ai.request(
     "gpt-4o",
     messages,
     {
-        "max_tokens": 500          # maximální délka odpovědi
-        "temperature": 0.7         # kreativita (0.0–2.0)
-        "top_p": 0.9               # nucleus sampling
-        "stop": ["###", "---"]     # stop sekvence
+        "max_tokens": 500,         # maximální délka odpovědi
+        "temperature": 0.7,        # kreativita podle pravidel providera
+        "timeout": 30,             # časový limit transportu v sekundách
+        "retries": 2               # opakování přechodných chyb
     }
 )
 ```
 
-Options je Dictionary odpovídající OpenAI API parametrům.
+`options` přijímá pouze `temperature`, `max_tokens`, `timeout`, `retries`,
+`cancel` a `transport_chunk`. Neznámé klíče vyvolají `AIProviderError`.
+`temperature` a `max_tokens` se posílají providerovi; ostatní řídí LSL.
+Pro další parametry API použijte `http.post` s vlastním tělem požadavku.
 
 ### ai.content(response)
 
-Bezpečně extrahuje první textovou odpověď:
+Extrahuje `choices[0].message.content`. Hodnotu `None` vrátí, pokud je
+obsah JSON `null`; při chybějící struktuře vyvolá `AIProviderError`:
 
 ```lsl
 text = ai.content(response)
@@ -96,32 +100,37 @@ else:
 end
 ```
 
-### ai.stream — streamování odpovědi
+### ai.stream — SSE odpověď
 
 ```lsl
-full_response = ""
+parts = []
 
-function on_token(token):
-    # Token je část odpovědi (String)
-    full_response = full_response + token
-    print token  # okamžitý výpis (bez newline pro postupný efekt)
+function on_token(chunk):
+    parts.append(chunk)
+    print chunk  # print vypisuje každý kus na samostatný řádek
 end
 
-call ai.stream_text(
+call ai.stream(
     "https://api.openai.com/v1/chat/completions",
     token,
     "gpt-4o",
     messages,
-    {"max_tokens": 500},
+    {"timeout": 30},
     on_token
 )
 
-print ""  # newline po streamu
-print "Celá odpověď:", full_response
+print "Celá odpověď:", "".join(parts)
 ```
 
-`ai.stream_text` validuje OpenAI SSE (Server-Sent Events) formát, `data:`
-eventy, `[DONE]`, provider errors a předává content chunky do callbacku.
+`ai.stream` posílá `stream: True` a parsuje SSE události. Textové callbacky
+v této verzi zpracovává až po načtení celé HTTP odpovědi. Volitelný callback
+`transport_chunk` dostává surové části těla už během přenosu. `timeout` a
+`cancel` řídí přenos a parsování; `temperature`, `max_tokens` a `retries`
+se ve streamovací variantě zatím neuplatňují.
+
+`ai.stream_text(text, on_event, cancel)` je samostatný parser již načteného
+SSE textu; neposílá HTTP požadavek. Obě varianty rozpoznávají `data:`,
+`[DONE]` a chyby providera.
 
 ### Chybové stavy
 
@@ -136,31 +145,28 @@ else:
     # Může být:
     # - AIProviderError: chyba od provideru (4xx, 5xx)
     # - AICancelled: operace zrušena
-    # - JsonError: neplatná JSON odpověď
+    # - AIProviderError: neplatná JSON odpověď nebo parametry
 end
 ```
 
-Podrobnější diagnostika:
+Podrobnější diagnostika přes `http`:
 
 ```lsl
-response = ai.request(endpoint, token, model, messages, options)
+load http
 
-# Kontrola struktury odpovědi
-if response == None:
-    print "Prázdná odpověď"
-elif not response["ok"]:
+response = http.post(endpoint, {"model": model, "messages": messages},
+                     {"Authorization": "Bearer " + token}, 30)
+if not response["ok"]:
     print "HTTP chyba:", response["status"]
     print "Tělo:", response["text"]
 else:
-    text = ai.content(response)
-    if text != None:
-        print "Úspěch:", text
-    else:
-        print "Neočekávaná struktura odpovědi"
-        print json.pretty(response)
-    end
+    data = ai.decode_response(response)
+    print ai.content(data)
 end
 ```
+
+`status`, `ok` a `text` patří do odpovědi `http`. `ai.request` už vrací
+samotný dekódovaný JSON providera a HTTP chyby převádí na `AIProviderError`.
 
 ## Modul http — HTTP/HTTPS komunikace
 
@@ -178,7 +184,7 @@ print response["text"]      # Tělo odpovědi (String)
 ```lsl
 body = {"query": "Hello"}
 headers = {
-    "Authorization": "Bearer " + token
+    "Authorization": "Bearer " + token,
     "Content-Type": "application/json"
 }
 response = http.post("https://api.example.com/query", body, headers, 30)
@@ -246,17 +252,21 @@ if not env.has("OPENAI_API_KEY"):
 end
 ```
 
+Od LSL 0.8.9 načte `load env` automaticky `.env` vedle vstupního skriptu
+(u přeloženého programu vedle binárky). Exportované proměnné mají přednost.
+Podrobnosti: [knihovna env](env.md).
+
 Nastavení proměnné prostředí:
 
 ```bash
 export OPENAI_API_KEY="sk-..."
-./muj_ai_program.lsl
+lsl muj_ai_program.lsl
 ```
 
 Nebo inline:
 
 ```bash
-OPENAI_API_KEY="sk-..." ./muj_ai_program.lsl
+OPENAI_API_KEY="sk-..." lsl muj_ai_program.lsl
 ```
 
 ## Praktický příklad: AI chatbot
@@ -285,7 +295,7 @@ function chat_loop(token, model):
 
         messages.append({"role": "user", "content": user_input})
 
-        safe:
+        try:
             response = ai.request(
                 "https://api.openai.com/v1/chat/completions",
                 token,
@@ -300,8 +310,7 @@ function chat_loop(token, model):
             else:
                 print "AI: [prázdná odpověď]"
             end
-        end
-        if last_error() != None:
+        else:
             print "Chyba:", last_error()
         end
     end
@@ -314,75 +323,76 @@ call chat_loop(token, model)
 
 ## AI s nástroji (function calling)
 
+`ai.request` nepřijímá `tools` ani `tool_choice`. Pro službu, která tyto
+parametry podporuje, sestavte JSON přes `http.post`. Následující příklad
+obsahuje demonstrační údaje o počasí, nikoli skutečnou předpověď.
+
 ```lsl
 load ai
+load http
 load json
+load env
 
-# Definice nástrojů
+endpoint = env.require("AI_ENDPOINT")
+token = env.require("OPENAI_API_KEY")
+model = env.get("OPENAI_MODEL", "gpt-4o")
+headers = {"Authorization": "Bearer " + token, "Content-Type": "application/json"}
+
 tools = [
     {
-        "type": "function"
+        "type": "function",
         "function": {
-            "name": "get_weather"
-            "description": "Získej aktuální počasí pro město"
+            "name": "get_weather",
+            "description": "Získej demonstrační počasí pro město",
             "parameters": {
-                "type": "object"
+                "type": "object",
                 "properties": {
                     "city": {
-                        "type": "string"
+                        "type": "string",
                         "description": "Název města"
                     }
-                }
+                },
                 "required": ["city"]
             }
         }
     }
 ]
 
-# Funkce pro provedení nástroje
 function get_weather(city):
-    # V reálné aplikaci: HTTP volání na weather API
     return json.encode({
-        "city": city
-        "temperature": 22
+        "city": city,
+        "temperature": 22,
         "condition": "slunečno"
     })
 end
 
-# Hlavní konverzace
 messages = [
-    {"role": "system", "content": "Jsi asistent s přístupem k počasí."}
+    {"role": "system", "content": "Jsi asistent s přístupem k demonstračnímu počasí."},
     {"role": "user", "content": "Jaké je počasí v Praze?"}
 ]
+payload = {"model": model, "messages": messages, "tools": tools, "tool_choice": "auto"}
+response = ai.decode_response(http.post(endpoint, payload, headers, 30))
+message = response["choices"][0]["message"]
 
-response = ai.request(
-    endpoint, token, model, messages,
-    {"tools": tools, "tool_choice": "auto"}
-)
-
-# Zpracování tool calls
-text = ai.content(response)
-if text == None:
-    # Získej tool calls z response (dle OpenAI formátu)
-    tool_calls = response["choices"][0]["message"]["tool_calls"]
-    for call in tool_calls:
-        if call["function"]["name"] == "get_weather":
-            args = json.decode(call["function"]["arguments"])
-            result = get_weather(args["city"])
-            messages.append({
-                "role": "tool"
-                "tool_call_id": call["id"]
-                "content": result
-            })
+if "tool_calls" in message and len(message["tool_calls"]) > 0:
+    # Do historie patří i zpráva asistenta, která požaduje použití nástroje.
+    messages.append(message)
+    for tool_call in message["tool_calls"]:
+        if tool_call["function"]["name"] != "get_weather":
+            Error(ToolError: "Neznámý nástroj")
         end
+        args = json.decode(tool_call["function"]["arguments"])
+        result = get_weather(args["city"])
+        messages.append({
+            "role": "tool",
+            "tool_call_id": tool_call["id"],
+            "content": result
+        })
     end
-
-    # Druhé volání — AI zpracuje výsledek
     response2 = ai.request(endpoint, token, model, messages, {})
     print ai.content(response2)
-    end
 else:
-    print text
+    print ai.content(response)
 end
 ```
 
@@ -425,48 +435,43 @@ Modul `ai` podporuje:
 
 ```lsl
 options = {
-    "max_tokens": 500
-    "timeout": 30     # sekundy
+    "max_tokens": 500,
+    "timeout": 30,    # sekundy
+    "retries": 2      # výchozí hodnota 0 znamená bez opakování
 }
 
-# ai.request interně zkouší znovu při transient chybách
+# Při retries > 0 ai.request opakuje přechodné chyby
 response = ai.request(endpoint, token, model, messages, options)
 ```
 
-## Streaming s progress indikátorem
+## Sledování SSE odpovědi
 
 ```lsl
 load ai
 
-full_text = ""
-char_count = 0
+chunks = []
+progress = {"characters": 0}
 
-function on_char(token):
-    if token != None:
-        full_text = full_text + token
-        char_count = char_count + len(token)
-
-        # Progress každých 50 znaků
-        if char_count % 50 == 0:
-            print "."  # tečka značí progress (bez newline)
-        end
+function on_char(chunk):
+    if chunk != None:
+        chunks.append(chunk)
+        progress["characters"] += len(chunk)
+        print "Zpracováno znaků:", progress["characters"]
     end
 end
 
-print "AI přemýšlí...",
-call ai.stream_text(endpoint, token, model, messages, options, on_char)
-print ""  # newline
+print "AI přemýšlí..."
+call ai.stream(endpoint, token, model, messages, options, on_char)
+full_text = "".join(chunks)
 print "Dokončeno:", len(full_text), "znaků"
 ```
 
-## Kompletní AI klient
-
-Příklad kompletního AI klienta včetně zpracování chyb, více modelů a
-ukládání historie najdete v souboru `examples/ai_client.lsl`. Tento
-soubor lze přeložit do samostatného ELF:
+Zde se sleduje zpracování textu po přijetí odpovědi. Pro průběh síťového
+přenosu slouží `transport_chunk`; jeho vstup je surové SSE, nikoli čistý text.
+Příklad chatbota výše uložte například jako `ai_client.lsl` a přeložte:
 
 ```bash
-./lsl compile examples/ai_client.lsl ai-client
+lsl compile ai_client.lsl ai-client
 ./ai-client
 ```
 
@@ -483,7 +488,8 @@ programovací režim**.
 |---|---|---|
 | `ai.request(e, t, m, msgs, opts)` | `ai` | Synchronní AI požadavek |
 | `ai.content(response)` | `ai` | Extrakce textu z odpovědi |
-| `ai.stream_text(e, t, m, msgs, o, cb)` | `ai` | Streamování textové odpovědi |
+| `ai.stream(e, t, m, msgs, o, cb)` | `ai` | Požadavek se SSE odpovědí |
+| `ai.stream_text(text, cb, cancel)` | `ai` | Parsování již načteného SSE |
 | `http.get(url)` | `http` | HTTP GET |
 | `http.post(url, body, hdrs, to)` | `http` | HTTP POST |
 | `http.post_stream(url, body, hdrs, to, cb)` | `http` | Streamovaný POST |

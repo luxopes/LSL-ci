@@ -1,1 +1,1 @@
-safe direct-call success path has no added checks or instructions
+safe direct-call success path clears error state without call checks
