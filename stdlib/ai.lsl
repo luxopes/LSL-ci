@@ -1,18 +1,18 @@
-# AI 1.0.0: chat a průběžné SSE; samostatný balíček: lsl install aikit.
+# AI 1.1.0: chat a průběžné SSE; samostatný balíček: lsl install aikit.
 # Použití balíčku v LSL 0.8.9: load aikit as ai; dokumentace: https://lsl.lux-ai.cz/#ai
 
 load http
 load json
 load time
 
-version = "1.0.0"
+version = "1.1.0"
 _MAX_EVENT_BYTES = 1048576
 _contexts = {}
 _context_lock = IntArray()
 _context_lock.append(0)
 
 function help():
-    return "AI " + version + "\nload aikit as ai\n\nrequest(endpoint, token, model, messages, options) -> Dictionary\ncontent(response) -> String | None\nstream(endpoint, token, model, messages, options, on_event) -> Int\nstream_text(text, on_event, cancel=None) -> Int\n\non_event(text) dostava neprázdné části odpovědi už během HTTP přenosu.\nVýsledek stream je počet callbacků, nikoli celá odpověď.\nOptions: temperature (0..2), max_tokens (>0), timeout (1..3600 s, výchozí 60),\nretries (0..10, výchozí 0), cancel (Function | None), transport_chunk (Function | None).\nPo prvním textovém callbacku se požadavek neopakuje. Živý stream vyžaduje [DONE].\nPro výpis bez newline použijte tui.Terminal().emit(text) a flush().\nAktualizace pouze knihovny: lsl update aikit\nÚplný manuál a chatbot: https://lsl.lux-ai.cz/#ai"
+    return "AI " + version + "\nload aikit as ai\n\nrequest(endpoint, token, model, messages, options) -> Dictionary\ncontent(response) -> String | None\nstream(endpoint, token, model, messages, options, on_event) -> Dictionary {events, tool_calls}\nstream_text(text, on_event, cancel=None) -> Int\ntool_calls(response) -> List {id, name, arguments}\ntool_message(id, name, result) -> Dictionary (role \"tool\")\n\non_event(text) dostává neprázdné části odpovědi už během HTTP přenosu.\nOptions: temperature (0..2), max_tokens (>0), timeout (1..3600 s, výchozí 60),\nretries (0..10, výchozí 0), cancel (Function | None), transport_chunk (Function | None),\ntools (List definic), tool_choice (auto | none | required | {type, function}),\non_tool_call (Function | None): po dokončení streamovaného volání nástroje dostává {id, name, arguments},\nstream_reliability (live | transactional, jen při streamu; provider musí volbu podporovat).\nPo prvním textovém callbacku se požadavek neopakuje. Živý stream vyžaduje [DONE].\nPro výpis bez newline použijte tui.Terminal().emit(text) a flush().\nAktualizace pouze knihovny: lsl update aikit\nÚplný manuál a chatbot: https://lsl.lux-ai.cz/#ai"
 end
 
 function _byte_length(text):
@@ -43,7 +43,7 @@ function checked_request(endpoint, token, model, messages, options):
         Error(AIProviderError: "AI options must be a bounded Dictionary")
     end
     for key in options:
-        if type(key) != "String" or key not in ["temperature", "max_tokens", "timeout", "retries", "cancel", "transport_chunk"]:
+        if type(key) != "String" or key not in ["temperature", "max_tokens", "timeout", "retries", "cancel", "transport_chunk", "tools", "tool_choice", "on_tool_call", "stream_reliability"]:
             Error(AIProviderError: "unknown AI request option: " + String(key))
         end
     end
@@ -64,6 +64,58 @@ function checked_request(endpoint, token, model, messages, options):
     end
     call _checked_callback(options.get("cancel", None), "cancel", True)
     call _checked_callback(options.get("transport_chunk", None), "transport_chunk", True)
+    call _checked_callback(options.get("on_tool_call", None), "on_tool_call", True)
+    if "tools" in options:
+        call _checked_tools(options["tools"])
+    end
+    if "tool_choice" in options:
+        call _checked_tool_choice(options["tool_choice"])
+    end
+    if "stream_reliability" in options and options["stream_reliability"] not in ["live", "transactional"]:
+        Error(AIProviderError: "stream_reliability must be live or transactional")
+    end
+end
+
+# Tool definice: {"type": "function", "function": {"name", "description"?, "parameters"?}}
+function _checked_tools(tools):
+    if type(tools) != "List" or len(tools) == 0 or len(tools) > 128:
+        Error(AIProviderError: "tools must be a non-empty List of at most 128 definitions")
+    end
+    for tool in tools:
+        if type(tool) != "Dictionary" or tool.get("type", None) != "function":
+            Error(AIProviderError: "each tool must be a Dictionary with type == \"function\"")
+        end
+        spec = tool.get("function", None)
+        if type(spec) != "Dictionary":
+            Error(AIProviderError: "each tool must contain a function Dictionary")
+        end
+        name = spec.get("name", None)
+        if type(name) != "String" or len(name) == 0 or len(name) > 256:
+            Error(AIProviderError: "tool function name must be a non-empty String")
+        end
+        if "description" in spec and type(spec["description"]) != "String":
+            Error(AIProviderError: "tool function description must be a String")
+        end
+        if "parameters" in spec and type(spec["parameters"]) != "Dictionary":
+            Error(AIProviderError: "tool function parameters must be a Dictionary (JSON schema)")
+        end
+    end
+end
+
+function _checked_tool_choice(choice):
+    if type(choice) == "String":
+        if choice not in ["auto", "none", "required"]:
+            Error(AIProviderError: "tool_choice must be auto, none or required")
+        end
+    elif type(choice) == "Dictionary":
+        if choice.get("type", None) != "function" or type(choice.get("function", None)) != "Dictionary":
+            Error(AIProviderError: "tool_choice Dictionary must be {type: function, function: {name}}")
+        elif type(choice["function"].get("name", None)) != "String":
+            Error(AIProviderError: "tool_choice function must contain a name String")
+        end
+    else:
+        Error(AIProviderError: "tool_choice must be a String or a Dictionary")
+    end
 end
 
 function _cancelled(cancel):
@@ -133,13 +185,16 @@ end
 
 function _payload(model, messages, options, streaming):
     payload = {"model": model, "messages": messages}
-    for name in ["temperature", "max_tokens"]:
+    for name in ["temperature", "max_tokens", "tools", "tool_choice"]:
         if name in options:
             payload[name] = options[name]
         end
     end
     if streaming:
         payload["stream"] = True
+        if "stream_reliability" in options:
+            payload["stream_reliability"] = options["stream_reliability"]
+        end
     end
     return payload
 end
@@ -176,7 +231,7 @@ function request(endpoint, token, model, messages, options):
 end
 
 function _decoder(on_event, cancel, raw):
-    return {"line": ByteArray(), "data": [], "bytes": 0, "skip_lf": False, "first": True, "done": False, "delivered": 0, "on_event": on_event, "cancel": cancel, "raw": raw}
+    return {"line": ByteArray(), "data": [], "bytes": 0, "skip_lf": False, "first": True, "done": False, "delivered": 0, "on_event": on_event, "cancel": cancel, "raw": raw, "tool_parts": {}, "tool_calls": [], "on_tool_call": None}
 end
 
 function _dispatch(state):
@@ -217,6 +272,7 @@ function _dispatch(state):
     if type(delta) != "Dictionary":
         Error(AIProviderError: "stream delta must be a Dictionary")
     end
+    call _collect_tool_delta(state, delta)
     text = delta.get("content", None)
     if text == None or text == "":
         return
@@ -227,6 +283,77 @@ function _dispatch(state):
     state["delivered"] += 1
     callback = state["on_event"]
     call callback(text)
+end
+
+# Sběr tool callů z delta chunků (OpenAI streaming formát: index, id, function.name, function.arguments).
+function _collect_tool_delta(state, delta):
+    chunks = delta.get("tool_calls", None)
+    if chunks == None:
+        return
+    end
+    if type(chunks) != "List":
+        Error(AIProviderError: "stream tool_calls must be a List")
+    end
+    for chunk in chunks:
+        if type(chunk) != "Dictionary":
+            Error(AIProviderError: "stream tool_call chunk must be a Dictionary")
+        end
+        index = chunk.get("index", None)
+        if type(index) != "Int" or index < 0 or index > 1024:
+            Error(AIProviderError: "stream tool_call index must be a non-negative Int")
+        end
+        parts = state["tool_parts"]
+        if index not in parts:
+            parts[index] = {"id": None, "name": "", "arguments": ""}
+        end
+        part = parts[index]
+        if "id" in chunk and chunk["id"] != None:
+            if type(chunk["id"]) != "String":
+                Error(AIProviderError: "stream tool_call id must be a String")
+            end
+            part["id"] = chunk["id"]
+        end
+        fn = chunk.get("function", None)
+        if fn != None:
+            if type(fn) != "Dictionary":
+                Error(AIProviderError: "stream tool_call function must be a Dictionary")
+            end
+            name = fn.get("name", None)
+            if name != None:
+                if type(name) != "String":
+                    Error(AIProviderError: "stream tool_call name must be a String")
+                end
+                part["name"] += name
+            end
+            args = fn.get("arguments", None)
+            if args != None:
+                if type(args) != "String":
+                    Error(AIProviderError: "stream tool_call arguments must be a String")
+                end
+                part["arguments"] += args
+            end
+        end
+    end
+end
+
+# Dokončí otevřené tool call parts do seznamu {id, name, arguments} a volá on_tool_call.
+function _finish_tools(state):
+    calls = []
+    for index in state["tool_parts"]:
+        part = state["tool_parts"][index]
+        if part["id"] == None or len(part["name"]) == 0:
+            Error(AIProviderError: "stream tool_call is incomplete (missing id or name)")
+        end
+        entry = {"id": part["id"], "name": part["name"], "arguments": part["arguments"]}
+        calls.append(entry)
+        hook = state["on_tool_call"]
+        if hook != None:
+            call hook(entry)
+        end
+    end
+    state["tool_calls"] = calls
+    state["tool_parts"] = {}
+    return calls
 end
 
 function _line(state):
@@ -370,6 +497,7 @@ function stream(endpoint, token, model, messages, options, on_event):
     call checked_request(endpoint, token, model, messages, options)
     call _checked_callback(on_event, "on_event", False)
     headers = _headers(token, True)
+    on_tool_call = options.get("on_tool_call", None)
     payload = _payload(model, messages, options, True)
     timeout = options.get("timeout", 60)
     retries = options.get("retries", 0)
@@ -379,6 +507,7 @@ function stream(endpoint, token, model, messages, options, on_event):
     loop:
         call _cancelled(cancel)
         state = _decoder(on_event, cancel, raw)
+        state["on_tool_call"] = on_tool_call
         key = _thread()
         call _push_context(key, state)
         response = None
@@ -394,7 +523,9 @@ function stream(endpoint, token, model, messages, options, on_event):
         end
         call _cancelled(cancel)
         if response["ok"]:
-            return _finish(state, True)
+            call _finish(state, True)
+            call _finish_tools(state)
+            return {"events": state["delivered"], "tool_calls": state["tool_calls"]}
         elif state["delivered"] > 0 or not _retryable(response) or attempt >= retries:
             return decode_response(response)
         end
@@ -416,4 +547,61 @@ function content(response):
         Error(AIProviderError: "provider message content must be a String or null")
     end
     return text
+end
+
+# Extrahuje tool calls z ne-stream odpovědi (choices[0].message.tool_calls).
+# Vrací List {id, name, arguments}; arguments je String s JSON objektem.
+function tool_calls(response):
+    if type(response) != "Dictionary" or "choices" not in response or type(response["choices"]) != "List" or len(response["choices"]) == 0:
+        Error(AIProviderError: "provider response has no choices")
+    end
+    choice = response["choices"][0]
+    if type(choice) != "Dictionary" or "message" not in choice or type(choice["message"]) != "Dictionary":
+        Error(AIProviderError: "provider response has no message")
+    end
+    message = choice["message"]
+    raw = message.get("tool_calls", None)
+    if raw == None:
+        return []
+    end
+    if type(raw) != "List" or len(raw) > 128:
+        Error(AIProviderError: "message tool_calls must be a bounded List")
+    end
+    calls = []
+    for item in raw:
+        if type(item) != "Dictionary" or item.get("type", None) != "function":
+            Error(AIProviderError: "tool_call must be a Dictionary with type == \"function\"")
+        end
+        fn = item.get("function", None)
+        if type(fn) != "Dictionary" or type(fn.get("name", None)) != "String":
+            Error(AIProviderError: "tool_call must contain function.name")
+        end
+        entry = {"id": item.get("id", None), "name": fn["name"], "arguments": fn.get("arguments", "")}
+        if type(entry["id"]) != "String" or len(entry["id"]) == 0:
+            Error(AIProviderError: "tool_call id must be a non-empty String")
+        end
+        if type(entry["arguments"]) != "String":
+            Error(AIProviderError: "tool_call arguments must be a String")
+        end
+        calls.append(entry)
+    end
+    return calls
+end
+
+# Zpráva role "tool" s výsledkem volání; appendněte ji za assistant zprávu
+# obsahující tool_calls a zopakujte request/stream.
+function tool_message(id, name, result):
+    if type(id) != "String" or len(id) == 0 or len(id) > 256:
+        Error(AIProviderError: "tool message id must be a non-empty String")
+    end
+    if type(name) != "String" or len(name) == 0 or len(name) > 256:
+        Error(AIProviderError: "tool message name must be a non-empty String")
+    end
+    if type(result) != "String":
+        Error(AIProviderError: "tool message result must be a String")
+    end
+    if _byte_length(result) > 1048576:
+        Error(AIProviderError: "tool message result exceeds 1 MiB")
+    end
+    return {"role": "tool", "tool_call_id": id, "name": name, "content": result}
 end

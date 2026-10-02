@@ -4,10 +4,11 @@ Tato kapitola vysvětluje, jak v LSL pracovat s AI modely přes
 OpenAI-compatible API — od jednoduchého dotazu přes streaming až po
 function calling a správu secrets.
 
-Tato kapitola používá AI knihovnu `aikit` 1.0.0 pro LSL 0.8.9+.
+Tato kapitola používá AI knihovnu `aikit` 1.1.0 pro LSL 0.8.9+.
 Nainstalujte ji přes `lsl install aikit`, později aktualizujte přes
 `lsl update aikit`. Import `load aikit as ai` zachová jméno `ai` v příkladech.
-Podrobnosti a hotový streamovací chatbot: [manuál AI](ai.md).
+Podrobnosti, nástroje (function calling) a hotový streamovací chatbot:
+[manuál AI](ai.md).
 
 ## Co k tomu potřebujete
 
@@ -62,7 +63,7 @@ response = ai.request(
 
 # Získání odpovědi
 text = ai.content(response)
-print "AI odpověď:", text
+printl "AI odpověď: {text}"
 ```
 
 ## Modul ai — API
@@ -86,10 +87,12 @@ response = ai.request(
 )
 ```
 
-`options` přijímá pouze `temperature`, `max_tokens`, `timeout`, `retries`,
-`cancel` a `transport_chunk`. Neznámé klíče vyvolají `AIProviderError`.
-`temperature` a `max_tokens` se posílají providerovi; ostatní řídí LSL.
-Pro další parametry API použijte `http.post` s vlastním tělem požadavku.
+`options` přijímá `temperature`, `max_tokens`, `timeout`, `retries`,
+`cancel`, `transport_chunk`, `tools`, `tool_choice`, `on_tool_call`
+a `stream_reliability`. Neznámé klíče vyvolají `AIProviderError`.
+`temperature`, `max_tokens`, `tools` a `tool_choice` se posílají providerovi;
+ostatní řídí LSL. Pro další parametry API (např. `top_p`, `stop`) použijte
+`http.post` s vlastním tělem požadavku.
 
 ### ai.content(response)
 
@@ -99,9 +102,9 @@ obsah JSON `null`; při chybějící struktuře vyvolá `AIProviderError`:
 ```lsl
 text = ai.content(response)
 if text == None:
-    print "Žádná textová odpověď"
+    printl "Žádná textová odpověď"
 else:
-    print text
+    printl "Odpověď: {text}"
 end
 ```
 
@@ -112,7 +115,6 @@ parts = []
 
 function on_token(chunk):
     parts.append(chunk)
-    print chunk  # print vypisuje každý kus na samostatný řádek
 end
 
 call ai.stream(
@@ -124,15 +126,19 @@ call ai.stream(
     on_token
 )
 
-print "Celá odpověď:", "".join(parts)
+reply = "".join(parts)
+printl "Celá odpověď: {reply}"
 ```
 
 `ai.stream` posílá `stream: True` a předává textové callbacky už během
-HTTP přenosu. Posílá také `temperature` a `max_tokens`; `timeout`, `cancel`
-a `retries` řídí přenos. Retry se provádí pouze před prvním textovým
-callbackem, aby se odpověď nezdvojovala. Volitelný `transport_chunk` dostává
-surové části těla, které mohou končit uprostřed JSON nebo UTF-8 znaku.
-Živý stream musí skončit značkou `[DONE]`, jinak vyvolá chybu.
+HTTP přenosu. Posílá také `temperature`, `max_tokens`, `tools` a
+`tool_choice`; `timeout`, `cancel` a `retries` řídí přenos. Retry se provádí
+pouze před prvním textovým callbackem, aby se odpověď nezdvojovala.
+Volitelný `transport_chunk` dostává surové části těla, které mohou končit
+uprostřed JSON nebo UTF-8 znaku. Živý stream musí skončit značkou `[DONE]`,
+jinak vyvolá chybu. Návratová hodnota je Dictionary `{events, tool_calls}`:
+počet textových callbacků a seznam dokončených volání nástrojů; celý text
+sestavíte z přijatých částí, nikoli z návratové hodnoty.
 
 `ai.stream_text(text, on_event, cancel)` je samostatný parser již načteného
 SSE textu; neposílá HTTP požadavek. Obě varianty rozpoznávají `data:`,
@@ -143,11 +149,9 @@ SSE textu; neposílá HTTP požadavek. Obě varianty rozpoznávají `data:`,
 ```lsl
 try:
     response = ai.request(endpoint, token, model, messages, options)
-    text = ai.content(response)
-    print text
+    printl "Odpověď: {ai.content(response)}"
 else:
-    err = last_error()
-    print "AI chyba:", err
+    printl "AI chyba: {last_error()}"
     # Může být:
     # - AIProviderError: chyba od provideru (4xx, 5xx)
     # - AICancelled: operace zrušena
@@ -163,11 +167,11 @@ load http
 response = http.post(endpoint, {"model": model, "messages": messages},
                      {"Authorization": "Bearer " + token}, 30)
 if not response["ok"]:
-    print "HTTP chyba:", response["status"]
-    print "Tělo:", response["text"]
+    printl "HTTP chyba: {response[\"status\"]}"
+    printl "Tělo: {response[\"text\"]}"
 else:
     data = ai.decode_response(response)
-    print ai.content(data)
+    printl "Odpověď: {ai.content(data)}"
 end
 ```
 
@@ -311,13 +315,13 @@ function chat_loop(token, model):
             )
             reply = ai.content(response)
             if reply != None:
-                print "AI:", reply
+                printl "AI: {reply}"
                 messages.append({"role": "assistant", "content": reply})
             else:
-                print "AI: [prázdná odpověď]"
+                printl "AI: [prázdná odpověď]"
             end
         else:
-            print "Chyba:", last_error()
+            printl "Chyba: {last_error()}"
         end
     end
 end
@@ -329,20 +333,19 @@ call chat_loop(token, model)
 
 ## AI s nástroji (function calling)
 
-`ai.request` nepřijímá `tools` ani `tool_choice`. Pro službu, která tyto
-parametry podporuje, sestavte JSON přes `http.post`. Následující příklad
-obsahuje demonstrační údaje o počasí, nikoli skutečnou předpověď.
+Od verze 1.1.0 podporuje `aikit` nástroje nativně — bez ručního `http.post`.
+Definice nástrojů předáte v `options["tools"]` a volání přečtete přes
+`ai.tool_calls(response)`. Následující příklad obsahuje demonstrační údaje
+o počasí, nikoli skutečnou předpověď.
 
 ```lsl
 load aikit as ai
-load http
 load json
 load env
 
-endpoint = env.require("AI_ENDPOINT")
-token = env.require("OPENAI_API_KEY")
-model = env.get("OPENAI_MODEL", "gpt-4o")
-headers = {"Authorization": "Bearer " + token, "Content-Type": "application/json"}
+endpoint = "https://api.lux-ai.cz/v1/chat/completions"
+token = env.require("LUX_AI_API")
+model = env.get("LUX_AI_MODEL", "flash")
 
 tools = [
     {
@@ -376,31 +379,76 @@ messages = [
     {"role": "system", "content": "Jsi asistent s přístupem k demonstračnímu počasí."},
     {"role": "user", "content": "Jaké je počasí v Praze?"}
 ]
-payload = {"model": model, "messages": messages, "tools": tools, "tool_choice": "auto"}
-response = ai.decode_response(http.post(endpoint, payload, headers, 30))
-message = response["choices"][0]["message"]
+response = ai.request(endpoint, token, model, messages,
+                      {"tools": tools, "tool_choice": "auto", "timeout": 120})
+calls = ai.tool_calls(response)
 
-if "tool_calls" in message and len(message["tool_calls"]) > 0:
+if len(calls) > 0:
     # Do historie patří i zpráva asistenta, která požaduje použití nástroje.
-    messages.append(message)
-    for tool_call in message["tool_calls"]:
-        if tool_call["function"]["name"] != "get_weather":
-            Error(ToolError: "Neznámý nástroj")
-        end
-        args = json.decode(tool_call["function"]["arguments"])
-        result = get_weather(args["city"])
-        messages.append({
-            "role": "tool",
-            "tool_call_id": tool_call["id"],
-            "content": result
-        })
+    assistant_calls = []
+    for call in calls:
+        assistant_calls.append({"id": call["id"], "type": "function",
+                                "function": {"name": call["name"],
+                                             "arguments": call["arguments"]}})
     end
-    response2 = ai.request(endpoint, token, model, messages, {})
-    print ai.content(response2)
+    messages.append({"role": "assistant", "content": None, "tool_calls": assistant_calls})
+    for call in calls:
+        args = json.decode(call["arguments"])
+        messages.append(ai.tool_message(call["id"], call["name"],
+                                        get_weather(args["city"])))
+    end
+    follow_up = ai.request(endpoint, token, model, messages,
+                           {"tools": tools, "timeout": 120})
+    printl "Odpověď: {ai.content(follow_up)}"
 else:
-    print ai.content(response)
+    printl "Odpověď: {ai.content(response)}"
 end
 ```
+
+`ai.tool_calls(response)` vrací List `{id, name, arguments}`. `arguments` je
+String s JSON objektem — dekódujte ho přes `json.decode`. `ai.tool_message`
+sestaví zprávu role `tool`, která v historii patří vždy za asistentovu zprávu
+s `tool_calls`; pak požadavek zopakujte se stejnými `tools`.
+
+### Živé streamování tool callů
+
+Ve streamu přicházejí tool cally po částech (`delta.tool_calls`) a `aikit`
+je skládá dohromady. Hotové volání dostanete v `on_tool_call` i ve výsledku:
+
+```lsl
+load aikit as ai
+load json
+load env
+
+hook_calls = []
+parts = []
+
+function on_text(text):
+    parts.append(text)
+end
+
+function on_tool(call):
+    hook_calls.append(call)
+    printl "Nástroj {call[\"name\"]} volán s {call[\"arguments\"]}"
+end
+
+result = ai.stream(
+    endpoint, token, model,
+    [{"role": "user", "content": "Jaké je počasí v Brně?"}],
+    {"tools": tools, "tool_choice": "required", "on_tool_call": on_tool, "timeout": 120},
+    on_text
+)
+printl "Volání: {len(result[\"tool_calls\"])}, textových částí: {result[\"events\"]}"
+```
+
+`tool_choice: "required"` modelu tool call vnutí; u `auto` se připravte i na
+čistě textovou odpověď. Služba `api.lux-ai.cz` streamuje tool cally živě ve
+výchozím nastavení; `stream_reliability: "transactional"` si vyžádá buffer
+celého výsledku s validací před odesláním (první token přijde později).
+
+Agenta s nástrojem `shell` (spouštění příkazů s potlačeným prostředím)
+najdete v [manuálu shell](shell.md); kompletní API nástrojů v
+[manuálu AI](ai.md).
 
 ## Bezpečnostní aspekty
 
@@ -421,13 +469,13 @@ try:
     response = ai.request(endpoint, token, model, messages, options)
     text = ai.content(response)
     if text != None:
-        print text
+        printl "Odpověď: {text}"
     else:
-        print "Neočekávaný formát odpovědi"
-        print json.pretty(response)   # pro debugging
+        printl "Neočekávaný formát odpovědi"
+        printl "{json.pretty(response)}"   # pro debugging
     end
 else:
-    print "Selhalo:", last_error()
+    printl "Selhalo: {last_error()}"
 end
 ```
 
@@ -494,8 +542,10 @@ programovací režim**.
 |---|---|---|
 | `ai.request(e, t, m, msgs, opts)` | `ai` | Synchronní AI požadavek |
 | `ai.content(response)` | `ai` | Extrakce textu z odpovědi |
-| `ai.stream(e, t, m, msgs, o, cb)` | `ai` | Požadavek se SSE odpovědí |
+| `ai.stream(e, t, m, msgs, o, cb)` | `ai` | Požadavek se SSE odpovědí; vrátí `{events, tool_calls}` |
 | `ai.stream_text(text, cb, cancel)` | `ai` | Parsování již načteného SSE |
+| `ai.tool_calls(response)` | `ai` | Volání nástrojů jako List `{id, name, arguments}` |
+| `ai.tool_message(id, name, result)` | `ai` | Zpráva role `tool` s výsledkem volání |
 | `http.get(url)` | `http` | HTTP GET |
 | `http.post(url, body, hdrs, to)` | `http` | HTTP POST |
 | `http.post_stream(url, body, hdrs, to, cb)` | `http` | Streamovaný POST |
@@ -508,5 +558,7 @@ programovací režim**.
 
 ## Kam dál
 
+- [Knihovna shell](shell.md): spouštění příkazů s potlačeným prostředím — včetně agenta s nástrojem `run_bash`
+- [Manuál AI](ai.md): úplné API knihovny `aikit`, limity a chybové stavy
 - [11 — Výkon a optimalizace](11-performance-and-optimization.md): optimalizace, tenzory, nativní pluginy
 - [12 — Interní architektura compileru](12-compiler-internals.md): jak compiler funguje

@@ -585,7 +585,7 @@ function guidePageName(href) {
   let match = href.match(/^([A-Za-z0-9-]+)\.md$/);
   if (!match) return null;
   let name = match[1];
-  if (name === 'README' || name === 'CHANGELOG' || name === 'reference' || name === 'security' || /^\d\d-[a-z0-9-]+$/.test(name) || /^(env|requests|http|httpserver|json|os|process|time|math|random|system|ai|bigint|config|configure|lconf|lux|luxos|fd|native|plugin|sandbox|tensor|tui|unixsock|cuda)$/.test(name)) {
+  if (name === 'README' || name === 'CHANGELOG' || name === 'reference' || name === 'security' || /^\d\d-[a-z0-9-]+$/.test(name) || /^(env|requests|http|httpserver|json|os|process|time|math|random|system|ai|bigint|config|configure|lconf|lux|luxos|fd|native|plugin|sandbox|shell|tensor|tui|unixsock|cuda)$/.test(name)) {
     return name;
   }
   return null;

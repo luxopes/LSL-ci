@@ -13,6 +13,10 @@ k čemu slouží, jak se zapisují a jak fungují.
 
 ## Obsah
 
+Nově: [AI knihovna 1.1.0 s nástroji](ai.md) — nativní function calling,
+živé streamování tool callů — a nová [knihovna shell](shell.md) pro běh
+příkazů s potlačeným prostředím.
+
 Nově: [env a automatické .env](env.md), [HTTP klient requests](requests.md)
 a samostatné manuály všech veřejných standardních knihoven v `lsl man KNIHOVNA`.
 

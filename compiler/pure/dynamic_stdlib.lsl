@@ -379,7 +379,7 @@ function __lsl_about_table():
         "bigint": "bigint: arbitrary-precision signed integers as BigInt objects for values beyond Int64.",
         "tensor": "tensor: dense CPU tensors over FloatArray storage with matrix operations, views and optional CUDA worker dispatch.",
         "cuda": "cuda: optional NVIDIA CUDA backend running as a separate worker process; without it tensor falls back to the CPU.",
-        "ai": "ai: client for OpenAI-compatible chat and embedding services with structured provider errors and retries.",
+        "ai": "ai: OpenAI-compatible chat client with tools (function calling), live SSE streaming, structured provider errors and retries.",
         "http": "http: HTTP and HTTPS client driven through a curl config on stdin, so headers and bodies never appear in process argv.",
         "requests": "requests: Python-style HTTP client over the shared transport; get/post/put/patch/delete/head/request return Response objects with status, text, ok, json() and raise_for_status().",
         "httpserver": "httpserver: bounded HTTP/1.1 server with syscall-only transport and static files pinned to one directory; also behind lsl server.",
