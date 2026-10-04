@@ -75,6 +75,92 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktu�
 
 ## Aktivní plán
 
+- [ ] Zpřesnit statickou kontrolu přiřazení pro prokazatelně neprázdné
+  smyčky, aby přijala čtení proměnné po smyčce, pokud přiřazení proběhne
+  na každé cestě vedoucí k tomuto čtení. Bez dodatečných běhových kontrol
+  a bez automatické inicializace nulou či `None`. Analýzu omezit na bezpečně
+  prokazatelné případy; zohlednit `break`, `continue`, větvení, změny kolekce
+  přes aliasy i vedlejší účinky volání. Pokud důkaz chybí, zachovat současné
+  odmítnutí. Doplnit pozitivní i negativní regrese (včetně prázdných či
+  vyprázdněných kolekcí) a změřit dopad na čas a paměť překladu; ověřit,
+  že nevzniká dodatečná běhová režie ani oslabení paměťové bezpečnosti.
+- [ ] FIX: Opravit zdrojové pozice diagnostiky výrazů v interpolacích.
+  Reprodukce v 0.8.9: E2002 při čtení `chyba` v
+  `printl "Epocha: {epocha} loss: {chyba}"` nesprávně ukazuje na první
+  řádek `load random`. Chyba musí označit skutečné použití `chyba`
+  v původním souboru, se správným řádkem a sloupcem. Zachovat původní
+  pozice při parsování interpolovaných výrazů a doplnit regresní testy
+  pro `printl`, l-stringy a importované moduly.
+- [ ] Opravit čítače vnořených `for` smyček se stejným jménem proměnné:
+  oddělit interní stav iterace od uživatelské proměnné, aby vnitřní `for i`
+  neměnil počet iterací vnějšího `for i` ani nezpůsoboval zacyklení.
+  Reprodukce v 0.8.9: vnější `rang(3)` s vnitřním `rang(2)` provede jen
+  jednu vnější iteraci místo tří; kombinace `rang(100)` / `rang(10)` se
+  zacyklí. Doplnit regrese pro oba případy, přiřazení do proměnné v těle,
+  `break` a `continue`.
+- [ ] Sjednotit výpisy běhových chyb s obvyklým formátem diagnostiky LSL.
+  Místo holého `LSL runtime error: TypeError: sequence index must be Int`
+  zobrazit `error[...]`, typ a srozumitelný popis chyby, soubor, řádek,
+  sloupec, příslušný zdrojový kód s označením chybného výrazu a vhodné
+  `help:` s návodem k opravě; u typových chyb uvést očekávaný i skutečný typ.
+  Zachovat správné zdrojové pozice včetně interpolací, funkcí a importů,
+  barevný výstup dle stávajících pravidel terminálu a `NO_COLOR`.
+  Pokrýt běh přes `lsl` i samostatné zkompilované binárky regresními testy;
+  zachycené chyby v `try`/`safe` nesmí samovolně vypisovat diagnostiku.
+- [ ] Přidat výchozí hodnoty parametrů uživatelských funkcí po vzoru Pythonu,
+  například `function f(x = 10):`. Vynechaný argument použije deklarovanou
+  výchozí hodnotu, explicitně předaný argument ji nahradí. Doplnit pravidla
+  pro povinné/volitelné parametry, dokumentaci a regresní testy.
+- [ ] Opravit hlášené chování `help("nonexist")`: neexistující téma má vypsat
+  srozumitelnou anglickou zprávu, například `No help available for topic: nonexist.`,
+  nikoli vyvolat chybu či ukončit program. Zachovat `help()` i známá témata
+  a pokrýt všechny tyto případy regresními testy.
+- [ ] Doplnit volitelný druhý argument `Dictionary.get(key, default=None)`
+  po vzoru Pythonu. `.get(key)` vrátí existující hodnotu, při chybějícím klíči
+  `None`; `.get(key, default)` místo toho vrátí zadanou výchozí hodnotu.
+  Odstranit hlášené selhání při jednom argumentu; nesprávný počet argumentů
+  musí mít srozumitelnou diagnostiku, nikdy pád runtime. Přidat dokumentaci
+  a regrese včetně uložených hodnot `None`, `False` a `0`.
+- [ ] Pro další vydání doplnit rozbalování položek v běžném `for`, například
+  `for x, target in data:` pro seznam dvojic. V LSL 0.8.9 tento zápis končí
+  E1210 (`expected in after loop variable`), přestože comprehensions
+  rozbalování podporují. Sjednotit chování, přidat srozumitelnou chybu při
+  nesprávném počtu hodnot, dokumentaci a regresní testy včetně uvedené
+  vnořené trénovací smyčky s výpočty Int/Float.
+- [ ] Přidat raw řetězce `r"..."` (r-string) bez interpretace escape sekvencí,
+  interpolace a jiných automatických úprav. Doplnit `printr` pro výpis
+  přesného obsahu bez přidaného odřádkování či oddělovačů; popsat syntaxi
+  v dokumentaci a ověřit chování regresními testy.
+- [ ] Přidat podporu blokových komentářů `/* ... */`, včetně více řádků,
+  diagnostiky neukončeného komentáře, dokumentace a regresních testů.
+- [ ] Umožnit zaokrouhlit a oseknout (truncate) počet desetinných míst
+  u Float. Dnes `math.round` vrací jen celé číslo a žádný přímý zápis pro
+  počet míst neexistuje; běžné formátování typu „{x:.2f}" v LSL chybí.
+  Cíl: jeden srozumitelný mechanismus (např. `round(x, digits)` a/nebo
+  přesnost v interpolaci) s jasně definovanou sémantikou — matematické
+  zaokrouhlování včetně záporných čísel a polovin a odděleně oseknutí
+  bez zaokrouhlování; podpora záporného počtu míst (desítky, stovky),
+  `digits = 0`, neceločíselného či jinak neplatného počtu míst
+  s srozumitelnou diagnostikou a chování pro NaN/Infinity. Doplnit
+  dokumentaci a regresní testy včetně interakce s Float formátováním.
+- [ ] Zpřístupnit opravené streamování z `aikit` také v instalované nativní
+  knihovně přes `load ai`. Vyřešit přednost vestavěného modulu tak, aby šlo
+  používat `lsl update ai` bez aktualizace celého LSL a bez aliasu
+  `load aikit as ai`. Spolu s knihovnou aktualizovat `lsl man ai`; ověřit
+  výběr správné verze, původ knihovny a kompatibilitu existujících skriptů.
+- [ ] Oddělit web a webové manuály (`docs/developer_guides` včetně index.html
+  a man stránek knihoven) od samotného LSL do vlastního repozitáře s vlastním
+  deployerem, aby šlo web aktualizovat nezávisle na commitech do LuxAI/LSL
+  main a bez čekání na vydání kompilátoru. Dnešní stav: oprava manuálu
+  (aikit 1.1.0, nový shell) vyžaduje commit do LuxAI/LSL; při aktivním
+  vývoji mainu vznikají konflikty s přepsanou historií a `lsl man` stejně
+  dostane nové stránky až s příštím vydáním, protože se kompilují do binárky.
+  Cíl: webový obsah v samostatném repu (např. LuxAI/LSL-Web) s atomic deploy
+  po vzoru lsl.lux-ai.cz, publikovaný z jeho main bez dotčení LuxAI/LSL;
+  vydání LSL si man stránky přebírá z jediného zdroje (bez dvou kopií,
+  které by se rozjely). Zachovat přesměrování, hlavičky a routovatelná
+  jména stránek; po přesunu ověřit web, offline `lsl man` i instalaci
+  balíčků z registru.
 - [x] Doplnit indexed augmented assignment pro List, RealArray a Dictionary.
 - [x] Odstranit omezení literal-only `rang` kroku; stop i step se vyhodnotí jednou.
 - [x] Dokončit Float round-trip/exponent formatting včetně subnormal, NaN a Infinity.
