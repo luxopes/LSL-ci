@@ -183,6 +183,166 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktu�
 - [x] Doplnit valid-source frontend fuzz, strict JSON malformed/round-trip corpus, generativní config corpus a GC cycle/deep/reuse stress.
 - [x] Změřit a zrychlit compiler bez změny deterministického výstupu; doplnit near-native IntArray/FloatArray kernely a packed ByteArray.
 
+### Nahlášeno z provozu 2026-10-09 — LUX AGENTS (LSL 0.8.9)
+
+Kontext: agentní konzole (~3000 řádků LSL, HTTP server v produkci za Caddy
++ CDN), marketplace v LSL a pět sellerů; jazyk použit i na podepisované
+kanonické JSON payloady. Všechny body níže jsou ověřené na 0.8.9; spustitelné
+reprodukce jsou v `~/Downloads/lsl-bugreport/` (README.md + `*.lsl`), zde
+jsou kvůli soběstačnosti uvedené i v tělech položek.
+
+- [ ] BUG: `httpserver` vrací 400 na **duplicitní request hlavičku**
+  (`stdlib/httpserver.lsl:404-405`):
+
+  ```lsl
+  if name in headers:
+      return error_request(400, "Bad Request", "duplicate header: " + name)
+  end
+  ```
+
+  Reprodukce (server s handlerem vracejícím 200):
+
+  ```
+  1) běžná žádost:                 200
+  2) dva řádky Via:                400  duplicate header: via
+  3) dva X-Forwarded-For:          400  duplicate header: x-forwarded-for
+  ```
+
+  Reálný dopad: za CDN + reverse proxy (WEDOS CDN → Caddy) dorazí `Via`
+  dvakrát a konzole odmítala **všechny** requesty; workaround
+  `header_up -Via` v Caddy. Stejně padá `X-Forwarded-For` s více skoky,
+  `Accept-Encoding` od klienta i proxy apod. Podle RFC 9110 §5.2 se
+  opakované field-lines slučují čárkou; tvrdě odmítat má smysl jen
+  `Content-Length`, `Transfer-Encoding` a `Host` (request smuggling).
+  Oprava: seznamové hlavičky sloučit `", "`, zmíněné tři dál odmítat.
+  Pozor: duplicitu hlaviček dnes **nepokrývá žádný test**
+  (`tests/http_security_conformance.lsl`, `tests/httpserver_conformance.lsl`),
+  takže chování nejspíš není zamýšlené — doplnit conformance i negative test.
+
+- [ ] BUG: `json.encode` kazí Floaty (`stdlib/json.lsl`, `encode_value()`,
+  větev `value_type == 6` → `__lsl_float_string(value)`). Dvě oddělené vady:
+
+  ```
+  String(1.0)      = 1.0                  <- správně (shortest round-trip)
+  String(2.50)     = 2.5                  <- správně
+  String(1e21)     = 1.0e+21              <- správně
+
+  json.encode({"a":1.0,"b":2,"c":1e21,"d":0.1+0.2})
+    = {"a":1.000000,"b":2,"c":-9223372036854775808.775808,"d":0.300000}
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ INT64_MIN
+  Python: {"a": 1.0, "b": 2, "c": 1e+21, "d": 0.30000000000000004}
+  ```
+
+  1. Floaty se formátují na pevných 6 desetinných míst (`1.0 → 1.000000`,
+     `1e15 → 1000000000000000.000000`) místo shortest round-trip jako
+     `String()`; pro byte-shodnou serializaci s jiným jazykem (podepsané
+     payloady, hashe, kanonická JSON) nepoužitelné — v marketplace jsem
+     kvůli tomu psal vlastní kanonický encoder a čas bral ze SQLite
+     `strftime`.
+  2. Od ~`9.223e18` (2^63) vzniká z Floatu **INT64_MIN** místo čísla;
+     round-trip pak ztrácí data i obrací znaménko:
+
+     ```
+     orig = 9.3e18
+     encode: {"v":-9223372036854775808.775808}
+     decode: {'v': -9.2233720368547768e+18}      <- jiná hodnota
+     ```
+
+  `json.decode` je v pořádku (zvládá `1.0`, `1e+21`, `3e-7` i velká celá
+  čísla), takže jde o lokální opravu encoderu: použít formatter
+  `String(Float)` a konverzi na Int64 ošetřit (nad 2^63 exponentový tvar
+  nebo `JsonError`); nikdy nevypsat INT64_MIN. Doplnit regresi
+  v `tests/json_fuzz_conformance` a round-trip test velkých Floatů.
+
+- [ ] CHOVÁNÍ: **tichý shadow globálu** — zápis do globálu z funkce se tiše
+  neprovede (žádná chyba, žádné varování):
+
+  ```lsl
+  counter = 1
+  function bump():
+      counter = 2        # vypadá jako zápis do globálu
+      return counter
+  end
+  print(bump())          # 2
+  print(counter)         # 1  <- globál se nezměnil
+  ```
+
+  Při čtení před přiřazením compiler chybu hlásí správně
+  (`error[E2002]: variable 'y' may be read before assignment`), takže
+  polovina kontroly už existuje. Dopad: v konzoli mi tři hodiny tiše
+  nefungovaly aktualizace stavu, než jsem na to přišel; náhrada je držet
+  stav v holder dictu nebo `IntArray`. Návrh: buď explicitní deklarace pro
+  zápis do vnějšího rozsahu (`global x`, případně `outer x`), nebo aspoň
+  varování/chyba, když funkce přiřazuje jméno existujícího globálu
+  (obdoba `-Wshadow`). Tichý no-op zápis je nejhorší varianta.
+
+- [ ] BUG (nepodařilo se zminimalizovat): `gc()` vedle běžícího workeru
+  poškodil alokace **SSE parseru modelu**. Podle dokumentace
+  (`docs/developer_guides/11-performance-and-optimization.md`, řádek ~593)
+  je volání z hlavního vlákna bezpečné („zastaví workery přes `SIGUSR1`,
+  projde jejich zásobníky a po sweepu je probudí"), v provozu to ale
+  rozsypalo proud. Náhrada v kódu:
+
+  ```lsl
+  # chat_server.lsl:1260
+  # gc() smí běžet jen bez aktivního pracovního vlákna: při běžícím tahu
+  # poškodí alokace stream parseru modelu.
+  if not busy_now():
+      call gc()
+  end
+  ```
+
+  Cesta v produkci: hlavní vlákno (accept loop) + worker, který čte odpověď
+  modelu proudem (`http.post_stream` → curl podproces → `on_chunk` → parser
+  v `stream_codec.lsl`). Minimální repro se nepovedlo (worker 400×
+  `json.encode`+`decode` velkého dictu, hlavní vlákno 300× `gc()`:
+  0 špatných výsledků) — podezření míří na kombinaci s **byte buffery,
+  fd handles podprocesu nebo chunk callbacky** v druhém vlákně. Chce to
+  cílený conformance test (`capture_stream` + `gc()` ve smyčce) a dohledat,
+  co v root setu/registrech STW nezachytí; do té doby platí workaround výše.
+
+- [ ] DROBNOST: `IntArray(1)` končí hláškou
+  `IntArray cast requires an existing IntArray`, která neřekne, co je
+  špatně (správně `IntArray()` + `append`, viz
+  `docs/developer_guides/04-collections.md:377`). Doplnit do chyby nápovědu.
+
+- [ ] PŘIDAT: **ISO-8601 / strftime v `time`** — modul má jen `time()`,
+  `now()`, `monotonic()`, `perf_counter()`, `sleep()`. Kanonické časové
+  značky (`2026-10-09T04:01:53.833305+00:00`) do podepsaného payloadu jsem
+  musel vyrábět dotazem do SQLite (`strftime`).
+
+- [ ] PŘIDAT: **streamovaná odpověď v `httpserver`** — odpovědi se bufferují
+  (`Content-Length` + `close`), takže nelze poslat SSE. Kvůli tomu LSL port
+  marketplace vypustil relay průběhu sellerů (konzole zobrazí až hotový
+  job). Stačil by write handle / chunked režim.
+
+- [ ] ROBUSTNOST: **zámek přežije výjimku** — `lock()`/`unlock()` nad
+  `IntArray` uvolní zámek jen explicitně, takže výjimka mezi nimi drží
+  spinlock navždy (v provozu tvrdý hang celé konzole na ~48 % CPU, dokud
+  jsem to nenašel). Bloková konstrukce (`lock x: … end`) nebo automatické
+  uvolnění při zániku vlákna by to řešily. Navazující přání: **viditelná
+  diagnostika, když workeři umře výjimka** — tichý zánik vlákna se ladí
+  velmi těžko.
+
+- [ ] DOKUMENTACE/DEPLOY: přepsání běžící binárky končí `ETXTBSY`;
+  řeším `stop → kopie → start`. Není to chyba jazyka, ale pár řádků
+  v dokumentaci (nebo `lsl deploy` s atomickým replace) by ušetřilo
+  překvapení. Zároveň: accept loop `httpserveru` je jednovláknový
+  (dokumentováno) — jeden pomalý request zdrží ostatní a klienti musí
+  volat sekvenčně; volitelný worker pool / per-connection vlákno by
+  serializaci frontendu odstranily.
+
+- Co naopak funguje a nestojí za „opravu": diagnostika compileru
+  (`E2002` včetně `help:`), moduly a nativní kompilace, HTTP klient přes
+  curl včetně `post_stream`/`on_chunk` a přenosu binárních dat přes
+  `curl -o`, hardening `httpserveru` (limit 16 KiB, folded hlavičky,
+  validace `Content-Length`), `sqlite` 1.0.0 v produkci jako nezávislá
+  kontrola ledgeru, GC i alokátor pod tisícovkami requestů.
+
+- Nabídka: k prvním dvěma bodům (duplicitní hlavičky, `json.encode`)
+  můžu připravit patche a regresní testy ve stylu
+  `tests/*_conformance.lsl` + `.out` a `*_negative.lsl`.
+
 ## Feature scope 0.5 bez GPU
 
 Feature scope je implementovaný: self-host compiler/runtime, jazyk a collections, config lazy/default/provenance, AI retry/cancellation/SSE + live transport chunks, process JSON ABI, structured stdout/stderr/status, zero-copy CPU Tensor a omezený in-process CPU ET_DYN ABI v1.
