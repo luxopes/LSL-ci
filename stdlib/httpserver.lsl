@@ -401,10 +401,21 @@ function read_request(client, allow_body):
             return error_request(400, "Bad Request", "header name is invalid")
         end
         name = name.lower()
+        value = line[separator + 1:len(line)].strip()
         if name in headers:
-            return error_request(400, "Bad Request", "duplicate header: " + name)
+            # RFC 9110 §5.3: opakované řádky se slučují čárkou (Cookie
+            # středníkem). Hlavičky rámující tělo nebo cíl se kvůli request
+            # smugglingu nesmí opakovat.
+            if name == "content-length" or name == "transfer-encoding" or name == "host":
+                return error_request(400, "Bad Request", "duplicate header: " + name)
+            elif name == "cookie":
+                headers[name] = headers[name] + "; " + value
+            else:
+                headers[name] = headers[name] + ", " + value
+            end
+        else:
+            headers[name] = value
         end
-        headers[name] = line[separator + 1:len(line)].strip()
         line_index += 1
     end
     if version == "HTTP/1.1" and ("host" not in headers or headers["host"] == ""):
@@ -567,6 +578,122 @@ function send_response(client, status, reason, body, body_type, head_only):
     return result
 end
 
+# Streamovaná odpověď: hlavičky hned, tělo po částech přes stream_write.
+# HTTP/1.1 používá chunked kódování, HTTP/1.0 tělo ukončí zavřením spojení.
+function send_stream_head(client, status, reason, body_type, chunked):
+    mime = String(body_type)
+    if not valid_content_type(mime):
+        mime = "application/octet-stream"
+    end
+    header = "HTTP/1.1 " + String(status) + " " + String(reason) + chr(13) + chr(10)
+    if chunked:
+        header += "Transfer-Encoding: chunked" + chr(13) + chr(10)
+    end
+    header += "Content-Type: " + mime + chr(13) + chr(10)
+    header += "Cache-Control: no-cache" + chr(13) + chr(10)
+    header += "Connection: close" + chr(13) + chr(10)
+    header += "X-Accel-Buffering: no" + chr(13) + chr(10)
+    header += "X-Content-Type-Options: nosniff" + chr(13) + chr(10)
+    header += "Referrer-Policy: no-referrer" + chr(13) + chr(10) + chr(13) + chr(10)
+    return socket_write(client, text_bytes(header))
+end
+
+function hex_length(value):
+    digits = "0123456789abcdef"
+    if value == 0:
+        return "0"
+    end
+    text = ""
+    rest = value
+    while rest > 0:
+        text = digits[rest % 16] + text
+        rest = rest // 16
+    end
+    return text
+end
+
+# Pošle část streamované odpovědi; False, když klient spojení zavřel.
+function stream_write(stream, data):
+    if type(stream) != "Dictionary" or not ("client" in stream):
+        Error(TypeError: "stream_write expects the stream passed to the response stream function")
+    end
+    state = stream["state"]
+    if state[0] != 0:
+        return False
+    end
+    payload = data
+    if type(payload) == "String":
+        payload = text_bytes(payload)
+    elif type(payload) != "ByteArray":
+        Error(TypeError: "stream data must be String or ByteArray, got " + type(payload))
+    end
+    if len(payload) == 0:
+        return True
+    end
+    client = stream["client"]
+    if stream["chunked"]:
+        if socket_write(client, text_bytes(hex_length(len(payload)) + chr(13) + chr(10))) < 0:
+            state[0] = 1
+            return False
+        end
+    end
+    if socket_write(client, payload) < 0:
+        state[0] = 1
+        return False
+    end
+    if stream["chunked"]:
+        if socket_write(client, text_bytes(chr(13) + chr(10))) < 0:
+            state[0] = 1
+            return False
+        end
+    end
+    return True
+end
+
+# Jedna událost Server-Sent Events; víceřádková data dostanou více řádků data:.
+function sse_event(stream, data, event=None):
+    text = ""
+    if event != None:
+        name = String(event)
+        if name.find(chr(10)) >= 0 or name.find(chr(13)) >= 0:
+            Error(ValueError: "SSE event name cannot contain line breaks")
+        end
+        text += "event: " + name + chr(10)
+    end
+    for line in String(data).replace(chr(13) + chr(10), chr(10)).replace(chr(13), chr(10)).split(chr(10)):
+        text += "data: " + line + chr(10)
+    end
+    return stream_write(stream, text + chr(10))
+end
+
+function serve_stream(client, request, response):
+    chunked = request["version"] == "HTTP/1.1"
+    if send_stream_head(client, response["status"], response["reason"], response["content_type"], chunked) < 0:
+        return -1
+    end
+    if request["method"] == "HEAD":
+        return 0
+    end
+    state = IntArray()
+    state.append(0)
+    stream = {"client": client, "chunked": chunked, "request": request, "state": state}
+    producer = response["stream"]
+    failed = False
+    try:
+        call producer(stream)
+    else:
+        failed = True
+    end
+    # Po chybě producenta se stream neukončí řádně (bez koncového chunku),
+    # klient tak pozná neúplnou odpověď místo tiše zkráceného těla.
+    if chunked and not failed and state[0] == 0:
+        if socket_write(client, text_bytes("0" + chr(13) + chr(10) + chr(13) + chr(10))) < 0:
+            return -1
+        end
+    end
+    return 0
+end
+
 function send_error(client, request):
     status = Int(request["status"])
     reason = String(request["reason"])
@@ -612,6 +739,11 @@ function normalize_app_response(value):
     mime = value.get("content_type", "text/plain; charset=utf-8")
     if type(reason) != "String" or not valid_content_type(reason) or type(mime) != "String" or not valid_content_type(mime):
         return {"status": 500, "reason": "Internal Server Error", "body": "500 Internal Server Error" + chr(10), "content_type": "text/plain; charset=utf-8"}
+    elif "stream" in value:
+        if type(value["stream"]) != "Function":
+            return {"status": 500, "reason": "Internal Server Error", "body": "500 Internal Server Error" + chr(10), "content_type": "text/plain; charset=utf-8"}
+        end
+        return {"status": status, "reason": reason, "body": "", "content_type": mime, "stream": value["stream"]}
     elif type(body) != "String" and type(body) != "ByteArray":
         return {"status": 500, "reason": "Internal Server Error", "body": "500 Internal Server Error" + chr(10), "content_type": "text/plain; charset=utf-8"}
     elif BODY_LIMIT[0] > 0 and ((type(body) == "String" and __lsl_text_byte_length(String(body)) > BODY_LIMIT[0]) or (type(body) == "ByteArray" and len(body) > BODY_LIMIT[0])):
@@ -656,7 +788,11 @@ function serve_listener(listener, root_handle, handler, maximum_requests, announ
                 end
             end
             head_only = request["method"] == "HEAD"
-            call send_response(client, response["status"], response["reason"], response["body"], response["content_type"], head_only)
+            if "stream" in response:
+                call serve_stream(client, request, response)
+            else:
+                call send_response(client, response["status"], response["reason"], response["body"], response["content_type"], head_only)
+            end
         end
         call fd.close(client)
         served += 1

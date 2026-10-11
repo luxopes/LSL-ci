@@ -12,7 +12,7 @@ function state_with_interpolation(path, source, interpolation_depth):
     # needed when producing a parser diagnostic.
     # Slots 4/5 bound recursive unary/block parsing. Slots 6/7 bound the token
     # complexity of one expression, and slot 8 follows nested Lux Strings.
-    return [lexer.tokenize(path, source), 0, path, source, 0, 0, 0, 0, interpolation_depth, [0]]
+    return [lexer.tokenize(path, source), 0, path, source, 0, 0, 0, 0, interpolation_depth, [0, 0, None, 0]]
 end
 
 function current(parser):
@@ -190,6 +190,30 @@ function interpolation_value(parser, value, token):
             end
             expression_parser = state_with_interpolation(path, expression_source, parser[8] + 1)
             expression_parser[9] = parser[9]
+            # Tokeny výrazu dostanou skutečný řádek a sloupec v původním souboru.
+            # Řádky zdroje se rozdělí jednou pro celý soubor (sdílený stav).
+            if parser[9][2] == None:
+                parser[9][2] = parser[3].split(chr(10))
+            end
+            source_lines = parser[9][2]
+            raw_line = ""
+            if token["line"] >= 1 and token["line"] <= len(source_lines):
+                raw_line = source_lines[token["line"] - 1]
+            end
+            search_from = max(0, token["column"] - 1)
+            found = raw_line[search_from:len(raw_line)].find("{" + expression_source + "}")
+            column_offset = token["column"] - 1
+            if found >= 0:
+                column_offset = search_from + found + 1
+            end
+            for expression_token in expression_parser[0]:
+                if expression_token["line"] == 1:
+                    expression_token["column"] += column_offset
+                    expression_token["end_column"] += column_offset
+                end
+                expression_token["line"] = token["line"] + expression_token["line"] - 1
+            end
+            expression_parser[3] = parser[3]
             expression = parse_expression(expression_parser)
             if not check_kind(expression_parser, "eof"):
                 call fail_at(expression_parser, current(expression_parser), "E1114", "unexpected token in Lux String interpolation", "use one expression between the braces")
@@ -242,6 +266,61 @@ function synthetic_assign(token, target, value):
     result["value"] = value
     result["operator"] = "="
     return result
+end
+
+function copy_node(value):
+    if type(value) == "List":
+        return [copy_node(item) for item in value]
+    elif type(value) == "Dictionary":
+        result = {}
+        for key in value.keys():
+            result[key] = copy_node(value[key])
+        end
+        return result
+    end
+    return value
+end
+
+function number_literal(token, number):
+    result = node("literal", token)
+    result["literal_kind"] = "number"
+    result["value"] = String(number)
+    result["integer_value"] = number
+    return result
+end
+
+function call_node(token, name, arguments):
+    result = node("call", token)
+    result["target"] = synthetic_name(token, name)
+    result["arguments"] = arguments
+    return result
+end
+
+function compare_node(token, operator, left, right):
+    result = node("compare", token)
+    result["operators"] = [operator]
+    result["operands"] = [left, right]
+    return result
+end
+
+# Rozbalení sekvence do cílů s kontrolou délky (holder je jméno s hodnotou).
+function unpack_statements(token, targets, holder, message_prefix):
+    statements = []
+    actual = call_node(token, "len", [synthetic_name(token, holder)])
+    failure = node("error", token)
+    failure["error_kind"] = "ValueError"
+    failure["message"] = binary_node("+", interpolation_literal(token, message_prefix + "expected " + String(len(targets)) + " values, got "), call_node(token, "String", [copy_node(actual)]))
+    guard = node("if", token)
+    guard["branches"] = [[compare_node(token, "!=", actual, number_literal(token, len(targets))), [failure]]]
+    guard["otherwise"] = []
+    statements.append(guard)
+    for index in rang(len(targets)):
+        item = node("index", token)
+        item["target"] = synthetic_name(token, holder)
+        item["index"] = number_literal(token, index)
+        statements.append(synthetic_assign(token, copy_node(targets[index]), item))
+    end
+    return statements
 end
 
 function rename_comprehension(value, names):
@@ -781,6 +860,12 @@ function block(parser, terminators):
                 statements.append(extra)
             end
         end
+        # Přepsaný zápis (např. a, b = 1, 2) může dát víc příkazů.
+        if "extra_statements" in parsed:
+            for extra in parsed["extra_statements"]:
+                statements.append(extra)
+            end
+        end
         call skip_newlines(parser)
     end
     parser[5] -= 1
@@ -825,17 +910,58 @@ function parse_function(parser, opening):
         end
     end
     call consume_colon_line(parser)
+    # Hloubka funkcí: global je povolený jen uvnitř funkce.
+    parser[9][1] += 1
+    globals_before = parser[9][3]
     body = block(parser, ["end"])
+    parser[9][1] -= 1
     call expect(parser, "end", "E1207", "function block has no end")
     call consume_line_end(parser)
     result = node("function", opening)
     result["name"] = name["value"]
     result["parameters"] = parameters
+    globals = []
+    # Tělo se prochází jen tehdy, když v něm padla deklarace global.
+    if parser[9][3] != globals_before:
+        call collect_global_names(body, globals)
+    end
+    for declared in globals:
+        if declared in parameters:
+            call fail_at(parser, name, "E1246", "'" + declared + "' is both a parameter and global", "rename the parameter or remove it from global")
+        end
+    end
+    if len(globals) > 0:
+        result["globals"] = globals
+    end
     if has_default:
         result["defaults"] = defaults
     end
     result["body"] = body
     return finish_node(result, parser)
+end
+
+# Jména z příkazů global v těle funkce (platí pro celou funkci).
+function collect_global_names(statements, names):
+    for statement in statements:
+        kind = statement["kind"]
+        if kind == "global":
+            for name in statement["names"]:
+                if name not in names:
+                    names.append(name)
+                end
+            end
+        elif kind == "if":
+            for branch in statement["branches"]:
+                call collect_global_names(branch[1], names)
+            end
+            call collect_global_names(statement["otherwise"], names)
+        elif kind == "while" or kind == "loop" or kind == "unsafe" or kind == "for":
+            call collect_global_names(statement["body"], names)
+        elif kind == "safe" or kind == "try":
+            call collect_global_names(statement["body"], names)
+            call collect_global_names(statement["otherwise"], names)
+        end
+    end
 end
 
 function parse_if(parser, opening):
@@ -867,12 +993,44 @@ function parse_loop_block(parser, opening, kind):
         result["condition"] = parse_expression(parser)
     elif kind == "for":
         name = expect_kind(parser, "name", "E1209", "expected loop variable")
+        # for x, y in data: položky se rozbalí do jmen s kontrolou délky.
+        targets = [name]
+        parenthesized = False
+        while match(parser, ","):
+            if check(parser, "in"):
+                call fail_at(parser, current(parser), "E1209", "expected loop variable after comma", "remove the trailing comma or add a name")
+            end
+            targets.append(expect_kind(parser, "name", "E1209", "expected loop variable after comma"))
+            if len(targets) > 256:
+                call fail_at(parser, opening, "E1209", "too many loop variables", "use at most 256 loop variables")
+            end
+        end
         call expect(parser, "in", "E1210", "expected in after loop variable")
         result["name"] = name["value"]
         result["iterable"] = parse_expression(parser)
+        if len(targets) > 1:
+            seen = []
+            for target in targets:
+                if target["value"] in seen:
+                    call fail_at(parser, target, "E1209", "duplicate loop variable", "use distinct names, for example for key, value in pairs")
+                end
+                seen.append(target["value"])
+            end
+            serial = parser[9][0]
+            parser[9][0] += 1
+            holder = "@for@" + parser[2] + "@" + String(serial) + "@item"
+            result["name"] = holder
+            result["unpack"] = [synthetic_name(target, target["value"]) for target in targets]
+        end
     end
     call consume_colon_line(parser)
     result["body"] = block(parser, ["end"])
+    if "unpack" in result:
+        body = unpack_statements(opening, result["unpack"], result["name"], "")
+        body.extend(result["body"])
+        result["body"] = body
+        del(result["unpack"])
+    end
     call expect(parser, "end", "E1211", kind + " block has no end")
     call consume_line_end(parser)
     return finish_node(result, parser)
@@ -944,6 +1102,159 @@ function parse_class(parser, opening):
     return finish_node(result, parser)
 end
 
+# a, b = výraz. Více hodnot napravo se přiřadí po dvojicích (všechny se
+# vyhodnotí před prvním přiřazením), List nebo Tuple se rozbalí a jakákoli jiná
+# hodnota se přiřadí všem cílům.
+# Zakáže return/break/continue, které by opustily lock blok bez uvolnění.
+function check_lock_exits(parser, statements, loop_depth):
+    for statement in statements:
+        kind = statement["kind"]
+        if kind == "return" or ((kind == "break" or kind == "continue") and loop_depth == 0):
+            call fail_at(parser, statement, "E1247", kind + " cannot leave a lock block", "set a flag and leave the block normally; the lock is released at end")
+        elif kind == "if":
+            for branch in statement["branches"]:
+                call check_lock_exits(parser, branch[1], loop_depth)
+            end
+            call check_lock_exits(parser, statement["otherwise"], loop_depth)
+        elif kind == "while" or kind == "loop" or kind == "for":
+            call check_lock_exits(parser, statement["body"], loop_depth + 1)
+        elif kind == "unsafe":
+            call check_lock_exits(parser, statement["body"], loop_depth)
+        elif kind == "safe" or kind == "try":
+            call check_lock_exits(parser, statement["body"], loop_depth)
+            call check_lock_exits(parser, statement["otherwise"], loop_depth)
+        end
+        if "extra_statements" in statement:
+            call check_lock_exits(parser, statement["extra_statements"], loop_depth)
+        end
+    end
+end
+
+# lock zamek[, slot]: tělo end — spinlock nad slotem IntArray, který se
+# uvolní i při chybě v těle; chyba se pak propaguje beze změny.
+function parse_lock_block(parser, opening):
+    target = parse_expression(parser)
+    slot = number_literal(opening, 0)
+    if match(parser, ","):
+        slot = parse_expression(parser)
+    end
+    call consume_colon_line(parser)
+    body = block(parser, ["end"])
+    call expect(parser, "end", "E1247", "lock block has no end")
+    call consume_line_end(parser)
+    call check_lock_exits(parser, body, 0)
+    serial = parser[9][0]
+    parser[9][0] += 1
+    prefix = "@lock@" + parser[2] + "@" + String(serial) + "@"
+    handle = prefix + "handle"
+    index = prefix + "slot"
+    failed = prefix + "failed"
+    statements = []
+    statements.append(synthetic_assign(opening, synthetic_name(opening, handle), call_node(opening, "IntArray", [target])))
+    statements.append(synthetic_assign(opening, synthetic_name(opening, index), call_node(opening, "Int", [slot])))
+    spin = node("while", opening)
+    spin["condition"] = compare_node(opening, "!=", call_node(opening, "atomic_cas", [synthetic_name(opening, handle), synthetic_name(opening, index), number_literal(opening, 0), number_literal(opening, 1)]), number_literal(opening, 0))
+    pause = node("expression", opening)
+    pause["expression"] = call_node(opening, "atomic_pause", [])
+    pause["discard"] = True
+    spin["body"] = [pause]
+    statements.append(spin)
+    false_value = node("literal", opening)
+    false_value["literal_kind"] = "name"
+    false_value["value"] = "False"
+    true_value = copy_node(false_value)
+    true_value["value"] = "True"
+    statements.append(synthetic_assign(opening, synthetic_name(opening, failed), false_value))
+    guarded = node("try", opening)
+    guarded["body"] = body
+    guarded["otherwise"] = [synthetic_assign(opening, synthetic_name(opening, failed), true_value)]
+    statements.append(guarded)
+    release = node("expression", opening)
+    release["expression"] = call_node(opening, "atomic_xchg", [synthetic_name(opening, handle), synthetic_name(opening, index), number_literal(opening, 0)])
+    release["discard"] = True
+    statements.append(release)
+    rethrow = node("error", opening)
+    rethrow["error_kind"] = ""
+    rethrow["rethrow"] = True
+    rethrow["message"] = call_node(opening, "last_error", [])
+    propagate = node("if", opening)
+    propagate["branches"] = [[synthetic_name(opening, failed), [rethrow]]]
+    propagate["otherwise"] = []
+    statements.append(propagate)
+    result = statements[0]
+    result["extra_statements"] = statements[1:]
+    return finish_node(result, parser)
+end
+
+function parse_multiple_assignment(parser, opening, first):
+    targets = [first]
+    while match(parser, ","):
+        targets.append(parse_expression(parser))
+        if len(targets) > 256:
+            call fail_at(parser, opening, "E1245", "too many assignment targets", "use at most 256 targets")
+        end
+    end
+    for target in targets:
+        if target["kind"] != "name" and target["kind"] != "index" and target["kind"] != "member":
+            call fail_at(parser, opening, "E1245", "invalid assignment target", "assign to names, indexes or members, for example a, b = 1, 2")
+        end
+    end
+    if not check(parser, "="):
+        call fail_at(parser, current(parser), "E1245", "multiple assignment requires =", "use a, b = value; augmented forms such as a, b += 1 are not supported")
+    end
+    call advance(parser)
+    values = [parse_expression(parser)]
+    while match(parser, ","):
+        values.append(parse_expression(parser))
+    end
+    call consume_line_end(parser)
+    serial = parser[9][0]
+    parser[9][0] += 1
+    prefix = "@assign@" + parser[2] + "@" + String(serial) + "@"
+    statements = []
+    if len(values) > 1:
+        if len(values) != len(targets):
+            call fail_at(parser, opening, "E1245", "expected " + String(len(targets)) + " values, got " + String(len(values)), "use as many values as targets, or one value for all of them")
+        end
+        for index in rang(len(values)):
+            statements.append(synthetic_assign(opening, synthetic_name(opening, prefix + String(index)), values[index]))
+        end
+        for index in rang(len(targets)):
+            statements.append(synthetic_assign(opening, targets[index], synthetic_name(opening, prefix + String(index))))
+        end
+    else:
+        value = values[0]
+        holder = prefix + "value"
+        statements.append(synthetic_assign(opening, synthetic_name(opening, holder), value))
+        if value["kind"] == "list" or value["kind"] == "tuple":
+            if len(value["items"]) != len(targets):
+                call fail_at(parser, opening, "E1245", "expected " + String(len(targets)) + " values, got " + String(len(value["items"])), "use as many values as targets")
+            end
+            statements.extend(unpack_statements(opening, targets, holder, ""))
+        elif value["kind"] == "literal":
+            for target in targets:
+                statements.append(synthetic_assign(opening, target, synthetic_name(opening, holder)))
+            end
+        else:
+            # Typ hodnoty je známý až za běhu.
+            is_list = compare_node(opening, "==", call_node(opening, "type", [synthetic_name(opening, holder)]), interpolation_literal(opening, "List"))
+            is_tuple = compare_node(opening, "==", call_node(opening, "type", [synthetic_name(opening, holder)]), interpolation_literal(opening, "Tuple"))
+            condition = binary_node("or", is_list, is_tuple)
+            shared = []
+            for target in targets:
+                shared.append(synthetic_assign(opening, copy_node(target), synthetic_name(opening, holder)))
+            end
+            choice = node("if", opening)
+            choice["branches"] = [[condition, unpack_statements(opening, targets, holder, "")]]
+            choice["otherwise"] = shared
+            statements.append(choice)
+        end
+    end
+    result = statements[0]
+    result["extra_statements"] = statements[1:]
+    return finish_node(result, parser)
+end
+
 function parse_statement(parser):
     before = parser[9][0]
     result = parse_statement_inner(parser)
@@ -975,7 +1286,7 @@ function parse_statement_inner(parser):
         return parse_try_block(parser, opening, False)
     elif match(parser, "Error"):
         return parse_error_statement(parser, opening)
-    elif match(parser, "print") or match(parser, "printl"):
+    elif match(parser, "print") or match(parser, "printl") or match(parser, "printr"):
         formatted = opening["value"] == "printl"
         expressions = []
         if not check_kind(parser, "newline") and not check_kind(parser, "eof"):
@@ -996,6 +1307,10 @@ function parse_statement_inner(parser):
         call consume_line_end(parser)
         result = node("print", opening)
         result["formatted"] = formatted
+        # printr vypíše hodnoty přesně, bez oddělovačů a odřádkování.
+        if opening["value"] == "printr":
+            result["raw"] = True
+        end
         result["expressions"] = expressions
         return finish_node(result, parser)
     elif match(parser, "return"):
@@ -1093,6 +1408,24 @@ function parse_statement_inner(parser):
         result = node("ctype", opening)
         result["visibility"] = visibility["value"]
         return result
+    elif check(parser, "global") and parser[1] + 1 < len(parser[0]) and parser[0][parser[1] + 1]["kind"] == "name":
+        # global x, y: zápis do proměnných modulu z funkce.
+        call advance(parser)
+        if parser[9][1] == 0:
+            call fail_at(parser, opening, "E1246", "global is only allowed inside a function", "module-level variables are global already")
+        end
+        names = []
+        loop:
+            names.append(expect_kind(parser, "name", "E1246", "expected variable name after global")["value"])
+            if not match(parser, ","):
+                break
+            end
+        end
+        call consume_line_end(parser)
+        parser[9][3] += 1
+        result = node("global", opening)
+        result["names"] = names
+        return finish_node(result, parser)
     elif match(parser, "del"):
         call expect(parser, "(", "E1224", "expected parenthesized del target")
         target = parse_expression(parser)
@@ -1103,6 +1436,11 @@ function parse_statement_inner(parser):
         return result
     elif check(parser, "end") or check(parser, "elif") or check(parser, "else"):
         call fail_at(parser, opening, "E1226", "unexpected block terminator", "remove it or add its opening block")
+    end
+    # lock je kontextové slovo: lock jméno: ... end (jinak běžné jméno).
+    if check_kind(parser, "name") and check(parser, "lock") and parser[1] + 1 < len(parser[0]) and parser[0][parser[1] + 1]["kind"] == "name":
+        call advance(parser)
+        return parse_lock_block(parser, opening)
     end
 
     call_prefix = match(parser, "call")
@@ -1116,6 +1454,9 @@ function parse_statement_inner(parser):
             call fail_at(parser, current(parser), "E1243", "only one increment or decrement is allowed", "use i++ or --i as a separate statement")
         end
         increment = advance(parser)["value"]
+    end
+    if increment == "" and not call_prefix and check(parser, ","):
+        return parse_multiple_assignment(parser, opening, left)
     end
     if increment != "":
         if left["kind"] != "name" or call_prefix:

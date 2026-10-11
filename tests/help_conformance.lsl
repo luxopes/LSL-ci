@@ -17,11 +17,6 @@ else:
     rejected = "TypeError" in last_error()
 end
 require(rejected, "non-String help topic")
-rejected = False
-try:
-    call help("no_such_help_topic")
-else:
-    rejected = "HelpError" in last_error()
-end
-require(rejected, "unknown help topic")
+# Neznámé téma vypíše zprávu a program pokračuje.
+require(help("no_such_help_topic") == None, "unknown help topic")
 print "help conformance passed"

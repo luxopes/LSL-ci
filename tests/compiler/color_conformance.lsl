@@ -17,11 +17,13 @@ for settings in [[], ["TERM=dumb"], ["FORCE_COLOR=0"], ["FORCE_COLOR=1"], ["TERM
     stdout = capture_clean("/usr/bin/env", command)
     stderr = capture_stderr()
     call require(capture_status() == 1 and stdout == "", "runtime status/stream")
-    expected = "LSL runtime error: DemoError: dynamic message"
+    heading = "error[DemoError]: dynamic message"
+    help_line = " help: handle expected errors with try: ... else: ... end or safe: ... end"
     if colored:
-        expected = chr(27) + "[1;31m" + expected + chr(27) + "[0m"
+        heading = chr(27) + "[1;31m" + heading + chr(27) + "[0m"
+        help_line = chr(27) + "[36m" + help_line + chr(27) + "[0m"
     end
-    call require(stderr == expected + chr(10), "runtime color policy: " + String(settings))
+    call require(stderr == heading + chr(10) + help_line + chr(10), "runtime color policy: " + String(settings))
     command = ["-i"] + settings + [cli, "compile", work + "/compile.lsl", work + "/invalid"]
     stdout = capture_clean("/usr/bin/env", command)
     stderr = capture_stderr()

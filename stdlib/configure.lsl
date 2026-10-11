@@ -340,26 +340,26 @@ if snapshot:
         print "Configuration snapshot directory is invalid"
         exit(2)
     end
-    index = 0
-    while index < len(order):
-        snapshot_path = snapshot_root + "/" + snapshot_name(index) + ".lsl"
+    graph_index = 0
+    while graph_index < len(order):
+        snapshot_path = snapshot_root + "/" + snapshot_name(graph_index) + ".lsl"
         if exists(snapshot_path):
             print "Configuration snapshot target already exists"
             exit(1)
         end
-        call writefile(snapshot_path, sources[index])
-        index += 1
+        call writefile(snapshot_path, sources[graph_index])
+        graph_index += 1
     end
 end
 wrapper = "load json\n"
-index = 0
-while index < len(order):
-    loaded_module = module_name(root, order[index])
+graph_index = 0
+while graph_index < len(order):
+    loaded_module = module_name(root, order[graph_index])
     if snapshot:
-        loaded_module = snapshot_name(index)
+        loaded_module = snapshot_name(graph_index)
     end
     wrapper += "load " + loaded_module + "\n"
-    index += 1
+    graph_index += 1
 end
 wrapper += "\nfunction priority(value):\n"
 wrapper += "    if __lsl_type_code(value) == 3 and \"__priority\" in value:\n        return value[\"__priority\"]\n    end\n    return 500\nend\n"
@@ -397,23 +397,23 @@ wrapper += "\nfunction dynamic_type(value):\n    code = __lsl_type_code(value)\n
 wrapper += "\nfunction type_matches(value, expected):\n"
 wrapper += "    variants = expected.split(\"|\")\n    for variant in variants:\n        if variant.strip() == \"Any\" or variant.strip() == dynamic_type(value):\n            return True\n        end\n    end\n    return False\nend\n"
 wrapper += "\nmerged = {}\nall_options = {}\nall_assertions = []\n"
-index = 0
-while index < len(order):
-    current_module = module_name(root, order[index])
+graph_index = 0
+while graph_index < len(order):
+    current_module = module_name(root, order[graph_index])
     if snapshot:
-        current_module = snapshot_name(index)
+        current_module = snapshot_name(graph_index)
     end
     wrapper += "merged = deep_merge(merged, " + current_module + ".config, [])\n"
-    if has_export(sources[index], "options"):
+    if has_export(sources[graph_index], "options"):
         wrapper += "for declared_name in " + current_module + ".options:\n"
         wrapper += "    declared_option = " + current_module + ".options[declared_name]\n"
-        wrapper += "    declared_option[\"source\"] = " + string_literal(order[index]) + "\n"
+        wrapper += "    declared_option[\"source\"] = " + string_literal(order[graph_index]) + "\n"
         wrapper += "    all_options[declared_name] = declared_option\nend\n"
     end
-    if has_export(sources[index], "assertions"):
+    if has_export(sources[graph_index], "assertions"):
         wrapper += "all_assertions.extend(" + current_module + ".assertions)\n"
     end
-    index += 1
+    graph_index += 1
 end
 wrapper += "clean = materialize(merged, [])\nmissing = {\"__missing\": True}\n"
 wrapper += "for option_name in all_options:\n    descriptor = all_options[option_name]\n    option_value = get_path(clean, option_name, missing)\n    if option_value == missing:\n        if descriptor[\"required\"]:\n            print \"Missing required option\", option_name, \"declared in\", descriptor[\"source\"]\n            exit(1)\n        end\n        option_value = materialize(descriptor[\"default\"], [])\n        call set_path(clean, option_name, option_value)\n    end\n    if not type_matches(option_value, descriptor[\"type\"]):\n        print \"Invalid option type\", option_name, descriptor[\"type\"], dynamic_type(option_value), \"declared in\", descriptor[\"source\"]\n        exit(1)\n    end\nend\n"

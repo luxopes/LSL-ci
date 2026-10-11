@@ -1,1 +1,2 @@
-LSL runtime error: ConfigCycleError: cyclic configuration value
+error[ConfigCycleError]: cyclic configuration value
+ help: handle expected errors with try: ... else: ... end or safe: ... end

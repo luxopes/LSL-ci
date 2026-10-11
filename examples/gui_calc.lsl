@@ -35,40 +35,40 @@ function make_button(label, kind, col, row, span):
     if span == 2:
         width = diameter * 2 + gap
     end
-    button = {}
-    button["label"] = label
-    button["kind"] = kind
-    button["x"] = x
-    button["y"] = y
-    button["w"] = width
-    button["h"] = diameter
-    button["span"] = span
-    button["hover"] = False
-    return button
+    made = {}
+    made["label"] = label
+    made["kind"] = kind
+    made["x"] = x
+    made["y"] = y
+    made["w"] = width
+    made["h"] = diameter
+    made["span"] = span
+    made["hover"] = False
+    return made
 end
 
 function build_buttons():
-    buttons = []
-    buttons.append(make_button("AC", "func", 0, 0, 1))
-    buttons.append(make_button("+/-", "func", 1, 0, 1))
-    buttons.append(make_button("%", "func", 2, 0, 1))
-    buttons.append(make_button("/", "op", 3, 0, 1))
-    buttons.append(make_button("7", "digit", 0, 1, 1))
-    buttons.append(make_button("8", "digit", 1, 1, 1))
-    buttons.append(make_button("9", "digit", 2, 1, 1))
-    buttons.append(make_button("*", "op", 3, 1, 1))
-    buttons.append(make_button("4", "digit", 0, 2, 1))
-    buttons.append(make_button("5", "digit", 1, 2, 1))
-    buttons.append(make_button("6", "digit", 2, 2, 1))
-    buttons.append(make_button("-", "op", 3, 2, 1))
-    buttons.append(make_button("1", "digit", 0, 3, 1))
-    buttons.append(make_button("2", "digit", 1, 3, 1))
-    buttons.append(make_button("3", "digit", 2, 3, 1))
-    buttons.append(make_button("+", "op", 3, 3, 1))
-    buttons.append(make_button("0", "digit", 0, 4, 2))
-    buttons.append(make_button(".", "digit", 2, 4, 1))
-    buttons.append(make_button("=", "equals", 3, 4, 1))
-    return buttons
+    created = []
+    created.append(make_button("AC", "func", 0, 0, 1))
+    created.append(make_button("+/-", "func", 1, 0, 1))
+    created.append(make_button("%", "func", 2, 0, 1))
+    created.append(make_button("/", "op", 3, 0, 1))
+    created.append(make_button("7", "digit", 0, 1, 1))
+    created.append(make_button("8", "digit", 1, 1, 1))
+    created.append(make_button("9", "digit", 2, 1, 1))
+    created.append(make_button("*", "op", 3, 1, 1))
+    created.append(make_button("4", "digit", 0, 2, 1))
+    created.append(make_button("5", "digit", 1, 2, 1))
+    created.append(make_button("6", "digit", 2, 2, 1))
+    created.append(make_button("-", "op", 3, 2, 1))
+    created.append(make_button("1", "digit", 0, 3, 1))
+    created.append(make_button("2", "digit", 1, 3, 1))
+    created.append(make_button("3", "digit", 2, 3, 1))
+    created.append(make_button("+", "op", 3, 3, 1))
+    created.append(make_button("0", "digit", 0, 4, 2))
+    created.append(make_button(".", "digit", 2, 4, 1))
+    created.append(make_button("=", "equals", 3, 4, 1))
+    return created
 end
 
 function is_digit(label):
@@ -230,7 +230,7 @@ function draw(pixels, width, height, buttons, state):
 
     for button in buttons:
         kind = button["kind"]
-        label = String(button["label"])
+        caption = String(button["label"])
         fill = color_digit
         text_color = color_display
         if kind == "digit":
@@ -247,27 +247,27 @@ function draw(pixels, width, height, buttons, state):
         else:
             fill = color_op
             text_color = color_op_text
-            if kind == "op" and String(state["op"]) == label:
+            if kind == "op" and String(state["op"]) == caption:
                 fill = color_op_active_bg
                 text_color = color_op
             elif button["hover"]:
                 fill = color_op_hover
             end
         end
-        bx = button["x"]
-        by = button["y"]
+        button_x = button["x"]
+        button_y = button["y"]
         bw = button["w"]
         radius = diameter // 2
         if button["span"] == 2:
-            call gfx.raster_fill_pill(pixels, width, height, bx, by, bw, diameter, fill)
+            call gfx.raster_fill_pill(pixels, width, height, button_x, button_y, bw, diameter, fill)
         else:
-            call gfx.raster_fill_circle(pixels, width, height, bx + radius, by + radius, radius, fill)
+            call gfx.raster_fill_circle(pixels, width, height, button_x + radius, button_y + radius, radius, fill)
         end
         label_scale = 2
-        label_w = len(label) * 8 * label_scale
-        label_x = bx + radius - label_w // 2
-        label_y = by + radius - 8 * label_scale
-        call gfx.raster_text_scaled(pixels, width, height, label_x, label_y, label, text_color, label_scale)
+        label_w = len(caption) * 8 * label_scale
+        label_x = button_x + radius - label_w // 2
+        label_y = button_y + radius - 8 * label_scale
+        call gfx.raster_text_scaled(pixels, width, height, label_x, label_y, caption, text_color, label_scale)
     end
     return None
 end

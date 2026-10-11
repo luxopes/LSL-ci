@@ -1103,11 +1103,36 @@ function expression(s,node):
     end
     Error(CompileError: "LuxIR expression: "+kind)
 end
+# Absolutní cesty ke zdrojům repozitáře nebo instalace se v binárce zkrátí
+# na relativní (stdlib/..., compiler/pure/...), aby build nezávisel na adresáři.
+function display_path(path):
+    text = String(path)
+    if not text.startswith("/"):
+        return text
+    end
+    for marker in ["/compiler/pure/", "/stdlib/", "/extensions/"]:
+        position = -1
+        search = text.find(marker)
+        while search >= 0:
+            position = search
+            following = text[search + 1:len(text)].find(marker)
+            if following < 0:
+                break
+            end
+            search = search + 1 + following
+        end
+        if position >= 0:
+            return text[position + 1:len(text)]
+        end
+    end
+    return text
+end
+
 function source_error(s,message,node=None):
     if node == None or s["internal"] or s["trusted"]:
         return message
     end
-    return message+" at "+node.get("path",s["unit"]["path"])+":"+String(node.get("line",1))
+    return message+" at "+display_path(node.get("path",s["unit"]["path"]))+":"+String(node.get("line",1))
 end
 function raise_error(s,message):
     value = string(s,message)
@@ -1125,7 +1150,7 @@ function class_validation_error(s,node,rules):
     for rule in rules:
         error = validation.error_for(context,node,rule)
         if error != None:
-            location = node.get("path",s["unit"]["path"])+":"+String(node.get("line",1))+":"+String(node.get("column",1))
+            location = display_path(node.get("path",s["unit"]["path"]))+":"+String(node.get("line",1))+":"+String(node.get("column",1))
             call raise_error(s,error[0]+": "+error[1]+" at "+location)
             # The enclosing expression may still emit operations using its
             # placeholder result. Keep them in an unreachable basic block.
@@ -1465,7 +1490,7 @@ function statements(s,body,break_target,continue_target):
                         zero = label(s)
                         call jump_if(s,step,ready,zero)
                         call mark(s,zero)
-                        call raise_error(s,"ValueError: rang step cannot be zero at "+node.get("path",s["unit"]["path"])+":"+String(node["line"]))
+                        call raise_error(s,"ValueError: rang step cannot be zero at "+display_path(node.get("path",s["unit"]["path"]))+":"+String(node["line"]))
                         call mark(s,ready)
                     end
                 end
@@ -1503,12 +1528,6 @@ function statements(s,body,break_target,continue_target):
             allocation_calls = s["allocation_calls"]
             call rt(s,"maybe_gc",[],"None",False)
             if range_loop:
-                binding = load_name(s,node["name"])
-                if binding[1] == "Any" and not s["internal"]:
-                    binding = function_call(s,"__lsl_require_rang_step",[binding])
-                    binding[1] = "Int"
-                end
-                call define(s,index,"copy("+integer(s,binding)+")")
                 positive = temp(s,"gt("+typed(step,"Int64")+", 0)","w")
                 less = temp(s,"lt("+typed(index,"Int64")+", "+stop+")","w")
                 greater = temp(s,"gt("+typed(index,"Int64")+", "+stop+")","w")
@@ -1516,10 +1535,17 @@ function statements(s,body,break_target,continue_target):
             else:
                 condition = temp(s,"lt("+typed(index,"Int64")+", "+stop+")","w")
             end
-            call jump_if(s,condition,inner,done)
+            finished = done
+            if range_loop:
+                finished = label(s)
+            end
+            call jump_if(s,condition,inner,finished)
             call mark(s,inner)
             if range_loop:
                 value = [index,"Int"]
+                # Iteraci řídí interní počítadlo; přiřazení do proměnné v těle
+                # ani vnořená smyčka se stejným jménem počet iterací nemění.
+                call store_name(s,node["name"],value)
             else:
                 if target[1] == "Any" and not s["internal"]:
                     value = rt(s,"iter_get",[target[0],boxed(s,[index,"Int"])],"Any")
@@ -1533,19 +1559,15 @@ function statements(s,body,break_target,continue_target):
             call statements(s,node["body"],done,increment)
             call jump(s,increment)
             call mark(s,increment)
-            if range_loop:
-                binding = load_name(s,node["name"])
-                if binding[1] == "Any" and not s["internal"]:
-                    binding = function_call(s,"__lsl_require_rang_step",[binding])
-                    binding[1] = "Int"
-                end
-                call define(s,index,"copy("+integer(s,binding)+")")
-            end
             call define(s,index,"add("+index+", "+step+")")
-            if range_loop:
-                call store_name(s,node["name"],[index,"Int"])
-            end
             call jump(s,head)
+            if range_loop:
+                # Po normálním skončení má proměnná konečnou hodnotu počítadla
+                # (testované chování); break si ponechá hodnotu iterace.
+                call mark(s,finished)
+                call store_name(s,node["name"],[index,"Int"])
+                call jump(s,done)
+            end
             call mark(s,done)
             call finish_loop_poll(s,poll_position,allocation_calls)
         elif kind == "break":
@@ -1595,7 +1617,12 @@ function statements(s,body,break_target,continue_target):
             else:
                 value = expression(s,message_node)
             end
-            message = rt(s,"string_concat",[string(s,node["error_kind"]+": ")[0],value[0]],"String",False)
+            if node.get("rethrow",False):
+                # Znovu vyhozená zachycená chyba (lock blok): text beze změny.
+                message = value
+            else:
+                message = rt(s,"string_concat",[string(s,node["error_kind"]+": ")[0],value[0]],"String",False)
+            end
             call invoke(s,"qbe_error_set",[message[0]],"None",False)
             call jump(s,s["error"])
         elif kind == "delete":
@@ -1615,18 +1642,21 @@ function statements(s,body,break_target,continue_target):
                 end
             end
         elif kind == "print":
+            raw = node.get("raw",False)
             for index in rang(len(node["expressions"])):
-                if index > 0:
+                if index > 0 and not raw:
                     call rt(s,"print_string",[string(s," ")[0]],"None",False)
                 end
                 value = expression(s,node["expressions"][index])
                 text = stringify(s,value)
                 call rt(s,"print_string",[text[0]],"None",False)
             end
-            call rt(s,"print_string",[string(s,chr(10))[0]],"None",False)
+            if not raw:
+                call rt(s,"print_string",[string(s,chr(10))[0]],"None",False)
+            end
         elif kind == "class":
             call class_declaration(s,node)
-        elif kind in ["function","load"]:
+        elif kind in ["function","load","global"]:
             continue
         else:
             Error(CompileError: "LuxIR statement: "+kind)
@@ -1810,7 +1840,8 @@ function call_expression(s,node):
             if name == "get" and len(values) == 2:
                 values.append(["0","None"])
             elif name == "split" and len(values) == 1:
-                values.append(["0","None"])
+                # split() bez argumentu: mezera se doplní už při překladu.
+                values.append(string(s," "))
             end
             helper = METHODS[name]
             if name == "copy":
@@ -2011,7 +2042,7 @@ function call_expression(s,node):
             no = label(s)
             call jump_if(s,valid,yes,no)
             call mark(s,no)
-            call raise_error(s,"TypeError: "+name+" cast requires an existing "+name)
+            call raise_error(s,"TypeError: "+name+"(value) only converts an existing "+name+"; create an empty one with "+name+"() and add items with append")
             call mark(s,yes)
             return [args[0],name]
         elif name == "ByteArray":

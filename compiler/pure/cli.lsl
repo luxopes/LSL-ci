@@ -17,11 +17,12 @@ load sandbox
 load tui
 load update
 
-VERSION = "0.9.0"
-RELEASE_LABEL = "BETA"
+VERSION = "0.9.1"
+# Prázdné u stabilního vydání, jinak např. " BETA".
+RELEASE_LABEL = ""
 
 function print_help():
-    call console.heading("Lux Simple Lang (LSL) " + VERSION + " " + RELEASE_LABEL)
+    call console.heading("Lux Simple Lang (LSL) " + VERSION + RELEASE_LABEL)
     print ""
     print "Usage:"
     print "  lsl [SOURCE [ARG...]]"
@@ -155,6 +156,14 @@ end
 
 function required_system_tool(primary, fallback, label):
     return host.required_system_tool(primary, fallback, label)
+end
+
+# Vestavěný modul ai se v registru aktualizuje jako balíček aikit.
+function registry_package(name):
+    if name == "ai":
+        return "aikit"
+    end
+    return name
 end
 
 function registry_server():
@@ -311,7 +320,7 @@ end
 
 function read_interactive_source(stty):
     colors = console.colors()
-    call console.heading("Lux Simple Lang " + VERSION + " " + RELEASE_LABEL + " interactive source mode")
+    call console.heading("Lux Simple Lang " + VERSION + RELEASE_LABEL + " interactive source mode")
     print console.style("Enter code; type exit on its own line (or press Ctrl-D) to compile and run. Ctrl-C clears the line.", "2")
     saved = host.prompt_enter(stty)
     lines = []
@@ -365,7 +374,7 @@ function read_stdin_source():
         end
     end
     if terminal:
-        print "Lux Simple Lang " + VERSION + " " + RELEASE_LABEL + " interactive source mode"
+        print "Lux Simple Lang " + VERSION + RELEASE_LABEL + " interactive source mode"
         print "Enter code; type exit on its own line to compile and run."
     end
     loop:
@@ -433,7 +442,13 @@ function main():
         elif arg(2) == "sandbox":
             call print_sandbox_help()
         elif arg(2) != None:
-            print __lsl_help_text(arg(2))
+            topic_text = __lsl_help_text(arg(2))
+            # Neznámé téma: help() v programu jen vypíše zprávu, CLI skončí chybou.
+            if topic_text.startswith("No help available for topic: "):
+                call console.error(topic_text)
+                exit(1)
+            end
+            print topic_text
         else:
             call print_help()
         end
@@ -574,7 +589,7 @@ function main():
         elif name == "--config" and arg(3) != None and arg(4) == None:
             call package.install_config(arg(3), user_home(), registry_server(), host.tool("curl"), host.tool("sha256sum"), host.tool("mv"), host.tool("chmod"), executable_path())
         elif name != None and arg(3) == None:
-            call package.install(name, user_home(), registry_server(), host.tool("curl"), host.tool("sha256sum"), host.tool("mv"), host.tool("chmod"), executable_path())
+            call package.install(registry_package(name), user_home(), registry_server(), host.tool("curl"), host.tool("sha256sum"), host.tool("mv"), host.tool("chmod"), executable_path())
         else:
             print "usage: lsl install NAME | lsl install --config FILE | lsl install --tui"
             exit(2)
@@ -656,6 +671,17 @@ function main():
         end
         if plain or not __lsl_isatty(0) or not __lsl_isatty(1) or __lsl_getenv("TERM") == "dumb":
             call manual.plain(resource_path("docs/developer_guides"), topic)
+            if topic == "ai":
+                # Která knihovna AI platí pro load ai (vestavěná, nebo novější
+                # aikit); až za manuálem, aby stránka začínala svým nadpisem.
+                active = host.module_path("ai", "program.lsl", user_home(), True)
+                active_header = ""
+                safe:
+                    active_header = readfile(active).split(chr(10))[0]
+                end
+                print ""
+                print "Active library for load ai: " + active_header.replace("# ", "") + " [" + active + "]"
+            end
         else:
             call browser.manual_view(resource_path("docs/developer_guides"), topic)
         end
@@ -668,7 +694,7 @@ function main():
             print "usage: lsl update [NAME]"
             exit(2)
         else:
-            call package.update(name, user_home(), registry_server(), host.tool("curl"), host.tool("sha256sum"), host.tool("mv"), host.tool("chmod"), executable_path())
+            call package.update(registry_package(name), user_home(), registry_server(), host.tool("curl"), host.tool("sha256sum"), host.tool("mv"), host.tool("chmod"), executable_path())
         end
         exit(0)
     elif command == "origin":
@@ -680,7 +706,7 @@ function main():
         if name == None:
             print registry_server()
         else:
-            provenance = package.verified_origin(name, user_home(), host.tool("sha256sum"))
+            provenance = package.verified_origin(registry_package(name), user_home(), host.tool("sha256sum"))
             print "name", provenance["name"]
             print "origin", provenance["origin"]
             print "source", provenance["source"]

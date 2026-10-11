@@ -1379,7 +1379,7 @@ function expression(state, syntax):
                 end
                 call semantic.unsupported(state["path"], state["lines"], syntax, "type " + receiver_type + " has no method " + target["name"], "use a method documented for " + receiver_type)
             end
-            method_arity = {"strip": 0, "lstrip": 0, "rstrip": 0, "lower": 0, "upper": 0, "title": 0, "capitalize": 0, "sort": 0, "reverse": 0, "copy": 0, "keys": 0, "values": 0, "items": 0, "clear": 0, "append": 1, "startswith": 1, "endswith": 1, "find": 1, "count": 1, "split": 1, "join": 1, "extend": 1, "remove": 1, "index": 1, "update": 1, "replace": 2, "insert": 2}
+            method_arity = {"strip": 0, "lstrip": 0, "rstrip": 0, "lower": 0, "upper": 0, "title": 0, "capitalize": 0, "sort": 0, "reverse": 0, "copy": 0, "keys": 0, "values": 0, "items": 0, "clear": 0, "append": 1, "startswith": 1, "endswith": 1, "find": 1, "count": 1, "join": 1, "extend": 1, "remove": 1, "index": 1, "update": 1, "replace": 2, "insert": 2}
             if semantic.set_method(target["name"]):
                 method_arity[target["name"]] = 1
             end
@@ -1391,6 +1391,15 @@ function expression(state, syntax):
                         return
                     end
                     call semantic.unsupported(state["path"], state["lines"], syntax, "method " + target["name"] + " expects " + String(expected_method) + " argument(s), got " + String(len(syntax["arguments"])), "pass exactly " + String(expected_method) + " argument(s)")
+                end
+            elif target["name"] == "split" and not receiver_type.startswith("Class:") and not receiver_type.startswith("Instance:"):
+                # split() bez argumentu dělí podle mezery.
+                if len(syntax["arguments"]) > 1:
+                    if state["error_label"] != "":
+                        call record_error(state, syntax, "method_arity", "TypeError", "method split expects zero or one argument, got " + String(len(syntax["arguments"])))
+                        return
+                    end
+                    call semantic.unsupported(state["path"], state["lines"], syntax, "method split expects zero or one argument, got " + String(len(syntax["arguments"])), "use text.split() or text.split(separator)")
                 end
             elif target["name"] == "get":
                 if len(syntax["arguments"]) != 1 and len(syntax["arguments"]) != 2:
@@ -2161,7 +2170,7 @@ function statements(state, body, break_label, continue_label, return_label):
                     call semantic.unsupported(state["path"], state["lines"], member, "unsupported class body statement", "use fields, ctype, and function methods")
                 end
             end
-        elif kind == "function":
+        elif kind == "function" or kind == "global":
             value = None
         elif kind == "load":
             call semantic.unsupported(state["path"], state["lines"], statement, "load code generation reached the linked program", "check module linker lowering")

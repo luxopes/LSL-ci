@@ -32,39 +32,39 @@ function make_button(label, style, col, row, span):
     if span == 2:
         width = btn * 2 + gap
     end
-    button = {}
-    button["label"] = label
-    button["style"] = style
-    button["x"] = x
-    button["y"] = y
-    button["w"] = width
-    button["h"] = btn
-    button["hover"] = False
-    return button
+    made = {}
+    made["label"] = label
+    made["style"] = style
+    made["x"] = x
+    made["y"] = y
+    made["w"] = width
+    made["h"] = btn
+    made["hover"] = False
+    return made
 end
 
 function build_buttons():
-    buttons = []
-    buttons.append(make_button("C", "func", 0, 0, 1))
-    buttons.append(make_button("(", "paren", 1, 0, 1))
-    buttons.append(make_button(")", "paren", 2, 0, 1))
-    buttons.append(make_button("/", "op", 3, 0, 1))
-    buttons.append(make_button("7", "digit", 0, 1, 1))
-    buttons.append(make_button("8", "digit", 1, 1, 1))
-    buttons.append(make_button("9", "digit", 2, 1, 1))
-    buttons.append(make_button("*", "op", 3, 1, 1))
-    buttons.append(make_button("4", "digit", 0, 2, 1))
-    buttons.append(make_button("5", "digit", 1, 2, 1))
-    buttons.append(make_button("6", "digit", 2, 2, 1))
-    buttons.append(make_button("-", "op", 3, 2, 1))
-    buttons.append(make_button("1", "digit", 0, 3, 1))
-    buttons.append(make_button("2", "digit", 1, 3, 1))
-    buttons.append(make_button("3", "digit", 2, 3, 1))
-    buttons.append(make_button("+", "op", 3, 3, 1))
-    buttons.append(make_button("0", "digit", 0, 4, 2))
-    buttons.append(make_button(".", "digit", 2, 4, 1))
-    buttons.append(make_button("=", "equals", 0, 5, 2))
-    return buttons
+    created = []
+    created.append(make_button("C", "func", 0, 0, 1))
+    created.append(make_button("(", "paren", 1, 0, 1))
+    created.append(make_button(")", "paren", 2, 0, 1))
+    created.append(make_button("/", "op", 3, 0, 1))
+    created.append(make_button("7", "digit", 0, 1, 1))
+    created.append(make_button("8", "digit", 1, 1, 1))
+    created.append(make_button("9", "digit", 2, 1, 1))
+    created.append(make_button("*", "op", 3, 1, 1))
+    created.append(make_button("4", "digit", 0, 2, 1))
+    created.append(make_button("5", "digit", 1, 2, 1))
+    created.append(make_button("6", "digit", 2, 2, 1))
+    created.append(make_button("-", "op", 3, 2, 1))
+    created.append(make_button("1", "digit", 0, 3, 1))
+    created.append(make_button("2", "digit", 1, 3, 1))
+    created.append(make_button("3", "digit", 2, 3, 1))
+    created.append(make_button("+", "op", 3, 3, 1))
+    created.append(make_button("0", "digit", 0, 4, 2))
+    created.append(make_button(".", "digit", 2, 4, 1))
+    created.append(make_button("=", "equals", 0, 5, 2))
+    return created
 end
 
 # --- výraz: rekurzivní vyhodnocení se správnou prioritou -----------------
@@ -154,13 +154,13 @@ function ev_expr(state):
 end
 
 function evaluate(text):
-    state = {}
-    state["text"] = text
-    state["len"] = len(text)
-    state["pos"] = 0
-    state["error"] = False
-    result = ev_expr(state)
-    if state["error"] or state["pos"] < state["len"]:
+    parsed_state = {}
+    parsed_state["text"] = text
+    parsed_state["len"] = len(text)
+    parsed_state["pos"] = 0
+    parsed_state["error"] = False
+    result = ev_expr(parsed_state)
+    if parsed_state["error"] or parsed_state["pos"] < parsed_state["len"]:
         return 0.0 / 0.0
     end
     return result
@@ -182,17 +182,17 @@ function format_number(value):
 end
 
 function press(state, label):
-    entry = String(state["entry"])
+    current_entry = String(state["entry"])
     if label == "C":
         state["entry"] = ""
     elif label == "=":
-        state["entry"] = format_number(evaluate(entry))
+        state["entry"] = format_number(evaluate(current_entry))
     else:
-        if entry == "Error":
-            entry = ""
+        if current_entry == "Error":
+            current_entry = ""
         end
-        if len(entry) < 24:
-            state["entry"] = entry + label
+        if len(current_entry) < 24:
+            state["entry"] = current_entry + label
         end
     end
     return None
@@ -221,23 +221,23 @@ function resolve_styles(buttons, sheet):
 end
 
 function draw_button(pixels, width, height, button):
-    bx = button["x"]
-    by = button["y"]
+    button_x = button["x"]
+    button_y = button["y"]
     bw = button["w"]
     bh = button["h"]
     radius = button["radius"]
     if button["gradient"]:
         top = button["top"]
         bottom = button["bottom"]
-        call gfx.raster_round_rect(pixels, width, height, bx + 2, by + 6, bw, bh, radius, bottom, 70, 10)
-        call gfx.raster_round_rect_grad(pixels, width, height, bx, by, bw, bh, radius, top, bottom, 255, 1.4)
+        call gfx.raster_round_rect(pixels, width, height, button_x + 2, button_y + 6, bw, bh, radius, bottom, 70, 10)
+        call gfx.raster_round_rect_grad(pixels, width, height, button_x, button_y, bw, bh, radius, top, bottom, 255, 1.4)
     else:
-        call gfx.raster_round_rect(pixels, width, height, bx, by, bw, bh, radius, button["fill"], button["fill_alpha"], 1.4)
+        call gfx.raster_round_rect(pixels, width, height, button_x, button_y, bw, bh, radius, button["fill"], button["fill_alpha"], 1.4)
     end
-    label = String(button["label"])
-    label_x = bx + (bw - len(label) * 16) // 2
-    label_y = by + (bh - 32) // 2
-    call gfx.raster_text_aa(pixels, width, height, label_x, label_y, label, button["text_color"], 255, 2)
+    caption = String(button["label"])
+    label_x = button_x + (bw - len(caption) * 16) // 2
+    label_y = button_y + (bh - 32) // 2
+    call gfx.raster_text_aa(pixels, width, height, label_x, label_y, caption, button["text_color"], 255, 2)
     return None
 end
 

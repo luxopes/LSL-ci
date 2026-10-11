@@ -1,6 +1,6 @@
 # Lux Simple Lang (LSL)
 
-**LSL 0.9.0 BETA** je self-hostované vydání pro **Linux x86_64**. Frontend,
+**LSL 0.9.1** je stabilní self-hostované vydání pro **Linux x86_64**. Frontend,
 backend LuxIR i host runtime jsou napsané v LSL. Výchozí překlad vede přes
 analyzovaný AST a LuxIR do assembleru; **GNU `as` a `ld` z balíku binutils**
 vytvoří statický PIE ELF. Výsledné programy používají přímé syscalls a nepotřebují
@@ -13,12 +13,20 @@ nebo OS není součástí tohoto vydání.
 
 ## Self-hosted vydání
 
-0.9.0 BETA přechází z přímého AST backendu na samostatný nativní
+Od 0.9.0 nahrazuje přímý AST backend samostatný nativní
 [LuxIR](https://git.lux-ai.cz/LuxAI/LuxIR). Běžné CLI i `compiler/lslc`
 používají tuto cestu s bezpečným výchozím režimem. Privilegované operace
 vyžadují `unsafe:` nebo explicitní `--unsafe`.
 
-**Známé omezení pro 0.9.1:** překlad velkého společného zdroje compileru
+0.9.1 přidává přiřazení více proměnným (`a, b = 1`, `x, y = y, x`),
+rozbalení ve `for`, `global`, blok `lock`, raw řetězce, blokové komentáře,
+`printr`, `split()` bez argumentu, `math.round/trunc` s počtem míst, ISO-8601
+v `time`, streamovaný `httpserver` a běhové chyby ve formátu diagnostiky.
+Úplný seznam je v [changelogu](https://lsl.lux-ai.cz/#CHANGELOG).
+
+**Známá omezení:** převod desetinného textu na Float není u části
+sedmnáctimístných čísel správně zaokrouhlený (1–2 ulp; viz `TODO.md`).
+Překlad velkého společného zdroje compileru
 v měření na stejném stroji trval **11,399 s proti 8,062 s u 0.8.9**, tedy
 **o 41,4 % déle**. Rychlejší výsledné programy v osmi měřených úlohách tuto
 regresi času překladu neodstraňují. Podrobnosti a reprodukovatelná data jsou
@@ -28,14 +36,14 @@ Vydání si ponechává `.env` vedle skriptu, `requests` a offline manuály
 standardních knihoven. Proměnné prostředí mají před `.env` přednost;
 hodnoty ze souboru se čtou za běhu a nevkládají se do binárky.
 
-BETA je prerelease; strojový výstup `lsl version` zůstává `0.9.0`.
-Instalátor použijte z příslušného archivu BETA. Příkaz `lsl update` sleduje
-podepsaný stabilní kanál a sám o sobě nevybírá prerelease.
+Strojový výstup `lsl version` je `0.9.1`. Příkaz `lsl update` sleduje
+podepsaný stabilní kanál.
 Web a manuály mají samostatný projekt
 [LSL-Web](https://git.lux-ai.cz/LuxAI/LSL-Web); veřejná dokumentace je na
 [lsl.lux-ai.cz](https://lsl.lux-ai.cz/).
 Starší manuály jsou v [historii vydání](https://lsl.lux-ai.cz/releases/):
 
+- [LSL 0.9.1](https://git.lux-ai.cz/LuxAI/LSL/releases/tag/v0.9.1) — stabilní vydání LuxIR pipeline, nové jazykové konstrukce, streamovaný HTTP server a čitelné běhové chyby;
 - [LSL 0.9.0 BETA](https://git.lux-ai.cz/LuxAI/LSL/releases/tag/v0.9.0-beta.1) — nový nativní backend LuxIR v LSL, oddělený frontend a ověřený self-host; Linux x86_64;
 - LSL 0.8.9 — `.env`, `requests` a manuály knihoven;
 - LSL 0.8.8 — bufferovaný stdin/stdout, rezerva haldy, nativní `split` a `Int`, oprava typů proměnných a diagnostika comprehension;

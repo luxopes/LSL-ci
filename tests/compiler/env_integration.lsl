@@ -49,7 +49,7 @@ for executable in ["cli-program", "direct-program"]:
 end
 call writefile(root + "/source/.env", "LSL_DOTENV_TEST_VALUE_089='secret-without-closing-quote" + chr(10))
 call capture(cli, [script])
-call require(capture_status() != 0 and "EnvironmentError:" in capture_stderr() and "secret-without-closing-quote" not in capture_stderr(), "automatic dotenv errors do not reveal secrets")
+call require(capture_status() != 0 and "EnvironmentError" in capture_stderr() and "secret-without-closing-quote" not in capture_stderr(), "automatic dotenv errors do not reveal secrets")
 call writefile(root + "/source/.env", "LSL_DOTENV_TEST_VALUE_089=updated-test-only" + chr(10))
 call expect(cli, [script], "updated-test-only" + chr(10) + "True" + chr(10), "dotenv reread for next process")
 print "env integration passed"

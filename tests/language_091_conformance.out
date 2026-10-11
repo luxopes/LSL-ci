@@ -1,0 +1,56 @@
+multi same 1 1
+multi swap 2 1
+multi list 3 4
+multi tuple 5 six
+multi string text text
+multi index [7, 0, 9]
+multi dict x y
+multi function 4 7
+multi mismatch ValueError: expected 2 values, got 3
+split default ['a', 'b', '', 'c']
+split explicit ['x', 'y']
+split any ['one', 'two']
+nested outer 3
+nested count 1000
+body assignment [0, 10, 20, 30]
+nested flow [1, 1, 1]
+for unpack 14.5
+for items a 1
+for nested 52
+for mismatch ValueError: expected 2 values, got 3
+block comment 3
+raw C:\cesta\{comment_value} 2
+raw "double" inside
+printr:C:\cesta\{comment_value}|
+global bump 2 3 3
+global retype text text
+round int 3 -3 -3
+round digits 2.68 -2.68 1.01
+round scale 1234.6 1235.0 1200.0 -1300.0
+trunc digits 2.67 -2.67 1000.0
+round carry 10.0 0.0 0.001 10.0
+round extremes 1.0e+300 1.5e-10 123.0
+round special inf -inf nan
+round invalid TypeError: digits must be Int, got Float
+round integer 123456789012346000 -20 -10 10 7 0
+round halves 1 2 -1 4503599627370497 -7
+round error ValueError: cannot convert NaN to Int
+trunc error ValueError: cannot convert NaN to Int
+round error ValueError: cannot convert Infinity to Int
+trunc error ValueError: cannot convert Infinity to Int
+round error ValueError: cannot convert Infinity to Int
+trunc error ValueError: cannot convert Infinity to Int
+round error ValueError: value is outside the Int range
+trunc error ValueError: value is outside the Int range
+round overflow ValueError: rounded value is outside the Int range
+round type TypeError: value must be Int or Float, got String
+dynamic equality True True True False True False
+nonempty range 2 3
+nonempty list 20
+nonempty function 7
+nonempty break 3
+lock total 20000 0
+lock propagated True
+lock released 0 3 0
+plain name
+lock target True

@@ -54,7 +54,7 @@ def main():
                         help="secure parent for isolated installation; /tmp is not suitable")
     parser.add_argument("--old-installer", type=Path,
                         default=Path.home() / ".local/bin/lsl-install")
-    parser.add_argument("--expected-version", default="0.9.0",
+    parser.add_argument("--expected-version", default="0.9.1",
                         help="canonical machine version; BETA is a separate display label")
     parser.add_argument("--timeout", type=int, default=3600,
                         help="complete original corpus timeout, at least 1800 seconds")
@@ -80,7 +80,7 @@ def main():
         "old_installer": old_installer,
     }
     report = {
-        "scope": "Linux x86_64 staged 0.9.0 BETA release through native LuxIR",
+        "scope": "Linux x86_64 staged 0.9.1 release through native LuxIR",
         "correctness_only": True, "expected_version": args.expected_version,
         "root": str(ROOT), "platform": platform.platform(),
         "luxir_source": str(luxir_source), "commands": [],

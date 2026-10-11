@@ -3,3 +3,29 @@ True
 True
 ValueError: sleep duration cannot be negative
 ValueError: invalid sleep duration
+0 1970-01-01T00:00:00.000000+00:00 1970-01-01T00:00:00+00:00 Thu Thursday Jan January 01  1 001 4 4 70 12 AM 1970-01-01 00:00:00 0 +0000 UTC %
+951782400 2000-02-29T00:00:00.000000+00:00 2000-02-29T00:00:00+00:00 Tue Tuesday Feb February 29 29 060 2 2 00 12 AM 2000-02-29 00:00:00 951782400 +0000 UTC %
+1700000000 2023-11-14T22:13:20.000000+00:00 2023-11-14T22:13:20+00:00 Tue Tuesday Nov November 14 14 318 2 2 23 10 PM 2023-11-14 22:13:20 1700000000 +0000 UTC %
+-1 1969-12-31T23:59:59.000000+00:00 1969-12-31T23:59:59+00:00 Wed Wednesday Dec December 31 31 365 3 3 69 11 PM 1969-12-31 23:59:59 -1 +0000 UTC %
+1784592000 2026-07-21T00:00:00.000000+00:00 2026-07-21T00:00:00+00:00 Tue Tuesday Jul July 21 21 202 2 2 26 12 AM 2026-07-21 00:00:00 1784592000 +0000 UTC %
+1700000000.833305 2023-11-14T22:13:20.833305+00:00 2023-11-14T22:13:20+00:00 Tue Tuesday Nov November 14 14 318 2 2 23 10 PM 2023-11-14 22:13:20 1700000000 +0000 UTC %
+1700000000.9999995 2023-11-14T22:13:21.000000+00:00 2023-11-14T22:13:21+00:00 Tue Tuesday Nov November 14 14 318 2 2 23 10 PM 2023-11-14 22:13:21 1700000000 +0000 UTC %
+-0.5 1969-12-31T23:59:59.500000+00:00 1969-12-31T23:59:59+00:00 Wed Wednesday Dec December 31 31 365 3 3 69 11 PM 1969-12-31 23:59:59 -1 +0000 UTC %
+253402300799 9999-12-31T23:59:59.000000+00:00 9999-12-31T23:59:59+00:00 Fri Friday Dec December 31 31 365 5 5 99 11 PM 9999-12-31 23:59:59 253402300799 +0000 UTC %
+{'year': 2000, 'month': 2, 'day': 29, 'hour': 0, 'minute': 0, 'second': 0, 'microsecond': 0, 'weekday': 1, 'yearday': 60}
+1791518513.833305 951782400.0 1791518513.0 -1.0
+True
+error ValueError: invalid ISO-8601 time: field out of range
+error ValueError: invalid ISO-8601 time: missing Z or offset
+1791518513.0
+error ValueError: invalid ISO-8601 time: field out of range
+error ValueError: invalid ISO-8601 time: empty fraction
+error ValueError: invalid ISO-8601 time: expected : at offset 22
+error ValueError: invalid ISO-8601 time: missing year
+error ValueError: invalid ISO-8601 time: field out of range
+error ValueError: invalid ISO-8601 time: unexpected text at offset 20
+error ValueError: unsupported strftime directive %Q
+error ValueError: strftime format ends with a lone %
+error ValueError: digits must be between 0 and 6
+error TypeError: time value must be Int or Float, got String
+error ValueError: time value is outside years 1..9999

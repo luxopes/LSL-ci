@@ -134,6 +134,65 @@ function tokenize(path, source):
                 index += char_width(__lsl_text_byte(text, index))
                 column += 1
             end
+        elif code == 47 and index + 1 < count and __lsl_text_byte(text, index + 1) == 42:
+            # Blokový komentář /* ... */ je mezera; konce řádků uvnitř zůstávají.
+            comment_line = line
+            comment_column = column
+            index += 2
+            column += 2
+            closed = False
+            while index < count:
+                code = __lsl_text_byte(text, index)
+                if code == 42 and index + 1 < count and __lsl_text_byte(text, index + 1) == 47:
+                    index += 2
+                    column += 2
+                    closed = True
+                    break
+                elif code == 10:
+                    if depth == 0:
+                        result.append(token("newline", newline, line, column, column + 1))
+                    end
+                    index += 1
+                    line += 1
+                    column = 1
+                else:
+                    index += char_width(code)
+                    column += 1
+                end
+            end
+            if not closed:
+                call diagnostics.fail(path, comment_line, comment_column, 2, source_line(lines, comment_line), "E0011", "unterminated block comment", "close the comment with */")
+            end
+        elif code == 114 and index + 1 < count and (__lsl_text_byte(text, index + 1) == 34 or __lsl_text_byte(text, index + 1) == 39):
+            # Raw String r"..." bez escape sekvencí a interpolace.
+            start_line = line
+            start_column = column
+            quote = __lsl_text_byte(text, index + 1)
+            index += 2
+            column += 2
+            value_start = index
+            closed = False
+            while index < count:
+                code = __lsl_text_byte(text, index)
+                if code == quote:
+                    closed = True
+                    break
+                elif code == 10:
+                    call diagnostics.fail(path, start_line, start_column, max(1, column - start_column), source_line(lines, start_line), "E0001", "unterminated String literal", "close the raw String before the end of the line")
+                end
+                index += char_width(code)
+                column += 1
+                if index - value_start > 1048576:
+                    call diagnostics.fail(path, start_line, start_column, max(1, column - start_column), source_line(lines, start_line), "E0010", "String literal exceeds 1 MiB", "load large data from a file at runtime")
+                end
+            end
+            if not closed:
+                call diagnostics.fail(path, start_line, start_column, max(1, column - start_column), source_line(lines, start_line), "E0001", "unterminated String literal", "add the matching quote")
+            end
+            value = __lsl_text_piece(text, value_start, index - value_start)
+            index += 1
+            column += 1
+            result.append(token("string", value, start_line, start_column, column))
         elif code == 34 or code == 39 or (code == 108 and index + 1 < count and (__lsl_text_byte(text, index + 1) == 34 or __lsl_text_byte(text, index + 1) == 39)):
             lux_string = code == 108
             start_line = line

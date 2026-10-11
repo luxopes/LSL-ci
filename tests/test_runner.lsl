@@ -297,6 +297,9 @@ end
 gc_bigheap_test = test_path("gc-bigheap-test")
 call require_success(run_compiler(["tests/gc_bigheap_threads_conformance.lsl", gc_bigheap_test]), "compile gc bigheap threads conformance")
 call require_output(gc_bigheap_test, [], "tests/gc_bigheap_threads_conformance.out", "gc bigheap threads output differs")
+gc_stream_test = test_path("gc-stream-worker-test")
+call require_success(run_compiler(["tests/gc_stream_worker_conformance.lsl", gc_stream_test]), "compile gc stream worker conformance")
+call require_output(gc_stream_test, [], "tests/gc_stream_worker_conformance.out", "gc() during worker capture_stream corrupted the stream")
 string_split_test = test_path("string-split-test")
 call require_success(run_compiler(["tests/string_split_conformance.lsl", string_split_test]), "compile String split conformance")
 call require_output(string_split_test, [], "tests/string_split_conformance.out", "String split output differs")
@@ -327,7 +330,7 @@ end
 call require_success(run_compiler(["compiler/pure/cli.lsl", cli_test]), "compile stdin CLI")
 call require_hardened_elf(cli_test)
 help_output = capture(cli_test, ["--help"])
-expected_help = "Lux Simple Lang (LSL) 0.9.0 BETA" + chr(10)
+expected_help = "Lux Simple Lang (LSL) 0.9.1" + chr(10)
 expected_help += chr(10)
 expected_help += "Usage:" + chr(10)
 expected_help += "  lsl [SOURCE [ARG...]]" + chr(10)
@@ -381,11 +384,11 @@ if capture_status() != 0 or tui_keys_output != "buffered terminal keys passed" +
     Error(TestFailure: "buffered terminal keys differ")
 end
 version_output = capture(cli_test, ["version"])
-if capture_status() != 0 or version_output != "0.9.0" + chr(10):
+if capture_status() != 0 or version_output != "0.9.1" + chr(10):
     Error(TestFailure: "CLI version output differs")
 end
 version_flag_output = capture(cli_test, ["--version"])
-if capture_status() != 0 or version_flag_output != "0.9.0" + chr(10):
+if capture_status() != 0 or version_flag_output != "0.9.1" + chr(10):
     Error(TestFailure: "CLI --version output differs")
 end
 config_output = capture(cli_test, ["config", "examples/config/system.lsl"])
@@ -806,6 +809,9 @@ end
 extensions_test = test_path("language-extensions-negative")
 call require_success(run_compiler(["tests/compiler/language_extensions_negative.lsl", extensions_test]), "compile language extension diagnostics")
 call require_output(extensions_test, [compiler, test_root], "tests/compiler/language_extensions_negative.out", "language extension diagnostics differ")
+language_091_test = test_path("language-091-negative")
+call require_success(run_compiler(["tests/compiler/language_091_negative.lsl", language_091_test]), "compile 0.9.1 language diagnostics")
+call require_output(language_091_test, [compiler, test_root], "tests/compiler/language_091_negative.out", "0.9.1 language diagnostics differ")
 
 json_fuzz_test = test_path("json-fuzz-test")
 gc_stress_test = test_path("gc-stress-test")

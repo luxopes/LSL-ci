@@ -168,6 +168,48 @@ function remove_deleted(body, assigned):
     end
 end
 
+# Celočíselný literál (i se znaménkem) jako [True, hodnota], jinak [False, 0].
+# V interním ABI jsou None a 0 stejná raw hodnota, proto dvojice.
+function literal_integer(node):
+    sign = 1
+    if node["kind"] == "unary" and node["operator"] == "-":
+        sign = -1
+        node = node["operand"]
+    end
+    if node["kind"] == "literal" and node.get("literal_kind", "") == "number" and "integer_value" in node:
+        return [True, sign * __lsl_typed_int(node["integer_value"])]
+    end
+    return [False, 0]
+end
+
+# Smyčka, která prokazatelně proběhne aspoň jednou: rang s literály dávající
+# aspoň jednu hodnotu nebo neprázdný literál List/Tuple/String. Jinak False.
+function nonempty_iterable(node):
+    kind = node["kind"]
+    if kind == "list" or kind == "tuple" or kind == "real_array":
+        return len(node["items"]) > 0
+    elif kind == "literal" and node.get("literal_kind", "") == "string":
+        return len(node["value"]) > 0
+    elif kind == "call" and node["target"]["kind"] == "name" and (node["target"]["name"] == "rang" or node["target"]["name"] == "range") and "argument_names" not in node:
+        values = []
+        for argument in node["arguments"]:
+            number = literal_integer(argument)
+            if not number[0]:
+                return False
+            end
+            values.append(number[1])
+        end
+        if len(values) == 1:
+            return values[0] > 0
+        elif len(values) == 2:
+            return values[0] < values[1]
+        elif len(values) == 3:
+            return (values[2] > 0 and values[0] < values[1]) or (values[2] < 0 and values[0] > values[1])
+        end
+    end
+    return False
+end
+
 function statements(context, body, assigned, loop_state):
     for statement in body:
         if assigned == None:
@@ -231,6 +273,9 @@ function statements(context, body, assigned, loop_state):
             first_entry = Dictionary(entry)
             backedge = statements(context, statement["body"], entry, edges)
             backedge = meet(backedge, edges["continues"])
+            nonempty = kind == "for" and nonempty_iterable(statement["iterable"])
+            # Neprázdná smyčka skončí až po některém průchodu tělem.
+            exits = meet(backedge, edges["breaks"])
             # A deletion on a back edge must not expose a stale slot in the
             # next condition/body, even if the first iteration was initialized.
             if backedge != None:
@@ -244,11 +289,15 @@ function statements(context, body, assigned, loop_state):
                     next_entry[statement["index_name"]] = True
                 end
                 if next_entry != first_entry:
-                    call statements(context, statement["body"], next_entry, {"breaks": None, "continues": None})
+                    next_edges = {"breaks": None, "continues": None}
+                    next_backedge = statements(context, statement["body"], next_entry, next_edges)
+                    exits = meet(exits, meet(meet(next_backedge, next_edges["continues"]), next_edges["breaks"]))
                 end
             end
             if condition[0] and condition[1]:
                 assigned = edges["breaks"]
+            elif nonempty:
+                assigned = exits
             else:
                 assigned = meet(assigned, backedge)
                 assigned = meet(assigned, edges["breaks"])

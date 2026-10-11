@@ -1,6 +1,6 @@
 # AI 1.1.0: chat, nástroje a průběžné SSE; samostatný balíček: lsl install aikit.
 load _ai_platform as platform
-# Použití balíčku v LSL 0.8.9: load aikit as ai; dokumentace: https://lsl.lux-ai.cz/#ai
+# Od LSL 0.9.1: lsl update ai stáhne aikit; load ai pak použije novější verzi; dokumentace: https://lsl.lux-ai.cz/#ai
 
 load http
 load json

@@ -25,9 +25,9 @@ function reinstall_managed(prefix):
             call update_install.health(active, previous_version, work)
         end
         generation = update_install.private_work(store + "/generations")
-        call update_install.install_stage(executable_path(), generation, "0.9.0", work)
+        call update_install.install_stage(executable_path(), generation, "0.9.1", work)
         call update_install.prepare(prefix, prefix + "/bin/lsl", previous_version, work)
-        call update_install.activate(store, generation, "0.9.0", work)
+        call update_install.activate(store, generation, "0.9.1", work)
     else:
         failure = last_error()
     end
@@ -43,7 +43,7 @@ function reinstall_managed(prefix):
     elif cleanup_failure != None:
         Error(InstallError: String(cleanup_failure))
     end
-    print "Installed LSL 0.9.0 BETA atomically; previous version retained for rollback."
+    print "Installed LSL 0.9.1 atomically; previous version retained for rollback."
 end
 
 function dirname(path):
@@ -70,15 +70,15 @@ function source_root():
     if exists(repository + "/compiler/pure/install.lsl"):
         return repository
     end
-    prefix = dirname(binary_directory)
-    prefix_bin = prefix + "/bin"
-    if prefix == "/":
-        prefix_bin = "/bin"
+    candidate_prefix = dirname(binary_directory)
+    candidate_bin = candidate_prefix + "/bin"
+    if candidate_prefix == "/":
+        candidate_bin = "/bin"
     end
-    if binary_directory == prefix_bin:
+    if binary_directory == candidate_bin:
         # Preserve the trusted prefix even if the installation is incomplete;
         # subsequent reads fail instead of falling back to the caller's cwd.
-        return prefix + "/lib/lsl"
+        return candidate_prefix + "/lib/lsl"
     end
     # Development-only fallback for an installer freshly compiled outside the
     # repository. Real repository and installed binaries always resolve above.
@@ -277,4 +277,4 @@ end
 call copy_text(source_path("docs/developer_guides/SOURCE.json"), prefix + "/lib/lsl/docs/developer_guides/SOURCE.json")
 done += 1
 call report_progress(done, total)
-print "installed LSL 0.9.0 BETA into", prefix
+print "installed LSL 0.9.1 into", prefix

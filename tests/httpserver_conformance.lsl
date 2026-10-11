@@ -103,6 +103,43 @@ function memory_child_worker():
     return None
 end
 
+# 0.9.1: sloučené opakované hlavičky a streamované odpovědi.
+function header_handler(request):
+    headers = request["headers"]
+    return {"body": "via=" + headers.get("via", "-") + "|xff=" + headers.get("x-forwarded-for", "-") + "|cookie=" + headers.get("cookie", "-") + chr(10)}
+end
+
+function header_server_worker():
+    call httpserver.serve_listener(listener_box[0], -1, header_handler, 5, False)
+    return None
+end
+
+function stream_events(stream):
+    call httpserver.sse_event(stream, "first")
+    call httpserver.sse_event(stream, "two" + chr(10) + "lines", "update")
+    call httpserver.stream_write(stream, "")
+    call httpserver.stream_write(stream, httpserver.text_bytes(": raw" + chr(10) + chr(10)))
+end
+
+function stream_broken(stream):
+    call httpserver.stream_write(stream, "partial")
+    Error(TestStreamError: "producer failed mid-stream")
+end
+
+function stream_handler(request):
+    if request["target"] == "/broken":
+        return {"content_type": "text/event-stream", "stream": stream_broken}
+    elif request["target"] == "/invalid":
+        return {"stream": "not a function"}
+    end
+    return {"content_type": "text/event-stream", "stream": stream_events}
+end
+
+function stream_server_worker():
+    call httpserver.serve_listener(listener_box[0], -1, stream_handler, 5, False)
+    return None
+end
+
 function roundtrip_server_worker():
     call httpserver.serve_listener(listener_box[0], -1, roundtrip_handler, 3, False)
     return None
@@ -434,6 +471,41 @@ while memory_index < MEMORY_REQUESTS:
 end
 call require(thread_join(memory_child) == 0, "memory server thread join failed")
 call require(memory_child_status[0] == 0, "memory endurance server failed with status " + String(memory_child_status[0]))
+
+header_listener = httpserver.listen_ipv4("127.0.0.1", 0, 16)
+listener_box[0] = header_listener
+port_box[0] = httpserver.local_port(header_listener)
+header_worker = thread_spawn(header_server_worker)
+merged_response = exchange("GET / HTTP/1.1" + separator + "Host: localhost" + separator + "Via: 1.1 cdn" + separator + "via: 1.1 caddy" + separator + "X-Forwarded-For: 10.0.0.1" + separator + "X-Forwarded-For: 10.0.0.2, 10.0.0.3" + separator + "Cookie: a=1" + separator + "Cookie: b=2" + separator + separator)
+call require(merged_response.startswith("HTTP/1.1 200 OK"), "repeated list headers were rejected")
+call require(merged_response.endswith("via=1.1 cdn, 1.1 caddy|xff=10.0.0.1, 10.0.0.2, 10.0.0.3|cookie=a=1; b=2" + chr(10)), "repeated headers were not merged: " + merged_response)
+for smuggling in ["Content-Length: 0" + separator + "Content-Length: 0", "Host: other", "Transfer-Encoding: chunked" + separator + "Transfer-Encoding: chunked"]:
+    smuggling_response = exchange("GET / HTTP/1.1" + separator + "Host: localhost" + separator + smuggling + separator + separator)
+    call require(smuggling_response.startswith("HTTP/1.1 400 Bad Request") and "duplicate header: " in smuggling_response, "duplicate framing header was accepted: " + smuggling)
+end
+single_response = exchange("GET / HTTP/1.1" + separator + "Host: localhost" + separator + separator)
+call require(single_response.endswith("via=-|xff=-|cookie=-" + chr(10)), "single request headers changed")
+call require(thread_join(header_worker) == 0, "HTTP header server worker did not exit cleanly")
+
+stream_listener = httpserver.listen_ipv4("127.0.0.1", 0, 16)
+listener_box[0] = stream_listener
+port_box[0] = httpserver.local_port(stream_listener)
+stream_worker = thread_spawn(stream_server_worker)
+chunked_response = exchange("GET /events HTTP/1.1" + separator + "Host: localhost" + separator + separator)
+stream_head = chunked_response[0:chunked_response.find(separator + separator)]
+stream_body = chunked_response[chunked_response.find(separator + separator) + 4:len(chunked_response)]
+call require(stream_head.startswith("HTTP/1.1 200 OK") and "Transfer-Encoding: chunked" in stream_head and "Content-Type: text/event-stream" in stream_head and "Content-Length" not in stream_head, "streamed response head is wrong: " + stream_head)
+expected_events = "d" + separator + "data: first" + chr(10) + chr(10) + separator + "25" + separator + "event: update" + chr(10) + "data: two" + chr(10) + "data: lines" + chr(10) + chr(10) + separator + "7" + separator + ": raw" + chr(10) + chr(10) + separator + "0" + separator + separator
+call require(stream_body == expected_events, "chunked SSE body differs: " + stream_body)
+plain_response = exchange("GET /events HTTP/1.0" + separator + separator)
+call require(plain_response.startswith("HTTP/1.1 200 OK") and "Transfer-Encoding" not in plain_response and plain_response.endswith(separator + separator + "data: first" + chr(10) + chr(10) + "event: update" + chr(10) + "data: two" + chr(10) + "data: lines" + chr(10) + chr(10) + ": raw" + chr(10) + chr(10)), "HTTP/1.0 stream is not close-delimited: " + plain_response)
+broken_response = exchange("GET /broken HTTP/1.1" + separator + "Host: localhost" + separator + separator)
+call require(broken_response.endswith("7" + separator + "partial" + separator), "failed producer must end without the final chunk: " + broken_response)
+head_stream_response = exchange("HEAD /events HTTP/1.1" + separator + "Host: localhost" + separator + separator)
+call require(head_stream_response.endswith(separator + separator) and "data:" not in head_stream_response, "HEAD streamed a body")
+invalid_stream_response = exchange("GET /invalid HTTP/1.1" + separator + "Host: localhost" + separator + separator)
+call require(invalid_stream_response.startswith("HTTP/1.1 500 Internal Server Error"), "non-Function stream was accepted")
+call require(thread_join(stream_worker) == 0, "HTTP stream server worker did not exit cleanly")
 
 call unlink(escape_path)
 call unlink(fifo_path)

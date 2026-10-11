@@ -12,19 +12,19 @@ function invalid_cast(value):
     try:
         call IntArray(value)
     else:
-        check(last_error() == "TypeError: IntArray cast requires an existing IntArray", "IntArray error changed")
+        check(last_error() == "TypeError: IntArray(value) only converts an existing IntArray; create an empty one with IntArray() and add items with append", "IntArray error changed")
         caught += 1
     end
     try:
         call FloatArray(value)
     else:
-        check(last_error() == "TypeError: FloatArray cast requires an existing FloatArray", "FloatArray error changed")
+        check(last_error() == "TypeError: FloatArray(value) only converts an existing FloatArray; create an empty one with FloatArray() and add items with append", "FloatArray error changed")
         caught += 1
     end
     try:
         call ByteArray(value)
     else:
-        check(last_error() == "TypeError: ByteArray cast requires an existing ByteArray", "ByteArray error changed")
+        check(last_error() == "TypeError: ByteArray(value) only converts an existing ByteArray; create an empty one with ByteArray() and add items with append", "ByteArray error changed")
         caught += 1
     end
     check(caught == 3, "an invalid typed-array cast succeeded")

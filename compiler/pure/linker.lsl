@@ -419,6 +419,19 @@ function transform_statements(statements, own_functions, imported_names, namespa
             statement["name"] = own_functions[statement["name"]]
             local_names = scoped_names(own_functions, statement["parameters"], statement["body"])
             local_imports = scoped_names(imported_names, statement["parameters"], statement["body"])
+            # Jména z global se nestínají lokální proměnnou: zůstává jméno modulu.
+            if "globals" in statement:
+                renamed = []
+                for declared in statement["globals"]:
+                    if declared in own_functions:
+                        local_names[declared] = own_functions[declared]
+                        renamed.append(own_functions[declared])
+                    else:
+                        renamed.append(declared)
+                    end
+                end
+                statement["globals"] = renamed
+            end
             call transform_statements(statement["body"], local_names, local_imports, namespaces)
         elif kind == "assign":
             call transform_expression(statement["target"], own_functions, imported_names, namespaces)
@@ -455,6 +468,8 @@ function transform_statements(statements, own_functions, imported_names, namespa
             call transform_expression(statement["message"], own_functions, imported_names, namespaces)
         elif kind == "delete":
             call transform_expression(statement["target"], own_functions, imported_names, namespaces)
+        elif kind == "global":
+            statement["names"] = [own_functions.get(declared, declared) for declared in statement["names"]]
         elif kind == "class":
             statement["name"] = own_functions[statement["name"]]
             call transform_expression(statement["condition"], own_functions, imported_names, namespaces)

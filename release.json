@@ -1,7 +1,7 @@
 {
-  "version": "0.9.0",
-  "status": "BETA",
-  "tag": "v0.9.0-beta.1",
+  "version": "0.9.1",
+  "status": "STABLE",
+  "tag": "v0.9.1",
   "platforms": [
     "linux-x86_64"
   ],
@@ -13,7 +13,7 @@
   },
   "manual": {
     "repository": "https://git.lux-ai.cz/LuxAI/LSL-Web.git",
-    "commit": "1dec19e655bfeb0148d3090ee90b66ab1bd66622",
+    "commit": "7e50faceb5f79a17af234ff4c10be969147841e3",
     "path": "public",
     "directory": "build/dependencies/LSL-Web"
   },

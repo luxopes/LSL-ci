@@ -1,4 +1,4 @@
-# LSL 0.9.0 BETA pro Linux x86_64
+# LSL 0.9.1 pro Linux x86_64
 
 Spustitelné nástroje jsou v `bin/`, standardní knihovna, zdroj frontendu a
 připnuté offline manuály v `lib/lsl/`. Instalace není nutná:
@@ -16,9 +16,8 @@ Výsledné programy jsou statické Linux x86_64 PIE ELF s ASLR a neproveditelný
 stackem, bez libc a dynamického interpreteru. Spuštění už přeloženého programu
 binutils nepotřebuje. C QBE se automaticky nepoužívá.
 
-Jde o prerelease **BETA**; `lsl version` vypisuje kanonické `0.9.0`.
-Podepsaný `lsl update` sleduje stabilní kanál, proto se BETA instaluje z
-příslušného archivu. Instalátor zachovává předchozí spravovanou generaci
+Stabilní vydání; `lsl version` vypisuje `0.9.1`. Podepsaný `lsl update`
+sleduje stabilní kanál. Instalátor zachovává předchozí spravovanou generaci
 pro `lsl update --rollback`. Další OS a architektury nejsou součástí vydání.
 
 ## Self-host
@@ -59,10 +58,12 @@ běžný self-host starší instalaci nepotřebuje. `bin/lsl-test` potřebuje
 
 ## Známé omezení
 
-Překlad velkého společného zdroje compileru byl v měření proti 0.8.9
-**o 41,4 % pomalejší** (11,399 s proti 8,062 s). Náprava času překladu je
-plánovaná pro 0.9.1. Tento údaj se týká překladu, nikoli času běhu programu;
-podrobnosti jsou ve zdrojovém archivu v `tools/qbe/LUXIR_BENCHMARK_20261011.md`.
+Překlad i běh jsou stejně rychlé nebo rychlejší než 0.9.0. Překlad velkého
+zdroje compileru zůstává pomalejší než v 0.8.9 (backend LuxIR, viz
+`tools/qbe/LUXIR_BENCHMARK_20261011.md` ve zdrojovém archivu); výsledné
+programy jsou rychlejší. Převod desetinného textu na Float není u části
+sedmnáctimístných čísel správně zaokrouhlený (1–2 ulp); oprava je plánovaná
+pro 0.9.2.
 
 ## Volitelné CUDA
 

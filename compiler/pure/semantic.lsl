@@ -1489,14 +1489,114 @@ function infer_function_returns(functions, classes, parameter_types, global_type
 end
 
 
+# Přiřazení do jména globálu uvnitř funkce bez deklarace global by tiše
+# vytvořilo lokální proměnnou a globál by se nezměnil.
+function find_global_assignments(statements, globals, skipped, found):
+    for statement in statements:
+        kind = statement["kind"]
+        if kind == "assign":
+            target = statement["target"]
+            if target["kind"] == "name":
+                assigned = target["name"]
+                if assigned in globals and assigned not in skipped and not assigned.startswith("@"):
+                    found.append(statement)
+                end
+            end
+        elif kind == "if":
+            for branch in statement["branches"]:
+                call find_global_assignments(branch[1], globals, skipped, found)
+            end
+            call find_global_assignments(statement["otherwise"], globals, skipped, found)
+        elif kind == "while" or kind == "loop" or kind == "unsafe" or kind == "for":
+            call find_global_assignments(statement["body"], globals, skipped, found)
+        elif kind == "safe" or kind == "try":
+            call find_global_assignments(statement["body"], globals, skipped, found)
+            call find_global_assignments(statement["otherwise"], globals, skipped, found)
+        end
+    end
+end
+
+# Prefix modulu funkce: globály importovaného modulu mají jména
+# "@lsl_module_N@jméno", jeho lokální proměnné prefix nemají.
+function module_prefix_of(name):
+    text = String(name)
+    if text.startswith("@lsl_module_"):
+        rest = text[1:len(text)]
+        return text[0:rest.find("@") + 2]
+    end
+    return ""
+end
+
+function check_global_shadowing(unit, declaration):
+    skipped = {}
+    for parameter in declaration["parameters"]:
+        skipped[parameter] = True
+    end
+    prefix = module_prefix_of(declaration["name"])
+    # Vestavěná standardní knihovna sdílí jména se vstupním modulem.
+    if prefix == "" and declaration.get("path", unit["path"]) != unit["path"]:
+        return
+    end
+    globals = {}
+    for variable in unit["variables"].keys():
+        if module_prefix_of(variable) == prefix:
+            globals[String(variable)[len(prefix):len(String(variable))]] = True
+        end
+    end
+    for declared in declaration.get("globals", []):
+        skipped[String(declared)[len(prefix):len(String(declared))]] = True
+    end
+    found = []
+    call find_global_assignments(declaration["body"], globals, skipped, found)
+    reported = {}
+    for statement in found:
+        assigned = statement["target"]["name"]
+        if assigned in reported:
+            continue
+        end
+        reported[assigned] = True
+        width = max(1, statement["target"]["end_column"] - statement["target"]["column"])
+        details = context(unit["path"], unit["source"], statement["target"])
+        call diagnostics.warn(details["path"], statement["target"]["line"], statement["target"]["column"], width, details["source"], "W2004", "assignment to '" + assigned + "' inside a function creates a local variable; the global '" + assigned + "' is not changed", "write global " + assigned + " at the start of the function to change the global, or use a different local name")
+    end
+end
+
+# global x ve funkci: proměnná musí existovat na úrovni modulu.
+function check_declared_globals(unit, declaration):
+    for declared in declaration.get("globals", []):
+        if declared not in unit["variables"]:
+            shown = String(declared).split("@")[-1]
+            width = max(1, declaration["end_column"] - declaration["column"])
+            details = context(unit["path"], unit["source"], declaration)
+            call diagnostics.fail(details["path"], declaration["line"], declaration["column"], width, details["source"], "E2005", "global '" + shown + "' has no module-level variable", "assign " + shown + " at module level before using global " + shown)
+        end
+    end
+end
+
+# Globál zapisovaný z funkce může mít libovolný typ; slot musí být Any.
+function widen_written_globals(types, written):
+    for name in written.keys():
+        if name in types:
+            types[name] = "Any"
+        end
+    end
+end
+
 # Lokální jména mají stabilní pořadová ID; rozložení zásobníku určí backend.
 function analyze_function(unit, declaration):
     name = declaration["name"]
+    call check_declared_globals(unit, declaration)
+    call check_global_shadowing(unit, declaration)
     variables = {}
     for parameter in declaration["parameters"]:
         variables[parameter] = len(variables) + 1
     end
     call collect_variables(declaration["body"], variables)
+    for declared in declaration.get("globals", []):
+        if declared in variables:
+            del(variables[declared])
+        end
+    end
     global_reads = flow.check(unit["path"], unit["source"], declaration["body"], variables, declaration["parameters"], constant_truth_expression, constant_if_body, unit["noreturn"], unit["variables"])
     # The Dictionary constructor preserves insertion order and value identity,
     # without allocating a key list and performing one lookup per global.
@@ -1584,13 +1684,21 @@ function analyze(path, source, program, internal_abi):
             end
         end
     end
+    written_globals = {}
+    for function_name in functions.keys():
+        for declared in functions[function_name].get("globals", []):
+            written_globals[declared] = True
+        end
+    end
     main_types = {}
     call collect_types_stable(program, main_types, function_returns)
+    call widen_written_globals(main_types, written_globals)
     # Global types and return types depend on each other; one more round with
     # the globals visible resolves returns that read global state.
     function_returns = infer_function_returns(functions, classes, parameter_types, main_types)
     main_types = {}
     call collect_types_stable(program, main_types, function_returns)
+    call widen_written_globals(main_types, written_globals)
     if not internal_abi and has_specialization_candidate(functions) and not program_blocks_specialization(program):
         # Direct-call observations propagate parameter types through helper
         # chains. Escaping callbacks retain their dynamic ABI.
@@ -1598,6 +1706,7 @@ function analyze(path, source, program, internal_abi):
         function_returns = infer_function_returns(functions, classes, parameter_types, main_types)
         main_types = {}
         call collect_types_stable(program, main_types, function_returns)
+        call widen_written_globals(main_types, written_globals)
     end
     unit = {"path": path, "source": source, "program": program, "internal_abi": internal_abi, "unchecked_intarray": source_has_directive(source, "# lsl: unchecked-intarray"), "classes": classes, "functions": functions, "noreturn": noreturn, "function_parameters": parameter_types, "function_returns": function_returns, "variables": main_variables, "types": main_types, "global_reads": guarded_main_reads, "mutable_globals": mutable_globals, "function_scopes": {}}
     scopes = unit["function_scopes"]

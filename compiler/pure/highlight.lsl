@@ -3,7 +3,7 @@
 # scanner mirrors the lexer's token classes but never fails: unterminated
 # Strings or comments simply colour the rest of the line.
 
-KEYWORDS = ["function", "end", "if", "elif", "else", "while", "for", "in", "loop", "break", "continue", "return", "class", "ctype", "try", "safe", "unsafe", "load", "from", "as", "del", "call", "print", "printl", "input", "and", "or", "not", "Error", "self"]
+KEYWORDS = ["function", "end", "if", "elif", "else", "while", "for", "in", "loop", "break", "continue", "return", "class", "ctype", "try", "safe", "unsafe", "load", "from", "as", "del", "call", "print", "printl", "printr", "input", "and", "or", "not", "Error", "self"]
 CONSTANTS = ["True", "False", "None"]
 BUILTINS = ["len", "type", "String", "Int", "Float", "Bool", "List", "Tuple", "Dictionary", "IntArray", "FloatArray", "ByteArray", "RealArray", "rang", "range", "abs", "sqrt", "sum", "min", "max", "sorted", "chr", "ord", "readfile", "writefile", "exists", "exit", "arg", "help", "gc", "monotonic", "clock", "run", "capture", "system"]
 

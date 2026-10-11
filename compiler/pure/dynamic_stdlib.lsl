@@ -273,13 +273,16 @@ function __lsl_help_text(topic):
         "version": "lsl version\nPrint the installed LSL version, suitable for scripts. Equivalent: lsl --version.",
         "print": "print VALUE [, VALUE...]\nPrint values separated by spaces and end with a newline.\nExample: print \"answer\", 42",
         "printl": "printl \"text {EXPRESSION}\"\nPrint an interpolated Lux String and a newline. Equivalent: print l\"text {EXPRESSION}\".",
+        "global": "global NAME [, NAME...]\nInside a function, assignments to NAME change the module-level variable.\nWithout it, assigning a global's name creates a local and warns with W2004.",
+        "lock": "lock LOCKS[, SLOT]: ... end\nSpinlock over an IntArray slot (default 0) that is released even when the body fails.\nreturn, break and continue may not leave the block.",
+        "printr": "printr VALUE [, VALUE...]\nPrint values exactly as they are, without separators or a trailing newline.\nExample: printr r\"C:\\path\", \"\\n\"",
         "input": "input(PROMPT) -> String\nRead one input line after displaying PROMPT.\nExample: name = input(\"Name: \")",
         "function": "function NAME(PARAMETERS): ... end\nDeclare a function. return VALUE returns a result; omitted return yields None.\nImmutable default values and named arguments are supported for declared functions.",
         "return": "return VALUE\nReturn a value from a function. A bare return returns None.",
         "class": "class NAME(True): ... end\nDeclare a class. Define init(self, ...) as the constructor.\nclass Child(Parent) inherits methods; origin.method(...) invokes the parent.",
         "ctype": "ctype Public | Private\nSelect class export visibility. Public is the default; Private prevents module export.",
         "if": "if CONDITION: ... elif CONDITION: ... else: ... end\nConditional execution; elif and else are optional.",
-        "for": "for ITEM in ITERABLE: ... end\nIterate over a collection. Comprehensions additionally support flat unpacking.\nExample: [x*x for x in rang(10) if x % 2 == 0].",
+        "for": "for ITEM in ITERABLE: ... end\nIterate over a collection. for A, B in PAIRS unpacks each item (List or Tuple of matching length).\nExample: for name, score in [(\"a\", 1), (\"b\", 2)]: print name, score end",
         "while": "while CONDITION: ... end\nRepeat while the condition is true; break exits, continue advances the loop.",
         "loop": "loop: ... end\nAn unconditional loop. Use break to leave it.",
         "break": "break\nExit the innermost loop.",
@@ -348,14 +351,14 @@ function __lsl_help_text(topic):
     if topic == "":
         names = topics.keys()
         call names.sort()
-        return "Lux Simple Lang (LSL) 0.8.9" + chr(10) + "Use help(\"TOPIC\") for details; lsl man opens the full offline manual." + chr(10) + "topics: " + " ".join(names)
+        return "Lux Simple Lang (LSL) 0.9.1" + chr(10) + "Use help(\"TOPIC\") for details; lsl man opens the full offline manual." + chr(10) + "topics: " + " ".join(names)
     end
     about = __lsl_library_about(topic)
     if topic not in topics:
         if about != "":
             return about
         end
-        Error(HelpError: "unknown help topic; call help() to list supported topics")
+        return "No help available for topic: " + topic + ". Call help() to list supported topics."
     end
     if about != "":
         return about + chr(10) + topics[topic]
@@ -465,7 +468,7 @@ function __lsl_about_text(name):
         Error(TypeError: "about name must be a String")
     end
     if name == "":
-        return "Lux Simple Lang (LSL) 0.8.9" + chr(10) + "A small self-hosted programming language: the compiler writes static Linux x86_64 ELF binaries directly and the runtime uses plain syscalls, with no libc, assembler or linker. Programs read like scripts, run as native code, and can use declarative configuration, AI clients, GUI packages and optional CUDA tensors." + chr(10) + "Website and manual: https://lsl.lux-ai.cz/  (offline: lsl man)" + chr(10) + "License: MIT"
+        return "Lux Simple Lang (LSL) 0.9.1" + chr(10) + "A small self-hosted programming language: the compiler writes static Linux x86_64 ELF binaries directly and the runtime uses plain syscalls, with no libc, assembler or linker. Programs read like scripts, run as native code, and can use declarative configuration, AI clients, GUI packages and optional CUDA tensors." + chr(10) + "Website and manual: https://lsl.lux-ai.cz/  (offline: lsl man)" + chr(10) + "License: MIT"
     end
     about = __lsl_library_about(name)
     if about == "":
@@ -2108,11 +2111,24 @@ function __lsl_equal_seen(left, right, seen_left, seen_right, depth):
 end
 
 function __lsl_equal(left, right):
+    # Rychlá cesta zůstává první: kompilátor i programy porovnávají hlavně
+    # stejné Stringy a Int. Jen Float s NaN se sám sobě nerovná.
     if __lsl_raw_equal(left, right):
-        return True
+        if __lsl_type_code(left) != 6:
+            return True
+        end
+        Float(same_number) = __lsl_float_any(left)
+        return same_number == same_number
     end
     left_code = __lsl_type_code(left)
     right_code = __lsl_type_code(right)
+    # Float jako ve staticky typované cestě: IEEE (0.0 == -0.0) a Int/Bool
+    # proti Float číselně, nikoli podle bitů.
+    if (left_code == 6 and (right_code == 6 or right_code == 0 or right_code == 9 or right_code == 4)) or (right_code == 6 and (left_code == 0 or left_code == 9 or left_code == 4)):
+        Float(left_number) = __lsl_float_any(left)
+        Float(right_number) = __lsl_float_any(right)
+        return left_number == right_number
+    end
     if left_code != right_code:
         return False
     end

@@ -1,2 +1,3 @@
-captured LSL runtime error: ServerError: broken 1 False
+captured error[ServerError]: broken
+ help: handle expected errors with try: ... else: ... end or safe: ... end 1 False
 ProcessError: process exited with status 1

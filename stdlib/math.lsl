@@ -29,12 +29,193 @@ function ceil(value):
     return truncated
 end
 
-function round(value):
-    number = Float(value)
-    if number >= 0.0:
-        return floor(number + 0.5)
+# Desetinný zápis Floatu podle nejkratšího String(x): [záporné, číslice, tečka],
+# hodnota = 0.číslice × 10^tečka, číslice bez úvodních nul.
+function decimal_parts(number):
+    text = String(number)
+    negative = text.startswith("-")
+    if negative:
+        text = text[1:len(text)]
     end
-    return ceil(number - 0.5)
+    exponent = 0
+    marker = text.find("e")
+    if marker >= 0:
+        power = text[marker + 1:len(text)]
+        if power.startswith("+"):
+            power = power[1:len(power)]
+        end
+        exponent = Int(power)
+        text = text[0:marker]
+    end
+    dot = text.find(".")
+    whole = text
+    fraction = ""
+    if dot >= 0:
+        whole = text[0:dot]
+        fraction = text[dot + 1:len(text)]
+    end
+    digits = whole + fraction
+    point = len(whole) + exponent
+    while len(digits) > 1 and digits[0] == "0":
+        digits = digits[1:len(digits)]
+        point -= 1
+    end
+    return [negative, digits, point]
+end
+
+function check_digits(digits):
+    if type(digits) != "Int":
+        Error(TypeError: "digits must be Int, got " + type(digits))
+    end
+end
+
+# Zaokrouhlení (round_half=True) nebo oseknutí na places desetinných míst.
+function decimal_round(value, places, round_half):
+    number = Float(value)
+    if number != number or number - number != 0.0 or number == 0.0:
+        return number
+    end
+    parts = decimal_parts(number)
+    digits = parts[1]
+    point = parts[2]
+    keep = point + places
+    if keep >= len(digits):
+        return number
+    end
+    kept = ""
+    if keep > 0:
+        kept = digits[0:keep]
+    end
+    if keep >= 0 and round_half and Int(digits[keep]) >= 5:
+        carried = ""
+        carry = True
+        index = len(kept) - 1
+        while index >= 0:
+            digit = Int(kept[index])
+            if carry:
+                digit += 1
+                carry = digit == 10
+                if carry:
+                    digit = 0
+                end
+            end
+            carried = String(digit) + carried
+            index -= 1
+        end
+        if carry:
+            carried = "1" + carried
+            point += 1
+        end
+        kept = carried
+    end
+    if kept == "" or kept.replace("0", "") == "":
+        return 0.0
+    end
+    result = Float("0." + kept + "e" + String(point))
+    if parts[0]:
+        return -result
+    end
+    return result
+end
+
+# Int vstup: přesné zaokrouhlení na desítky, stovky… bez převodu na Float.
+function integer_round(value, places, round_half):
+    if places >= 0 or value == 0:
+        return value
+    elif value == -9223372036854775807 - 1:
+        Error(ValueError: "value is outside the Int range")
+    elif -places >= 19:
+        return 0
+    end
+    unit = 1
+    for step in rang(-places):
+        unit *= 10
+    end
+    negative = value < 0
+    magnitude = value
+    if negative:
+        magnitude = -value
+    end
+    remainder = magnitude % unit
+    base = magnitude - remainder
+    if round_half and remainder >= unit - remainder:
+        if base > 9223372036854775807 - unit:
+            Error(ValueError: "rounded value is outside the Int range")
+        end
+        base += unit
+    end
+    if negative:
+        return -base
+    end
+    return base
+end
+
+# Převod Float na Int jen pro konečné hodnoty v rozsahu Int.
+function check_integral(number):
+    if number != number:
+        Error(ValueError: "cannot convert NaN to Int")
+    elif number - number != 0.0:
+        Error(ValueError: "cannot convert Infinity to Int")
+    elif number >= 9223372036854775807.0 or number < -9223372036854775808.0:
+        Error(ValueError: "value is outside the Int range")
+    end
+end
+
+function numeric_argument(value):
+    if type(value) != "Int" and type(value) != "Float" and type(value) != "Bool":
+        Error(TypeError: "value must be Int or Float, got " + type(value))
+    end
+end
+
+# round(x) zaokrouhlí na Int (poloviny od nuly); round(x, digits) u Float
+# vrací Float zaokrouhlený na digits desetinných míst (záporné digits:
+# desítky, stovky…); Int zůstává Int.
+function round(value, digits=None):
+    call numeric_argument(value)
+    if digits != None:
+        call check_digits(digits)
+        if type(value) != "Float":
+            return integer_round(Int(value), digits, True)
+        end
+        return decimal_round(value, digits, True)
+    end
+    if type(value) != "Float":
+        return Int(value)
+    end
+    number = Float(value)
+    call check_integral(number)
+    # Rozdíl od celé části je přesný; number + 0.5 by se mohlo zaokrouhlit
+    # nahoru (0.49999999999999994 -> 1).
+    if number >= 0.0:
+        whole = floor(number)
+        if number - Float(whole) >= 0.5:
+            return whole + 1
+        end
+        return whole
+    end
+    whole = ceil(number)
+    if Float(whole) - number >= 0.5:
+        return whole - 1
+    end
+    return whole
+end
+
+# trunc(x) osekne směrem k nule na Int; trunc(x, digits) u Float vrací Float
+# bez zaokrouhlení, oseknutý na digits desetinných míst; Int zůstává Int.
+function trunc(value, digits=None):
+    call numeric_argument(value)
+    if digits != None:
+        call check_digits(digits)
+        if type(value) != "Float":
+            return integer_round(Int(value), digits, False)
+        end
+        return decimal_round(value, digits, False)
+    end
+    if type(value) != "Float":
+        return Int(value)
+    end
+    call check_integral(Float(value))
+    return Int(Float(value))
 end
 
 function sign(value):

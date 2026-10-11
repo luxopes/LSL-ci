@@ -2129,7 +2129,7 @@ function emit_expression(generator, syntax):
                 call assembler.emit(output, x86_64.cmp_reg_imm8(0, expected_array_code))
                 call assembler.relative(output, [15, 132], array_cast_ok)
                 call assembler.emit(output, x86_64.pop(0))
-                call emit_runtime_raise(generator, "TypeError: " + target["name"] + " cast requires an existing " + target["name"])
+                call emit_runtime_raise(generator, "TypeError: " + target["name"] + "(value) only converts an existing " + target["name"] + "; create an empty one with " + target["name"] + "() and add items with append")
                 call assembler.label(output, array_cast_ok)
                 call assembler.emit(output, x86_64.pop(0))
                 return

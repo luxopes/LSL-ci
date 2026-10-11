@@ -11,7 +11,9 @@ for line in prefix.with_suffix('.fixups').read_text().splitlines():
 names={n for ns in labels.values() for n in ns}
 missing=set(fixups.values())-names
 if missing:raise SystemExit('unresolved runtime dependencies: '+repr(missing))
-out=['.text']
+# Runtime začíná na hranici 64 B: zarovnání horkých rutin pak nezávisí
+# na velikosti programu, který se linkuje před něj.
+out=['.text','.p2align 6']
 positions=sorted(set(labels)|set(fixups)|{len(code)})
 pos=0
 for boundary in positions:
@@ -32,7 +34,8 @@ def abi_offset(name):
 for name in sorted(names):
     if not name.startswith('runtime_'):
         continue
-    out += ['.globl rt_'+name,'rt_'+name+':']
+    # Můstky volané z každé iterace zarovnané jako běžné funkce (16 B).
+    out += ['.p2align 4','.globl rt_'+name,'rt_'+name+':']
     if name == 'runtime_maybe_gc':
         out += ['mov lsl_state(%rip),%rax',
                 f'mov {abi_offset("GC_ALLOCATED_BYTES")}(%rax),%r10',

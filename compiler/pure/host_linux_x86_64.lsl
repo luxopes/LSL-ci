@@ -97,7 +97,72 @@ function cleanup_program(path):
     call rmdir(dirname(path))
 end
 
+# Verze z hlavičky knihovny AI ("# AI 1.2.0: ..."), jinak None.
+function ai_header_version(path):
+    first_line = ""
+    safe:
+        first_line = readfile(path).split(chr(10))[0]
+    end
+    if not first_line.startswith("# AI "):
+        return None
+    end
+    text = first_line[5:len(first_line)]
+    colon = text.find(":")
+    if colon > 0:
+        text = text[0:colon]
+    end
+    parts = text.strip().split(".")
+    if len(parts) != 3:
+        return None
+    end
+    numbers = []
+    for part in parts:
+        if part == "" or len(part) > 6:
+            return None
+        end
+        for character in part:
+            if "0123456789".find(character) < 0:
+                return None
+            end
+        end
+        numbers.append(Int(part))
+    end
+    return numbers
+end
+
+function version_newer(candidate, current):
+    for position in rang(3):
+        if candidate[position] != current[position]:
+            return candidate[position] > current[position]
+        end
+    end
+    return False
+end
+
+# load ai: knihovna aikit z registru (lsl update ai) má přednost před
+# vestavěným modulem jen tehdy, když je prokazatelně novější. Jiné vestavěné
+# moduly uživatelské knihovny nikdy nezastíní.
 function module_path(name, owner_path, home, builtin):
+    resolved = module_path_base(name, owner_path, home, builtin)
+    if name != "ai" or not resolved.endswith("stdlib/ai.lsl") or home == None or home == "":
+        return resolved
+    end
+    updated = home + "/.local/lib/lsl/stdlib/aikit.lsl"
+    if not exists(updated):
+        return resolved
+    end
+    updated_version = ai_header_version(updated)
+    builtin_version = ai_header_version(resolved)
+    if updated_version == None or builtin_version == None:
+        return resolved
+    end
+    if version_newer(updated_version, builtin_version):
+        return updated
+    end
+    return resolved
+end
+
+function module_path_base(name, owner_path, home, builtin):
     relative_name = name.replace(".", "/") + ".lsl"
     standard_path = "stdlib/" + relative_name
     executable = executable_path()

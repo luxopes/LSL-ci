@@ -447,12 +447,12 @@ function raster_glyph_scaled(pixels, width, height, x, y, offset, color, scale):
     start = Int(offset)
     row = 0
     while row < 16:
-        bits = rows[start + row]
-        if bits != 0:
+        glyph_bits = rows[start + row]
+        if glyph_bits != 0:
             column = 0
             divisor = 128
             while column < 8:
-                if bits // divisor % 2 == 1:
+                if glyph_bits // divisor % 2 == 1:
                     block_x = left + column * factor
                     block_y = top + row * factor
                     fy = 0
@@ -594,13 +594,13 @@ function raster_glyph(pixels, width, height, x, y, offset, color):
     while row < 16:
         screen_y = top + row
         if screen_y >= 0 and screen_y < h:
-            bits = rows[start + row]
-            if bits != 0:
+            glyph_bits = rows[start + row]
+            if glyph_bits != 0:
                 base = screen_y * w
                 column = 0
                 divisor = 128
                 while column < 8:
-                    if bits // divisor % 2 == 1:
+                    if glyph_bits // divisor % 2 == 1:
                         screen_x = left + column
                         if screen_x >= 0 and screen_x < w:
                             data[base + screen_x] = value

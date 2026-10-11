@@ -294,6 +294,23 @@ function emit_spawn(output):
     call assembler.emit(output, x86_64.function_epilogue())
 end
 
+function emit_stderr_literal(output, label, message):
+    # Zápis ASCII literálu na fd 2; data leží přímo v kódu za skokem.
+    call assembler.relative(output, x86_64.lea_rip_prefix(6), label)
+    call assembler.emit(output, x86_64.mov_imm64(2, len(message)))
+    call assembler.emit(output, x86_64.mov_imm64(7, 2))
+    call assembler.emit(output, x86_64.mov_imm64(0, platform.SYS_WRITE))
+    call assembler.emit(output, x86_64.syscall())
+    call assembler.relative(output, [233], label + "_end")
+    call assembler.label(output, label)
+    data = []
+    for character in message:
+        data.append(ord(character))
+    end
+    call assembler.emit(output, data)
+    call assembler.label(output, label + "_end")
+end
+
 function emit_entry(output):
     # Child start: rsp = stack top - 16 with [rsp] = entry, [rsp+8] = tagged
     # Function. rbx (state block) is inherited from the spawning thread; fs points
@@ -306,6 +323,19 @@ function emit_entry(output):
     call assembler.relative(output, [232], "runtime_unbox_dynamic_function")
     call assembler.emit(output, x86_64.move_reg_reg(11, 0))
     call assembler.emit(output, x86_64.call_reg(11))
+    # Worker skončil nezachycenou chybou: vypsat ji na stderr, jinak by vlákno
+    # zaniklo tiše. Zpráva je String v TLS (+8 délka, +16 bajty).
+    call assembler.emit(output, x86_64.cmp_fs_imm8(abi_x86_64.TLS_ERROR_FLAG, 0))
+    call assembler.relative(output, [15, 132], "thread_entry_exit")
+    call emit_stderr_literal(output, "thread_worker_prefix", "LSL worker error: ")
+    call assembler.emit(output, x86_64.load_fs(6, abi_x86_64.TLS_ERROR))
+    call assembler.emit(output, x86_64.load_memory(2, 6, 8))
+    call assembler.emit(output, x86_64.lea_base(6, 6, 16))
+    call assembler.emit(output, x86_64.mov_imm64(7, 2))
+    call assembler.emit(output, x86_64.mov_imm64(0, platform.SYS_WRITE))
+    call assembler.emit(output, x86_64.syscall())
+    call emit_stderr_literal(output, "thread_worker_newline", chr(10))
+    call assembler.label(output, "thread_entry_exit")
     # Thread exit: the kernel clears entry.status and wakes joiners.
     call assembler.emit(output, x86_64.xor_reg_reg(7, 7))
     call assembler.emit(output, x86_64.mov_imm64(0, platform.SYS_EXIT))
