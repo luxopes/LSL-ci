@@ -1,0 +1,18 @@
+{
+  "204": {
+    "request": "GET /204 HTTP/1.1\r\nHost: localhost\r\n\r\n",
+    "response": "HTTP/1.1 204 Response\r\nContent-Length: 7\r\nContent-Type: text/plain; charset=utf-8\r\nConnection: close\r\nX-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\n\r\nBADBODY"
+  },
+  "304": {
+    "request": "GET /304 HTTP/1.1\r\nHost: localhost\r\n\r\n",
+    "response": "HTTP/1.1 304 Response\r\nContent-Length: 7\r\nContent-Type: text/plain; charset=utf-8\r\nConnection: close\r\nX-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\n\r\nBADBODY"
+  },
+  "header_dot": {
+    "request": "GET / HTTP/1.1\r\nHost: localhost\r\nX.Test: ok\r\n\r\n",
+    "response": "HTTP/1.1 400 Bad Request\r\nContent-Length: 39\r\nContent-Type: text/plain; charset=utf-8\r\nConnection: close\r\nX-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\n\r\n400 Bad Request\nheader name is invalid\n"
+  },
+  "header_raw_cr": {
+    "request": "GET / HTTP/1.1\r\nHost: localhost\r\nX-Test: one\rtwo\r\n\r\n",
+    "response": "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nContent-Type: text/plain; charset=utf-8\r\nConnection: close\r\nX-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\n\r\nok"
+  }
+}

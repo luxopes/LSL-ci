@@ -1,0 +1,2 @@
+error[TensorIndexError]: tensor index out of range
+ help: handle expected errors with try: ... else: ... end or safe: ... end

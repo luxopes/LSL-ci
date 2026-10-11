@@ -1,0 +1,2 @@
+error[JsonError]: encoded JSON exceeds 4 MiB
+ help: handle expected errors with try: ... else: ... end or safe: ... end

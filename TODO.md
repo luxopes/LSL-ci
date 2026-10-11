@@ -2,6 +2,85 @@
 
 Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktuální handoff, pořadí blockerů a ověřovací příkazy jsou v `COMPLETION_PLAN.md`.
 
+## Otevřené nálezy auditu release 0.9.1 — 11. 10. 2026
+
+Ověřeno na tagu `v0.9.1`, commit `0928f4798a2245813f25711d50ea50577da90ade`.
+Reprodukce, výstupy a příčiny: [audit/0.9.1/LSL-0.9.1-audit.md](audit/0.9.1/LSL-0.9.1-audit.md).
+P1/P2 zde označuje prioritu auditu. Nálezy nejsou automaticky regrese zavedené v 0.9.1.
+Obecné Int operace mají wrap modulo 2^64; položky gcd/lcm požadují vyjasnit a kontrolovat rozsah matematického API.
+
+- [ ] **AUD-091-01 (P1): Rozbalování přepisuje dosud nepřečtené hodnoty.** `compiler/pure/parser.lsl:307`. unpack_statements čte holder[index] až při zápisu do jednotlivých cílů. Nejdřív zachytit všechny prvky do dočasných hodnot.
+  Reprodukce: `audit/0.9.1/alias_unpack.lsl`. Očekáváno: [2, 1].
+- [ ] **AUD-091-02 (P1): Nepřesný decimal → Float.** `compiler/pure/dynamic_stdlib.lsl:1117`. Známá chyba převodu decimal do binary64, stále v 0.9.1. Float("0.49999999999999994") chybně vrací přesně 0.5. Použít správně zaokrouhlený parser. Nejde o nově objevenou regresi.
+  Reprodukce: `audit/0.9.1/float_boundary.lsl`. Očekáváno: False. Další závažné projevy téže chyby: `float_long_fraction.lsl` vrací NaN pro číslo přesně 1; `float_long_mantissa.lsl` vrací inf pro číslo přesně 1; JSON parser pak odmítá platný konečný token (`json_long_float.lsl`).
+- [ ] **AUD-091-03 (P2): Overflow počtu desetinných míst Float.** `stdlib/math.lsl:73`. point + places přeteče. Totéž math.trunc. Kontrolovat mezní digits před součtem; dostatečně velký kladný počet míst má ponechat číslo.
+  Reprodukce: `audit/0.9.1/round_float_digits_max.lsl`. Očekáváno: 1.5.
+- [ ] **AUD-091-04 (P2): Overflow negace digits Int.MIN.** `stdlib/math.lsl:122`. -places přeteče pro -9223372036854775808; rang pak nemá průchody a jednotka zůstane 1. Explicitně ošetřit dolní mez. Float varianta s 0.015 také chybně ponechá číslo kvůli součtu.
+  Reprodukce: `audit/0.9.1/round_int_digits_min.lsl`. Očekáváno: 0.
+- [ ] **AUD-091-05 (P2): round velkého Int na 10^19 tiše vrací nulu.** `stdlib/math.lsl:122`. Větev -places >= 19 ignoruje zaokrouhlení poloviny od nuly. Rozlišit -19 od menších places a zkontrolovat overflow.
+  Reprodukce: `audit/0.9.1/round_int_overflow.lsl`. Očekáváno: Overflow/ValueError: výsledek 10000000000000000000 není Int64.
+- [ ] **AUD-091-06 (P2): trunc odmítá reprezentovatelný výsledek pro Int.MIN.** `stdlib/math.lsl:122`. Paušální zákaz vstupu Int.MIN vyhodí chybu i když výsledek fits Int64. Pracovat se záporným zbytkem bez abs/negace MIN.
+  Reprodukce: `audit/0.9.1/trunc_int_min.lsl`. Očekáváno: -9223372036854775800.
+- [ ] **AUD-091-07 (P1): floor/ceil převádí příliš velký Float na nesmyslný záporný Int.** `stdlib/math.lsl:14,23`. floor(1e20) → -9223372036854775808, ceil → -9223372036854775807. Před Int(number) ověřit konečnost a rozsah jako check_integral.
+  Reprodukce: `audit/0.9.1/floor_large.lsl`. Očekáváno: Chyba rozsahu; nikoli záporné číslo.
+- [ ] **AUD-091-08 (P2): exp předčasně přetéká pro konečný výsledek.** `stdlib/math.lsl:305`. Pevná mez number > 709 je příliš nízká; exp(709.5) se vejde do Float64. Použít správné meze a škálování exponentu.
+  Reprodukce: `audit/0.9.1/exp_finite.lsl`. Očekáváno: Přibližně 1.3549863193146328e308.
+- [ ] **AUD-091-09 (P2): exp ztrácí reprezentovatelné subnormály.** `stdlib/math.lsl:305`. Pro záporné x nejdříve počítá exp(abs(x)), které přeteče, a pak 1/inf. Počítat záporný exponent přímo nebo bezpečně škálovat.
+  Reprodukce: `audit/0.9.1/exp_subnormal.lsl`. Očekáváno: Přibližně 4.47628622567513e-309.
+- [ ] **AUD-091-10 (P2): hypot má zbytečný overflow i underflow.** `stdlib/math.lsl:471`. hypot(1e200,1e200) → inf; hypot(1e-200,1e-200) → 0.0. Škálovat největší absolutní hodnotou před umocněním.
+  Reprodukce: `audit/0.9.1/hypot_large.lsl`. Očekáváno: Přibližně 1.414213562373095e200.
+- [ ] **AUD-091-11 (P1): is_close považuje NaN a různá nekonečna za blízká.** `stdlib/math.lsl:477`. NaN proti 1 → True; +inf proti 1 → True; +inf proti -inf → True. Ošetřit rovnost, NaN a inf před odečítáním a výpočtem tolerance. Základní Float porovnání NaN přitom v kontrolním testu funguje.
+  Reprodukce: `audit/0.9.1/isclose_nan.lsl`. Očekáváno: False.
+- [ ] **AUD-091-12 (P2): gcd může vrátit záporný výsledek.** `stdlib/math.lsl:253`. abs(Int.MIN) zůstane záporné kvůli wrap Int64. Funkce pak vrací záporné gcd. Ošetřit overflow kladného výsledku.
+  Reprodukce: `audit/0.9.1/gcd_min.lsl`. Očekáváno: Chyba rozsahu nebo BigInt 9223372036854775808.
+- [ ] **AUD-091-13 (P2): lcm tiše vrací nesprávný výsledek po overflow.** `stdlib/math.lsl:264`. lcm(Int.MAX,2) → 2. Int operace mají dokumentovaný wrap, ale matematické API tak vrací nesprávné lcm bez indikace; přidat kontrolu rozsahu jako factorial.
+  Reprodukce: `audit/0.9.1/lcm_overflow.lsl`. Očekáváno: Chyba rozsahu nebo BigInt 18446744073709551614.
+- [ ] **AUD-091-14 (P2): mean a median přetékají na konečných výsledcích.** `stdlib/math.lsl:485,513`. mean([1e308,1e308]) a median stejného seznamu → inf. Mezisoučet přeteče, i když výsledná hodnota je konečná. Bezpečný průměr a škálované sčítání.
+  Reprodukce: `audit/0.9.1/mean_large.lsl`. Očekáváno: 1e308.
+- [ ] **AUD-091-15 (P2): sin vrací NaN pro konečný platný argument.** `stdlib/math.lsl:383`. Redukce úhlu převádí počet otoček do Int64 přes floor. Pro 1e20 je mimo rozsah; výsledný úhel rozbije Taylorovu řadu. Nutná redukce pro velké Float argumenty nebo explicitní zdokumentovaná chyba rozsahu.
+  Reprodukce: `audit/0.9.1/sin_large.lsl`. Očekáváno: Přibližně -0.6452512852657808.
+- [ ] **AUD-091-16 (P2): Čas odmítá zlomek poslední sekundy roku 9999.** `stdlib/time.lsl:41`. Horní mez 253402300799.0 vylučuje poslední téměř celou sekundu. Kontrolovat rozsah do začátku roku 10000 (exkluzivně) a ošetřit zaokrouhlení.
+  Reprodukce: `audit/0.9.1/time_last_fraction.lsl`. Očekáváno: 9999-12-31T23:59:59.500000+00:00.
+- [ ] **AUD-091-17 (P2): HTTP odmítá platný znak tečka v názvu hlavičky.** `stdlib/httpserver.lsl:190`. X.Test: ok → HTTP 400. Implementovat token/tchar podle RFC 9110 §5.1 a §5.6.2; tečka je dokonce doporučená pro interoperabilní nové názvy.
+  Reprodukce: `audit/0.9.1/http_probe.lsl`; skutečné HTTP odpovědi: `http_results.json`.
+- [ ] **AUD-091-18 (P1): HTTP ponechá nepovolený CR uvnitř hodnoty hlavičky.** `stdlib/httpserver.lsl:336`. X-Test: one\rtwo je přijat s HTTP 200 a původní hodnota je předána handleru. RFC 9110 §5.5 vyžaduje odmítnutí nebo nahrazení CR/LF/NUL. Ověřit každý field-value po rozdělení CRLF. Test prokazuje parser mismatch; neprokazuje zneužití za konkrétní proxy.
+  Reprodukce: `audit/0.9.1/http_probe.lsl`; skutečné HTTP odpovědi: `http_results.json`.
+- [ ] **AUD-091-19 (P1): HTTP posílá tělo u odpovědí, které tělo mít nesmějí.** `stdlib/httpserver.lsl:556`. Reálný socket dostal BADBODY pro 204 i 304; 204 má Content-Length: 7. RFC 9110 §15.3.5, §15.4.5 a §8.6. Centralizovat pravidla framingu pro jednotlivé statusy i stream.
+  Reprodukce: `audit/0.9.1/http_probe.lsl`; skutečné HTTP odpovědi: `http_results.json`.
+- [ ] **AUD-091-20 (P2): Ověřovací nástroje nefungují z čistého release checkoutu.** `tools/qbe/verify_image.py:64; tools/qbe/verify.py:118`. verify_image.py padá před první kontrolou na build/qbe/runtime.o; skutečný runtime je compiler/qbe/runtime.o. verify.py má stejnou pevnou závislost na konci (statické potvrzení, v tomto auditu znovu celý neproběhl). Přidat explicitní runtime parametr nebo odvodit release cestu.
+  Důkaz: `audit/0.9.1/verify_image.stderr`; v `verify.py` stejná pevná cesta potvrzena čtením zdroje.
+
+- [ ] **AUD-091-21 (P2): BigInt přijímá nekánonický nulový stav.** `stdlib/bigint.lsl:80`. Konstruktor přijme {"sign":0,"digits":"5"}; text() je 0 a is_zero() True, ale absolute().text() je 5. Zkontrolovat invariant reprezentace v _parts.
+  Reprodukce: `audit/0.9.1/bigint_zero_sign.lsl`. Očekáváno: Odmítnout sign=0 s digits!=0 nebo normalizovat digits na 0.
+- [ ] **AUD-091-22 (P2): JSON odmítá platný výstup přesně na hranici 4 MiB.** `stdlib/json.lsl:99`. Bool větev odečte 5 bajtů ještě před rozlišením true/false a true refunduje až poté. ["x"*4194295,True] má přesně 4194304 bajtů, ale je odmítnut; kontrolní stejně dlouhý JSON s False projde. Odečítat skutečnou délku tokenu.
+  Reprodukce: `audit/0.9.1/json_exact_limit.lsl`. Očekáváno: Délka zakódovaného JSON 4194304.
+- [ ] **AUD-091-23 (P1): printr obchází zákaz I/O v čisté konfiguraci.** `stdlib/configure.lsl:180`. lsl config vypíše UNEXPECTED-OUTPUT před JSON a vrátí exit 0. Nové printr chybí v zakázaných identifikátorech; synchronizovat pravidla pro všechny výstupní builtin funkce.
+  Reprodukce: `audit/0.9.1/config_printr.lsl`. Očekáváno: Staticky odmítnout stejně jako print.
+- [ ] **AUD-091-24 (P1): Čistá konfigurace přijímá ambientní hodiny a CPU vstup.** `stdlib/configure.lsl:180`. monotonic() vrátí hostitelský čas v JSON; cpu_count() také projde. Doplnit purity kontrolu podle kategorií builtinů, ne pouze historického seznamu jmen.
+  Reprodukce: `audit/0.9.1/config_monotonic.lsl`. Očekáváno: Odmítnout ambientní vstupy podle docs/configuration.md a docs/time.md.
+- [ ] **AUD-091-25 (P2): Konfigurační lexer neignoruje blokové komentáře.** `stdlib/configure.lsl:28`. /* readfile("not-executed") */ chybně skončí Impure configuration identifier readfile. Sdílet lexer jazyka nebo podporovat blokové komentáře.
+  Reprodukce: `audit/0.9.1/config_block_comment.lsl`. Očekáváno: Přijmout čistou konfiguraci s komentářem.
+- [ ] **AUD-091-26 (P2): Konfigurační lexer odmítá validní escaped a raw stringy.** `stdlib/configure.lsl:28`. "a\"b" je odmítnuto jako Unterminated configuration string. Kontrola konce stringu ignoruje stav escaped. Také validní raw string s koncovým backslashem odmítá; zachovat odlišnou raw sémantiku.
+  Reprodukce: `audit/0.9.1/config_escaped_quote.lsl`. Očekáváno: Přijmout validní řetězec obsahující escaped quote.
+- [ ] **AUD-091-27 (P1): Tabulátor vypne options i assertions; komentář vytváří falešný export.** `stdlib/configure.lsl:295`. has_export hledá substring name + " =" nebo name + "=". options/assertions s tabulátorem před = se tiše ignorují: nepravdivá assertion i missing required option skončí exit 0 s {}. Naopak # options = v komentáři vyvolá chybu neexistující proměnné. Odvozovat exporty z tokenů/AST.
+  Reprodukce: `audit/0.9.1/config_assertions_tab.lsl`. Očekáváno: Nepravdivá assertion musí skončit chybou; chybějící required option také.
+- [ ] **AUD-091-28 (P2): Float options odmítají skutečný Float.** `stdlib/configure.lsl, generované dynamic_type`. dynamic_type neobsahuje typový kód 6 (Float), proto je hodnota 1.5 označena Any a Float option/default odmítnut. Doplnit Float i regresi pro Float|None.
+  Reprodukce: `audit/0.9.1/config_float_option.lsl`. Očekáváno: Přijmout Float 1.5 a výchozí Float hodnotu.
+- [ ] **AUD-091-29 (P2): Sentinel pro chybějící option koliduje s platnou Dictionary hodnotou.** `stdlib/configure.lsl, missing sentinel a get_path`. Required Dictionary option s touto hodnotou skončí Missing required option. Porovnání používá strukturální == na běžném Dictionary sentinelu. Vrátit existenci zvlášť nebo použít nezaměnitelnou identitu.
+  Reprodukce: `audit/0.9.1/config_missing_sentinel.lsl`. Očekáváno: Přijmout existující Dictionary hodnotu {"__missing":True}.
+- [ ] **AUD-091-30 (P2): mkIf(False, ...) v List nevynechá položku.** `stdlib/configure.lsl, materialize List větev`. Výsledek je {"items":[1,{"__omit":true},3]}; interní omit marker uniká do uživatelského JSON. Stejnou filtraci jako u Dictionary použít i pro List, nebo výslovně omezit a zdokumentovat kontrakt mkIf.
+  Reprodukce: `audit/0.9.1/config_list_omit.lsl`. Očekáváno: {"items":[1,3]}.
+- [ ] **AUD-091-31 (P1): Průchod String a validace dlouhých řetězců mají kvadratický čas.** `compiler/pure/heap_runtime_linux_x86_64.lsl:2270,2309; stdlib/lconf.lsl:11`. 10k/20k/40k ASCII znaků: for c in x 0.146/0.591/2.273 s; lconf.valid_dependency 0.307/1.232/4.887 s. Byte kontrola 40k znaků 0.0012 s, 1 MiB 0.0122 s. String index volá runtime_length a znovu hledá znak od počátku. Iterovat byte offsetem s UTF-8 dekódováním a cache délky; zachovat Unicode sémantiku. lconf.encode pro 1MiB jméno překročilo 20s limit; to není důkaz chyby formátu.
+  Reprodukce: `audit/0.9.1/string_iteration_performance.lsl`. Očekáváno: Lineární postup po UTF-8 codepointech, nikoli opakované procházení prefixu.
+- [ ] **AUD-091-32 (P1): HTTP request-line přijímá neplatnou metodu i control znak v targetu.** `stdlib/httpserver.lsl:336`. Metoda G\tET i target /one\rtwo jsou přijaty s 200 a nezměněné předány handleru. Validovat method token a request-target podle RFC 9112 §3.1/3.2. Nejde o pouhou toleranci whitespace oddělovačů: znak zůstává uvnitř komponenty.
+  Reprodukce: `audit/0.9.1/http_request_line.lsl`. Očekáváno: Odmítnout invalid request-line před zavoláním handleru.
+- [ ] **AUD-091-33 (P1): Merge List/Dictionary ztrácí prioritu mkForce/mkDefault.** `stdlib/configure.lsl, deep_merge`. Sloučení dvou wrapperů stejné priority vrátí holý List/Dictionary (priorita se změní na 500). Výsledek force scénáře [1,2,3]; tři mkDefault seznamy dají [1,2] místo [1,2,3]. Uchovat obal s původní prioritou ve výsledku merge.
+  Reprodukce: `audit/0.9.1/config_priority_force/main.lsl`. Očekáváno: Po dvou mkForce([1])/mkForce([2]) obyčejná [3] nesmí vyhrát: [1,2].
+- [ ] **AUD-091-34 (P2): Chybný default option se nekontroluje, je-li hodnota explicitně zadána.** `stdlib/configure.lsl, option validation wrapper`. config.option("Int","bad default",...) s config.port=123 projde. Default se typově kontroluje pouze při chybějící hodnotě. Validovat descriptor/default nezávisle na výsledném stromu.
+  Reprodukce: `audit/0.9.1/config_invalid_default.lsl`. Očekáváno: Odmítnout String default pro Int option podle dokumentovaného kontraktu.
+
+- [ ] **AUD-091-C01 (kontrakt):** Sjednotit nebo zdokumentovat rozdílný UTC rozsah `time.parse_iso8601` a `time.iso8601`: parser přijme `0001-01-01T00:00:00+01:00`, formatter vzniklý čas odmítne. Reprodukce `audit/0.9.1/time_parse_range.lsl`. Nezapočteno mezi potvrzené chyby.
+
 ## Vydání 0.9.0 BETA a návazný plán — 11. 10. 2026
 
 Rozsah 0.9.0 BETA je Linux x86_64 s novým backendem odvozeným od QBE,

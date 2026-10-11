@@ -1,0 +1,128 @@
+{
+  "nan_comparisons": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "False True False False False False\n",
+    "stderr": "",
+    "seconds": 0.246
+  },
+  "isclose_opposite_inf": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "True\n",
+    "stderr": "",
+    "seconds": 0.449
+  },
+  "isclose_nan": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "True\n",
+    "stderr": "",
+    "seconds": 0.43
+  },
+  "round_small_digits_min": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "0.015\n",
+    "stderr": "",
+    "seconds": 0.666
+  },
+  "float_abs_nan": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "nan 0.0 0.0\n",
+    "stderr": "",
+    "seconds": 0.375
+  },
+  "loop_break_unassigned": {
+    "compile_rc": 1,
+    "rc": 1,
+    "stdout": "error[E2001]: unknown native variable: x\n --> /workspace/scratch/602efea1b046/verification/audit-091/loop_break_unassigned.lsl:5:7\n  |\n5 | print x\n  |       ^\n help: assign the variable before reading it\n",
+    "stderr": "",
+    "seconds": 0.194
+  },
+  "loop_continue_unassigned": {
+    "compile_rc": 1,
+    "rc": 1,
+    "stdout": "error[E2001]: unknown native variable: x\n --> /workspace/scratch/602efea1b046/verification/audit-091/loop_continue_unassigned.lsl:5:7\n  |\n5 | print x\n  |       ^\n help: assign the variable before reading it\n",
+    "stderr": "",
+    "seconds": 0.196
+  },
+  "global_retype": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "hi String\n",
+    "stderr": "",
+    "seconds": 0.312
+  },
+  "global_partial": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "2\n",
+    "stderr": "",
+    "seconds": 0.314
+  },
+  "intarray_unpack": {
+    "compile_rc": 0,
+    "rc": 1,
+    "stdout": "",
+    "stderr": "error[TypeError]: IntArray(value) only converts an existing IntArray; create an empty one with IntArray() and add items with append\n help: check the types of the values; convert explicitly, for example with Int(value) or String(value)\n",
+    "seconds": 0.403
+  },
+  "float_roundtrip": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "True\n",
+    "stderr": "",
+    "seconds": 0.411
+  },
+  "json_roundtrip": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "True\n",
+    "stderr": "",
+    "seconds": 0.54
+  },
+  "floor_large": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "-9223372036854775808\n",
+    "stderr": "",
+    "seconds": 0.424
+  },
+  "ceil_large": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "-9223372036854775807\n",
+    "stderr": "",
+    "seconds": 0.476
+  },
+  "sin_large": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "nan\n",
+    "stderr": "",
+    "seconds": 0.463
+  },
+  "sqrt_nan": {
+    "compile_rc": 0,
+    "rc": 1,
+    "stdout": "",
+    "stderr": "error[ValueError]: sqrt domain error\n help: check that the value has the expected range, length or format\n",
+    "seconds": 0.315
+  },
+  "float_subnormal_parse": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "5.0e-324\n",
+    "stderr": "",
+    "seconds": 0.316
+  },
+  "float_large_exponent_zero": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "0.0\n",
+    "stderr": "",
+    "seconds": 0.35
+  }
+}

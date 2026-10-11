@@ -1,0 +1,14 @@
+{
+  "method_tab": {
+    "request": "G\tET / HTTP/1.1\r\nHost: localhost\r\n\r\n",
+    "response": "HTTP/1.1 200 OK\r\nContent-Length: 43\r\nContent-Type: text/plain; charset=utf-8\r\nConnection: close\r\nX-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\n\r\n{\"method\":\"G\\tET\",\"target\":\"/\",\"header\":\"\"}"
+  },
+  "target_cr": {
+    "request": "GET /one\rtwo HTTP/1.1\r\nHost: localhost\r\n\r\n",
+    "response": "HTTP/1.1 200 OK\r\nContent-Length: 49\r\nContent-Type: text/plain; charset=utf-8\r\nConnection: close\r\nX-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\n\r\n{\"method\":\"GET\",\"target\":\"/one\\rtwo\",\"header\":\"\"}"
+  },
+  "header_cr_preserved": {
+    "request": "GET / HTTP/1.1\r\nHost: localhost\r\nX-Test: one\rtwo\r\n\r\n",
+    "response": "HTTP/1.1 200 OK\r\nContent-Length: 49\r\nContent-Type: text/plain; charset=utf-8\r\nConnection: close\r\nX-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\n\r\n{\"method\":\"GET\",\"target\":\"/\",\"header\":\"one\\rtwo\"}"
+  }
+}

@@ -1,0 +1,66 @@
+[
+  {
+    "binary": "lconf_performance",
+    "n": 10000,
+    "mode": "String",
+    "seconds": 0.3070815589999256,
+    "stdout": "True\n",
+    "rc": 0
+  },
+  {
+    "binary": "lconf_performance",
+    "n": 20000,
+    "mode": "String",
+    "seconds": 1.2321580420000373,
+    "stdout": "True\n",
+    "rc": 0
+  },
+  {
+    "binary": "lconf_performance",
+    "n": 40000,
+    "mode": "String",
+    "seconds": 4.887074442999847,
+    "stdout": "True\n",
+    "rc": 0
+  },
+  {
+    "binary": "string_iteration_performance",
+    "n": 10000,
+    "mode": "String",
+    "seconds": 0.14602126599993426,
+    "stdout": "10000\n",
+    "rc": 0
+  },
+  {
+    "binary": "string_iteration_performance",
+    "n": 20000,
+    "mode": "String",
+    "seconds": 0.5909409420000884,
+    "stdout": "20000\n",
+    "rc": 0
+  },
+  {
+    "binary": "string_iteration_performance",
+    "n": 40000,
+    "mode": "String",
+    "seconds": 2.272949017999963,
+    "stdout": "40000\n",
+    "rc": 0
+  },
+  {
+    "binary": "string_iteration_performance",
+    "n": 40000,
+    "mode": "bytes",
+    "seconds": 0.0011942099999942002,
+    "stdout": "40000\n",
+    "rc": 0
+  },
+  {
+    "binary": "string_iteration_performance",
+    "n": 1048576,
+    "mode": "bytes",
+    "seconds": 0.012176216999932876,
+    "stdout": "1048576\n",
+    "rc": 0
+  }
+]

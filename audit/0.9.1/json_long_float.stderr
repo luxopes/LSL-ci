@@ -1,0 +1,2 @@
+error[JsonError]: JSON number is outside the finite Float range
+ help: handle expected errors with try: ... else: ... end or safe: ... end

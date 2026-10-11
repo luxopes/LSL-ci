@@ -1,0 +1,2 @@
+error[TypeError]: IntArray(value) only converts an existing IntArray; create an empty one with IntArray() and add items with append
+ help: check the types of the values; convert explicitly, for example with Int(value) or String(value)

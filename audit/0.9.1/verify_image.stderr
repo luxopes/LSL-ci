@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/workspace/scratch/602efea1b046/lsl-release-091/tools/qbe/verify_image.py", line 146, in <module>
+    main()
+  File "/workspace/scratch/602efea1b046/lsl-release-091/tools/qbe/verify_image.py", line 64, in main
+    'runtime_sha256': digest(ROOT / 'build/qbe/runtime.o'),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/602efea1b046/lsl-release-091/tools/qbe/verify_public_int.py", line 22, in digest
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+                          ^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py", line 1019, in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/workspace/scratch/602efea1b046/lsl-release-091/build/qbe/runtime.o'

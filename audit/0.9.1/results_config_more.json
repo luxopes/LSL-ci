@@ -1,0 +1,32 @@
+{
+  "config_float_option": {
+    "rc": 1,
+    "stdout": "Invalid option type rate Float Any declared in /workspace/scratch/602efea1b046/lsl-release-091/audit/0.9.1/config_float_option.lsl\n",
+    "stderr": "",
+    "seconds": 0.553
+  },
+  "config_float_explicit": {
+    "rc": 1,
+    "stdout": "Invalid option type rate Float Any declared in /workspace/scratch/602efea1b046/lsl-release-091/audit/0.9.1/config_float_explicit.lsl\n",
+    "stderr": "",
+    "seconds": 0.492
+  },
+  "config_missing_sentinel": {
+    "rc": 1,
+    "stdout": "Missing required option data declared in /workspace/scratch/602efea1b046/lsl-release-091/audit/0.9.1/config_missing_sentinel.lsl\n",
+    "stderr": "",
+    "seconds": 0.545
+  },
+  "config_list_omit": {
+    "rc": 0,
+    "stdout": "{\"items\":[1,{\"__omit\":true},3]}\n",
+    "stderr": "",
+    "seconds": 0.517
+  },
+  "config_force_list": {
+    "rc": 0,
+    "stdout": "{\"items\":[1,2]}\n",
+    "stderr": "",
+    "seconds": 0.513
+  }
+}

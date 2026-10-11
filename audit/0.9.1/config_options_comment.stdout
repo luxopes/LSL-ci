@@ -1,0 +1,6 @@
+error[E2001]: unknown native variable: @lsl_module_1@options
+ --> /tmp/lsl-program-35/lsl_config_wrapper.lsl:182:44
+    |
+182 | for declared_name in lsl_config_snapshot_0.options:
+    |                                            ^~~~~~~
+ help: assign the variable before reading it

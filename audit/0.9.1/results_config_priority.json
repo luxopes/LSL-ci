@@ -1,0 +1,17 @@
+{
+  "force": {
+    "rc": 0,
+    "stdout": "{\"items\":[1,2,3]}\n",
+    "stderr": ""
+  },
+  "default": {
+    "rc": 0,
+    "stdout": "{\"items\":[1,2]}\n",
+    "stderr": ""
+  },
+  "invalid_default": {
+    "rc": 0,
+    "stdout": "{\"port\":123}\n",
+    "stderr": ""
+  }
+}

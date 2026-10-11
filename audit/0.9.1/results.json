@@ -1,0 +1,135 @@
+{
+  "alias_unpack": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "[1, 1]\n",
+    "stderr": "",
+    "seconds": 0.315
+  },
+  "round_float_digits_max": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "0.0\n",
+    "stderr": "",
+    "seconds": 0.455
+  },
+  "trunc_float_digits_max": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "0.0\n",
+    "stderr": "",
+    "seconds": 0.464
+  },
+  "round_int_digits_min": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "123\n",
+    "stderr": "",
+    "seconds": 0.458
+  },
+  "round_int_overflow": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "0\n",
+    "stderr": "",
+    "seconds": 0.472
+  },
+  "trunc_int_min": {
+    "compile_rc": 0,
+    "rc": 1,
+    "stdout": "",
+    "stderr": "error[ValueError]: value is outside the Int range\n help: check that the value has the expected range, length or format\n",
+    "seconds": 0.455
+  },
+  "exp_finite": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "inf\n",
+    "stderr": "",
+    "seconds": 0.46
+  },
+  "exp_subnormal": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "0.0\n",
+    "stderr": "",
+    "seconds": 0.439
+  },
+  "hypot_large": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "inf\n",
+    "stderr": "",
+    "seconds": 0.486
+  },
+  "hypot_small": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "0.0\n",
+    "stderr": "",
+    "seconds": 0.459
+  },
+  "isclose_inf_finite": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "True\n",
+    "stderr": "",
+    "seconds": 0.491
+  },
+  "isclose_inf_self": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "True\n",
+    "stderr": "",
+    "seconds": 0.469
+  },
+  "gcd_min": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "-9223372036854775808\n",
+    "stderr": "",
+    "seconds": 0.44
+  },
+  "lcm_overflow": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "2\n",
+    "stderr": "",
+    "seconds": 0.579
+  },
+  "median_large": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "inf\n",
+    "stderr": "",
+    "seconds": 0.514
+  },
+  "mean_large": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "inf\n",
+    "stderr": "",
+    "seconds": 0.501
+  },
+  "time_last_fraction": {
+    "compile_rc": 0,
+    "rc": 1,
+    "stdout": "",
+    "stderr": "error[ValueError]: time value is outside years 1..9999\n help: check that the value has the expected range, length or format\n",
+    "seconds": 0.408
+  },
+  "time_parse_range": {
+    "compile_rc": 0,
+    "rc": 1,
+    "stdout": "-62135600400.0\n",
+    "stderr": "error[ValueError]: time value is outside years 1..9999\n help: check that the value has the expected range, length or format\n",
+    "seconds": 0.504
+  },
+  "float_boundary": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "True\n",
+    "stderr": "",
+    "seconds": 0.34
+  }
+}

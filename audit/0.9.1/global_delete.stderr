@@ -1,0 +1,5 @@
+error[NameError]: global variable 'x' read before assignment
+ --> /workspace/scratch/602efea1b046/lsl-release-091/audit/0.9.1/global_delete.lsl:7
+  |
+7 | print x
+ help: assign the variable or define the function before using it

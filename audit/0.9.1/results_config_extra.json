@@ -1,0 +1,38 @@
+{
+  "config_options_control": {
+    "rc": 1,
+    "stdout": "Missing required option port declared in /workspace/scratch/602efea1b046/lsl-release-091/audit/0.9.1/config_options_control.lsl\n",
+    "stderr": "",
+    "seconds": 0.498
+  },
+  "config_options_tab": {
+    "rc": 0,
+    "stdout": "{}\n",
+    "stderr": "",
+    "seconds": 0.474
+  },
+  "config_assertions_control": {
+    "rc": 1,
+    "stdout": "Configuration assertion failed: must fail\n",
+    "stderr": "",
+    "seconds": 0.514
+  },
+  "config_assertions_tab": {
+    "rc": 0,
+    "stdout": "{}\n",
+    "stderr": "",
+    "seconds": 0.489
+  },
+  "config_options_comment": {
+    "rc": 1,
+    "stdout": "error[E2001]: unknown native variable: @lsl_module_1@options\n --> /tmp/lsl-program-35/lsl_config_wrapper.lsl:182:44\n    |\n182 | for declared_name in lsl_config_snapshot_0.options:\n    |                                            ^~~~~~~\n help: assign the variable before reading it\n",
+    "stderr": "",
+    "seconds": 0.322
+  },
+  "config_cpu_count": {
+    "rc": 0,
+    "stdout": "{\"cpus\":9}\n",
+    "stderr": "",
+    "seconds": 0.482
+  }
+}

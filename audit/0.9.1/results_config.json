@@ -1,0 +1,50 @@
+{
+  "config_control": {
+    "rc": 0,
+    "stdout": "{\"value\":1}\n",
+    "stderr": "",
+    "seconds": 0.456
+  },
+  "config_printr": {
+    "rc": 0,
+    "stdout": "UNEXPECTED-OUTPUT{\"value\":1}\n",
+    "stderr": "",
+    "seconds": 0.462
+  },
+  "config_monotonic": {
+    "rc": 0,
+    "stdout": "{\"stamp\":1335.975355217}\n",
+    "stderr": "",
+    "seconds": 0.492
+  },
+  "config_block_comment": {
+    "rc": 1,
+    "stdout": "Impure configuration identifier readfile in /workspace/scratch/602efea1b046/lsl-release-091/audit/0.9.1/config_block_comment.lsl at 1\n\n",
+    "stderr": "",
+    "seconds": 0.01
+  },
+  "config_escaped_quote": {
+    "rc": 1,
+    "stdout": "Unterminated configuration string in /workspace/scratch/602efea1b046/lsl-release-091/audit/0.9.1/config_escaped_quote.lsl at 1\n\n",
+    "stderr": "",
+    "seconds": 0.011
+  },
+  "config_tab_export": {
+    "rc": 0,
+    "stdout": "{\"value\":1}\n",
+    "stderr": "",
+    "seconds": 0.466
+  },
+  "config_raw_backslash": {
+    "rc": 1,
+    "stdout": "Unterminated configuration string in /workspace/scratch/602efea1b046/lsl-release-091/audit/0.9.1/config_raw_backslash.lsl at 1\n\n",
+    "stderr": "",
+    "seconds": 0.011
+  },
+  "config_print_blocked": {
+    "rc": 1,
+    "stdout": "Impure configuration identifier print in /workspace/scratch/602efea1b046/lsl-release-091/audit/0.9.1/config_print_blocked.lsl at 1\n\n",
+    "stderr": "",
+    "seconds": 0.01
+  }
+}

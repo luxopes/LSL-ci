@@ -1,0 +1,113 @@
+{
+  "bigint_zero_sign": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "0 True 5\n",
+    "stderr": "",
+    "seconds": 0.427
+  },
+  "bigint_sign_float": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "5\n",
+    "stderr": "",
+    "seconds": 0.396
+  },
+  "bigint_zero_divisor": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "0 True\n",
+    "stderr": "",
+    "seconds": 0.391
+  },
+  "float_long_fraction": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "nan\n",
+    "stderr": "",
+    "seconds": 0.32
+  },
+  "float_long_mantissa": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "inf\n",
+    "stderr": "",
+    "seconds": 0.318
+  },
+  "json_long_float": {
+    "compile_rc": 0,
+    "rc": 1,
+    "stdout": "",
+    "stderr": "error[JsonError]: JSON number is outside the finite Float range\n help: handle expected errors with try: ... else: ... end or safe: ... end\n",
+    "seconds": 0.53
+  },
+  "json_true_budget": {
+    "compile_rc": 0,
+    "rc": 1,
+    "stdout": "",
+    "stderr": "error[JsonError]: encoded JSON exceeds 4 MiB\n help: handle expected errors with try: ... else: ... end or safe: ... end\n",
+    "seconds": 0.421
+  },
+  "json_exact_limit": {
+    "compile_rc": 0,
+    "rc": 1,
+    "stdout": "",
+    "stderr": "error[JsonError]: encoded JSON exceeds 4 MiB\n help: handle expected errors with try: ... else: ... end or safe: ... end\n",
+    "seconds": 0.943
+  },
+  "json_limit_control": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "4194304\n",
+    "stderr": "",
+    "seconds": 0.879
+  },
+  "lconf_encode_limit": {
+    "timeout": true,
+    "stdout": "None",
+    "stderr": "None",
+    "seconds": 20.376
+  },
+  "median_mutation": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "2.0\n[3, 1, 2]\n",
+    "stderr": "",
+    "seconds": 0.45
+  },
+  "tensor_shape_alias": {
+    "compile_rc": 0,
+    "rc": 1,
+    "stdout": "2\n",
+    "stderr": "error[TensorIndexError]: tensor index out of range\n help: handle expected errors with try: ... else: ... end or safe: ... end\n",
+    "seconds": 1.492
+  },
+  "round_negative_zero": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "inf\n",
+    "stderr": "",
+    "seconds": 0.439
+  },
+  "list_append_self": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "1 2\n",
+    "stderr": "",
+    "seconds": 0.32
+  },
+  "global_delete": {
+    "compile_rc": 0,
+    "rc": 1,
+    "stdout": "",
+    "stderr": "error[NameError]: global variable 'x' read before assignment\n --> /workspace/scratch/602efea1b046/lsl-release-091/audit/0.9.1/global_delete.lsl:7\n  |\n7 | print x\n help: assign the variable or define the function before using it\n",
+    "seconds": 0.307
+  },
+  "global_for_target": {
+    "compile_rc": 0,
+    "rc": 0,
+    "stdout": "1\n2\n2\n",
+    "stderr": "",
+    "seconds": 0.325
+  }
+}

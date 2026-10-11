@@ -1,0 +1,6 @@
+error[E2001]: unknown native variable: x
+ --> /workspace/scratch/602efea1b046/verification/audit-091/loop_break_unassigned.lsl:5:7
+  |
+5 | print x
+  |       ^
+ help: assign the variable before reading it
