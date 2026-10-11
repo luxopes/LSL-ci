@@ -1,0 +1,254 @@
+{
+  "compiler_sha256": "1e123e69280d589e1c409f668c825476a30983e8c8f6f67a8048658cd9bf4b1f",
+  "backend_sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+  "runtime_sha256": "23a85294bf1087cc1b812172e1c95c0ee4b5b8d05486b375c25242c143b85c14",
+  "scope": "real frontend -> native LSL QBE -> system as/ld; no C codegen; serialized scratch cleanup check",
+  "source_sha256": {
+    "compiler/pure/qbe_toolchain.lsl": "786a5df6eace5885b342ef8ba85288352a28f7046548a1ddb9f4f1702b39b315",
+    "compiler/pure/qbe_emit.lsl": "4f7d281eb5f452021a12cb9b4823b05fbac74db7e23fa98dfa77159303de6301",
+    "tests/qbe_port/native_image_toolchain.lsl": "ccfecb087a97a7e26cedccf3c66b3872a26d62215df278409fead629336f1fca"
+  },
+  "checks": [
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "tests/qbe_port/native_image_toolchain.lsl",
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/image/image-api-probe",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 7.830946263995429,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/image/image-api-probe",
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/image/entry.lsl",
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/image/first",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+        "/source/entry/program.lsl"
+      ],
+      "seconds": 0.7386223529974814,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/image/image-api-probe",
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/image/entry.lsl",
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/image/second",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+        "/source/entry/program.lsl"
+      ],
+      "seconds": 0.7068658499993035,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/image/first"
+      ],
+      "seconds": 0.003237904005800374,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "/source/entry/.env\n11\nready\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/image/first"
+      ],
+      "seconds": 0.0031628950018784963,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "/source/entry/.env\n11\nready\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/image/first"
+      ],
+      "seconds": 0.0043608410051092505,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "/source/entry/.env\n11\nready\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/image/first"
+      ],
+      "seconds": 0.00397893999615917,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "/source/entry/.env\n11\nready\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/image/first"
+      ],
+      "seconds": 0.00331542100320803,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "/source/entry/.env\n11\nready\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/image/image-api-probe",
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/image/entry.lsl",
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/image/blank-entry",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+        ""
+      ],
+      "seconds": 0.6915365250024479,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/image/blank-entry"
+      ],
+      "seconds": 0.003546068001014646,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "/home/antonin/LSL-QBE/build/qbe-repair/optimized/image/.env\n11\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/image/image-api-probe",
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/image/entry.lsl",
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/image/failure",
+        "/bin/false",
+        ""
+      ],
+      "seconds": 0.5464960649987916,
+      "returncode": 1,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "LSL runtime error: CompileError: CompileError: QBE backend failed (status 1): \n"
+    }
+  ],
+  "complete": true,
+  "all_pass": true,
+  "image_sha256": "70593632451bd000d92e1c74f792790a32ffa64f45a77f0eb0361be31cbc87cb",
+  "elf": {
+    "bytes": 99024,
+    "type": "ET_DYN",
+    "machine": "x86_64",
+    "segments": [
+      {
+        "type": 1,
+        "flags": 4,
+        "offset": 0,
+        "vaddr": 0,
+        "file_bytes": 513,
+        "memory_bytes": 513,
+        "alignment": 4096
+      },
+      {
+        "type": 1,
+        "flags": 5,
+        "offset": 4096,
+        "vaddr": 4096,
+        "file_bytes": 83538,
+        "memory_bytes": 83538,
+        "alignment": 4096
+      },
+      {
+        "type": 1,
+        "flags": 4,
+        "offset": 90112,
+        "vaddr": 90112,
+        "file_bytes": 8,
+        "memory_bytes": 8,
+        "alignment": 4096
+      },
+      {
+        "type": 1,
+        "flags": 6,
+        "offset": 94000,
+        "vaddr": 98096,
+        "file_bytes": 4237,
+        "memory_bytes": 5184,
+        "alignment": 4096
+      },
+      {
+        "type": 2,
+        "flags": 6,
+        "offset": 94000,
+        "vaddr": 98096,
+        "file_bytes": 208,
+        "memory_bytes": 208,
+        "alignment": 8
+      },
+      {
+        "type": 1685382481,
+        "flags": 6,
+        "offset": 0,
+        "vaddr": 0,
+        "file_bytes": 0,
+        "memory_bytes": 0,
+        "alignment": 16
+      },
+      {
+        "type": 1685382482,
+        "flags": 4,
+        "offset": 94000,
+        "vaddr": 98096,
+        "file_bytes": 208,
+        "memory_bytes": 208,
+        "alignment": 1
+      }
+    ],
+    "dynamic": [
+      {
+        "tag": 1879047925,
+        "value": 456
+      },
+      {
+        "tag": 5,
+        "value": 512
+      },
+      {
+        "tag": 6,
+        "value": 488
+      },
+      {
+        "tag": 10,
+        "value": 1
+      },
+      {
+        "tag": 11,
+        "value": 24
+      },
+      {
+        "tag": 21,
+        "value": 0
+      },
+      {
+        "tag": 1879048187,
+        "value": 134217728
+      }
+    ],
+    "all_pass": true
+  },
+  "aslr_bases": [
+    140655084974080,
+    139681658269696,
+    140160191082496,
+    140242648150016,
+    139957620035584
+  ],
+  "binaries_unchanged": true
+}

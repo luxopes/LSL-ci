@@ -1,0 +1,165 @@
+{
+  "scope": "Independent integration audit of 4d61cde in coordinator checkout",
+  "agent_commit": "4d61cdef49ac861cc59994f3b7d8c9848a4d8fbf",
+  "generated_source_sha256": "e86d33614ee622a1a4044ded158bd077127991b83114d5dd51332d6b17fbe84c",
+  "backend_sha256": "3863bc4fed1630d0e10bd438a9433d6ea0229dabf4d9013f605717a482b86545",
+  "checks": [
+    {
+      "name": "upstream-differential",
+      "command": [
+        "python3",
+        "tools/qbe_port/verify_backend.py",
+        "--backend",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+        "--report",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/differential-parity-integrated.json"
+      ],
+      "returncode": 0,
+      "seconds": 27.15572169999723
+    },
+    {
+      "name": "ssa-valid",
+      "command": [
+        "python3",
+        "tools/qbe_port/verify_backend.py",
+        "--backend",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+        "--test-directory",
+        "tests/qbe_port/ssa_fastpath",
+        "--report",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/ssa-parity-integrated-valid.json"
+      ],
+      "returncode": 0,
+      "seconds": 2.7321661000023596
+    },
+    {
+      "name": "ssa-rejected",
+      "command": [
+        "python3",
+        "tools/qbe_port/verify_backend.py",
+        "--backend",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+        "--test-directory",
+        "tests/qbe_port/ssa_fastpath_rejected",
+        "--report",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/ssa-parity-integrated-rejected.json"
+      ],
+      "returncode": 0,
+      "seconds": 0.7709297700021125
+    },
+    {
+      "name": "ssa-undefined",
+      "command": [
+        "python3",
+        "tools/qbe_port/verify_backend.py",
+        "--backend",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+        "--test-directory",
+        "tests/qbe_port/ssa_fastpath_accepted_undefined",
+        "--report",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/ssa-parity-integrated-undefined.json"
+      ],
+      "returncode": 0,
+      "seconds": 1.0710931489993527
+    },
+    {
+      "name": "cli",
+      "command": [
+        "python3",
+        "tools/qbe_port/verify_cli.py",
+        "--backend",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+        "--report",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/cli-parity-integrated.json"
+      ],
+      "returncode": 0,
+      "seconds": 14.64087227300115
+    },
+    {
+      "name": "language",
+      "command": [
+        "python3",
+        "tools/qbe/verify.py",
+        "--compiler",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "--backend",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+        "--tests-only",
+        "--build-directory",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/language-parity-integrated"
+      ],
+      "returncode": 0,
+      "seconds": 8.123016022000229
+    },
+    {
+      "name": "word-stdio",
+      "command": [
+        "python3",
+        "tests/qbe_port/word_stdio_oracle.py",
+        "--compiler",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "--qbe",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+        "--report",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/word-stdio-parity-integrated.json"
+      ],
+      "returncode": 0,
+      "seconds": 3.2415667879977264
+    },
+    {
+      "name": "bitset",
+      "command": [
+        "python3",
+        "tests/qbe_port/bitset_iteration_oracle.py",
+        "--compiler",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "--qbe",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+        "--source",
+        "compiler/pure/qbe_port/qbe_backend.lsl",
+        "--report",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/bitset-parity-integrated.json"
+      ],
+      "returncode": 0,
+      "seconds": 13.154294293999556
+    },
+    {
+      "name": "executables",
+      "command": [
+        "env",
+        "bin=/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+        "binref=/home/antonin/LSL-QBE/build/qbe/qbe",
+        "sh",
+        "vendor/qbe-1.3/tools/test.sh",
+        "all"
+      ],
+      "returncode": 0,
+      "seconds": 7.305649188001553
+    }
+  ],
+  "component_count": 10,
+  "components_pass": true,
+  "word_stdio": {
+    "formats": 696,
+    "calls": 2088,
+    "expected_bytes": 50313,
+    "actual_bytes": 50313,
+    "expected_sha256": "1253815a99179f7b940a2e900c8a07d948deac68fa665a50b9dc52e52016e79c",
+    "actual_sha256": "1253815a99179f7b940a2e900c8a07d948deac68fa665a50b9dc52e52016e79c",
+    "returncode": 0,
+    "stderr": "",
+    "complete": true
+  },
+  "bitset": {
+    "cases": 636,
+    "complete": true,
+    "returncode": 0,
+    "stdout": "PASS bitset iteration\n",
+    "stderr": "",
+    "generated_source_sha256": "e86d33614ee622a1a4044ded158bd077127991b83114d5dd51332d6b17fbe84c"
+  },
+  "regressions_complete": true,
+  "benchmark_exact": true,
+  "strict_speed_threshold_met": false,
+  "selfhost_complete": true
+}

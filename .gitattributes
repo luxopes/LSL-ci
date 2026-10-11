@@ -1,10 +1,6 @@
-# Release archives are published beside the source archive and must not be
-# recursively embedded in it.
-docs/developer_guides/downloads export-ignore
-docs/developer_guides/releases/0.5/downloads export-ignore
-docs/developer_guides/releases/0.6/downloads export-ignore
-docs/developer_guides/releases/0.6.5/downloads export-ignore
-
 # Signed fixtures must retain exact bytes, including the manifest's final LF.
 tests/compiler/fixtures/update-stable.json -text whitespace=-blank-at-eof
 tests/compiler/fixtures/update-stable.sig binary
+
+# Preserve the vendored upstream reference byte-for-byte.
+vendor/qbe-1.3/** -whitespace

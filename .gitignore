@@ -5,7 +5,12 @@ dist/
 *.o
 *.a
 *.so
+__pycache__/
+*.pyc
 
 # transient double-build verification artifacts
 *.a
 *.b
+
+# Offline manuals are an export of the pinned LuxAI/LSL-Web dependency.
+docs/developer_guides

@@ -1,0 +1,187 @@
+{
+  "scope": "Check native capture preserves inherited RLIMIT_FSIZE bounds.",
+  "compiler_sha256": "efbcb2bbe51587b9728616cef23c0553acde66cceedc17aded04ae4c4602a7a9",
+  "source_sha256": "ca12f7c0cc0850bf8d3c742494c59d3e41f6cccd02703042d4f411a54cedf6fd",
+  "runtime_object_sha256": "f149de1788ca46b9a89ea31d91cbea93af95b83cd763a46301637a492267e123",
+  "runtime_source_sha256": "c1508d4c69fb952bbe89417d897a4a165182e07afd773a335d65088f96d9620f",
+  "correctness_only": true,
+  "commands": [
+    {
+      "mode": "public",
+      "command": [
+        "/home/antonin/LSL-QBE-capture-limits/compiler/pure/lslc-qbe",
+        "--unsafe",
+        "/home/antonin/LSL-QBE-capture-limits/tests/qbe_port/native_capture_file_limits.lsl",
+        "/home/antonin/LSL-QBE-capture-limits/build/qbe/capture-limits/capture-limits-public"
+      ],
+      "seconds": 0.6621189979996416,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "binary_sha256": "a412d49dd0419b2016850dbb48042a3ba80853c206829426ac3dcfeb61ed3805"
+    },
+    {
+      "mode": "internal",
+      "command": [
+        "/home/antonin/LSL-QBE-capture-limits/compiler/pure/lslc-qbe",
+        "--unsafe",
+        "/home/antonin/LSL-QBE-capture-limits/build/qbe/capture-limits/capture-limits-internal.lsl",
+        "/home/antonin/LSL-QBE-capture-limits/build/qbe/capture-limits/capture-limits-internal"
+      ],
+      "seconds": 0.6559295749975718,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "binary_sha256": "ece9b2c14b1dc68fc4a20dd876c00f93f5021eea21c2b442c76f681835db8ec8"
+    }
+  ],
+  "rows": [
+    {
+      "mode": "public",
+      "inherited_limits": [
+        16777216,
+        16777216
+      ],
+      "returncode": 0,
+      "stdout": "before 16777216 16777216\ncaptured 16777216 16777216\nafter 16777216 16777216\n",
+      "stderr": "",
+      "expected_stdout": "before 16777216 16777216\ncaptured 16777216 16777216\nafter 16777216 16777216\n",
+      "pass": true
+    },
+    {
+      "mode": "public",
+      "inherited_limits": [
+        67108864,
+        67108864
+      ],
+      "returncode": 0,
+      "stdout": "before 67108864 67108864\ncaptured 67108864 67108864\nafter 67108864 67108864\n",
+      "stderr": "",
+      "expected_stdout": "before 67108864 67108864\ncaptured 67108864 67108864\nafter 67108864 67108864\n",
+      "pass": true
+    },
+    {
+      "mode": "public",
+      "inherited_limits": [
+        134217728,
+        134217728
+      ],
+      "returncode": 0,
+      "stdout": "before 134217728 134217728\ncaptured 134217728 134217728\nafter 134217728 134217728\n",
+      "stderr": "",
+      "expected_stdout": "before 134217728 134217728\ncaptured 134217728 134217728\nafter 134217728 134217728\n",
+      "pass": true
+    },
+    {
+      "mode": "public",
+      "inherited_limits": [
+        1048576,
+        67108864
+      ],
+      "returncode": 0,
+      "stdout": "before 1048576 67108864\ncaptured 1048576 67108864\nafter 1048576 67108864\n",
+      "stderr": "",
+      "expected_stdout": "before 1048576 67108864\ncaptured 1048576 67108864\nafter 1048576 67108864\n",
+      "pass": true
+    },
+    {
+      "mode": "public",
+      "inherited_limits": [
+        16777216,
+        268435456
+      ],
+      "returncode": 0,
+      "stdout": "before 16777216 268435456\ncaptured 16777216 134217728\nafter 16777216 268435456\n",
+      "stderr": "",
+      "expected_stdout": "before 16777216 268435456\ncaptured 16777216 134217728\nafter 16777216 268435456\n",
+      "pass": true
+    },
+    {
+      "mode": "public",
+      "inherited_limits": [
+        -1,
+        -1
+      ],
+      "returncode": 0,
+      "stdout": "before -1 -1\ncaptured 134217728 134217728\nafter -1 -1\n",
+      "stderr": "",
+      "expected_stdout": "before -1 -1\ncaptured 134217728 134217728\nafter -1 -1\n",
+      "pass": true
+    },
+    {
+      "mode": "internal",
+      "inherited_limits": [
+        16777216,
+        16777216
+      ],
+      "returncode": 0,
+      "stdout": "before 16777216 16777216\ncaptured 16777216 16777216\nafter 16777216 16777216\n",
+      "stderr": "",
+      "expected_stdout": "before 16777216 16777216\ncaptured 16777216 16777216\nafter 16777216 16777216\n",
+      "pass": true
+    },
+    {
+      "mode": "internal",
+      "inherited_limits": [
+        67108864,
+        67108864
+      ],
+      "returncode": 0,
+      "stdout": "before 67108864 67108864\ncaptured 67108864 67108864\nafter 67108864 67108864\n",
+      "stderr": "",
+      "expected_stdout": "before 67108864 67108864\ncaptured 67108864 67108864\nafter 67108864 67108864\n",
+      "pass": true
+    },
+    {
+      "mode": "internal",
+      "inherited_limits": [
+        134217728,
+        134217728
+      ],
+      "returncode": 0,
+      "stdout": "before 134217728 134217728\ncaptured 134217728 134217728\nafter 134217728 134217728\n",
+      "stderr": "",
+      "expected_stdout": "before 134217728 134217728\ncaptured 134217728 134217728\nafter 134217728 134217728\n",
+      "pass": true
+    },
+    {
+      "mode": "internal",
+      "inherited_limits": [
+        1048576,
+        67108864
+      ],
+      "returncode": 0,
+      "stdout": "before 1048576 67108864\ncaptured 1048576 67108864\nafter 1048576 67108864\n",
+      "stderr": "",
+      "expected_stdout": "before 1048576 67108864\ncaptured 1048576 67108864\nafter 1048576 67108864\n",
+      "pass": true
+    },
+    {
+      "mode": "internal",
+      "inherited_limits": [
+        16777216,
+        268435456
+      ],
+      "returncode": 0,
+      "stdout": "before 16777216 268435456\ncaptured 16777216 134217728\nafter 16777216 268435456\n",
+      "stderr": "",
+      "expected_stdout": "before 16777216 268435456\ncaptured 16777216 134217728\nafter 16777216 268435456\n",
+      "pass": true
+    },
+    {
+      "mode": "internal",
+      "inherited_limits": [
+        -1,
+        -1
+      ],
+      "returncode": 0,
+      "stdout": "before -1 -1\ncaptured 134217728 134217728\nafter -1 -1\n",
+      "stderr": "",
+      "expected_stdout": "before -1 -1\ncaptured 134217728 134217728\nafter -1 -1\n",
+      "pass": true
+    }
+  ],
+  "all_pass": true
+}

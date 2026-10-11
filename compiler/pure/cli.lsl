@@ -1,7 +1,8 @@
 # lsl: internal-abi
+load host
 # Public pure-LSL command frontend.
 
-load codegen
+load pipeline
 load editor
 load fd
 load highlight
@@ -9,23 +10,22 @@ load browser
 load catalog
 load console
 load httpserver
-load linker
 load manual
 load os
 load package
-load parser
 load sandbox
 load tui
 load update
 
-VERSION = "0.8.9"
+VERSION = "0.9.0"
+RELEASE_LABEL = "BETA"
 
 function print_help():
-    call console.heading("Lux Simple Lang (LSL) " + VERSION)
+    call console.heading("Lux Simple Lang (LSL) " + VERSION + " " + RELEASE_LABEL)
     print ""
     print "Usage:"
     print "  lsl [SOURCE [ARG...]]"
-    print "  lsl compile [--unsafe] SOURCE OUTPUT"
+    print "  lsl compile [--unsafe] [--target NAME] SOURCE OUTPUT"
     print "  lsl config ENTRY"
     print "  lsl install NAME"
     print "  lsl install --config FILE"
@@ -106,30 +106,19 @@ function decimal_option(value, minimum, maximum, label):
     return result
 end
 
-function compile_image_mode(source_path, source, safety_mode, running=False):
+function compile_image_mode(source_path, source, safety_mode, running=False, target_name=""):
     stdlib_name = "compiler/pure/dynamic_stdlib.lsl"
     stdlib_path = resource_path(stdlib_name)
     stdlib_source = readfile(stdlib_path)
-    program = parser.parse(stdlib_name, stdlib_source)
-    call linker.annotate_statements(program, stdlib_name)
-    call linker.mark_internal_abi(program, True)
-    if safety_mode == 0:
-        program.extend(linker.link(source_path, source))
-    else:
-        if String(source).find("# lsl: unchecked-intarray") >= 0:
-            Error(CompileError: "unchecked-intarray requires lsl compile --unsafe")
-        end
-        program.extend(linker.link_checked(source_path, source, safety_mode == 2))
-    end
     entry_source = ""
     if running:
         entry_source = source_path
     end
-    return codegen.generate_mode(source_path, source, program, False, entry_source)
+    return pipeline.compile_mode(source_path, source, stdlib_source, safety_mode, False, entry_source, target_name)
 end
 
-function compile_source_mode(source_path, source, output_path, safety_mode):
-    call writebytes(output_path, compile_image_mode(source_path, source, safety_mode))
+function compile_source_mode(source_path, source, output_path, safety_mode, target_name=""):
+    call writebytes(output_path, compile_image_mode(source_path, source, safety_mode, False, target_name))
 end
 
 function compile_source(source_path, source, output_path):
@@ -153,72 +142,19 @@ function compile_file_image(source_path, safety_mode):
 end
 
 function dirname(path):
-    slash = -1
-    index = 0
-    while index < len(path):
-        if path[index] == "/":
-            slash = index
-        end
-        index += 1
-    end
-    if slash < 0:
-        return "."
-    elif slash == 0:
-        return "/"
-    end
-    return path[0:slash]
+    return host.dirname(path)
 end
 
 function resource_path(path):
-    executable = executable_path()
-    binary_directory = dirname(executable)
-    root_candidate = binary_directory + "/" + path
-    if exists(root_candidate):
-        return root_candidate
-    end
-    root_candidate = dirname(dirname(dirname(executable))) + "/" + path
-    if exists(root_candidate):
-        return root_candidate
-    end
-    prefix = dirname(binary_directory)
-    prefix_bin = prefix + "/bin"
-    if prefix == "/":
-        prefix_bin = "/bin"
-    end
-    if binary_directory == prefix_bin:
-        return prefix + "/lib/lsl/" + path
-    end
-    # Repository fallback is last so an attacker-controlled working directory
-    # cannot shadow resources beside an installed executable.
-    return path
+    return host.resource_path(path)
 end
 
 function tool_path(repository_path, installed_name):
-    binary_directory = dirname(executable_path())
-    adjacent = binary_directory + "/" + installed_name
-    if exists(adjacent):
-        return adjacent
-    end
-    prefix = dirname(binary_directory)
-    prefix_bin = prefix + "/bin"
-    if prefix == "/":
-        prefix_bin = "/bin"
-    end
-    if binary_directory == prefix_bin:
-        # An incomplete installation must not execute a same-named tool from
-        # the caller's working directory.
-        return adjacent
-    end
-    return repository_path
+    return host.tool_path(repository_path, installed_name)
 end
 
 function required_system_tool(primary, fallback, label):
-    if exists(primary):
-        return primary
-    elif exists(fallback):
-        return fallback
-    end
-    Error(ProcessError: "trusted " + label + " executable is required")
+    return host.required_system_tool(primary, fallback, label)
 end
 
 function registry_server():
@@ -230,32 +166,17 @@ function registry_server():
 end
 
 function user_home():
-    home = __lsl_getenv("HOME")
-    if home == None or home == "":
-        Error(PackageError: "HOME is required for per-user library installation")
-    end
-    return home
+    return host.user_home()
 end
 
 # Scratch path for a compiled program. Atomic 0700 mkdir prevents other users
 # from replacing the ELF between compilation and execution.
 function scratch_program_path():
-    process = String(__lsl_syscall(39, 0, 0, 0, 0))
-    attempt = 0
-    directory = "/tmp/lsl-program-" + process
-    while __lsl_mkdir_private(directory) != 0:
-        attempt += 1
-        if attempt > 100:
-            Error(FileError: "cannot create a private CLI scratch directory")
-        end
-        directory = "/tmp/lsl-program-" + process + "-" + String(attempt)
-    end
-    return directory + "/program"
+    return host.scratch_program_path()
 end
 
 function cleanup_program(path):
-    call unlink(path)
-    call rmdir(dirname(path))
+    return host.cleanup_program(path)
 end
 
 function materialize_scratch(image):
@@ -390,15 +311,9 @@ end
 
 function read_interactive_source(stty):
     colors = console.colors()
-    call console.heading("Lux Simple Lang " + VERSION + " interactive source mode")
+    call console.heading("Lux Simple Lang " + VERSION + " " + RELEASE_LABEL + " interactive source mode")
     print console.style("Enter code; type exit on its own line (or press Ctrl-D) to compile and run. Ctrl-C clears the line.", "2")
-    saved = os.capture_argv_clean(stty, ["-g"]).strip()
-    if capture_status() != 0 or len(saved) == 0 or len(saved) > 4096:
-        Error(CliError: "cannot read terminal state")
-    end
-    if os.run_argv_clean(stty, ["-echo", "-icanon", "min", "1", "time", "0"]) != 0:
-        Error(CliError: "cannot enter terminal raw mode")
-    end
+    saved = host.prompt_enter(stty)
     lines = []
     history = []
     total = 0
@@ -429,7 +344,7 @@ function read_interactive_source(stty):
     else:
         failure = last_error()
     end
-    call os.run_argv_clean(stty, [saved])
+    call host.prompt_leave(stty, saved)
     if failure != None:
         Error(CliError: String(failure))
     end
@@ -444,13 +359,13 @@ function read_stdin_source():
     total = 0
     terminal = __lsl_isatty(0)
     if terminal and __lsl_isatty(1) and __lsl_getenv("TERM") != "dumb":
-        stty = os.which_trusted("stty")
+        stty = host.interactive_tool()
         if stty != None:
             return read_interactive_source(stty)
         end
     end
     if terminal:
-        print "Lux Simple Lang " + VERSION + " interactive source mode"
+        print "Lux Simple Lang " + VERSION + " " + RELEASE_LABEL + " interactive source mode"
         print "Enter code; type exit on its own line to compile and run."
     end
     loop:
@@ -575,26 +490,32 @@ function main():
         print console.clean(about[colon + 1:len(about)].strip())
         exit(0)
     elif command == "compile":
-        source_path = arg(2)
-        output_path = arg(3)
+        option_index = 2
         unsafe_compile = False
-        if source_path == "--unsafe":
-            unsafe_compile = True
-            source_path = arg(3)
-            output_path = arg(4)
-            extra = arg(5)
-        else:
-            extra = arg(4)
+        target_name = ""
+        while arg(option_index) == "--unsafe" or arg(option_index) == "--target":
+            if arg(option_index) == "--unsafe":
+                unsafe_compile = True
+                option_index += 1
+            else:
+                target_name = arg(option_index + 1)
+                if target_name == None:
+                    Error(CliError: "--target requires a target name")
+                end
+                option_index += 2
+            end
         end
-        if source_path == None or output_path == None or extra != None:
-            print "usage: lsl compile [--unsafe] SOURCE OUTPUT"
+        source_path = arg(option_index)
+        output_path = arg(option_index + 1)
+        if source_path == None or output_path == None or arg(option_index + 2) != None:
+            print "usage: lsl compile [--unsafe] [--target NAME] SOURCE OUTPUT"
             exit(2)
         end
+        safety_mode = 1
         if unsafe_compile:
-            call compile_file_unsafe(source_path, output_path)
-        else:
-            call compile_file(source_path, output_path)
+            safety_mode = 0
         end
+        call compile_source_mode(source_path, readfile(source_path), output_path, safety_mode, target_name)
         exit(0)
     elif command == "config":
         entry = arg(2)
@@ -630,14 +551,7 @@ function main():
             # Even lexically pure configuration may contain an infinite loop or an
             # allocation bomb. Evaluate it in a clean subprocess with wall-clock,
             # CPU, address-space, file-size and descriptor limits.
-            timeout = required_system_tool("/usr/bin/timeout", "/bin/timeout", "timeout")
-            prlimit = required_system_tool("/usr/bin/prlimit", "/bin/prlimit", "prlimit")
-            limits = [
-                "--signal=TERM", "--kill-after=1s", "--", "30s", prlimit,
-                "--as=1073741824", "--cpu=30", "--fsize=16777216",
-                "--nofile=64", "--nproc=32", "--", evaluator
-            ]
-            status = run_clean(timeout, limits)
+            status = host.run_config(evaluator)
         else:
             failure = last_error()
         end
@@ -654,13 +568,13 @@ function main():
         elif name == "--tui" and arg(3) == None:
             call console.require_terminal()
             call console.heading("Loading package catalog from " + registry_server())
-            items = catalog.fetch(registry_server(), "/usr/bin/curl")
+            items = catalog.fetch(registry_server(), host.tool("curl"))
             inventory = catalog.installed(__lsl_getenv("HOME"), resource_path("stdlib"))
             call browser.packages(items, inventory, executable_path())
         elif name == "--config" and arg(3) != None and arg(4) == None:
-            call package.install_config(arg(3), user_home(), registry_server(), "/usr/bin/curl", "/usr/bin/sha256sum", "/usr/bin/mv", "/usr/bin/chmod", executable_path())
+            call package.install_config(arg(3), user_home(), registry_server(), host.tool("curl"), host.tool("sha256sum"), host.tool("mv"), host.tool("chmod"), executable_path())
         elif name != None and arg(3) == None:
-            call package.install(name, user_home(), registry_server(), "/usr/bin/curl", "/usr/bin/sha256sum", "/usr/bin/mv", "/usr/bin/chmod", executable_path())
+            call package.install(name, user_home(), registry_server(), host.tool("curl"), host.tool("sha256sum"), host.tool("mv"), host.tool("chmod"), executable_path())
         else:
             print "usage: lsl install NAME | lsl install --config FILE | lsl install --tui"
             exit(2)
@@ -706,7 +620,7 @@ function main():
         if query == None:
             query = ""
         end
-        items = catalog.search(catalog.fetch(registry_server(), "/usr/bin/curl"), query)
+        items = catalog.search(catalog.fetch(registry_server(), host.tool("curl")), query)
         inventory = catalog.installed(__lsl_getenv("HOME"), resource_path("stdlib"))
         call console.heading("Registry: " + registry_server())
         for item in items:
@@ -754,7 +668,7 @@ function main():
             print "usage: lsl update [NAME]"
             exit(2)
         else:
-            call package.update(name, user_home(), registry_server(), "/usr/bin/curl", "/usr/bin/sha256sum", "/usr/bin/mv", "/usr/bin/chmod", executable_path())
+            call package.update(name, user_home(), registry_server(), host.tool("curl"), host.tool("sha256sum"), host.tool("mv"), host.tool("chmod"), executable_path())
         end
         exit(0)
     elif command == "origin":
@@ -766,7 +680,7 @@ function main():
         if name == None:
             print registry_server()
         else:
-            provenance = package.verified_origin(name, user_home(), "/usr/bin/sha256sum")
+            provenance = package.verified_origin(name, user_home(), host.tool("sha256sum"))
             print "name", provenance["name"]
             print "origin", provenance["origin"]
             print "source", provenance["source"]

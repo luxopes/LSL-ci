@@ -5,7 +5,7 @@
 
 load bytes
 
-function header(code_size, data_size, entry_offset):
+function header(code_size, data_size, entry_offset, machine=62, segment_alignment=4096):
     header_size = 64
     program_header_size = 56
     program_header_count = 2
@@ -16,7 +16,7 @@ function header(code_size, data_size, entry_offset):
     # randomized load bias even though the image has no interpreter, dynamic
     # section or relocations.
     result.extend(bytes.little(3, 2))
-    result.extend(bytes.little(62, 2))
+    result.extend(bytes.little(machine, 2))
     result.extend(bytes.little(1, 4))
     result.extend(bytes.little(payload_offset + entry_offset, 8))
     result.extend(bytes.little(header_size, 8))
@@ -39,7 +39,7 @@ function header(code_size, data_size, entry_offset):
     result.extend(bytes.little(0, 8))
     result.extend(bytes.little(image_size, 8))
     result.extend(bytes.little(image_size, 8))
-    result.extend(bytes.little(4096, 8))
+    result.extend(bytes.little(segment_alignment, 8))
 
     # Explicit non-executable stack. Relying on the kernel default when
     # PT_GNU_STACK is absent is architecture- and tooling-dependent.
@@ -54,9 +54,9 @@ function header(code_size, data_size, entry_offset):
     return result
 end
 
-function image_entry(code, data, entry_offset):
+function image_entry(code, data, entry_offset, machine=62, segment_alignment=4096):
     result = ByteArray()
-    call bytes.extend(result, header(len(code), len(data), entry_offset))
+    call bytes.extend(result, header(len(code), len(data), entry_offset, machine, segment_alignment))
     call bytes.extend_bytes(result, code)
     call bytes.extend_bytes(result, data)
     return result

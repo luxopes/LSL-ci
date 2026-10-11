@@ -1,0 +1,35 @@
+{
+  "production_commit": "a51ff74",
+  "compiler_sha256": "0ecd044c591d95b576816512413b62f2010e9c5620a2b56b8242f98b479f1911",
+  "source_sha256": {
+    "lexer": "dcc607a576efd5b1a370737dc3c1075c8f815aed853c80097045e02e7147c101",
+    "flow": "87adb7765087299b64a41997d1919ee362b679b6264388356d32576e25c28323",
+    "validation": "82d3f45c9655cd169c878153900f58d17c32f6eab95fbafb562024cc694fd5e1",
+    "semantic": "10168895e9a39b94c540f1b90663fea8edb15b7843fbc0a4f94a6ed425978a0b"
+  },
+  "unicode_byte_spans": {
+    "command": [
+      "build/qbe-repair/lexer_smoke",
+      "build/qbe-repair/lexer-unicode-input.lsl"
+    ],
+    "seconds": 0.002268956995976623,
+    "returncode": 0,
+    "timed_out": false,
+    "stdout": "name print 1 1 6\nstring \u017elu\u0165ou\u010dk\u00fd \ud83d\ude00 1 7 20\nsymbol , 1 20 21\nnumber 255 1 22 26\nnewline \n 1 26 27\nnewline \n 2 4 5\nname x 3 1 2\nsymbol = 3 3 4\nnumber 3.5e+2 3 5 11\nnewline \n 3 11 12\neof  4 1 1\n",
+    "stderr": "",
+    "matches_expected": true
+  },
+  "parser_1000_sources": {
+    "command": [
+      "build/qbe-repair/frontend_fuzz"
+    ],
+    "seconds": 0.6077558209944982,
+    "returncode": 0,
+    "timed_out": false,
+    "stdout": "1000\n",
+    "stderr": "",
+    "matches_expected": true
+  },
+  "all_pass": true,
+  "note": "Initial lexer harness invocation omitted its required input argument and failed FileError; corrected invocation shown here."
+}

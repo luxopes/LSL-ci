@@ -1,4 +1,31 @@
-# LSL 0.7.1 release handoff
+# LSL 0.9.0 BETA — release handoff
+
+## Aktuální rozsah a následující vydání — 11. 10. 2026
+
+0.9.0 BETA cílí na Linux x86_64. Nový backend odvozený od QBE je přepsaný
+do LSL; překlad generovaného assembleru a výsledné ELF používá systémové
+GNU binutils (`as`/`ld`). Historický zákaz assembleru/linkeru uvedený níže
+popisuje původní přímý backend 0.7.1, není kontraktem nové QBE cesty.
+Další OS/architektury nejsou v tomto vydání označené jako podporované.
+
+Úplný zachovaný seznam provozních hlášení, reprodukcí a dalších požadavků
+je v `TODO.md`. Všechny zbylé otevřené položky jsou plánované pro 0.9.1;
+žádné hlášení se nepovažuje za opravené pouze výměnou backendu. Konkrétní
+release hashe, self-host fixed point, regresní corpus a instalační ověření
+musí pocházet z reportů pro výsledné release artefakty. Historické výsledky
+níže nejsou výsledky nynějšího vydání a neoznačují budoucí testy za PASS.
+
+Web a manuály jsou oddělené do [LuxAI/LSL-Web](https://git.lux-ai.cz/LuxAI/LSL-Web).
+LSL přebírá offline manuály z připnutého commitu tohoto jediného zdroje;
+web má vlastní atomický deployer a rollback. Produkční hosting dosud čeká
+na přístupové a provozní údaje. Stabilní podepsaný kanál 0.8.9 se zachovává;
+0.9.0 BETA jej automaticky nepromuje ani nenahrazuje.
+
+## Historický handoff 0.7.1
+
+Následující původní text je zachovaný jako historický záznam původního
+přímého backendu. Jeho cesty, hashe, časy a provozní pravidla nejsou aktuálním
+návodem pro sestavení či publikaci 0.9.0 BETA.
 
 ## Cíl a aktuální stav
 

@@ -1,0 +1,1646 @@
+{
+  "complete": true,
+  "scope": "Fresh final production correctness audit. Same frozen compiler graph as native self-host0339509. Fresh output namespace with no previous SSA/assembly/diagnostic markers, seven exact production ELF reproductions, freshly compiled automatic-GC/thread program100repetitions. No timing benchmark; Float/collection baseline is historical native frontend, not LSL0.8.9. Startup includes installed0.8.9 comparisons.",
+  "compiler_graph_commit": "0339509",
+  "checkout_commit": "bd660986f8c8af77dae19d5568c177a4f3372b8c",
+  "compiler_sources_sha256": {
+    "compiler/pure/_catalog_platform.lsl": "82988ff5d7f2adc752cbe3e86da10faebc873f4857d9442124e538193e536006",
+    "compiler/pure/_compiler_host_platform.lsl": "50235c7e0176d1a72af26e33296c94c3557e2640268b1729f8d2e361958b2e96",
+    "compiler/pure/_install_platform.lsl": "2a5e28db11799527374a35b1c2a8b80a6f34d14f209c1f0336db779afc1132d4",
+    "compiler/pure/_package_platform.lsl": "5390924c2c8eb95ebc34099e05d88d0b77ce27693fce9f32d0f064317dd00100",
+    "compiler/pure/_update_install_platform.lsl": "b23a59ce6d202f03f7e25fe683ce23b293d0dcc82e2312f823b295266b0a6b59",
+    "compiler/pure/_update_platform.lsl": "b35cd3dbd1de9e582410c1c0078d5016c34a03d5b24440003a21e775ff41b041",
+    "compiler/pure/abi_x86_64.lsl": "5e6123581d7dec0223b03ff00e2ba5fd6fe7973bb665852d8d0a44820c3b8a60",
+    "compiler/pure/assembler.lsl": "8d6c68b1d9f40d37904704741d2fe6b00872309661baaf4951cf5e65baf78f7c",
+    "compiler/pure/assembler_x86_64.lsl": "af22e43292f7866cbb9348840d6cb52e05e4b0df10cb61aaef32a826abbd52f4",
+    "compiler/pure/backend_x86_64.lsl": "70bf7ed1cb4c7b23c97bdc170f5233dae7158c4a38503d1a8f3c60a5fe44f718",
+    "compiler/pure/browser.lsl": "eeb9f0d0ea05efb5b473a5ff89ef95c08217f3ebc4a4095ab534ea013f23db2a",
+    "compiler/pure/bytes.lsl": "6d5b630011129af9a936b448432e0cd8631437d20c809995e6fa78197b18f1b8",
+    "compiler/pure/catalog.lsl": "1dd32f76028e005b28a518c99df572941a3952ea6a72711fa4fc9c07bb6f433b",
+    "compiler/pure/catalog_linux_x86_64.lsl": "016b9de8341ee410286a7d2e6d540bfafa9ae79cd2de4be27dc2866613f53f39",
+    "compiler/pure/cli.lsl": "a5e4b55f211aa5522e72ce777967fd14d2d696f8a07766113f40abd22dc25088",
+    "compiler/pure/codegen.lsl": "058d58fbb77bf78d5a52a863f6fd8447321a70e8a00257b7076ae7423258c3cd",
+    "compiler/pure/compiler_backend.lsl": "a14da865d5cdef0e5599335884c3a1c9dffa8c19ef5ab3bd0b9c6ffe9ecb75b7",
+    "compiler/pure/console.lsl": "05ec9f84138198f65065f4c8aa2c451ac90961996947e7fad3e755e830cf505d",
+    "compiler/pure/declarations.lsl": "8b4027b210bb46c5db34d3a70c857ee26b088a31cf340b2e09c886137d2e82ac",
+    "compiler/pure/diagnostics.lsl": "e5b5d66ab05ae3e87b9c84103f8a69d6857416fabcebb17d7ca5a959af64ec74",
+    "compiler/pure/dynamic_stdlib.lsl": "6b78f1022da7021a48246f35d1224a501d2964ab59faae735922595f54e5797e",
+    "compiler/pure/editor.lsl": "381eb9980899eb6964cc72f07608e39b419c7f832a7b7f45f5977be3bca218d0",
+    "compiler/pure/elf_image.lsl": "2a05401fc3ff99dbd7364f9b26f42e114747e079dbcb22525f8acf91ac5f828e",
+    "compiler/pure/flow.lsl": "87adb7765087299b64a41997d1919ee362b679b6264388356d32576e25c28323",
+    "compiler/pure/frontend.lsl": "e708a35f8a44ba8002f05165ec864ae9aaa7b2d924d0cf67b282862c78c9be85",
+    "compiler/pure/heap_runtime.lsl": "3b4679d6104c1a0bc8fdfb2bb0165288c97482a30a51c9cf5edee1af38ba20e6",
+    "compiler/pure/heap_runtime_linux_x86_64.lsl": "f6b7ddc4e3c546ab592e2a1e39e53e4c1c695fe83cca1ff15fc251e928c30073",
+    "compiler/pure/highlight.lsl": "7bb02d0eb31f1435896ea2f447ace7c89b4bc286b5da1642c6f03e1e2c1ce87d",
+    "compiler/pure/host.lsl": "3b458a8d437aa50d2cebb7d613339c08df7816386babc2245c529ce1bb15cbf6",
+    "compiler/pure/host_linux_x86_64.lsl": "95fbed18a04238710eca734c09e73d7fa5b7f3f41d784f34f1a2401e2083745e",
+    "compiler/pure/image_elf64_linux.lsl": "44bf898add0a37fd9279459c5f7ff140dcd66c7abb87f557c47e5a854da6d739",
+    "compiler/pure/image_writer.lsl": "58cebb23435a57c9d3d723646bd444ac7c48f46c3bb2097374d94361eaeff492",
+    "compiler/pure/install.lsl": "e57e496e0d960293194bbdba5dcecf1210ffc131bd94c0b5a027cf33f72bea18",
+    "compiler/pure/install_linux_x86_64.lsl": "acd36f168730cc3904c34c827a700d3210a3e9722a8119d55cc004c250402d6d",
+    "compiler/pure/io_runtime.lsl": "3d5302d06c75e9fad5c628b739bdc3d06cfe0e803b2a129c863b997f6e4a7995",
+    "compiler/pure/io_runtime_linux_x86_64.lsl": "67518f93b0253792ed0f0ee1a8c8e34f8df9873b979e32f88308297166ca3a19",
+    "compiler/pure/lexer.lsl": "dcc607a576efd5b1a370737dc3c1075c8f815aed853c80097045e02e7147c101",
+    "compiler/pure/linker.lsl": "05bde8e7d7ff5a7a004c51bb574a0a621b911df96e1d9c79666c2346a9abc9a5",
+    "compiler/pure/lslc_direct.lsl": "c025015017dcca7300b893529d3de7bf97f9a89d58a1e6e6d924a8030269ce58",
+    "compiler/pure/lslc_qbe.lsl": "085e51564613f2468546cf45f054fdf74863d1032a873b2b71c491dab8b0540d",
+    "compiler/pure/manual.lsl": "565e91fc2003e4eadfa264991771dc9289a0ffd8a2f3621aa2fee32b58369dc0",
+    "compiler/pure/native_plugin_runtime.lsl": "c48e8995ddb131ac5d2808530cc1aa9d0e3ba618c44bf9a411f425c70b9fba7d",
+    "compiler/pure/native_plugin_runtime_linux_x86_64.lsl": "f1d07341cb011cb23df05caee61ccb3a5fc763c62b61d4b927c1dffaacf64241",
+    "compiler/pure/native_runtime.lsl": "97b15d1f9b2cbe3ecb8ac67a42affabe876dc8f2b9439150088232cfcc3bf461",
+    "compiler/pure/native_runtime_linux_x86_64.lsl": "89021b33402d8a8f2b746ddbaa85282df0a9f391a073ae813b558f0a392fe710",
+    "compiler/pure/object_code.lsl": "28c665c4799f59166c42c8673d9bf203a18a3bba95bec233571516037f1562f5",
+    "compiler/pure/package.lsl": "b344a5cc14db24b526c8c0dd256949541147e9462244207ac1319a2f026aa472",
+    "compiler/pure/package_linux_x86_64.lsl": "7bdb0f73c59a1de70cbd689d1c4560c3cb2ea37987550299e5462a96e4bf0a5b",
+    "compiler/pure/parser.lsl": "a5eb49774210c7c101014f344f91a58a9730a09e9028cce8ed190738ce3783bf",
+    "compiler/pure/pipeline.lsl": "84d20482156131be58360f56f0d47883b4d5a3797a59087473c240d85f8c9320",
+    "compiler/pure/process_runtime.lsl": "feb20eed99030a41b6bcf73c6ed925fea11b648272606ea42527954d064bb43d",
+    "compiler/pure/process_runtime_linux_x86_64.lsl": "c1508d4c69fb952bbe89417d897a4a165182e07afd773a335d65088f96d9620f",
+    "compiler/pure/qbe_emit.lsl": "4f7d281eb5f452021a12cb9b4823b05fbac74db7e23fa98dfa77159303de6301",
+    "compiler/pure/qbe_emit_diagnostic.lsl": "3dd7297e557fec1ddd58cadbfba7a75e22f7dd20bb8aef5e01b2b824d81c66d9",
+    "compiler/pure/qbe_runtime_dump.lsl": "1ed4e00498b6396680fb24138df48923cf4ae80c1c882b317834f0deb50e0bff",
+    "compiler/pure/qbe_toolchain.lsl": "786a5df6eace5885b342ef8ba85288352a28f7046548a1ddb9f4f1702b39b315",
+    "compiler/pure/relocations_x86_64.lsl": "53c7cbb52f6724dd4fab3337219acbb5c3c6e2042e8147d51e03b9f0d8373d42",
+    "compiler/pure/runtime.lsl": "6f54df34a08b9b8ce4b855e7bea82d3fe81b6a9f9750216c458641838634d860",
+    "compiler/pure/runtime_abi_linux_x86_64.lsl": "6e2b067194db926dce39dc332c2ff8537db9bf58e81a3d0172f9bda01fe6d1ec",
+    "compiler/pure/runtime_linux_x86_64.lsl": "2f4e16fec47238f243b88727c95ddcf056041a73edf42fba128846104274310e",
+    "compiler/pure/semantic.lsl": "dc78c7511a58e0afcff35e75156b3c10560ec151aa111050b128894289494a29",
+    "compiler/pure/target.lsl": "2d913fa28cd778d02d0d4bebd18986cd5d68864cf2640a63db262ccb2977d9cf",
+    "compiler/pure/thread_runtime.lsl": "cf94f0a37f4e031a06ee52d4a759e368cda64583bcb6ff8f484650debb29adfd",
+    "compiler/pure/thread_runtime_linux_x86_64.lsl": "e4df2c12dd90248ec2c23d236f3c157af87df5724736d2fc31328550b8765bdc",
+    "compiler/pure/update.lsl": "fef774fac49493190b44c0d9444589005f8ff1194051662af67117c0afdda363",
+    "compiler/pure/update_install.lsl": "d8ccac15b846cd4b0d4e023f1a4804f9e265e781324d3e08c01cad110891058a",
+    "compiler/pure/update_install_linux_x86_64.lsl": "80ce50d927bffe1edc9f3abc226b25519399be2327a0576b469794b0d5fb39d6",
+    "compiler/pure/update_linux_x86_64.lsl": "07bf87e077446c6d76b2b7a5f6531f74705d605d0d84e73b4b0aefa0c8596e50",
+    "compiler/pure/validation.lsl": "82d3f45c9655cd169c878153900f58d17c32f6eab95fbafb562024cc694fd5e1",
+    "compiler/pure/value_abi.lsl": "6e61c4f92bb308cc95c37e5c5faad57303dd6cb2852518ff581753bdca5bac74",
+    "compiler/pure/x86_64.lsl": "060978b936d1f758565841725c648c506bf52cc1af2e6f2fc6879ed912461ce5"
+  },
+  "production_byte_equality_cases": [
+    "tests/table_growth_conformance.lsl",
+    "tests/qbe/startup_tables.lsl",
+    "float_loop",
+    "list_access",
+    "dictionary_access",
+    "string_split_join",
+    "allocation_gc"
+  ],
+  "production_byte_equality_count": 7,
+  "production_binary_sha256_after": {
+    "build/qbe-port-tools/native-selfhost/frontend-stage3": "d26a3b71df3b643aed58264e3eb8bb03360c468da41d351117f151142cc94f32",
+    "build/qbe-port-tools/native-selfhost/qbe-stage3": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+    "build/qbe/runtime.o": "23a85294bf1087cc1b812172e1c95c0ee4b5b8d05486b375c25242c143b85c14"
+  },
+  "thread_gc_compile_command": [
+    "build/qbe-port-tools/native-selfhost/frontend-stage3",
+    "--unsafe",
+    "tests/automatic_gc_threads_conformance.lsl",
+    "build/qbe-repair/artifact-audit-production-final/automatic_gc_threads_conformance",
+    "build/qbe-port-tools/native-selfhost/qbe-stage3"
+  ],
+  "provenance_regression": {
+    "command": [
+      "python3",
+      "tools/qbe/test_source_artifacts.py"
+    ],
+    "cwd": "/home/antonin/LSL-QBE",
+    "returncode": 0,
+    "tests_passed": 2,
+    "source_artifacts_sha256": "5e4e200ffe26aa17cdbdb689da233f18ba33a995fa006866a17a320cd6bb33d9",
+    "regression_source_sha256": "cc7d53f519d9dc1c901410491a0f62c114b032ebd85320e6d2cd8b8a19fca435",
+    "covered": [
+      "Repeated failed explicit reproduction cannot masquerade as legacy compiler artifacts",
+      "Clear removes stale markers/reconstruction files, allowing genuine fresh legacy artifacts"
+    ]
+  },
+  "reports": {
+    "startup": {
+      "complete": true,
+      "compiler_sha256": "d26a3b71df3b643aed58264e3eb8bb03360c468da41d351117f151142cc94f32",
+      "backend_sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+      "old_compiler_sha256": "f235b42d4998474c1bfee7eb02f17625bbc824f647f9ba33bdef8c20b0ff8696",
+      "runtime_sha256": "23a85294bf1087cc1b812172e1c95c0ee4b5b8d05486b375c25242c143b85c14",
+      "emitter_sha256": "4f7d281eb5f452021a12cb9b4823b05fbac74db7e23fa98dfa77159303de6301",
+      "cases": [
+        {
+          "source": "tests/table_growth_conformance.lsl",
+          "source_sha256": "e67b8010c5520d3199b1c68316fb5c5ff6e9eb37fb3d894f7fdab7c19d572dfd",
+          "expected_stdout": "True True 40 12\n39 l\n",
+          "candidate": {
+            "build": {
+              "command": [
+                "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+                "--unsafe",
+                "tests/table_growth_conformance.lsl",
+                "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit-production-final/table_growth_conformance-candidate",
+                "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+              ],
+              "returncode": 0,
+              "seconds": 0.8207500200005597,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "5b1603fcfcc7cbf390495b3e74c941745a31f618dcf8cb83ad65b9f3dfa2561a",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit-production-final/table_growth_conformance-candidate"
+              ],
+              "returncode": 0,
+              "seconds": 0.0009180269989883527,
+              "stdout": "True True 40 12\n39 l\n",
+              "stderr": ""
+            },
+            "pass": true
+          },
+          "diagnostic_artifacts": {
+            "compiler_sha256": "d26a3b71df3b643aed58264e3eb8bb03360c468da41d351117f151142cc94f32",
+            "backend_sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+            "production_elf_sha256": "5b1603fcfcc7cbf390495b3e74c941745a31f618dcf8cb83ad65b9f3dfa2561a",
+            "origin": "explicit diagnostic re-emission",
+            "complete": true,
+            "diagnostic_emitter_sha256": "e38bf1aa817336d88176795d7a569bd6bac2c40382a39ae5c78c6ff2983d9d16",
+            "runtime_sha256": "23a85294bf1087cc1b812172e1c95c0ee4b5b8d05486b375c25242c143b85c14",
+            "reconstructed_elf_sha256": "5b1603fcfcc7cbf390495b3e74c941745a31f618dcf8cb83ad65b9f3dfa2561a",
+            "matches_production_elf": true,
+            "ssa_sha256": "8a0d0eed83d22a8645d0295d437b2873e6792256e49abf0820daca746afe9d5c",
+            "assembly_sha256": "dd0a8acbef319d3edaa46189fec3945d4119732fc2fba5e800065a7441e8c115"
+          },
+          "entry_bootstrap_calls": 1,
+          "bootstrap_before_literals": true,
+          "v089": {
+            "build": {
+              "command": [
+                "/home/antonin/.local/bin/lslc",
+                "tests/table_growth_conformance.lsl",
+                "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit-production-final/table_growth_conformance-v089"
+              ],
+              "returncode": 0,
+              "seconds": 0.7038424200000009,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "e96c56b771ee621d6b177bf803025641c85643c8045068a3aab8534353f17b90",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit-production-final/table_growth_conformance-v089"
+              ],
+              "returncode": 0,
+              "seconds": 0.002681209000002127,
+              "stdout": "True True 40 12\n39 l\n",
+              "stderr": ""
+            },
+            "pass": true
+          }
+        },
+        {
+          "source": "tests/qbe/startup_tables.lsl",
+          "source_sha256": "f660c473a4bdfe4b276046941e18e1ff764606f14d6e7e500fca470c0baa6d22",
+          "expected_stdout": "True True\n39 l startup literal survives\n",
+          "candidate": {
+            "build": {
+              "command": [
+                "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+                "--unsafe",
+                "tests/qbe/startup_tables.lsl",
+                "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit-production-final/qbe-startup_tables-candidate",
+                "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+              ],
+              "returncode": 0,
+              "seconds": 0.7344795210010489,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "6b411ee065971679c87bd791226746432d7ef23862ec1b6d07ff357592480533",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit-production-final/qbe-startup_tables-candidate"
+              ],
+              "returncode": 0,
+              "seconds": 0.0019190390012226999,
+              "stdout": "True True\n39 l startup literal survives\n",
+              "stderr": ""
+            },
+            "pass": true
+          },
+          "diagnostic_artifacts": {
+            "compiler_sha256": "d26a3b71df3b643aed58264e3eb8bb03360c468da41d351117f151142cc94f32",
+            "backend_sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+            "production_elf_sha256": "6b411ee065971679c87bd791226746432d7ef23862ec1b6d07ff357592480533",
+            "origin": "explicit diagnostic re-emission",
+            "complete": true,
+            "diagnostic_emitter_sha256": "e38bf1aa817336d88176795d7a569bd6bac2c40382a39ae5c78c6ff2983d9d16",
+            "runtime_sha256": "23a85294bf1087cc1b812172e1c95c0ee4b5b8d05486b375c25242c143b85c14",
+            "reconstructed_elf_sha256": "6b411ee065971679c87bd791226746432d7ef23862ec1b6d07ff357592480533",
+            "matches_production_elf": true,
+            "ssa_sha256": "b63f2bda6d9fd26d86d895e1ea0eee9248ba4962a8118ca66fa46a71b5b8daf2",
+            "assembly_sha256": "c5109c0128f4883f6ef1077ef03e242be148125f0fa5ba722048202daf6e26f4"
+          },
+          "entry_bootstrap_calls": 1,
+          "bootstrap_before_literals": true,
+          "v089": {
+            "build": {
+              "command": [
+                "/home/antonin/.local/bin/lslc",
+                "tests/qbe/startup_tables.lsl",
+                "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit-production-final/qbe-startup_tables-v089"
+              ],
+              "returncode": 0,
+              "seconds": 0.721426258001884,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "893b2440ae9d5db5df5aef299116a72fbf1d72be3a828c9f25e3c077fe6dfa0f",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit-production-final/qbe-startup_tables-v089"
+              ],
+              "returncode": 0,
+              "seconds": 0.0007858770040911622,
+              "stdout": "True True\n39 l startup literal survives\n",
+              "stderr": ""
+            },
+            "pass": true
+          }
+        },
+        {
+          "source": "tests/automatic_gc_conformance.lsl",
+          "source_sha256": "1b30392b69f47679d4799a81f10d2a1b8affa4603aa8e0e7855d939464db5006",
+          "expected_stdout": "automatic GC roots, cycles, deep graphs, callbacks, exceptions and memory bound passed\n",
+          "candidate": {
+            "build": {
+              "command": [
+                "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+                "--unsafe",
+                "tests/automatic_gc_conformance.lsl",
+                "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit-production-final/automatic_gc_conformance-candidate",
+                "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+              ],
+              "returncode": 0,
+              "seconds": 1.2942302670053323,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "e32a9e78711fcd13877eb94045bea776ef36c56abf0b1b25cc1f66fa3279ba98",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit-production-final/automatic_gc_conformance-candidate"
+              ],
+              "returncode": 0,
+              "seconds": 0.18055488800018793,
+              "stdout": "automatic GC roots, cycles, deep graphs, callbacks, exceptions and memory bound passed\n",
+              "stderr": ""
+            },
+            "pass": true
+          },
+          "v089": {
+            "build": {
+              "command": [
+                "/home/antonin/.local/bin/lslc",
+                "tests/automatic_gc_conformance.lsl",
+                "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit-production-final/automatic_gc_conformance-v089"
+              ],
+              "returncode": 0,
+              "seconds": 0.9809121430007508,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "97142330bdcd0e609d278d72f1d316d7cb1a74a52bac15bbb31da1be266a77be",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit-production-final/automatic_gc_conformance-v089"
+              ],
+              "returncode": 0,
+              "seconds": 0.7761208439987968,
+              "stdout": "automatic GC roots, cycles, deep graphs, callbacks, exceptions and memory bound passed\n",
+              "stderr": ""
+            },
+            "pass": true
+          }
+        }
+      ],
+      "all_pass": true
+    },
+    "float": {
+      "complete": true,
+      "scope": "diagnostic call counts, not timings",
+      "runtime_sha256": "23a85294bf1087cc1b812172e1c95c0ee4b5b8d05486b375c25242c143b85c14",
+      "runtime_assembly_sha256": "2637064fe28a6a68dad10aa31cdd048e7c06a7553d18193976bc34a2494b557e",
+      "backend_sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+      "builds": [
+        {
+          "command": [
+            "/usr/bin/cc",
+            "-c",
+            "/home/antonin/LSL-QBE/build/qbe-repair/runtime-combined/runtime.s",
+            "-o",
+            "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit-production-final/runtime-uninstrumented.o"
+          ],
+          "seconds": 0.01861052800086327,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "/usr/bin/cc",
+            "-c",
+            "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit-production-final/runtime-counted.s",
+            "-o",
+            "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit-production-final/runtime-counted.o"
+          ],
+          "seconds": 0.021653381998476107,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-finish/seed-frontend-stage3",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/float_loop.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit-production-final/float-baseline",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "seconds": 1.0777751249988796,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "/usr/bin/cc",
+            "-nostdlib",
+            "-no-pie",
+            "-Wl,--build-id=none",
+            "-o",
+            "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit-production-final/float-baseline.counted",
+            "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit-production-final/float-baseline.counted.s",
+            "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit-production-final/runtime-counted.o"
+          ],
+          "seconds": 0.04379207499732729,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "--unsafe",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/float_loop.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit-production-final/float-candidate",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "seconds": 0.8960908779990859,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "/usr/bin/cc",
+            "-nostdlib",
+            "-no-pie",
+            "-Wl,--build-id=none",
+            "-o",
+            "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit-production-final/float-candidate.counted",
+            "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit-production-final/float-candidate.counted.s",
+            "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit-production-final/runtime-counted.o"
+          ],
+          "seconds": 0.03676146199723007,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "",
+          "stderr": ""
+        }
+      ],
+      "checks": [
+        {
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit-production-final/float-baseline.counted",
+            "100"
+          ],
+          "seconds": 0.0027929159987252206,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "51202\n",
+          "stderr": "runtime_float_new 0000000000000066\nruntime_alloc 00000000000000b3\nruntime_add_any 0000000000000000\nruntime_mul_any 0000000000000000\nruntime_box_dynamic_int 0000000000000000\nruntime_coerce_float 0000000000000000\nruntime_float_from_int 0000000000000000\nruntime_gc 0000000000000000\nrt_runtime_maybe_gc 00000000000000b2\n",
+          "kind": "baseline",
+          "iterations": 100,
+          "counters": {
+            "runtime_float_new": 102,
+            "runtime_alloc": 179,
+            "runtime_add_any": 0,
+            "runtime_mul_any": 0,
+            "runtime_box_dynamic_int": 0,
+            "runtime_coerce_float": 0,
+            "runtime_float_from_int": 0,
+            "runtime_gc": 0,
+            "rt_runtime_maybe_gc": 178
+          },
+          "expected": "51202\n",
+          "matches": true
+        },
+        {
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit-production-final/float-candidate.counted",
+            "100"
+          ],
+          "seconds": 0.002945370004454162,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "51202\n",
+          "stderr": "runtime_float_new 0000000000000066\nruntime_alloc 00000000000000b4\nruntime_add_any 0000000000000000\nruntime_mul_any 0000000000000000\nruntime_box_dynamic_int 0000000000000000\nruntime_coerce_float 0000000000000000\nruntime_float_from_int 0000000000000000\nruntime_gc 0000000000000000\nrt_runtime_maybe_gc 00000000000000b3\n",
+          "kind": "candidate",
+          "iterations": 100,
+          "counters": {
+            "runtime_float_new": 102,
+            "runtime_alloc": 180,
+            "runtime_add_any": 0,
+            "runtime_mul_any": 0,
+            "runtime_box_dynamic_int": 0,
+            "runtime_coerce_float": 0,
+            "runtime_float_from_int": 0,
+            "runtime_gc": 0,
+            "rt_runtime_maybe_gc": 179
+          },
+          "expected": "51202\n",
+          "matches": true
+        }
+      ],
+      "uninstrumented_runtime_sha256": "23a85294bf1087cc1b812172e1c95c0ee4b5b8d05486b375c25242c143b85c14",
+      "fixture_sha256": "1d6f26fc7a06ba8160964a5937dce1a10f5147ff18850e2c3151d856a1e90ca3",
+      "baseline_sha256": "489d46b56766d85071b23017c7bf31313fc5881efaf81223a5b17cf3e8b852ad",
+      "program_artifacts": {
+        "baseline": {
+          "compiler_sha256": "489d46b56766d85071b23017c7bf31313fc5881efaf81223a5b17cf3e8b852ad",
+          "backend_sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+          "production_elf_sha256": "339dd252334eb6451f144d7320315723577cea5d7d1e07d0680679083d51b166",
+          "origin": "compiler-emitted alongside the production ELF",
+          "ssa_sha256": "55e9cbd42e235b150c647314968a95c06304465645774f4269fcfc8f3043d6b0",
+          "assembly_sha256": "aede3e3715a98f9cf2eb5b96226abfeeb5bd19c27108cf690c4c5772fb6ecfa7",
+          "complete": true
+        },
+        "candidate": {
+          "compiler_sha256": "d26a3b71df3b643aed58264e3eb8bb03360c468da41d351117f151142cc94f32",
+          "backend_sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+          "production_elf_sha256": "5d3b0ed69df57627fac13a7217bbc3c2f64b20928531ba454b3976e8d08b4645",
+          "origin": "explicit diagnostic re-emission",
+          "complete": true,
+          "diagnostic_emitter_sha256": "e38bf1aa817336d88176795d7a569bd6bac2c40382a39ae5c78c6ff2983d9d16",
+          "runtime_sha256": "23a85294bf1087cc1b812172e1c95c0ee4b5b8d05486b375c25242c143b85c14",
+          "reconstructed_elf_sha256": "5d3b0ed69df57627fac13a7217bbc3c2f64b20928531ba454b3976e8d08b4645",
+          "matches_production_elf": true,
+          "ssa_sha256": "cef1a3cd1394cca0f8e282bd31e72187c83d2e9054a11b3b0a888bb1e9f5bca2",
+          "assembly_sha256": "877c2fb4a8f9772780a76d48a5bddf30434db480dc216a608e85828a1b5b1c05"
+        }
+      },
+      "candidate_sha256": "d26a3b71df3b643aed58264e3eb8bb03360c468da41d351117f151142cc94f32",
+      "runtime_unchanged": true
+    },
+    "collections": {
+      "complete": true,
+      "scope": "diagnostic call counts; instrumented timings excluded",
+      "iterations": 100,
+      "cases": [
+        {
+          "name": "list_access",
+          "expected_stdout": "5050\n",
+          "samples": [
+            {
+              "kind": "baseline",
+              "compiler_sha256": "489d46b56766d85071b23017c7bf31313fc5881efaf81223a5b17cf3e8b852ad",
+              "source_sha256": "68e62198d813b8f65a2bd4108e987e31f736a4f31bd8f6493806c6b0a9b119f1",
+              "assembly_sha256": "f2e0ec79116f1cfc55a2911780d879a7f33c9538a8d17c2b351d58d8fd1422a4",
+              "diagnostic_artifacts": {
+                "compiler_sha256": "489d46b56766d85071b23017c7bf31313fc5881efaf81223a5b17cf3e8b852ad",
+                "backend_sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+                "production_elf_sha256": "856c236a41970087b12268779d7286fc0c94d45ccc3cd2000afe2bfe53ad1b48",
+                "origin": "compiler-emitted alongside the production ELF",
+                "ssa_sha256": "2b069bcc4a9bb6c224ec60591c67c6f0a8b9c4d7a757691b1338be824ad6c2d6",
+                "assembly_sha256": "f2e0ec79116f1cfc55a2911780d879a7f33c9538a8d17c2b351d58d8fd1422a4",
+                "complete": true
+              },
+              "counts": {
+                "runtime_alloc": 1948,
+                "runtime_box_dynamic_int": 0,
+                "runtime_dynamic_get": 0,
+                "runtime_dynamic_set": 100,
+                "runtime_list_append": 1024,
+                "runtime_dict_get": 0,
+                "runtime_dict_set": 0,
+                "runtime_add_any": 4,
+                "runtime_sub_any": 0,
+                "runtime_mul_any": 0,
+                "runtime_gc": 0,
+                "runtime_type_code": 1039,
+                "runtime_unbox_dynamic_int": 845,
+                "runtime_string_concat": 4,
+                "runtime_text_split_byte": 0,
+                "rt_runtime_maybe_gc": 1839
+              },
+              "stdout": "5050\n"
+            },
+            {
+              "kind": "candidate",
+              "compiler_sha256": "d26a3b71df3b643aed58264e3eb8bb03360c468da41d351117f151142cc94f32",
+              "source_sha256": "68e62198d813b8f65a2bd4108e987e31f736a4f31bd8f6493806c6b0a9b119f1",
+              "assembly_sha256": "e28e3554e4a3deaca6e333b0f168a8594af65d8064a49bd54714226a91d81323",
+              "diagnostic_artifacts": {
+                "compiler_sha256": "d26a3b71df3b643aed58264e3eb8bb03360c468da41d351117f151142cc94f32",
+                "backend_sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+                "production_elf_sha256": "b4847205e9e5aaf6a5c83b6e84125697e5d9145e71684f9c956770aec55081fb",
+                "origin": "explicit diagnostic re-emission",
+                "complete": true,
+                "diagnostic_emitter_sha256": "e38bf1aa817336d88176795d7a569bd6bac2c40382a39ae5c78c6ff2983d9d16",
+                "runtime_sha256": "23a85294bf1087cc1b812172e1c95c0ee4b5b8d05486b375c25242c143b85c14",
+                "reconstructed_elf_sha256": "b4847205e9e5aaf6a5c83b6e84125697e5d9145e71684f9c956770aec55081fb",
+                "matches_production_elf": true,
+                "ssa_sha256": "f2c8462507c44a0a6263a37c2b42093a4b120b98dfe0cc75b900169b9d4b93ec",
+                "assembly_sha256": "e28e3554e4a3deaca6e333b0f168a8594af65d8064a49bd54714226a91d81323"
+              },
+              "counts": {
+                "runtime_alloc": 1351,
+                "runtime_box_dynamic_int": 0,
+                "runtime_dynamic_get": 0,
+                "runtime_dynamic_set": 0,
+                "runtime_list_append": 1024,
+                "runtime_dict_get": 0,
+                "runtime_dict_set": 0,
+                "runtime_add_any": 4,
+                "runtime_sub_any": 0,
+                "runtime_mul_any": 0,
+                "runtime_gc": 0,
+                "runtime_type_code": 339,
+                "runtime_unbox_dynamic_int": 45,
+                "runtime_string_concat": 4,
+                "runtime_text_split_byte": 0,
+                "rt_runtime_maybe_gc": 1242
+              },
+              "stdout": "5050\n"
+            }
+          ]
+        },
+        {
+          "name": "dictionary_access",
+          "expected_stdout": "5050\n",
+          "samples": [
+            {
+              "kind": "baseline",
+              "compiler_sha256": "489d46b56766d85071b23017c7bf31313fc5881efaf81223a5b17cf3e8b852ad",
+              "source_sha256": "0b05906fe8fb9d18b4f8ff8fbd58aceb33f6369c376635bd1b0d77b1cce1b307",
+              "assembly_sha256": "55d53fafa6b4fc7b97ad888c3eb4bfffb72867bd4d2b65389e0625794a24d5fd",
+              "diagnostic_artifacts": {
+                "compiler_sha256": "489d46b56766d85071b23017c7bf31313fc5881efaf81223a5b17cf3e8b852ad",
+                "backend_sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+                "production_elf_sha256": "5af2f1fb17a468be502c6e494c4d23345a621ac41ae2f89e72283213306a8a43",
+                "origin": "compiler-emitted alongside the production ELF",
+                "ssa_sha256": "a0dd75994c00209ecd02b3c46ffb71bfa673bbe30c803784990de0ada2fa2386",
+                "assembly_sha256": "55d53fafa6b4fc7b97ad888c3eb4bfffb72867bd4d2b65389e0625794a24d5fd",
+                "complete": true
+              },
+              "counts": {
+                "runtime_alloc": 1210,
+                "runtime_box_dynamic_int": 0,
+                "runtime_dynamic_get": 0,
+                "runtime_dynamic_set": 0,
+                "runtime_list_append": 128,
+                "runtime_dict_get": 200,
+                "runtime_dict_set": 228,
+                "runtime_add_any": 4,
+                "runtime_sub_any": 0,
+                "runtime_mul_any": 0,
+                "runtime_gc": 0,
+                "runtime_type_code": 839,
+                "runtime_unbox_dynamic_int": 1073,
+                "runtime_string_concat": 132,
+                "runtime_text_split_byte": 0,
+                "rt_runtime_maybe_gc": 944
+              },
+              "stdout": "5050\n"
+            },
+            {
+              "kind": "candidate",
+              "compiler_sha256": "d26a3b71df3b643aed58264e3eb8bb03360c468da41d351117f151142cc94f32",
+              "source_sha256": "0b05906fe8fb9d18b4f8ff8fbd58aceb33f6369c376635bd1b0d77b1cce1b307",
+              "assembly_sha256": "bc1a8e387e6e513163aa3050103882a862cf92269986e5115c3004415c4b98d7",
+              "diagnostic_artifacts": {
+                "compiler_sha256": "d26a3b71df3b643aed58264e3eb8bb03360c468da41d351117f151142cc94f32",
+                "backend_sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+                "production_elf_sha256": "8251bdf8f8d1493e93c3a944b4062ace69cfe0131a22e29f47474fb23f985f90",
+                "origin": "explicit diagnostic re-emission",
+                "complete": true,
+                "diagnostic_emitter_sha256": "e38bf1aa817336d88176795d7a569bd6bac2c40382a39ae5c78c6ff2983d9d16",
+                "runtime_sha256": "23a85294bf1087cc1b812172e1c95c0ee4b5b8d05486b375c25242c143b85c14",
+                "reconstructed_elf_sha256": "8251bdf8f8d1493e93c3a944b4062ace69cfe0131a22e29f47474fb23f985f90",
+                "matches_production_elf": true,
+                "ssa_sha256": "b78d05d02b0ef6383b4cbf6e1e36a682b6f893f252579d525d2b9459ac3df94b",
+                "assembly_sha256": "bc1a8e387e6e513163aa3050103882a862cf92269986e5115c3004415c4b98d7"
+              },
+              "counts": {
+                "runtime_alloc": 713,
+                "runtime_box_dynamic_int": 0,
+                "runtime_dynamic_get": 0,
+                "runtime_dynamic_set": 0,
+                "runtime_list_append": 128,
+                "runtime_dict_get": 200,
+                "runtime_dict_set": 228,
+                "runtime_add_any": 4,
+                "runtime_sub_any": 0,
+                "runtime_mul_any": 0,
+                "runtime_gc": 0,
+                "runtime_type_code": 567,
+                "runtime_unbox_dynamic_int": 273,
+                "runtime_string_concat": 132,
+                "runtime_text_split_byte": 0,
+                "rt_runtime_maybe_gc": 347
+              },
+              "stdout": "5050\n"
+            }
+          ]
+        },
+        {
+          "name": "string_split_join",
+          "expected_stdout": "7100\n",
+          "samples": [
+            {
+              "kind": "baseline",
+              "compiler_sha256": "489d46b56766d85071b23017c7bf31313fc5881efaf81223a5b17cf3e8b852ad",
+              "source_sha256": "45a2619dc0cf723c31c83396cb7ee781294d7cae5fc38ce03eba09f25ebdba77",
+              "assembly_sha256": "6c451e4b9e7f1d020e1c6ded01638bbe5c36567b80f52a7f1f0ee005dbcc314c",
+              "diagnostic_artifacts": {
+                "compiler_sha256": "489d46b56766d85071b23017c7bf31313fc5881efaf81223a5b17cf3e8b852ad",
+                "backend_sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+                "production_elf_sha256": "87ffec2150976603b8996dd3c7b28d6771f70ac12bb92d3271565daedbe0217c",
+                "origin": "compiler-emitted alongside the production ELF",
+                "ssa_sha256": "1a4aae931d65e981d34343e766a1a64ca054076347c371e60eb67d10273a20b4",
+                "assembly_sha256": "6c451e4b9e7f1d020e1c6ded01638bbe5c36567b80f52a7f1f0ee005dbcc314c",
+                "complete": true
+              },
+              "counts": {
+                "runtime_alloc": 6183,
+                "runtime_box_dynamic_int": 0,
+                "runtime_dynamic_get": 1000,
+                "runtime_dynamic_set": 0,
+                "runtime_list_append": 3100,
+                "runtime_dict_get": 0,
+                "runtime_dict_set": 0,
+                "runtime_add_any": 1800,
+                "runtime_sub_any": 0,
+                "runtime_mul_any": 0,
+                "runtime_gc": 0,
+                "runtime_type_code": 3502,
+                "runtime_unbox_dynamic_int": 2002,
+                "runtime_string_concat": 2100,
+                "runtime_text_split_byte": 100,
+                "rt_runtime_maybe_gc": 5384
+              },
+              "stdout": "7100\n"
+            },
+            {
+              "kind": "candidate",
+              "compiler_sha256": "d26a3b71df3b643aed58264e3eb8bb03360c468da41d351117f151142cc94f32",
+              "source_sha256": "45a2619dc0cf723c31c83396cb7ee781294d7cae5fc38ce03eba09f25ebdba77",
+              "assembly_sha256": "4da918b977a8c30173bbfebfee37cb761feb5b325aeca8daae04e3a81a4a6be9",
+              "diagnostic_artifacts": {
+                "compiler_sha256": "d26a3b71df3b643aed58264e3eb8bb03360c468da41d351117f151142cc94f32",
+                "backend_sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+                "production_elf_sha256": "93549619fd42d8c275303188e2ae102716b1cab1a0f45f70ac73f19ca6ad1487",
+                "origin": "explicit diagnostic re-emission",
+                "complete": true,
+                "diagnostic_emitter_sha256": "e38bf1aa817336d88176795d7a569bd6bac2c40382a39ae5c78c6ff2983d9d16",
+                "runtime_sha256": "23a85294bf1087cc1b812172e1c95c0ee4b5b8d05486b375c25242c143b85c14",
+                "reconstructed_elf_sha256": "93549619fd42d8c275303188e2ae102716b1cab1a0f45f70ac73f19ca6ad1487",
+                "matches_production_elf": true,
+                "ssa_sha256": "377cb29a5bee722439024979225892e8766a986cf10c359757518941fd29cd11",
+                "assembly_sha256": "4da918b977a8c30173bbfebfee37cb761feb5b325aeca8daae04e3a81a4a6be9"
+              },
+              "counts": {
+                "runtime_alloc": 2985,
+                "runtime_box_dynamic_int": 0,
+                "runtime_dynamic_get": 0,
+                "runtime_dynamic_set": 0,
+                "runtime_list_append": 1000,
+                "runtime_dict_get": 0,
+                "runtime_dict_set": 0,
+                "runtime_add_any": 0,
+                "runtime_sub_any": 0,
+                "runtime_mul_any": 0,
+                "runtime_gc": 0,
+                "runtime_type_code": 1402,
+                "runtime_unbox_dynamic_int": 2002,
+                "runtime_string_concat": 300,
+                "runtime_text_split_byte": 100,
+                "rt_runtime_maybe_gc": 986
+              },
+              "stdout": "7100\n"
+            }
+          ]
+        },
+        {
+          "name": "allocation_gc",
+          "expected_stdout": "100\n",
+          "samples": [
+            {
+              "kind": "baseline",
+              "compiler_sha256": "489d46b56766d85071b23017c7bf31313fc5881efaf81223a5b17cf3e8b852ad",
+              "source_sha256": "e9af16681b4e8d2cf4cbcd6b58adb5127634cc7631db2dc9ba593afae038a79b",
+              "assembly_sha256": "eef7f9a5bcbdf47eaf890e2e24da7eb0f7f9caf2f278d41af4694a5628a4552c",
+              "diagnostic_artifacts": {
+                "compiler_sha256": "489d46b56766d85071b23017c7bf31313fc5881efaf81223a5b17cf3e8b852ad",
+                "backend_sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+                "production_elf_sha256": "c3d54b07c99f88facc0a46dbceea447a95b439ce54c5c4b233db426397769967",
+                "origin": "compiler-emitted alongside the production ELF",
+                "ssa_sha256": "892d7afaac0e1a967ce5a6ab8767aa5c4ba061b0d58f3506a96a37025476974a",
+                "assembly_sha256": "eef7f9a5bcbdf47eaf890e2e24da7eb0f7f9caf2f278d41af4694a5628a4552c",
+                "complete": true
+              },
+              "counts": {
+                "runtime_alloc": 1216,
+                "runtime_box_dynamic_int": 100,
+                "runtime_dynamic_get": 100,
+                "runtime_dynamic_set": 0,
+                "runtime_list_append": 300,
+                "runtime_dict_get": 200,
+                "runtime_dict_set": 200,
+                "runtime_add_any": 3,
+                "runtime_sub_any": 100,
+                "runtime_mul_any": 0,
+                "runtime_gc": 0,
+                "runtime_type_code": 631,
+                "runtime_unbox_dynamic_int": 636,
+                "runtime_string_concat": 3,
+                "runtime_text_split_byte": 0,
+                "rt_runtime_maybe_gc": 509
+              },
+              "stdout": "100\n"
+            },
+            {
+              "kind": "candidate",
+              "compiler_sha256": "d26a3b71df3b643aed58264e3eb8bb03360c468da41d351117f151142cc94f32",
+              "source_sha256": "e9af16681b4e8d2cf4cbcd6b58adb5127634cc7631db2dc9ba593afae038a79b",
+              "assembly_sha256": "b77a40412a3d0ddce363f89f0dccc15eafc20b925f453836733c6f9388dd512a",
+              "diagnostic_artifacts": {
+                "compiler_sha256": "d26a3b71df3b643aed58264e3eb8bb03360c468da41d351117f151142cc94f32",
+                "backend_sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+                "production_elf_sha256": "131ba1570c5c8fc2b7578ca07c340d8419bb9a349b9ec364797341e47978911c",
+                "origin": "explicit diagnostic re-emission",
+                "complete": true,
+                "diagnostic_emitter_sha256": "e38bf1aa817336d88176795d7a569bd6bac2c40382a39ae5c78c6ff2983d9d16",
+                "runtime_sha256": "23a85294bf1087cc1b812172e1c95c0ee4b5b8d05486b375c25242c143b85c14",
+                "reconstructed_elf_sha256": "131ba1570c5c8fc2b7578ca07c340d8419bb9a349b9ec364797341e47978911c",
+                "matches_production_elf": true,
+                "ssa_sha256": "38730dfa23005eb3caec4dae5f78b160c6557a1ff12e7a5c0e4fb100d1da62b3",
+                "assembly_sha256": "b77a40412a3d0ddce363f89f0dccc15eafc20b925f453836733c6f9388dd512a"
+              },
+              "counts": {
+                "runtime_alloc": 917,
+                "runtime_box_dynamic_int": 0,
+                "runtime_dynamic_get": 0,
+                "runtime_dynamic_set": 0,
+                "runtime_list_append": 0,
+                "runtime_dict_get": 200,
+                "runtime_dict_set": 200,
+                "runtime_add_any": 3,
+                "runtime_sub_any": 0,
+                "runtime_mul_any": 0,
+                "runtime_gc": 0,
+                "runtime_type_code": 531,
+                "runtime_unbox_dynamic_int": 36,
+                "runtime_string_concat": 3,
+                "runtime_text_split_byte": 0,
+                "rt_runtime_maybe_gc": 210
+              },
+              "stdout": "100\n"
+            }
+          ]
+        }
+      ],
+      "runtime": {
+        "baseline": {
+          "object_sha256": "23a85294bf1087cc1b812172e1c95c0ee4b5b8d05486b375c25242c143b85c14",
+          "assembly_sha256": "2637064fe28a6a68dad10aa31cdd048e7c06a7553d18193976bc34a2494b557e"
+        },
+        "candidate": {
+          "object_sha256": "23a85294bf1087cc1b812172e1c95c0ee4b5b8d05486b375c25242c143b85c14",
+          "assembly_sha256": "2637064fe28a6a68dad10aa31cdd048e7c06a7553d18193976bc34a2494b557e"
+        }
+      }
+    },
+    "thread-gc": {
+      "complete": true,
+      "scope": "Correctness stress only; no timing benchmark",
+      "executable_sha256": "5f9759aae8164ea1f58d854722f75df0e33560eee7bc04f10952dd7cf9f96dd4",
+      "expected_stdout_sha256": "b7f7d66aea227b308cc9b4132570152f19239dc0e37392d371d0b04bac5d2e5d",
+      "concurrency": 4,
+      "repeat": 100,
+      "runs": [
+        {
+          "iteration": 0,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 1,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 2,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 3,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 4,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 5,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 6,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 7,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 8,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 9,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 10,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 11,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 12,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 13,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 14,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 15,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 16,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 17,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 18,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 19,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 20,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 21,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 22,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 23,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 24,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 25,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 26,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 27,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 28,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 29,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 30,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 31,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 32,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 33,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 34,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 35,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 36,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 37,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 38,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 39,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 40,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 41,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 42,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 43,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 44,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 45,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 46,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 47,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 48,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 49,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 50,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 51,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 52,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 53,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 54,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 55,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 56,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 57,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 58,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 59,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 60,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 61,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 62,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 63,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 64,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 65,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 66,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 67,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 68,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 69,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 70,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 71,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 72,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 73,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 74,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 75,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 76,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 77,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 78,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 79,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 80,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 81,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 82,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 83,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 84,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 85,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 86,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 87,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 88,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 89,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 90,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 91,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 92,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 93,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 94,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 95,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 96,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 97,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 98,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        },
+        {
+          "iteration": 99,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "pass": true
+        }
+      ],
+      "executable_unchanged": true,
+      "all_pass": true
+    }
+  }
+}

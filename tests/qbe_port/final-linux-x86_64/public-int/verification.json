@@ -1,0 +1,506 @@
+{
+  "complete": true,
+  "compiler_sha256": "6ef7077dd1e9e122a2884851c3024b015f95ef8993b05c61071fd622fc645182",
+  "backend_sha256": "24996ab6ae8d78238e8066c1de2b33e676ad332b1c2d007469e94bd9e42d5448",
+  "runtime_sha256": "6780bb856d07a9017e40a90931487b0905c58dbe30b1ee08bc1f8f1d3e0d691b",
+  "emitter_sha256": "e1b9ce1db43919d3e12aa80eca6e6197aa244ded3acfb1e3b35b0b8e51092f59",
+  "builds": [
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "/home/antonin/LSL-QBE/tests/qbe/public_int_collision.lsl",
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_collision-fixed",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 0.813573715997336,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "source_sha256": "336dd5f1fd1dbd3d0401b0b8b7525ea840fb5c98596ed896b2b34a2a57db80bf",
+      "binary_sha256": "40412d5f8cf96e497e57e1f712b78a9e3a32e47df51a4795d343db1644138111"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "/home/antonin/LSL-QBE/tests/qbe/public_int_recurrence.lsl",
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_recurrence-fixed",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 0.7930981609970331,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "source_sha256": "9a0cd13cf549a067875488aeddd31298ef690e87f6e505cba4f250311b997d70",
+      "binary_sha256": "a0fe5a8bfde510c8a4081edd350f25dee397a80fa97aafef0494ad70ede97e38"
+    }
+  ],
+  "checks": [
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_collision-fixed"
+      ],
+      "seconds": 0.0033982170061790384,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "True True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\n0 -1 1 0 3 -42\n-9223372036854775808 9223372036854775807\n",
+      "stderr": "",
+      "case": "collision",
+      "repeat": 0,
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_collision-fixed"
+      ],
+      "seconds": 0.0024192450000555255,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "True True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\n0 -1 1 0 3 -42\n-9223372036854775808 9223372036854775807\n",
+      "stderr": "",
+      "case": "collision",
+      "repeat": 1,
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_collision-fixed"
+      ],
+      "seconds": 0.0024283860038849525,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "True True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\n0 -1 1 0 3 -42\n-9223372036854775808 9223372036854775807\n",
+      "stderr": "",
+      "case": "collision",
+      "repeat": 2,
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_collision-fixed"
+      ],
+      "seconds": 0.003957110006012954,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "True True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\n0 -1 1 0 3 -42\n-9223372036854775808 9223372036854775807\n",
+      "stderr": "",
+      "case": "collision",
+      "repeat": 3,
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_collision-fixed"
+      ],
+      "seconds": 0.004642665000574198,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "True True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\n0 -1 1 0 3 -42\n-9223372036854775808 9223372036854775807\n",
+      "stderr": "",
+      "case": "collision",
+      "repeat": 4,
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_recurrence-fixed",
+        "0"
+      ],
+      "seconds": 0.003723211004398763,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 0,
+      "repeat": 0,
+      "expected": "1\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_recurrence-fixed",
+        "0"
+      ],
+      "seconds": 0.0023451470042346045,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 0,
+      "repeat": 1,
+      "expected": "1\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_recurrence-fixed",
+        "0"
+      ],
+      "seconds": 0.0017629470021347515,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 0,
+      "repeat": 2,
+      "expected": "1\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_recurrence-fixed",
+        "0"
+      ],
+      "seconds": 0.0017522340058349073,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 0,
+      "repeat": 3,
+      "expected": "1\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_recurrence-fixed",
+        "0"
+      ],
+      "seconds": 0.0016735480021452531,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 0,
+      "repeat": 4,
+      "expected": "1\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_recurrence-fixed",
+        "1"
+      ],
+      "seconds": 0.003542646998539567,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1015568748\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 1,
+      "repeat": 0,
+      "expected": "1015568748\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_recurrence-fixed",
+        "1"
+      ],
+      "seconds": 0.0026605599996400997,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1015568748\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 1,
+      "repeat": 1,
+      "expected": "1015568748\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_recurrence-fixed",
+        "1"
+      ],
+      "seconds": 0.0019626149951363914,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1015568748\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 1,
+      "repeat": 2,
+      "expected": "1015568748\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_recurrence-fixed",
+        "1"
+      ],
+      "seconds": 0.0018473629970685579,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1015568748\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 1,
+      "repeat": 3,
+      "expected": "1015568748\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_recurrence-fixed",
+        "1"
+      ],
+      "seconds": 0.001730825999402441,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1015568748\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 1,
+      "repeat": 4,
+      "expected": "1015568748\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_recurrence-fixed",
+        "100"
+      ],
+      "seconds": 0.001807387001463212,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "2146152485\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 100,
+      "repeat": 0,
+      "expected": "2146152485\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_recurrence-fixed",
+        "100"
+      ],
+      "seconds": 0.0021239630004856735,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "2146152485\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 100,
+      "repeat": 1,
+      "expected": "2146152485\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_recurrence-fixed",
+        "100"
+      ],
+      "seconds": 0.002343693995499052,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "2146152485\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 100,
+      "repeat": 2,
+      "expected": "2146152485\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_recurrence-fixed",
+        "100"
+      ],
+      "seconds": 0.0027184499995200895,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "2146152485\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 100,
+      "repeat": 3,
+      "expected": "2146152485\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_recurrence-fixed",
+        "100"
+      ],
+      "seconds": 0.002185290002671536,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "2146152485\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 100,
+      "repeat": 4,
+      "expected": "2146152485\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_recurrence-fixed",
+        "200000"
+      ],
+      "seconds": 0.004033824996440671,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1636339521\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 200000,
+      "repeat": 0,
+      "expected": "1636339521\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_recurrence-fixed",
+        "200000"
+      ],
+      "seconds": 0.0036922360013704747,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1636339521\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 200000,
+      "repeat": 1,
+      "expected": "1636339521\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_recurrence-fixed",
+        "200000"
+      ],
+      "seconds": 0.003977525993832387,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1636339521\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 200000,
+      "repeat": 2,
+      "expected": "1636339521\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_recurrence-fixed",
+        "200000"
+      ],
+      "seconds": 0.00423150000278838,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1636339521\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 200000,
+      "repeat": 3,
+      "expected": "1636339521\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_recurrence-fixed",
+        "200000"
+      ],
+      "seconds": 0.004400946003443096,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1636339521\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 200000,
+      "repeat": 4,
+      "expected": "1636339521\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_recurrence-fixed",
+        "1000000"
+      ],
+      "seconds": 0.009008485001686495,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "366300225\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 1000000,
+      "repeat": 0,
+      "expected": "366300225\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_recurrence-fixed",
+        "1000000"
+      ],
+      "seconds": 0.0077622669996344484,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "366300225\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 1000000,
+      "repeat": 1,
+      "expected": "366300225\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_recurrence-fixed",
+        "1000000"
+      ],
+      "seconds": 0.0060493920027511194,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "366300225\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 1000000,
+      "repeat": 2,
+      "expected": "366300225\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_recurrence-fixed",
+        "1000000"
+      ],
+      "seconds": 0.005246432003332302,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "366300225\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 1000000,
+      "repeat": 3,
+      "expected": "366300225\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-finish/final/public-int/public_int_recurrence-fixed",
+        "1000000"
+      ],
+      "seconds": 0.005786455993074924,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "366300225\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 1000000,
+      "repeat": 4,
+      "expected": "366300225\n",
+      "matches": true
+    }
+  ]
+}

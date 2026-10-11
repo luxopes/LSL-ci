@@ -1,0 +1,25 @@
+# A single definition dominates nested branch uses; the join phi is for the
+# branch results, not for %value.
+export function w $nested(w %outer, w %inner) {
+@start
+	jnz %outer, @define, @other
+@define
+	%value =w add 20, 22
+	jnz %inner, @left, @right
+@left
+	%left_value =w add %value, 1
+	jmp @join
+@right
+	%right_value =w add %value, 2
+	jmp @join
+@join
+	%result =w phi @left %left_value, @right %right_value
+	ret %result
+@other
+	ret 0
+}
+
+# >>> driver
+# extern int nested(int, int);
+# int main(void) { return nested(1, 1) == 43 && nested(1, 0) == 44 && nested(0, 1) == 0 ? 0 : 1; }
+# <<<

@@ -96,16 +96,10 @@ function decode_escape(path, lines, line, column, escaped):
     return 0
 end
 
-# The String spelled by the source bytes start..stop. The caller's scratch
-# buffer is reused for every token instead of allocating one per token.
+# Copy a token's UTF-8 byte range directly. Byte positions must not become
+# code-point slice positions, including in unexpected-character diagnostics.
 function text_slice(text, start, stop, buffer):
-    call buffer.clear()
-    index = start
-    while index < stop:
-        call buffer.append(__lsl_text_byte(text, index))
-        index += 1
-    end
-    return __lsl_text_from_bytes(buffer, 0, len(buffer))
+    return __lsl_text_piece(text, start, stop - start)
 end
 
 function tokenize(path, source):
@@ -366,8 +360,8 @@ function tokenize(path, source):
             end
             result.append(token("symbol", value, line, start_column, column))
         end
-        if len(result) > 500000:
-            Error(CompileError: "source exceeds the 500000-token compiler limit: " + path)
+        if len(result) > 2000000:
+            Error(CompileError: "source exceeds the 2000000-token compiler limit: " + path)
         end
     end
     if depth != 0:

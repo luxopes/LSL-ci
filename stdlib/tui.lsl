@@ -1,3 +1,4 @@
+load _tui_platform as transport
 # tui — a small terminal UI toolkit for full-screen, keyboard-driven LSL apps.
 #
 # It puts the controlling terminal into cbreak mode (single-key reads, no echo),
@@ -27,11 +28,7 @@ color_cyan = 36
 color_white = 37
 
 function stty_tool():
-    command = os.which_trusted("stty")
-    if command == None:
-        Error(TUIError: "trusted stty executable is unavailable")
-    end
-    return command
+    return transport.stty_tool()
 end
 
 class Terminal(True):
@@ -51,14 +48,7 @@ class Terminal(True):
     # Enter cbreak + alternate screen. Saves the current stty state so leave()
     # can restore it exactly.
     function enter(self):
-        command = stty_tool()
-        self.saved = os.capture_argv_clean(command, ["-g"]).strip()
-        if capture_status() != 0 or len(self.saved) == 0 or len(self.saved) > 4096 or chr(0) in self.saved:
-            Error(TUIError: "cannot read terminal state")
-        end
-        if os.run_argv_clean(command, ["-echo", "-icanon", "-isig", "-ixon", "min", "1", "time", "0"]) != 0:
-            Error(TUIError: "cannot enter terminal raw mode")
-        end
+        self.saved = transport.enter_state()
         call self.query_size()
         self.active = True
         call self.emit(ESC + "[?1049h" + ESC + "[?25l" + ESC + "[2J")
@@ -75,9 +65,7 @@ class Terminal(True):
             self.active = False
         end
         if self.saved != "":
-            if os.run_argv_clean(stty_tool(), [self.saved]) != 0:
-                Error(TUIError: "cannot restore terminal state")
-            end
+            call transport.restore_state(self.saved)
             self.saved = ""
         end
         return None
@@ -85,15 +73,10 @@ class Terminal(True):
 
     # Read the terminal size (rows, cols) via `stty size`.
     function query_size(self):
-        size = os.capture_argv_clean(stty_tool(), ["size"]).strip()
-        parts = size.split(" ")
-        if capture_status() == 0 and len(parts) == 2:
-            rows = Int(parts[0])
-            cols = Int(parts[1])
-            if rows >= 1 and rows <= 10000 and cols >= 1 and cols <= 10000:
-                self.rows = rows
-                self.cols = cols
-            end
+        size = transport.dimensions()
+        if len(size) == 2:
+            self.rows = size[0]
+            self.cols = size[1]
         end
         return None
     end
@@ -198,9 +181,7 @@ class Terminal(True):
     function read_byte(self, timeout):
         if self.input_index >= self.input_count:
             if timeout >= 0:
-                descriptor = __lsl_byte_zeros(8)
-                descriptor[4] = 1
-                ready = __lsl_syscall(7, __lsl_data_address(descriptor), 1, Int(timeout), 0)
+                ready = transport.wait_readable(timeout)
                 if ready == 0:
                     return -2
                 elif ready < 0:

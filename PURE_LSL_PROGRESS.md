@@ -1,6 +1,35 @@
 # Pure-LSL migration
 
-## Aktuální vydání 0.8.8 — aktualizace 28. 9. 2026
+## Ověření vydání 0.9.0 BETA — 11. 10. 2026
+
+Finální staged nativní sestava prošla plným `tests/test_runner.lsl` přes
+LuxIR, self-hostem frontendu i backendu, izolovanou migrací 0.8.9, dvěma
+reinstalacemi a dvěma rollbacky, hardeningem ELF, veřejným CLI a 43 cílenými
+regresemi. Výsledky a hashe jsou v `tests/release/0.9.0-beta/`.
+Zdrojový archiv se sestavil offline v jiném adresáři; oba překladače mají
+shodné bajty. Relokovaný binární balík přeložil/spustil program, otevřel
+offline manuály, reprodukoval frontend a vytvořil další funkční instalaci.
+CLI/installer/test runner obsahují absolutní stdlib diagnostické cesty,
+proto jejich cross-directory hashe nejsou shodné; jde o úkol pro 0.9.1.
+Reálná instalace 0.8.9 nebyla změněna. GPU hardware nebyl součástí tohoto
+preflightu. BETA se publikuje samostatně, bez nahrazení signed stable 0.8.9.
+
+
+## 0.9.0 BETA — stav plánu 11. 10. 2026
+
+Aktuální rozsah vydání je Linux x86_64 s backendem odvozeným od QBE,
+implementovaným v LSL. Aktuální release důkazy a hashe patří do reportů
+výsledných artefaktů; následující starší záznamy zůstávají historické.
+Neprovedená release ověření tento dokument neoznačuje jako PASS.
+
+Web a manuály mají samostatný zdroj
+[LuxAI/LSL-Web](https://git.lux-ai.cz/LuxAI/LSL-Web), vlastní atomický deployer
+s rollbackem a připnutý export offline manuálů do LSL. Oddělení zdrojů je
+hotové, živý hosting čeká na provozní údaje. Stabilní podepsaný kanál 0.8.9
+zůstává zachován. Všechny otevřené požadavky a nahlášené problémy z původního
+mainu jsou zachované v `TODO.md` a explicitně plánované pro 0.9.1.
+
+## Historické vydání 0.8.8 — aktualizace 28. 9. 2026
 
 I/O runtime: bufferovaný stdin pro obyčejný soubor (64 KiB, `lseek` hand-back
 před fork/exit), bufferovaný stdout mimo terminál (flush před input/fd/syscall/

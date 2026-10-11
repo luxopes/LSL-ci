@@ -1,0 +1,18 @@
+# Unique definition in a non-entry block dominates a later-block use.
+export function w $unique_dom() {
+@start
+	%take =w copy 1
+	jnz %take, @define, @other
+@define
+	%value =w add 40, 2
+	jmp @use
+@use
+	ret %value
+@other
+	ret 0
+}
+
+# >>> driver
+# extern int unique_dom(void);
+# int main(void) { return unique_dom() == 42 ? 0 : 1; }
+# <<<

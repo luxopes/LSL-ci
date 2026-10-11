@@ -1,0 +1,30 @@
+# One temporary is defined in several blocks and twice in the loop body;
+# other blocks only use it. The definition index must preserve phi order.
+export function w $indexed_loop(w %limit) {
+@start
+	%value =w copy 1
+	%count =w copy 0
+	jmp @header
+@header
+	%more =w csltw %count, %limit
+	jnz %more, @body, @exit
+@body
+	%value =w add %value, 2
+	%value =w sub %value, 1
+	%odd =w and %count, 1
+	jnz %odd, @left, @right
+@left
+	%value =w add %value, 3
+	jmp @next
+@right
+	jmp @next
+@next
+	%count =w add %count, 1
+	jmp @header
+@exit
+	ret %value
+}
+# >>> driver
+# extern int indexed_loop(int);
+# int main(void) { return indexed_loop(5) == 12 ? 0 : 1; }
+# <<<

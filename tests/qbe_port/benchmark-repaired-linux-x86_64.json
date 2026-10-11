@@ -1,0 +1,188 @@
+{
+  "platform": "Linux-6.12.74+deb13+1-amd64-x86_64-with-glibc2.41",
+  "machine": "x86_64",
+  "scope": "backend execution, exact same IL and amd64_sysv target",
+  "binaries": {
+    "reference": {
+      "path": "/home/antonin/LSL-QBE/build/qbe/qbe",
+      "sha256": "9b2142227068a52f0f1e2efd73f34923b7dadd88b1fdf3205deb6d1a0c61429e"
+    },
+    "backend": {
+      "path": "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+      "sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9"
+    }
+  },
+  "repeats": 5,
+  "max_ratio": 1.0,
+  "workloads": [
+    {
+      "input": "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-frontend.ssa",
+      "input_sha256": "08b1a637a6aed4d3be05421690180b26cf20ad126150a0b4455c5694af7c2403",
+      "input_bytes": 2874335,
+      "samples": [
+        {
+          "kind": "reference",
+          "repeat": 0,
+          "seconds": 1.6213756159995683,
+          "returncode": 0,
+          "assembly_sha256": "f76e46df3955d4e3625649a4598626a0d1ab342d990a8a78c4066129932ad2f4"
+        },
+        {
+          "kind": "backend",
+          "repeat": 0,
+          "seconds": 1.6393504089937778,
+          "returncode": 0,
+          "assembly_sha256": "f76e46df3955d4e3625649a4598626a0d1ab342d990a8a78c4066129932ad2f4"
+        },
+        {
+          "kind": "backend",
+          "repeat": 1,
+          "seconds": 1.647759725994547,
+          "returncode": 0,
+          "assembly_sha256": "f76e46df3955d4e3625649a4598626a0d1ab342d990a8a78c4066129932ad2f4"
+        },
+        {
+          "kind": "reference",
+          "repeat": 1,
+          "seconds": 1.6106602110012318,
+          "returncode": 0,
+          "assembly_sha256": "f76e46df3955d4e3625649a4598626a0d1ab342d990a8a78c4066129932ad2f4"
+        },
+        {
+          "kind": "reference",
+          "repeat": 2,
+          "seconds": 1.5939286770008039,
+          "returncode": 0,
+          "assembly_sha256": "f76e46df3955d4e3625649a4598626a0d1ab342d990a8a78c4066129932ad2f4"
+        },
+        {
+          "kind": "backend",
+          "repeat": 2,
+          "seconds": 1.6575308669998776,
+          "returncode": 0,
+          "assembly_sha256": "f76e46df3955d4e3625649a4598626a0d1ab342d990a8a78c4066129932ad2f4"
+        },
+        {
+          "kind": "backend",
+          "repeat": 3,
+          "seconds": 1.6673170649955864,
+          "returncode": 0,
+          "assembly_sha256": "f76e46df3955d4e3625649a4598626a0d1ab342d990a8a78c4066129932ad2f4"
+        },
+        {
+          "kind": "reference",
+          "repeat": 3,
+          "seconds": 1.6017653920062003,
+          "returncode": 0,
+          "assembly_sha256": "f76e46df3955d4e3625649a4598626a0d1ab342d990a8a78c4066129932ad2f4"
+        },
+        {
+          "kind": "reference",
+          "repeat": 4,
+          "seconds": 1.611998323998705,
+          "returncode": 0,
+          "assembly_sha256": "f76e46df3955d4e3625649a4598626a0d1ab342d990a8a78c4066129932ad2f4"
+        },
+        {
+          "kind": "backend",
+          "repeat": 4,
+          "seconds": 1.6695688429972506,
+          "returncode": 0,
+          "assembly_sha256": "f76e46df3955d4e3625649a4598626a0d1ab342d990a8a78c4066129932ad2f4"
+        }
+      ],
+      "assembly_matches": true,
+      "median_seconds": {
+        "reference": 1.6106602110012318,
+        "backend": 1.6575308669998776
+      },
+      "ratio": 1.0291002755755105,
+      "speed_goal_met": false
+    },
+    {
+      "input": "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-backend.ssa",
+      "input_sha256": "04e1e3d9728f3c43831fc331588f227bd7b74d8a1ec30f7eba3f8cd7cf017f14",
+      "input_bytes": 7684231,
+      "samples": [
+        {
+          "kind": "reference",
+          "repeat": 0,
+          "seconds": 4.309110946996952,
+          "returncode": 0,
+          "assembly_sha256": "f879568f202849b95b776ea16bbb380d074df00e04d0b3b12b724a0231a51927"
+        },
+        {
+          "kind": "backend",
+          "repeat": 0,
+          "seconds": 3.1483835670005647,
+          "returncode": 0,
+          "assembly_sha256": "f879568f202849b95b776ea16bbb380d074df00e04d0b3b12b724a0231a51927"
+        },
+        {
+          "kind": "backend",
+          "repeat": 1,
+          "seconds": 3.1230737549994956,
+          "returncode": 0,
+          "assembly_sha256": "f879568f202849b95b776ea16bbb380d074df00e04d0b3b12b724a0231a51927"
+        },
+        {
+          "kind": "reference",
+          "repeat": 1,
+          "seconds": 4.386170939003932,
+          "returncode": 0,
+          "assembly_sha256": "f879568f202849b95b776ea16bbb380d074df00e04d0b3b12b724a0231a51927"
+        },
+        {
+          "kind": "reference",
+          "repeat": 2,
+          "seconds": 4.330058753999765,
+          "returncode": 0,
+          "assembly_sha256": "f879568f202849b95b776ea16bbb380d074df00e04d0b3b12b724a0231a51927"
+        },
+        {
+          "kind": "backend",
+          "repeat": 2,
+          "seconds": 3.0684216900044703,
+          "returncode": 0,
+          "assembly_sha256": "f879568f202849b95b776ea16bbb380d074df00e04d0b3b12b724a0231a51927"
+        },
+        {
+          "kind": "backend",
+          "repeat": 3,
+          "seconds": 3.0801012790034292,
+          "returncode": 0,
+          "assembly_sha256": "f879568f202849b95b776ea16bbb380d074df00e04d0b3b12b724a0231a51927"
+        },
+        {
+          "kind": "reference",
+          "repeat": 3,
+          "seconds": 4.332813847999205,
+          "returncode": 0,
+          "assembly_sha256": "f879568f202849b95b776ea16bbb380d074df00e04d0b3b12b724a0231a51927"
+        },
+        {
+          "kind": "reference",
+          "repeat": 4,
+          "seconds": 4.219679630994506,
+          "returncode": 0,
+          "assembly_sha256": "f879568f202849b95b776ea16bbb380d074df00e04d0b3b12b724a0231a51927"
+        },
+        {
+          "kind": "backend",
+          "repeat": 4,
+          "seconds": 3.0619779090047814,
+          "returncode": 0,
+          "assembly_sha256": "f879568f202849b95b776ea16bbb380d074df00e04d0b3b12b724a0231a51927"
+        }
+      ],
+      "assembly_matches": true,
+      "median_seconds": {
+        "reference": 4.330058753999765,
+        "backend": 3.0801012790034292
+      },
+      "ratio": 0.7113301352223629,
+      "speed_goal_met": true
+    }
+  ],
+  "complete": false
+}

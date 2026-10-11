@@ -1,0 +1,68 @@
+{
+  "cases": [
+    {
+      "name": "integer_loop",
+      "same": true,
+      "sha256": [
+        "c72d52ee6c2032bb2062dfb00d3442aa0a9b96a9d59d78edd9e59cd847e108e2"
+      ]
+    },
+    {
+      "name": "function_calls",
+      "same": true,
+      "sha256": [
+        "aaec4607ba85dcf6121bac7c8b670a193ce2041e1bda14f82732152fb12a445b"
+      ]
+    },
+    {
+      "name": "float_loop",
+      "same": true,
+      "sha256": [
+        "5d3b0ed69df57627fac13a7217bbc3c2f64b20928531ba454b3976e8d08b4645"
+      ]
+    },
+    {
+      "name": "intarray_access",
+      "same": true,
+      "sha256": [
+        "e98dfbe5ee72f96f4982e039194717c8de0103944f8e965573b3f74ab20c48c3"
+      ]
+    },
+    {
+      "name": "list_access",
+      "same": true,
+      "sha256": [
+        "b4847205e9e5aaf6a5c83b6e84125697e5d9145e71684f9c956770aec55081fb"
+      ]
+    },
+    {
+      "name": "dictionary_access",
+      "same": true,
+      "sha256": [
+        "8251bdf8f8d1493e93c3a944b4062ace69cfe0131a22e29f47474fb23f985f90"
+      ]
+    },
+    {
+      "name": "string_split_join",
+      "same": true,
+      "sha256": [
+        "93549619fd42d8c275303188e2ae102716b1cab1a0f45f70ac73f19ca6ad1487"
+      ]
+    },
+    {
+      "name": "allocation_gc",
+      "same": true,
+      "sha256": [
+        "131ba1570c5c8fc2b7578ca07c340d8419bb9a349b9ec364797341e47978911c"
+      ]
+    },
+    {
+      "name": "common compiler",
+      "same": true,
+      "sha256": [
+        "dfd9503d3f654d85a421d6d2776e37d101b3ad76c12d16d464221d69062d9361"
+      ]
+    }
+  ],
+  "all_identical": true
+}

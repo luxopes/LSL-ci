@@ -1,0 +1,19 @@
+{
+  "command": [
+    "build/qbe-port-tools/native-selfhost/frontend-stage3",
+    "compiler/pure/lslc_qbe.lsl",
+    "build/qbe-finish/compiler-relative-final",
+    "build/qbe-port-tools/native-selfhost/qbe-stage3"
+  ],
+  "seconds": 7.811959537000803,
+  "returncode": 0,
+  "timed_out": false,
+  "stdout": "",
+  "stderr": "",
+  "compiler_sha256": "6ef7077dd1e9e122a2884851c3024b015f95ef8993b05c61071fd622fc645182",
+  "backend_sha256": "24996ab6ae8d78238e8066c1de2b33e676ad332b1c2d007469e94bd9e42d5448",
+  "runtime_sha256": "6780bb856d07a9017e40a90931487b0905c58dbe30b1ee08bc1f8f1d3e0d691b",
+  "complete": true,
+  "output_sha256": "6ef7077dd1e9e122a2884851c3024b015f95ef8993b05c61071fd622fc645182",
+  "matches_selfhost_frontend": true
+}

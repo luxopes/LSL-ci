@@ -1,0 +1,70 @@
+{
+  "complete": true,
+  "compiler_sha256": "1e123e69280d589e1c409f668c825476a30983e8c8f6f67a8048658cd9bf4b1f",
+  "backend_sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+  "checks": [
+    {
+      "source": "tests/qbe/native_internal_numeric_collision.lsl",
+      "source_sha256": "1a6204d3af9ddeb68726339991bbc83a2da103223c9feaa25770c32784fb7cfd",
+      "expected_sha256": "1bde642fece1c84314ff4f7be682e6f4e033abc11da687ace65c3ce8dbfc7034",
+      "build": {
+        "command": [
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+          "/home/antonin/LSL-QBE/tests/qbe/native_internal_numeric_collision.lsl",
+          "/home/antonin/LSL-QBE/build/qbe-repair/optimized/numeric-budget/native_internal_numeric_collision-after",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+        ],
+        "seconds": 0.5130375669978093,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "execution": {
+        "command": [
+          "/home/antonin/LSL-QBE/build/qbe-repair/optimized/numeric-budget/native_internal_numeric_collision-after"
+        ],
+        "seconds": 0.005962493996776175,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "True\nTrue\nTrue\nTrue\nTrue\nTrue\nTrue\nTrue\nTrue\nTrue\nTrue\nTrue\nTrue\nTrue\n",
+        "stderr": ""
+      },
+      "matches_expected": true,
+      "matches": true
+    },
+    {
+      "source": "tests/qbe/native_source_budget.lsl",
+      "source_sha256": "7311c6b9bc123323e046cf329a1910ae150b3c13ea81fc4810bcc1292b78334b",
+      "expected_sha256": "0f6435b873e0bab77571a5a5f040927b38cd78539e1177ca2cdf77cdcff423fb",
+      "build": {
+        "command": [
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+          "/home/antonin/LSL-QBE/tests/qbe/native_source_budget.lsl",
+          "/home/antonin/LSL-QBE/build/qbe-repair/optimized/numeric-budget/native_source_budget-after",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+        ],
+        "seconds": 2.335785372000828,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "execution": {
+        "command": [
+          "/home/antonin/LSL-QBE/build/qbe-repair/optimized/numeric-budget/native_source_budget-after",
+          "/home/antonin/LSL-QBE/build/qbe-repair/optimized/numeric-budget"
+        ],
+        "seconds": 0.02646422500401968,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "True\nTrue\nTrue True\n",
+        "stderr": ""
+      },
+      "matches_expected": true,
+      "matches": true
+    }
+  ],
+  "scope": "Known Int/Bool operands at internal generic arithmetic boundaries; typed module byte counter. The historical isolated startup failure is not reproduced by this test.",
+  "all_pass": true
+}

@@ -1,0 +1,68 @@
+{
+  "compiler_sha256": "e099f50cce59b554f27314e968f4a1fbde65c1f239afc9f452e99eb79e333237",
+  "backend_sha256": "4712c5462be659300054b6e96ccab1cdf7f2195971180d9623e0e7c21e8e7807",
+  "checks": [
+    {
+      "mode": "public",
+      "source_sha256": "011e9672ad20624ab17314357c9201eaf9f2c22818379743782c179cf2835b4e",
+      "build": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/lslc",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/fixtures/arg-public.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/fixtures/arg-public",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+        ],
+        "seconds": 0.6244214230027865,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "execution": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/fixtures/arg-public",
+          "present"
+        ],
+        "seconds": 0.002104677005263511,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "True False None\nNone\nNone False\nTrue False None\nTrue False None\nTrue True String\n",
+        "stderr": ""
+      },
+      "pass": true
+    },
+    {
+      "mode": "internal",
+      "source_sha256": "198ccf00ce93ed3d01a03bb2cffa600f3420aa8ba1fd6657e896703a53ed4b32",
+      "build": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/lslc",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/fixtures/arg-internal.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/fixtures/arg-internal",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+        ],
+        "seconds": 0.6064322649981477,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "execution": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/fixtures/arg-internal",
+          "present"
+        ],
+        "seconds": 0.0027434229996288195,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "True False None\nNone\nNone False\nTrue False None\nTrue False None\nTrue True String\n",
+        "stderr": ""
+      },
+      "pass": true
+    }
+  ],
+  "all_pass": true,
+  "source_commit": "cbe4b64361ccb9d72dc763ef0f77838083a95cb6",
+  "scope": "arg() nullable String/None metadata and value representation in public/internal ABIs; full CLI conformance is checked separately.",
+  "failure_reproduced": "Before the metadata correction, absent arg assigned to a local inferred String reached runtime_string_equal with a null receiver in full CLI list. After metadata correction alone, dynamic print rendered missing arg as 0; absent branch now explicitly boxes None in both ABIs."
+}

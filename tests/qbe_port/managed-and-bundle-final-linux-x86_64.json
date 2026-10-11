@@ -1,0 +1,135 @@
+{
+  "source_graph_matches_root": true,
+  "compiler": "/home/antonin/LSL-QBE-release-audit/compiler/pure/lslc-qbe",
+  "compiler_sha256": "d26a3b71df3b643aed58264e3eb8bb03360c468da41d351117f151142cc94f32",
+  "backend_sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+  "runtime_sha256": "23a85294bf1087cc1b812172e1c95c0ee4b5b8d05486b375c25242c143b85c14",
+  "original_installed_tools_sha256": {
+    "/home/antonin/.local/bin/lsl-configure": "143d61d803c9bbd2898fe81dd32ad6bd1164f67875fce427ed38f15dad4f0993",
+    "/home/antonin/.local/bin/lsl-cuda-worker": "e6822df1ceff1df15ab9b21502e1fb9a14038801638d0a0162b5ac8032c90016",
+    "/home/antonin/.local/bin/lsl": "d5569f009a0c9bce01e3dbc979dd4ab5e84c5400e929a6e4a978185cf1b13348",
+    "/home/antonin/.local/bin/lsl-install": "eda6c7587fa53c15adcd11ba25edcda566dbd294e5ac5b8e36d26f8933c1500f",
+    "/home/antonin/.local/bin/lslc": "f235b42d4998474c1bfee7eb02f17625bbc824f647f9ba33bdef8c20b0ff8696",
+    "/home/antonin/.local/bin/lsl-test": "42538487c2733bf9516d845a05e2bfe210c5f7927e82af40fb2f0bae636311d1"
+  },
+  "builds": [],
+  "commands": [
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-release-audit/compiler/pure/lslc-qbe",
+        "--unsafe",
+        "compiler/pure/cli.lsl",
+        "/home/antonin/LSL-QBE-release-audit/compiler/pure/lsl-cli"
+      ],
+      "seconds": 15.667424995997862,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "stage compiler/pure/lsl-cli",
+      "output_sha256": "f20b310aafec0af47f1ab4b38037a48d3f288e535b4567af7d3d187c0fbc65ae"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-release-audit/compiler/pure/lslc-qbe",
+        "--unsafe",
+        "stdlib/configure.lsl",
+        "/home/antonin/LSL-QBE-release-audit/compiler/pure/lsl-configure"
+      ],
+      "seconds": 2.0234658570043393,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "stage compiler/pure/lsl-configure",
+      "output_sha256": "e555e01a578330d157c8b586e25b74c8a5bf1377f1da8d6094c6c86ee745da39"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-release-audit/compiler/pure/lslc-qbe",
+        "--unsafe",
+        "compiler/pure/install.lsl",
+        "/home/antonin/LSL-QBE-release-audit/compiler/pure/lsl-install"
+      ],
+      "seconds": 4.212223690003157,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "stage compiler/pure/lsl-install",
+      "output_sha256": "354aa0dcaca6961d7a1b90bd204ecab5c2b82772a8778212c801d388ede733df"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-release-audit/compiler/pure/lslc-qbe",
+        "--unsafe",
+        "tests/test_runner.lsl",
+        "/home/antonin/LSL-QBE-release-audit/tests/lsl-test"
+      ],
+      "seconds": 5.157944976999715,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "stage tests/lsl-test",
+      "output_sha256": "485cc146124ea3ef07a22b4195ec910ef956d9a8fd1159c61fc47767b22824ea"
+    },
+    {
+      "command": [
+        "/usr/bin/python3",
+        "/home/antonin/LSL-QBE-release-audit/tools/qbe/verify_integration.py",
+        "--compiler",
+        "/home/antonin/LSL-QBE-release-audit/compiler/pure/lslc-qbe",
+        "--build-directory",
+        "/home/antonin/LSL-QBE-release-audit/build/qbe-audit/final/original-runner",
+        "--report",
+        "/home/antonin/LSL-QBE-release-audit/build/qbe-audit/final/original-runner.json",
+        "--mode",
+        "qbe"
+      ],
+      "seconds": 536.7625404989958,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": ".lsl\nInstalled registry_probe into /tmp/lsl-test-187659/package-home/.local/lib/lsl/stdlib/registry_probe.lsl.\nFetching http://127.0.0.1:8080/lsl/config_probe.lsl\nInstalled config_probe into /tmp/lsl-test-187659/package-home/.local/lib/lsl/stdlib/config_probe.lsl.\nFetching http://127.0.0.1:8080/lsl/second_probe.lsl\nInstalled second_probe into /tmp/lsl-test-187659/package-home/.local/lib/lsl/stdlib/second_probe.lsl.\npackage-update-config-ok\ncuda-protocol-ok\nerror[E2001]: builtin len expects 1 argument(s), got 0\n --> tests/builtin_arity_negative.lsl:1:7\n  |\n1 | print len()\n  |       ^~~~~\n help: pass exactly 1 argument(s)\nerror[E2001]: builtin arg expects 1 argument(s), got 0\n --> tests/arg_arity_negative.lsl:1:7\n  |\n1 | print arg()\n  |       ^~~~~\n help: pass exactly 1 argument(s)\nerror[E2001]: builtin __lsl_box_int expects 1 argument(s), got 0\n --> tests/internal_builtin_arity_negative.lsl:1:7\n  |\n1 | print __lsl_box_int()\n  |       ^~~~~~~~~~~~~~~\n help: pass exactly 1 argument(s)\nerror[E2001]: method append expects 1 argument(s), got 0\n --> tests/method_arity_negative.lsl:2:6\n  |\n2 | call values.append()\n  |      ^~~~~~~~~~~~~~~\n help: pass exactly 1 argument(s)\nerror[E2001]: method get expects one or two arguments\n --> tests/dictionary_method_arity_negative.lsl:1:7\n  |\n1 | print {\"a\": 1}.get()\n  |       ^~~~~~~~~~~~~~\n help: use dictionary.get(key[, default])\nerror[E2001]: type String has no method clear\n --> tests/method_receiver_negative.lsl:1:6\n  |\n1 | call \"immutable\".clear()\n  |      ^~~~~~~~~~~~~~~~~~~\n help: use a method documented for String\nerror[E2001]: value of type Int has no length\n --> tests/scalar_length_negative.lsl:1:11\n  |\n1 | print len(42)\n  |           ^~\n help: pass a String, collection, typed array, or Dictionary\nerror[E2001]: sequence index must be Int\n --> tests/sequence_index_type_negative.lsl:1:14\n  |\n1 | print [1, 2][\"wrong\"]\n  |              ^~~~~~~\n help: convert the index with Int(...)\nerror[E2001]: operator - requires numeric operands\n --> tests/arithmetic_operand_negative.lsl:1:7\n  |\n1 | print \"not numeric\" - 1\n  |       ^~~~~~~~~~~~~~~~~\n help: pass Int, Bool, or Float values\nerror[E2001]: unary - requires a numeric operand\n --> tests/unary_numeric_negative.lsl:1:7\n  |\n1 | print -[]\n  |       ^~~\n help: pass an Int, Bool, or Float value\nerror[E2001]: ordered comparison requires numeric operands\n --> tests/ordered_comparison_negative.lsl:1:7\n  |\n1 | print \"a\" < \"b\"\n  |       ^~~~~~~~~\n help: compare Int, Bool, or Float values\nerror[E2001]: abs requires a numeric operand\n --> tests/numeric_builtin_negative.lsl:1:7\n  |\n1 | print abs({})\n  |       ^~~~~~~\n help: pass an Int, Bool, or Float value\nerror[E2001]: inheritance cycle involving class First\n --> tests/inheritance_cycle_negative.lsl:1:1\n  |\n1 | class First(Second):\n  | ^\n help: make the class hierarchy acyclic\nerror[E2001]: class Root has no parent\n --> tests/origin_without_parent_negative.lsl:3:14\n  |\n3 |         call origin.init()\n  |              ^~~~~~~~~~~~~\n help: remove origin or inherit from a parent class\nerror[E2001]: type Tuple has no method pop\n --> tests/fixed_collection_negative.lsl:2:6\n  |\n2 | call values.pop()\n  |      ^~~~~~~~~~~~\n help: use a method documented for Tuple\nerror[E2001]: unknown native function: @lsl_module_0@Hidden\n --> tests/private_class_negative.lsl:3:10\n  |\n3 | hidden = sample.Hidden()\n  |          ^~~~~~~~~~~~~~~\n help: declare the function or assign a Function value before calling it\nerror[E2001]: mutable or collection value cannot be a Dictionary key\n --> tests/dictionary_key_negative.lsl:1:12\n  |\n1 | mapping = {[1, 2]: \"bad\"}\n  |            ^\n help: use String, Int, Bool, None, Float, or Function keys\nerror[E2001]: IntArray append requires an Int\n --> tests/intarray_type_negative.lsl:2:15\n  |\n2 | values.append(\"not an Int\")\n  |               ^~~~~~~~~~~~\n help: convert the value with Int(...) before appending\nerror[E2001]: FloatArray append requires a Float\n --> tests/floatarray_type_negative.lsl:2:15\n  |\n2 | values.append(1)\n  |               ^\n help: convert the value with Float(...) before appending\nerror[E2001]: ByteArray append requires an Int\n --> tests/bytearray_type_negative.lsl:2:15\n  |\n2 | values.append(\"x\")\n  |               ^~~\n help: convert the value with Int(...) before appending\nerror[E1100]: expected an expression\n --> tests/legacy_power_negative.lsl:1:10\n  |\n1 | print 2 ** 3\n  |          ^\n help: use a literal, name, collection, or function call\nerror[E2001]: bitwise operators require Int operands, got Float\n --> tests/bitwise_float_negative.lsl:1:7\n  |\n1 | print 1.5 & 3\n  |       ^~~\n help: convert the value with Int(...) first\nerror[E2001]: negative shift count\n --> tests/bitwise_shift_negative.lsl:1:7\n  |\n1 | print 1 << -1\n  |       ^~~~~~~\n help: use a shift count of 0 or more\nerror[E0009]: base prefix without digits\n --> tests/base_literal_negative.lsl:1:7\n  |\n1 | print 0x\n  |       ^~\n help: add at least one digit after 0b, 0o, or 0x\npure LSL tests passed\n\nLSL runtime error: PackageError: SHA-256 mismatch for registry_probe\nLSL runtime error: PackageError: invalid library name: Bad/Name\nLSL runtime error: PackageError: config:2: duplicate library: duplicate\nLSL runtime error: PackageError: config:1: invalid library name: bad name\nLSL runtime error: MemoryError: allocator or object table exhausted\nLSL runtime error: TypeError: bitwise operators require Int operands\n\n",
+      "stderr": "",
+      "name": "complete original native runner"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-release-audit/compiler/pure/lslc-qbe",
+        "--unsafe",
+        "tests/compiler/install_managed_integration.lsl",
+        "/home/antonin/LSL-QBE-release-audit/build/qbe-audit/final/install-managed-integration"
+      ],
+      "seconds": 1.318616053002188,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "compile managed migration integration"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-release-audit/build/qbe-audit/final/install-managed-integration",
+        "/home/antonin",
+        "/home/antonin/.local/bin/lsl-install",
+        "/home/antonin/LSL-QBE-release-audit/compiler/pure/lsl-install",
+        "/home/antonin/LSL-QBE-release-audit/compiler/pure/lsl-cli"
+      ],
+      "seconds": 15.977296457997,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "Legacy migration, managed reinstall and rollback passed.\n",
+      "stderr": "",
+      "name": "managed migration reinstall rollback"
+    }
+  ],
+  "all_pass": true,
+  "installed_tools_unchanged": true,
+  "source_graph_unchanged": true,
+  "correctness_only": true,
+  "timing_note": "Shared correctness run; elapsed times are not performance measurements.",
+  "source_freeze_root_commit": "0339509",
+  "runtime_unchanged": true,
+  "scope": "Canonical native frontend/backend stage all tools, complete maintained original corpus, isolated0.8.9 migration, two reinstalls and two rollbacks"
+}

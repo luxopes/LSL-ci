@@ -1,0 +1,522 @@
+{
+  "scope": "Observed return-type dependency memoization, isolated candidate from production source 0339509. Full final selfhost/corpus belongs to the coordinator after integration.",
+  "source_base": "0339509",
+  "candidate_source_sha256": "4c5f0a50c9c7ab2a930268c06f0efe51e4055811060d1635288c2d7121cdfd33",
+  "design": [
+    "Record only actual function_returns value reads at constructor, direct-call and member-call inference sites.",
+    "Cache per declaration within one infer_function_returns invocation; globals and parameter types remain fixed.",
+    "Compare recorded PRE-update values before skipping a visit. Preserve declaration order, inherited-alias refresh and original iteration bound.",
+    "Collect local names on the original first visit, preserving hidden annotations and final scope-ID allocation.",
+    "Remove the impossible source-identifier sentinel @return.inputs after every evaluation."
+  ],
+  "artifacts": {
+    "before_sha256": "d1022cc8ff66b83ce6056aa5d77ddb67aa708152e7196fe4de6c5d0354e6c70a",
+    "after_sha256": "3e52f863157cf8bd02df1190b5b6247e360e70bedd028e613f58b30a0ebcd6ff",
+    "backend_sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+    "runtime_sha256": "23a85294bf1087cc1b812172e1c95c0ee4b5b8d05486b375c25242c143b85c14"
+  },
+  "typed_ssa_comparisons": 22,
+  "maintained_output_executions": 11,
+  "checks": [
+    {
+      "source": "tests/qbe/return_dependency_inference.lsl",
+      "source_sha256": "75f6b0281c8d729ffd3ef2c3ca395429dd33ceebdcec3958c8fe7d1e194ab1e5",
+      "mode": "public",
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "0552c26a179854bce5e4158c01948c919b4581668668167787a0940f0323157d",
+      "ssa_equal": true,
+      "ssa_sha256": "3419e33b1e366f084e3afaf47de96c2ec9623c4a7f7cf4832a5d96aac2c6e114",
+      "function_scope_count": 144,
+      "output_equal": true,
+      "expected_sha256": "6086396625411133e31232269103af4389e698186a0e22e657c19a209ee9ec2e",
+      "execution": {
+        "returncode": 0,
+        "stdout": "17 17\nTrue\n[[17, 18], [18, 19]]\n",
+        "stderr": "",
+        "timed_out": false
+      }
+    },
+    {
+      "source": "tests/qbe/return_dependency_inference.lsl",
+      "source_sha256": "75f6b0281c8d729ffd3ef2c3ca395429dd33ceebdcec3958c8fe7d1e194ab1e5",
+      "mode": "internal",
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "0552c26a179854bce5e4158c01948c919b4581668668167787a0940f0323157d",
+      "ssa_equal": true,
+      "ssa_sha256": "1b52a54d9fa95f382423637cb83f7587e81ca7e7ad697c5d2a1e8e76eebe14db",
+      "function_scope_count": 144
+    },
+    {
+      "source": "tests/qbe/frontend_scope_shadowing.lsl",
+      "source_sha256": "20f279c2d1c0bcc26937f4b1f562b346cdee3906465af305b7d608d67c75075d",
+      "mode": "public",
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "8727f88dc95bbaa5db53b6ca8be3473f09073d7a2dbdb81810ebc0e120be6b43",
+      "ssa_equal": true,
+      "ssa_sha256": "c3e3ab35f6bf4e8da7206bafcd1a305b8850ca6193348dc7d995d0a6bd1b850c",
+      "function_scope_count": 140,
+      "output_equal": true,
+      "expected_sha256": "8a9f97b88236bbe291bf0482b5ba8b3f4321be4acce6e882c59de4e6ab12aab1",
+      "execution": {
+        "returncode": 0,
+        "stdout": "18 8 7 100 21\n",
+        "stderr": "",
+        "timed_out": false
+      }
+    },
+    {
+      "source": "tests/qbe/frontend_scope_shadowing.lsl",
+      "source_sha256": "20f279c2d1c0bcc26937f4b1f562b346cdee3906465af305b7d608d67c75075d",
+      "mode": "internal",
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "68670edc650de142e4f872efb38e9e9eedfd45ae629c4e6888d63be0050e9bda",
+      "ssa_equal": true,
+      "ssa_sha256": "69024fe2a1d3dae749534be21a110b8645cbde6359b222d0c801016bf7efd9e8",
+      "function_scope_count": 140
+    },
+    {
+      "source": "tests/recursive_return_conformance.lsl",
+      "source_sha256": "9bd4cb5b8a6f7f08b8a406fe90bc077c88e6af4fa4974c1173e2a825c7817ec4",
+      "mode": "public",
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "1c053f402259a8c6f59215a73e123d8d8c94a5d67dad6c341fbb8adb9d349b0b",
+      "ssa_equal": true,
+      "ssa_sha256": "766fa92f5d6ba25a7931c47e2ea5e65a53038e68c8f9f6416d73091cc362f744",
+      "function_scope_count": 141,
+      "output_equal": true,
+      "expected_sha256": "8295caceaaa24899a59ea3ad1101c9beac31996060befea57c3ea0ef9e1c1579",
+      "execution": {
+        "returncode": 0,
+        "stdout": "True True False False\nTrue False\n55 610\n7.0\n",
+        "stderr": "",
+        "timed_out": false
+      }
+    },
+    {
+      "source": "tests/recursive_return_conformance.lsl",
+      "source_sha256": "9bd4cb5b8a6f7f08b8a406fe90bc077c88e6af4fa4974c1173e2a825c7817ec4",
+      "mode": "internal",
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "3a94043079caad0bcb94c20667d0e3d97f0e77b397e828e4457ccc7069fc2df7",
+      "ssa_equal": true,
+      "ssa_sha256": "cdde1b617635d2099d3b958957cae7112417748e32be3cf72d6ab7a90732efa0",
+      "function_scope_count": 141
+    },
+    {
+      "source": "tests/class_method_return_conformance.lsl",
+      "source_sha256": "0ddccbcb10e6ea05d9b1435f3234c2ed9bda27d21bf6882687fadc8cecac6fb3",
+      "mode": "public",
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "9ba8a9ff149c77045555e057893c6771d57bd6ead40244d28b70b4a738693387",
+      "ssa_equal": true,
+      "ssa_sha256": "aee64beaa1861a0d7f3d11fd96c59c48794199c567a2b82b66aa51fef2369a28",
+      "function_scope_count": 142,
+      "output_equal": true,
+      "expected_sha256": "084c799cd551dd1d8d5c5f9a5d593b2e931f5e36122ee5c793c1d08a19839cc0",
+      "execution": {
+        "returncode": 0,
+        "stdout": "42\n",
+        "stderr": "",
+        "timed_out": false
+      }
+    },
+    {
+      "source": "tests/class_method_return_conformance.lsl",
+      "source_sha256": "0ddccbcb10e6ea05d9b1435f3234c2ed9bda27d21bf6882687fadc8cecac6fb3",
+      "mode": "internal",
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "9ba8a9ff149c77045555e057893c6771d57bd6ead40244d28b70b4a738693387",
+      "ssa_equal": true,
+      "ssa_sha256": "d420d2cead807f189659b1fd88b9a1fb061a5942ad9113de11b5bd4c0a279bf9",
+      "function_scope_count": 142
+    },
+    {
+      "source": "tests/inheritance_conformance.lsl",
+      "source_sha256": "713d4842e7218da24f9f3093360f49e0ef7b0497c1bd3bd310e12a356f96921c",
+      "mode": "public",
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "5efdef86cfe7007361b973a2c4d31f98932cbf8699ad24a5090fa38a38042bf6",
+      "ssa_equal": true,
+      "ssa_sha256": "02833812c87b7abbec6f31635fcfe0092c1c3c417fdd75406dd82130ed9c93f5",
+      "function_scope_count": 145,
+      "output_equal": true,
+      "expected_sha256": "bfed78625de66d9d4148f88de7e5575629af00050debffecf13ad12dc9050018",
+      "execution": {
+        "returncode": 0,
+        "stdout": "parent:21:child\n42\nparent:41:child:grandchild\n82\nimported:7:child\n",
+        "stderr": "",
+        "timed_out": false
+      }
+    },
+    {
+      "source": "tests/inheritance_conformance.lsl",
+      "source_sha256": "713d4842e7218da24f9f3093360f49e0ef7b0497c1bd3bd310e12a356f96921c",
+      "mode": "internal",
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "5efdef86cfe7007361b973a2c4d31f98932cbf8699ad24a5090fa38a38042bf6",
+      "ssa_equal": true,
+      "ssa_sha256": "f81061200fb631166134167baa496e96eeb4db6fad8566a2c15095ee803c3564",
+      "function_scope_count": 145
+    },
+    {
+      "source": "tests/comprehension_conformance.lsl",
+      "source_sha256": "584cb5b78b14052a2665274a3563565027c8c067a5a814d11c8805ec7dd7e54d",
+      "mode": "public",
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "b049018faae1c43d3cc7bcd7478a025e78753068bd8cce48cb1b0ed69e933175",
+      "ssa_equal": true,
+      "ssa_sha256": "98757044db5205c768dd8ac583bcaa1fc30f6fd4a4c2d91048a1fe0729a5a97c",
+      "function_scope_count": 147,
+      "output_equal": true,
+      "expected_sha256": "6604f370d6442fe4dca1852c6dd73267006e4480731f007de46690822933eedd",
+      "execution": {
+        "returncode": 0,
+        "stdout": "comprehension conformance passed\n",
+        "stderr": "",
+        "timed_out": false
+      }
+    },
+    {
+      "source": "tests/comprehension_conformance.lsl",
+      "source_sha256": "584cb5b78b14052a2665274a3563565027c8c067a5a814d11c8805ec7dd7e54d",
+      "mode": "internal",
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "b049018faae1c43d3cc7bcd7478a025e78753068bd8cce48cb1b0ed69e933175",
+      "ssa_equal": true,
+      "ssa_sha256": "957b8c33621f5d0d9cc51f781218aac80d59f10e4e234862d08ee0ecd1808e69",
+      "function_scope_count": 147
+    },
+    {
+      "source": "tests/rang_value_conformance.lsl",
+      "source_sha256": "698da2a4570e8ae0380ec59756a64b0c1f84524a644858bc2962ba28aeef5354",
+      "mode": "public",
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "2238c85104d26ff9a8535304955fe59483f9651048bfdaa9cbb1780cdd139e95",
+      "ssa_equal": true,
+      "ssa_sha256": "f7d2401a81b94ea398f36ca32810c2eb1d8d34c4560eaee136cda7a0acd859b2",
+      "function_scope_count": 138,
+      "output_equal": true,
+      "expected_sha256": "d0c1f6b790c316902a3621fd6fdb5ad44e45f467364a5e46f7980f4f4cd2f40f",
+      "execution": {
+        "returncode": 0,
+        "stdout": "rang value conformance passed\n",
+        "stderr": "",
+        "timed_out": false
+      }
+    },
+    {
+      "source": "tests/rang_value_conformance.lsl",
+      "source_sha256": "698da2a4570e8ae0380ec59756a64b0c1f84524a644858bc2962ba28aeef5354",
+      "mode": "internal",
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "11490ead3269052b717a2e0ae932212487c8ca84c288b41a1ad35bdc85dff068",
+      "ssa_equal": true,
+      "ssa_sha256": "e3d3b456b698f4e2585166dc1ce8651aa418f79a66bfb6e526d433268aabcb16",
+      "function_scope_count": 138
+    },
+    {
+      "source": "tests/class_module_smoke.lsl",
+      "source_sha256": "c26e56b06935ddb35ed8c853b05168d318c33ac7ab18449d177699d10303327a",
+      "mode": "public",
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "0aec923934fe46f1a2a827c238490432a4466d9007fddd8392a6df5e44031904",
+      "ssa_equal": true,
+      "ssa_sha256": "c459eeefd9f9cd36022ad143e45695f3dbf1acb17ef9cd9f3f45e5f1d68d0acb",
+      "function_scope_count": 140,
+      "output_equal": true,
+      "expected_sha256": "0b23705bc5c8031ed56e6220a920157dde9e5490a97541bfd6f2a6a7a89f2dc5",
+      "execution": {
+        "returncode": 0,
+        "stdout": "module-ok 12 module-ok 15\n12 Class Instance\n",
+        "stderr": "",
+        "timed_out": false
+      }
+    },
+    {
+      "source": "tests/class_module_smoke.lsl",
+      "source_sha256": "c26e56b06935ddb35ed8c853b05168d318c33ac7ab18449d177699d10303327a",
+      "mode": "internal",
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "3364d58d0d5f883cc1de9bd42af72057c623a4164c5b00400b2884f03835c43f",
+      "ssa_equal": true,
+      "ssa_sha256": "1d3cfe7ea9b8ece5dedd7914d6d0bcab901eb3d93e340a0368461bc4bf488970",
+      "function_scope_count": 140
+    },
+    {
+      "source": "tests/boxed_collection_conformance.lsl",
+      "source_sha256": "4234ce18992c7790086cf60dc03eaac0f47f7213538e274d8a4e1ae1556fb765",
+      "mode": "public",
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "3e3b890473c249dbf56ccc40c41772307f10bf81c41620351997d15985092288",
+      "ssa_equal": true,
+      "ssa_sha256": "7c6dbe82c610d023c362827b7575a68b2b41d2b735bacac469dec8516e7301a8",
+      "function_scope_count": 155,
+      "output_equal": true,
+      "expected_sha256": "fd7eb4537503dff4b165b336150d1f6c21e82a96a92361d7a5e17259f603b1a0",
+      "execution": {
+        "returncode": 0,
+        "stdout": "[0, 1, -1, 9223372036854775807, -9223372036854775808]\n9 Int 0\n9 Int 1\n9 Int -1\n9 Int 9223372036854775807\n9 Int -9223372036854775808\n[0,1,-1,9223372036854775807,-9223372036854775808]\n[6, 7, 1, -1, 9223372036854775807, -9223372036854775808, 4]\n9 9 14\n(0, 1) ![0, 1, 2.5] Int Int\n{'zero': 7, 'one': 1, 'two': 2, 'three': 3}\nInt {\"zero\":7,\"one\":1,\"two\":2,\"three\":3}\n",
+        "stderr": "",
+        "timed_out": false
+      }
+    },
+    {
+      "source": "tests/boxed_collection_conformance.lsl",
+      "source_sha256": "4234ce18992c7790086cf60dc03eaac0f47f7213538e274d8a4e1ae1556fb765",
+      "mode": "internal",
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "3e3b890473c249dbf56ccc40c41772307f10bf81c41620351997d15985092288",
+      "ssa_equal": true,
+      "ssa_sha256": "2b7b89dcb3b562afdd09ee23fc3d053982a0bb03caf94ec1901c4e8a100c48b8",
+      "function_scope_count": 155
+    },
+    {
+      "source": "tests/qbe/public_call_inference.lsl",
+      "source_sha256": "d1ac81c85ecb0c287e05cdaa6361f59f21406c8c8826efa1c98acc7b869baf63",
+      "mode": "public",
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "174711db6784755d1c1048ff50e21b5f89661e56168f1ec7c7d0ec954f637e9c",
+      "ssa_equal": true,
+      "ssa_sha256": "98e0f3cf763e40ea95558bf6d1be6fa703a9ffdeeb48cea91161774f28f2f984",
+      "function_scope_count": 139,
+      "output_equal": true,
+      "expected_sha256": "b1232326d26e39f3b9da45926f9fd62f306e3a3b989d831e83084ff878aba7e7",
+      "execution": {
+        "returncode": 0,
+        "stdout": "1814098701\n7 2.5 value 3.5\nBool Int Float\n",
+        "stderr": "",
+        "timed_out": false
+      }
+    },
+    {
+      "source": "tests/qbe/public_call_inference.lsl",
+      "source_sha256": "d1ac81c85ecb0c287e05cdaa6361f59f21406c8c8826efa1c98acc7b869baf63",
+      "mode": "internal",
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "4c2ba37382006d5506f1b019b5c19fbd0fcebdd76ec02ec5ffd9def0bdb18988",
+      "ssa_equal": true,
+      "ssa_sha256": "f164df83cb26742e0ac56eb25e9ef8ebd18fe188cd5d77fd44bd66e78e92d982",
+      "function_scope_count": 139
+    },
+    {
+      "source": "tests/compiler/frontend_conformance.lsl",
+      "source_sha256": "0e6d821db364dba76a72d84816233fa4557638e9e4a49037032cd09b9bdac679",
+      "mode": "public",
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "53a394291c3acaa9f24942da9ba58de92e84c3169e47ee4872e75acdc76fbd18",
+      "ssa_equal": true,
+      "ssa_sha256": "a2f139f695d0718796e876f78fb75f923c3ea836dfb2cbbcb6a39027dfe4f3eb",
+      "function_scope_count": 382,
+      "output_equal": true,
+      "expected_sha256": "af27be5ff08673b2e83210279437a6eb0e892f1866bbe22368e8b9448de70461",
+      "execution": {
+        "returncode": 0,
+        "stdout": "frontend bindings, inference, shadowing, callbacks and ABI provenance passed\n",
+        "stderr": "",
+        "timed_out": false
+      }
+    },
+    {
+      "source": "tests/compiler/frontend_conformance.lsl",
+      "source_sha256": "0e6d821db364dba76a72d84816233fa4557638e9e4a49037032cd09b9bdac679",
+      "mode": "internal",
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "53a394291c3acaa9f24942da9ba58de92e84c3169e47ee4872e75acdc76fbd18",
+      "ssa_equal": true,
+      "ssa_sha256": "aec148c0b32a4b2150f2f629990c05b80bd4f8c7b96a443ffd47e1c5aaab7900",
+      "function_scope_count": 382
+    }
+  ],
+  "common_compiler_source_equivalence": {
+    "source": "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+    "source_sha256": "ca5306deaf8612930f7648df9f5540faba69de2c78a9fa604b29fdded1452418",
+    "before_sha256": "d1022cc8ff66b83ce6056aa5d77ddb67aa708152e7196fe4de6c5d0354e6c70a",
+    "after_sha256": "3e52f863157cf8bd02df1190b5b6247e360e70bedd028e613f58b30a0ebcd6ff",
+    "baseline_reused": "Same exact pristine 0339509 diagnostic baseline and input source from common-equivalence.json",
+    "checks": [
+      {
+        "mode": "internal",
+        "after": {
+          "command": [
+            "/home/antonin/LSL-QBE-return-cache/build/qbe-return-cache/observed-dump",
+            "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+            "/home/antonin/LSL-QBE-return-cache/build/qbe-return-cache/common-observed-internal",
+            "internal"
+          ],
+          "seconds": 10.060766101996705,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "",
+          "stderr": ""
+        },
+        "baseline_typed_sha256": "7e9d0108ba133485d49470b74f4db177141230582a81a6e2e7d4467a0e287931",
+        "baseline_ssa_sha256": "68cced2e856febfbf2dcaf25102ba2e73051d6cab1b51fdc1645658b2bd95fbd",
+        "typed_equal": true,
+        "ssa_equal": true,
+        "ssa_sha256": "68cced2e856febfbf2dcaf25102ba2e73051d6cab1b51fdc1645658b2bd95fbd",
+        "pass": true
+      },
+      {
+        "mode": "public",
+        "after": {
+          "command": [
+            "/home/antonin/LSL-QBE-return-cache/build/qbe-return-cache/observed-dump",
+            "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+            "/home/antonin/LSL-QBE-return-cache/build/qbe-return-cache/common-observed-public",
+            "public"
+          ],
+          "seconds": 10.66723460900539,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "",
+          "stderr": ""
+        },
+        "baseline_typed_sha256": "7e9d0108ba133485d49470b74f4db177141230582a81a6e2e7d4467a0e287931",
+        "baseline_ssa_sha256": "6c48ae1b32f8eb64c63881aead2689ffc01aa434c4c63d1595adeaf596a58674",
+        "typed_equal": true,
+        "ssa_equal": true,
+        "ssa_sha256": "6c48ae1b32f8eb64c63881aead2689ffc01aa434c4c63d1595adeaf596a58674",
+        "pass": true
+      }
+    ],
+    "all_pass": true
+  },
+  "isolated_performance": {
+    "correctness_only": false,
+    "exclusive_cpu": true,
+    "variant": "observed return-map reads; no generic AST traversal",
+    "source": "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+    "source_sha256": "ca5306deaf8612930f7648df9f5540faba69de2c78a9fa604b29fdded1452418",
+    "before_sha256": "d26a3b71df3b643aed58264e3eb8bb03360c468da41d351117f151142cc94f32",
+    "after_sha256": "1e123e69280d589e1c409f668c825476a30983e8c8f6f67a8048658cd9bf4b1f",
+    "samples": [
+      {
+        "command": [
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+          "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+          "/home/antonin/LSL-QBE-return-cache/build/qbe-return-cache/observed-perf-before-0",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+        ],
+        "seconds": 12.356425985002716,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": "",
+        "compiler": "before",
+        "iteration": 0,
+        "output_sha256": "dfd9503d3f654d85a421d6d2776e37d101b3ad76c12d16d464221d69062d9361"
+      },
+      {
+        "command": [
+          "/home/antonin/LSL-QBE-return-cache/build/qbe-return-cache/compiler-observed",
+          "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+          "/home/antonin/LSL-QBE-return-cache/build/qbe-return-cache/observed-perf-after-0",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+        ],
+        "seconds": 12.17224804199941,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": "",
+        "compiler": "after",
+        "iteration": 0,
+        "output_sha256": "dfd9503d3f654d85a421d6d2776e37d101b3ad76c12d16d464221d69062d9361"
+      },
+      {
+        "command": [
+          "/home/antonin/LSL-QBE-return-cache/build/qbe-return-cache/compiler-observed",
+          "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+          "/home/antonin/LSL-QBE-return-cache/build/qbe-return-cache/observed-perf-after-1",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+        ],
+        "seconds": 12.188135210002656,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": "",
+        "compiler": "after",
+        "iteration": 1,
+        "output_sha256": "dfd9503d3f654d85a421d6d2776e37d101b3ad76c12d16d464221d69062d9361"
+      },
+      {
+        "command": [
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+          "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+          "/home/antonin/LSL-QBE-return-cache/build/qbe-return-cache/observed-perf-before-1",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+        ],
+        "seconds": 12.372311292005179,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": "",
+        "compiler": "before",
+        "iteration": 1,
+        "output_sha256": "dfd9503d3f654d85a421d6d2776e37d101b3ad76c12d16d464221d69062d9361"
+      },
+      {
+        "command": [
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+          "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+          "/home/antonin/LSL-QBE-return-cache/build/qbe-return-cache/observed-perf-before-2",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+        ],
+        "seconds": 12.431809674999386,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": "",
+        "compiler": "before",
+        "iteration": 2,
+        "output_sha256": "dfd9503d3f654d85a421d6d2776e37d101b3ad76c12d16d464221d69062d9361"
+      },
+      {
+        "command": [
+          "/home/antonin/LSL-QBE-return-cache/build/qbe-return-cache/compiler-observed",
+          "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+          "/home/antonin/LSL-QBE-return-cache/build/qbe-return-cache/observed-perf-after-2",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+        ],
+        "seconds": 12.212980973999947,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": "",
+        "compiler": "after",
+        "iteration": 2,
+        "output_sha256": "dfd9503d3f654d85a421d6d2776e37d101b3ad76c12d16d464221d69062d9361"
+      }
+    ],
+    "medians": {
+      "before": 12.372311292005179,
+      "after": 12.188135210002656
+    },
+    "all_images_equal": true,
+    "ratio": 0.9851138499787396
+  },
+  "performance_interpretation": "Three paired full translations of identical installed 0.8.9 compiler sources; median wall time decreases 1.4886%. All six generated compiler ELFs are byte-identical. These are native-baseline versus native-candidate samples, not comparisons against the 0.8.9 binary.",
+  "correctness_timing_note": "Diagnostic typed/SSA elapsed times are not performance evidence and are intentionally omitted here.",
+  "all_pass": true
+}

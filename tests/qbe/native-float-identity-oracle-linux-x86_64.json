@@ -1,0 +1,79 @@
+{
+  "scope": "Correctness of legacy Float scalar identity; concurrent correctness runs, no benchmark claim. Full old arithmetic output may retain historical unrelated differences.",
+  "baseline_sha256": "f235b42d4998474c1bfee7eb02f17625bbc824f647f9ba33bdef8c20b0ff8696",
+  "compiler_sha256": "efbcb2bbe51587b9728616cef23c0553acde66cceedc17aded04ae4c4602a7a9",
+  "backend_sha256": "44c141c6ee0d0887c80111320fa2db80fe485f385cbf0a70dbfeee400754b26d",
+  "checks": [
+    {
+      "mode": "old089",
+      "build": {
+        "command": [
+          "/home/antonin/.local/bin/lslc",
+          "/home/antonin/LSL-QBE-cli-finish/tests/qbe/native_float_arithmetic.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-float-oracle-audit/old089"
+        ],
+        "seconds": 0.7634232290001819,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "execution": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-float-oracle-audit/old089"
+        ],
+        "seconds": 0.008524231998308096,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "14.0\n8.0 6.0\n3.75 2.25\n-9223372036854775808 -9223372036854775808\n0 -9223372036854775808\nTrue\nTrue\n2 0\n-9223372036854775808\nTrue\nTrue\nTrue\nTrue\nTrue True\nTrue\nTrue\nTrue\n1.0 0.0\n2.25 Float\nTrue True\nTrue\n",
+        "stderr": ""
+      },
+      "identity_tail": [
+        "True True",
+        "True"
+      ],
+      "matches_complete_corrected_oracle": true
+    },
+    {
+      "mode": "new",
+      "build": {
+        "command": [
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+          "--unsafe",
+          "/home/antonin/LSL-QBE-cli-finish/tests/qbe/native_float_arithmetic.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-float-oracle-audit/new",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+        ],
+        "seconds": 0.9801472190010827,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "execution": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-float-oracle-audit/new"
+        ],
+        "seconds": 0.004056536003190558,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "14.0\n8.0 6.0\n3.75 2.25\n-9223372036854775808 -9223372036854775808\n0 -9223372036854775808\nTrue\nTrue\n2 0\n-9223372036854775808\nTrue\nTrue\nTrue\nTrue\nTrue True\nTrue\nTrue\nTrue\n1.0 0.0\n2.25 Float\nTrue True\nTrue\n",
+        "stderr": ""
+      },
+      "identity_tail": [
+        "True True",
+        "True"
+      ],
+      "matches_complete_corrected_oracle": true
+    }
+  ],
+  "legacy_identity_confirmed": true,
+  "measured_source_sha256": "c292baff2982c218930205c1d3ecd569b1970eab897273976ac39401abfd7aab",
+  "source_sha256": "aae523e66c5b1785a9c0e2a177928893846c775a25f1066415a6c6c26561d04a",
+  "oracle_sha256": "52cf4c8e658e63108eca1e825c9ec4cc591e4236ab8570cc83bea206f5b189b3",
+  "source_change_after_measurement": "Only two explanatory comment lines were added; executable fixture expressions are unchanged.",
+  "contract": "Scalar is/is not compares values. Proven Float operands use IEEE equality: equal Float values in separate allocations compare True, signed zeros compare equal, NaN compares unequal. Collection is/is not retains object identity.",
+  "other_float_identity_oracles": [],
+  "registered_suite": "Diagnostic run passed all four native_float_* fixtures with current F3/B3; full 40-case run was interrupted after 26 passes awaiting newly discovered runtime repairs. No complete integration claim.",
+  "all_oracle_checks_pass": true
+}

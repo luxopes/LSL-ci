@@ -1,0 +1,1417 @@
+{
+  "scope": "Compare typed frontend state and exact SSA before/after structural caching.\n\nDiagnostic correctness runs may overlap other agents. Their elapsed times are\nrecorded for reproducibility and must not be treated as performance results.\n",
+  "complete": true,
+  "all_pass": true,
+  "before_sha256": "17a631055ea15a88df9517d7a96292770d0c47e79517dd6a39a8f5e0d390ea8c",
+  "after_sha256": "3de97fff1bd8244009c4d92560836a3565c6d8995c41f1028372ba91d1433f8d",
+  "backend_sha256": "44c141c6ee0d0887c80111320fa2db80fe485f385cbf0a70dbfeee400754b26d",
+  "runtime_sha256": "6780bb856d07a9017e40a90931487b0905c58dbe30b1ee08bc1f8f1d3e0d691b",
+  "checks": [
+    {
+      "source": "tests/qbe/frontend_scope_shadowing.lsl",
+      "source_sha256": "20f279c2d1c0bcc26937f4b1f562b346cdee3906465af305b7d608d67c75075d",
+      "mode": "public",
+      "before": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-before",
+          "/home/antonin/LSL-QBE-cli-finish/tests/qbe/frontend_scope_shadowing.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/frontend_scope_shadowing-public-before",
+          "public"
+        ],
+        "seconds": 0.627908665999712,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "after": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-after",
+          "/home/antonin/LSL-QBE-cli-finish/tests/qbe/frontend_scope_shadowing.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/frontend_scope_shadowing-public-after",
+          "public"
+        ],
+        "seconds": 0.5870925139970495,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "78ac834a1b665676672ee4ae5253b8f56d2512855eeba8c437fdc9e93bd7bb03",
+      "function_scope_count": 140,
+      "ssa_equal": true,
+      "ssa_sha256": "c34e42f77cf1bead579e3f33d0320a75c38b39e43b8cd02b057037746c71d960",
+      "lower": {
+        "command": [
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+          "-t",
+          "amd64_sysv",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/frontend_scope_shadowing-public.s",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/frontend_scope_shadowing-public-after.ssa"
+        ],
+        "seconds": 0.11978022300172597,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "assemble": {
+        "command": [
+          "/usr/bin/as",
+          "--64",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/frontend_scope_shadowing-public.o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/frontend_scope_shadowing-public.s"
+        ],
+        "seconds": 0.019421853001404088,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/usr/bin/ld",
+          "-nostdlib",
+          "-static",
+          "-pie",
+          "--no-dynamic-linker",
+          "-z",
+          "text",
+          "-z",
+          "noexecstack",
+          "--build-id=none",
+          "-s",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/frontend_scope_shadowing-public",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/frontend_scope_shadowing-public.o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/runtime.o"
+        ],
+        "seconds": 0.013315677999344189,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "execution": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/frontend_scope_shadowing-public"
+        ],
+        "seconds": 0.002067098997940775,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "18 8 7 100 21\n",
+        "stderr": ""
+      },
+      "expected_sha256": "8a9f97b88236bbe291bf0482b5ba8b3f4321be4acce6e882c59de4e6ab12aab1",
+      "output_equal": true
+    },
+    {
+      "source": "tests/qbe/frontend_scope_shadowing.lsl",
+      "source_sha256": "20f279c2d1c0bcc26937f4b1f562b346cdee3906465af305b7d608d67c75075d",
+      "mode": "internal",
+      "before": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-before",
+          "/home/antonin/LSL-QBE-cli-finish/tests/qbe/frontend_scope_shadowing.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/frontend_scope_shadowing-internal-before",
+          "internal"
+        ],
+        "seconds": 0.5168275689939037,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "after": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-after",
+          "/home/antonin/LSL-QBE-cli-finish/tests/qbe/frontend_scope_shadowing.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/frontend_scope_shadowing-internal-after",
+          "internal"
+        ],
+        "seconds": 0.5083272429983481,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "dbc1f1836c00f51d0bdc4fefc9f3291b022b240adcc5de69ab81dcc3085ccda1",
+      "function_scope_count": 140,
+      "ssa_equal": true,
+      "ssa_sha256": "1b6ea4bdbe28136643ff842c68d3b5bf3de02fd366877be0533653dc6f68db57"
+    },
+    {
+      "source": "tests/recursive_return_conformance.lsl",
+      "source_sha256": "9bd4cb5b8a6f7f08b8a406fe90bc077c88e6af4fa4974c1173e2a825c7817ec4",
+      "mode": "public",
+      "before": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-before",
+          "/home/antonin/LSL-QBE-cli-finish/tests/recursive_return_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/recursive_return_conformance-public-before",
+          "public"
+        ],
+        "seconds": 0.5903684679942671,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "after": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-after",
+          "/home/antonin/LSL-QBE-cli-finish/tests/recursive_return_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/recursive_return_conformance-public-after",
+          "public"
+        ],
+        "seconds": 0.5901868650034885,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "1c053f402259a8c6f59215a73e123d8d8c94a5d67dad6c341fbb8adb9d349b0b",
+      "function_scope_count": 141,
+      "ssa_equal": true,
+      "ssa_sha256": "ea687fbb06f95400b0cb52ecd1357c4f23415534ebae11eafb9a3992393d535a",
+      "lower": {
+        "command": [
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+          "-t",
+          "amd64_sysv",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/recursive_return_conformance-public.s",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/recursive_return_conformance-public-after.ssa"
+        ],
+        "seconds": 0.10748940399935236,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "assemble": {
+        "command": [
+          "/usr/bin/as",
+          "--64",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/recursive_return_conformance-public.o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/recursive_return_conformance-public.s"
+        ],
+        "seconds": 0.023088465997716412,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/usr/bin/ld",
+          "-nostdlib",
+          "-static",
+          "-pie",
+          "--no-dynamic-linker",
+          "-z",
+          "text",
+          "-z",
+          "noexecstack",
+          "--build-id=none",
+          "-s",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/recursive_return_conformance-public",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/recursive_return_conformance-public.o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/runtime.o"
+        ],
+        "seconds": 0.00637543299671961,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "execution": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/recursive_return_conformance-public"
+        ],
+        "seconds": 0.00199996600713348,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "True True False False\nTrue False\n55 610\n7.0\n",
+        "stderr": ""
+      },
+      "expected_sha256": "8295caceaaa24899a59ea3ad1101c9beac31996060befea57c3ea0ef9e1c1579",
+      "output_equal": true
+    },
+    {
+      "source": "tests/recursive_return_conformance.lsl",
+      "source_sha256": "9bd4cb5b8a6f7f08b8a406fe90bc077c88e6af4fa4974c1173e2a825c7817ec4",
+      "mode": "internal",
+      "before": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-before",
+          "/home/antonin/LSL-QBE-cli-finish/tests/recursive_return_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/recursive_return_conformance-internal-before",
+          "internal"
+        ],
+        "seconds": 0.5131804709963035,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "after": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-after",
+          "/home/antonin/LSL-QBE-cli-finish/tests/recursive_return_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/recursive_return_conformance-internal-after",
+          "internal"
+        ],
+        "seconds": 0.5027557090070331,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "3a94043079caad0bcb94c20667d0e3d97f0e77b397e828e4457ccc7069fc2df7",
+      "function_scope_count": 141,
+      "ssa_equal": true,
+      "ssa_sha256": "e39572dd77606ef6995230c2e5f29f38c845d5e5e98c05832772c16d92b3397e"
+    },
+    {
+      "source": "tests/class_method_return_conformance.lsl",
+      "source_sha256": "0ddccbcb10e6ea05d9b1435f3234c2ed9bda27d21bf6882687fadc8cecac6fb3",
+      "mode": "public",
+      "before": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-before",
+          "/home/antonin/LSL-QBE-cli-finish/tests/class_method_return_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/class_method_return_conformance-public-before",
+          "public"
+        ],
+        "seconds": 0.6414278189986362,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "after": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-after",
+          "/home/antonin/LSL-QBE-cli-finish/tests/class_method_return_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/class_method_return_conformance-public-after",
+          "public"
+        ],
+        "seconds": 0.5896277060019202,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "9ba8a9ff149c77045555e057893c6771d57bd6ead40244d28b70b4a738693387",
+      "function_scope_count": 142,
+      "ssa_equal": true,
+      "ssa_sha256": "67c665d6ffcfa7c73c4e6d8c25113506482a8057d0f02e6c8be9413b67a42c6f",
+      "lower": {
+        "command": [
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+          "-t",
+          "amd64_sysv",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/class_method_return_conformance-public.s",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/class_method_return_conformance-public-after.ssa"
+        ],
+        "seconds": 0.10072280099848285,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "assemble": {
+        "command": [
+          "/usr/bin/as",
+          "--64",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/class_method_return_conformance-public.o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/class_method_return_conformance-public.s"
+        ],
+        "seconds": 0.01955135999742197,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/usr/bin/ld",
+          "-nostdlib",
+          "-static",
+          "-pie",
+          "--no-dynamic-linker",
+          "-z",
+          "text",
+          "-z",
+          "noexecstack",
+          "--build-id=none",
+          "-s",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/class_method_return_conformance-public",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/class_method_return_conformance-public.o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/runtime.o"
+        ],
+        "seconds": 0.007203822999144904,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "execution": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/class_method_return_conformance-public"
+        ],
+        "seconds": 0.002063810999970883,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "42\n",
+        "stderr": ""
+      },
+      "expected_sha256": "084c799cd551dd1d8d5c5f9a5d593b2e931f5e36122ee5c793c1d08a19839cc0",
+      "output_equal": true
+    },
+    {
+      "source": "tests/class_method_return_conformance.lsl",
+      "source_sha256": "0ddccbcb10e6ea05d9b1435f3234c2ed9bda27d21bf6882687fadc8cecac6fb3",
+      "mode": "internal",
+      "before": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-before",
+          "/home/antonin/LSL-QBE-cli-finish/tests/class_method_return_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/class_method_return_conformance-internal-before",
+          "internal"
+        ],
+        "seconds": 0.5325844540057005,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "after": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-after",
+          "/home/antonin/LSL-QBE-cli-finish/tests/class_method_return_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/class_method_return_conformance-internal-after",
+          "internal"
+        ],
+        "seconds": 0.517494182997325,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "9ba8a9ff149c77045555e057893c6771d57bd6ead40244d28b70b4a738693387",
+      "function_scope_count": 142,
+      "ssa_equal": true,
+      "ssa_sha256": "fd4f5e624a8d3640f6f060fadd710d53096a6565c34757eb6b29ff9edc874d4d"
+    },
+    {
+      "source": "tests/inheritance_conformance.lsl",
+      "source_sha256": "713d4842e7218da24f9f3093360f49e0ef7b0497c1bd3bd310e12a356f96921c",
+      "mode": "public",
+      "before": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-before",
+          "/home/antonin/LSL-QBE-cli-finish/tests/inheritance_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/inheritance_conformance-public-before",
+          "public"
+        ],
+        "seconds": 0.5924560060011572,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "after": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-after",
+          "/home/antonin/LSL-QBE-cli-finish/tests/inheritance_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/inheritance_conformance-public-after",
+          "public"
+        ],
+        "seconds": 0.5564136270040763,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "5efdef86cfe7007361b973a2c4d31f98932cbf8699ad24a5090fa38a38042bf6",
+      "function_scope_count": 145,
+      "ssa_equal": true,
+      "ssa_sha256": "4fca9d81a47a006f9be08f513e55fad9cab9df74494df4dcb97f99f0a2606b10",
+      "lower": {
+        "command": [
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+          "-t",
+          "amd64_sysv",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/inheritance_conformance-public.s",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/inheritance_conformance-public-after.ssa"
+        ],
+        "seconds": 0.10714506899967091,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "assemble": {
+        "command": [
+          "/usr/bin/as",
+          "--64",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/inheritance_conformance-public.o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/inheritance_conformance-public.s"
+        ],
+        "seconds": 0.025113009993219748,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/usr/bin/ld",
+          "-nostdlib",
+          "-static",
+          "-pie",
+          "--no-dynamic-linker",
+          "-z",
+          "text",
+          "-z",
+          "noexecstack",
+          "--build-id=none",
+          "-s",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/inheritance_conformance-public",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/inheritance_conformance-public.o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/runtime.o"
+        ],
+        "seconds": 0.006600660999538377,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "execution": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/inheritance_conformance-public"
+        ],
+        "seconds": 0.002474746994266752,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "parent:21:child\n42\nparent:41:child:grandchild\n82\nimported:7:child\n",
+        "stderr": ""
+      },
+      "expected_sha256": "bfed78625de66d9d4148f88de7e5575629af00050debffecf13ad12dc9050018",
+      "output_equal": true
+    },
+    {
+      "source": "tests/inheritance_conformance.lsl",
+      "source_sha256": "713d4842e7218da24f9f3093360f49e0ef7b0497c1bd3bd310e12a356f96921c",
+      "mode": "internal",
+      "before": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-before",
+          "/home/antonin/LSL-QBE-cli-finish/tests/inheritance_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/inheritance_conformance-internal-before",
+          "internal"
+        ],
+        "seconds": 0.5549195370040252,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "after": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-after",
+          "/home/antonin/LSL-QBE-cli-finish/tests/inheritance_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/inheritance_conformance-internal-after",
+          "internal"
+        ],
+        "seconds": 0.5398451590008335,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "5efdef86cfe7007361b973a2c4d31f98932cbf8699ad24a5090fa38a38042bf6",
+      "function_scope_count": 145,
+      "ssa_equal": true,
+      "ssa_sha256": "1ecc4a1f572093b6869b11bfc0b36ecbce121b40194fd08a34e5a1f17c2cafb0"
+    },
+    {
+      "source": "tests/comprehension_conformance.lsl",
+      "source_sha256": "584cb5b78b14052a2665274a3563565027c8c067a5a814d11c8805ec7dd7e54d",
+      "mode": "public",
+      "before": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-before",
+          "/home/antonin/LSL-QBE-cli-finish/tests/comprehension_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/comprehension_conformance-public-before",
+          "public"
+        ],
+        "seconds": 0.7117580549966078,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "after": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-after",
+          "/home/antonin/LSL-QBE-cli-finish/tests/comprehension_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/comprehension_conformance-public-after",
+          "public"
+        ],
+        "seconds": 0.705118781006604,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "0e12cce590b7c4ce3a05b1ce81d8d2bd3d7235a4593087407cc10f96e8d44d7a",
+      "function_scope_count": 147,
+      "ssa_equal": true,
+      "ssa_sha256": "e60b7cf9e9a5af638db7ad12abf014c7fc09047382cc919dd8bdcefa8470fd20",
+      "lower": {
+        "command": [
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+          "-t",
+          "amd64_sysv",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/comprehension_conformance-public.s",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/comprehension_conformance-public-after.ssa"
+        ],
+        "seconds": 0.1343778320006095,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "assemble": {
+        "command": [
+          "/usr/bin/as",
+          "--64",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/comprehension_conformance-public.o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/comprehension_conformance-public.s"
+        ],
+        "seconds": 0.02800085300259525,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/usr/bin/ld",
+          "-nostdlib",
+          "-static",
+          "-pie",
+          "--no-dynamic-linker",
+          "-z",
+          "text",
+          "-z",
+          "noexecstack",
+          "--build-id=none",
+          "-s",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/comprehension_conformance-public",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/comprehension_conformance-public.o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/runtime.o"
+        ],
+        "seconds": 0.008326906005095225,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "execution": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/comprehension_conformance-public"
+        ],
+        "seconds": 0.01084087899653241,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "comprehension conformance passed\n",
+        "stderr": ""
+      },
+      "expected_sha256": "6604f370d6442fe4dca1852c6dd73267006e4480731f007de46690822933eedd",
+      "output_equal": true
+    },
+    {
+      "source": "tests/comprehension_conformance.lsl",
+      "source_sha256": "584cb5b78b14052a2665274a3563565027c8c067a5a814d11c8805ec7dd7e54d",
+      "mode": "internal",
+      "before": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-before",
+          "/home/antonin/LSL-QBE-cli-finish/tests/comprehension_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/comprehension_conformance-internal-before",
+          "internal"
+        ],
+        "seconds": 0.6919242590010981,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "after": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-after",
+          "/home/antonin/LSL-QBE-cli-finish/tests/comprehension_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/comprehension_conformance-internal-after",
+          "internal"
+        ],
+        "seconds": 0.6983126830018591,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "0e12cce590b7c4ce3a05b1ce81d8d2bd3d7235a4593087407cc10f96e8d44d7a",
+      "function_scope_count": 147,
+      "ssa_equal": true,
+      "ssa_sha256": "b2b2bafaab6323aa6b82c3cf94026a648a29243b4073aeeb84d1d6766509f0d5"
+    },
+    {
+      "source": "tests/rang_value_conformance.lsl",
+      "source_sha256": "698da2a4570e8ae0380ec59756a64b0c1f84524a644858bc2962ba28aeef5354",
+      "mode": "public",
+      "before": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-before",
+          "/home/antonin/LSL-QBE-cli-finish/tests/rang_value_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/rang_value_conformance-public-before",
+          "public"
+        ],
+        "seconds": 0.6533283509998,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "after": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-after",
+          "/home/antonin/LSL-QBE-cli-finish/tests/rang_value_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/rang_value_conformance-public-after",
+          "public"
+        ],
+        "seconds": 0.6321123380039353,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "8b22c861b1631ec47d623bf52ef973ef89b9ee322144600210d1d16bbaace0db",
+      "function_scope_count": 138,
+      "ssa_equal": true,
+      "ssa_sha256": "de84a4cd94e878decbae5c5ab888b97a9ff7d6580f13949ec03a4ad84b9bcc5a",
+      "lower": {
+        "command": [
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+          "-t",
+          "amd64_sysv",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/rang_value_conformance-public.s",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/rang_value_conformance-public-after.ssa"
+        ],
+        "seconds": 0.13157994599896483,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "assemble": {
+        "command": [
+          "/usr/bin/as",
+          "--64",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/rang_value_conformance-public.o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/rang_value_conformance-public.s"
+        ],
+        "seconds": 0.02393884799676016,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/usr/bin/ld",
+          "-nostdlib",
+          "-static",
+          "-pie",
+          "--no-dynamic-linker",
+          "-z",
+          "text",
+          "-z",
+          "noexecstack",
+          "--build-id=none",
+          "-s",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/rang_value_conformance-public",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/rang_value_conformance-public.o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/runtime.o"
+        ],
+        "seconds": 0.006717941003444139,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "execution": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/rang_value_conformance-public"
+        ],
+        "seconds": 0.0024969099977170117,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "rang value conformance passed\n",
+        "stderr": ""
+      },
+      "expected_sha256": "d0c1f6b790c316902a3621fd6fdb5ad44e45f467364a5e46f7980f4f4cd2f40f",
+      "output_equal": true
+    },
+    {
+      "source": "tests/rang_value_conformance.lsl",
+      "source_sha256": "698da2a4570e8ae0380ec59756a64b0c1f84524a644858bc2962ba28aeef5354",
+      "mode": "internal",
+      "before": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-before",
+          "/home/antonin/LSL-QBE-cli-finish/tests/rang_value_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/rang_value_conformance-internal-before",
+          "internal"
+        ],
+        "seconds": 0.5592477050013258,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "after": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-after",
+          "/home/antonin/LSL-QBE-cli-finish/tests/rang_value_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/rang_value_conformance-internal-after",
+          "internal"
+        ],
+        "seconds": 0.5481205629985197,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "b8181dc3cf89304d727d1fe95b5fe71ee376c615407847b8061978a97e31b581",
+      "function_scope_count": 138,
+      "ssa_equal": true,
+      "ssa_sha256": "06cc40e35f6253275daa996ed806a3b9a335392ee224db5a6f3dd051bbc70726"
+    },
+    {
+      "source": "tests/class_module_smoke.lsl",
+      "source_sha256": "c26e56b06935ddb35ed8c853b05168d318c33ac7ab18449d177699d10303327a",
+      "mode": "public",
+      "before": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-before",
+          "/home/antonin/LSL-QBE-cli-finish/tests/class_module_smoke.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/class_module_smoke-public-before",
+          "public"
+        ],
+        "seconds": 0.6187427069962723,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "after": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-after",
+          "/home/antonin/LSL-QBE-cli-finish/tests/class_module_smoke.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/class_module_smoke-public-after",
+          "public"
+        ],
+        "seconds": 0.6044562749957549,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "0aec923934fe46f1a2a827c238490432a4466d9007fddd8392a6df5e44031904",
+      "function_scope_count": 140,
+      "ssa_equal": true,
+      "ssa_sha256": "1614f07365a8bc6b687b92383de66b8fd1c1a93e491478e41e2725d4fd8f21f7",
+      "lower": {
+        "command": [
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+          "-t",
+          "amd64_sysv",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/class_module_smoke-public.s",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/class_module_smoke-public-after.ssa"
+        ],
+        "seconds": 0.10555307799950242,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "assemble": {
+        "command": [
+          "/usr/bin/as",
+          "--64",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/class_module_smoke-public.o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/class_module_smoke-public.s"
+        ],
+        "seconds": 0.020598734998202417,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/usr/bin/ld",
+          "-nostdlib",
+          "-static",
+          "-pie",
+          "--no-dynamic-linker",
+          "-z",
+          "text",
+          "-z",
+          "noexecstack",
+          "--build-id=none",
+          "-s",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/class_module_smoke-public",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/class_module_smoke-public.o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/runtime.o"
+        ],
+        "seconds": 0.006678840996755753,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "execution": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/class_module_smoke-public"
+        ],
+        "seconds": 0.0019412330002523959,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "module-ok 12 module-ok 15\n12 Class Instance\n",
+        "stderr": ""
+      },
+      "expected_sha256": "0b23705bc5c8031ed56e6220a920157dde9e5490a97541bfd6f2a6a7a89f2dc5",
+      "output_equal": true
+    },
+    {
+      "source": "tests/class_module_smoke.lsl",
+      "source_sha256": "c26e56b06935ddb35ed8c853b05168d318c33ac7ab18449d177699d10303327a",
+      "mode": "internal",
+      "before": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-before",
+          "/home/antonin/LSL-QBE-cli-finish/tests/class_module_smoke.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/class_module_smoke-internal-before",
+          "internal"
+        ],
+        "seconds": 0.5505576770010521,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "after": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-after",
+          "/home/antonin/LSL-QBE-cli-finish/tests/class_module_smoke.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/class_module_smoke-internal-after",
+          "internal"
+        ],
+        "seconds": 0.549879703001352,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "3364d58d0d5f883cc1de9bd42af72057c623a4164c5b00400b2884f03835c43f",
+      "function_scope_count": 140,
+      "ssa_equal": true,
+      "ssa_sha256": "36d791b56aae736ef80d4dc0a5cfff4a0dd575cc0ac17e289153e801e8b594f2"
+    },
+    {
+      "source": "tests/boxed_collection_conformance.lsl",
+      "source_sha256": "4234ce18992c7790086cf60dc03eaac0f47f7213538e274d8a4e1ae1556fb765",
+      "mode": "public",
+      "before": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-before",
+          "/home/antonin/LSL-QBE-cli-finish/tests/boxed_collection_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/boxed_collection_conformance-public-before",
+          "public"
+        ],
+        "seconds": 0.7568756360051339,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "after": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-after",
+          "/home/antonin/LSL-QBE-cli-finish/tests/boxed_collection_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/boxed_collection_conformance-public-after",
+          "public"
+        ],
+        "seconds": 0.7246657840005355,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "3e3b890473c249dbf56ccc40c41772307f10bf81c41620351997d15985092288",
+      "function_scope_count": 155,
+      "ssa_equal": true,
+      "ssa_sha256": "7c17c0e1de2514f34743fe2afb73d2da42a53beda17d546502afb3ccb5d26b3c",
+      "lower": {
+        "command": [
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+          "-t",
+          "amd64_sysv",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/boxed_collection_conformance-public.s",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/boxed_collection_conformance-public-after.ssa"
+        ],
+        "seconds": 0.123619117999624,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "assemble": {
+        "command": [
+          "/usr/bin/as",
+          "--64",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/boxed_collection_conformance-public.o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/boxed_collection_conformance-public.s"
+        ],
+        "seconds": 0.0253457420039922,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/usr/bin/ld",
+          "-nostdlib",
+          "-static",
+          "-pie",
+          "--no-dynamic-linker",
+          "-z",
+          "text",
+          "-z",
+          "noexecstack",
+          "--build-id=none",
+          "-s",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/boxed_collection_conformance-public",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/boxed_collection_conformance-public.o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/runtime.o"
+        ],
+        "seconds": 0.0068120349969831295,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "execution": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/boxed_collection_conformance-public"
+        ],
+        "seconds": 0.0024418259999947622,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "[0, 1, -1, 9223372036854775807, -9223372036854775808]\n9 Int 0\n9 Int 1\n9 Int -1\n9 Int 9223372036854775807\n9 Int -9223372036854775808\n[0,1,-1,9223372036854775807,-9223372036854775808]\n[6, 7, 1, -1, 9223372036854775807, -9223372036854775808, 4]\n9 9 14\n(0, 1) ![0, 1, 2.5] Int Int\n{'zero': 7, 'one': 1, 'two': 2, 'three': 3}\nInt {\"zero\":7,\"one\":1,\"two\":2,\"three\":3}\n",
+        "stderr": ""
+      },
+      "expected_sha256": "fd7eb4537503dff4b165b336150d1f6c21e82a96a92361d7a5e17259f603b1a0",
+      "output_equal": true
+    },
+    {
+      "source": "tests/boxed_collection_conformance.lsl",
+      "source_sha256": "4234ce18992c7790086cf60dc03eaac0f47f7213538e274d8a4e1ae1556fb765",
+      "mode": "internal",
+      "before": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-before",
+          "/home/antonin/LSL-QBE-cli-finish/tests/boxed_collection_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/boxed_collection_conformance-internal-before",
+          "internal"
+        ],
+        "seconds": 0.7416679869929794,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "after": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-after",
+          "/home/antonin/LSL-QBE-cli-finish/tests/boxed_collection_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/boxed_collection_conformance-internal-after",
+          "internal"
+        ],
+        "seconds": 0.7261272219984676,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "3e3b890473c249dbf56ccc40c41772307f10bf81c41620351997d15985092288",
+      "function_scope_count": 155,
+      "ssa_equal": true,
+      "ssa_sha256": "4f1aaec92bb15f4379937f2a3a5f82be3b27479c84bdcdfb91f1daa0168f54d2"
+    },
+    {
+      "source": "tests/qbe/public_call_inference.lsl",
+      "source_sha256": "d1ac81c85ecb0c287e05cdaa6361f59f21406c8c8826efa1c98acc7b869baf63",
+      "mode": "public",
+      "before": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-before",
+          "/home/antonin/LSL-QBE-cli-finish/tests/qbe/public_call_inference.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/public_call_inference-public-before",
+          "public"
+        ],
+        "seconds": 0.6237917520047631,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "after": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-after",
+          "/home/antonin/LSL-QBE-cli-finish/tests/qbe/public_call_inference.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/public_call_inference-public-after",
+          "public"
+        ],
+        "seconds": 0.6096329579959274,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "174711db6784755d1c1048ff50e21b5f89661e56168f1ec7c7d0ec954f637e9c",
+      "function_scope_count": 139,
+      "ssa_equal": true,
+      "ssa_sha256": "53692c84b12acfbe18da533c2d0cf7ad1419deee6e0650b630c6b3dd3e1738e3",
+      "lower": {
+        "command": [
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+          "-t",
+          "amd64_sysv",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/public_call_inference-public.s",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/public_call_inference-public-after.ssa"
+        ],
+        "seconds": 0.10635474699665792,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "assemble": {
+        "command": [
+          "/usr/bin/as",
+          "--64",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/public_call_inference-public.o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/public_call_inference-public.s"
+        ],
+        "seconds": 0.018457099002262112,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/usr/bin/ld",
+          "-nostdlib",
+          "-static",
+          "-pie",
+          "--no-dynamic-linker",
+          "-z",
+          "text",
+          "-z",
+          "noexecstack",
+          "--build-id=none",
+          "-s",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/public_call_inference-public",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/public_call_inference-public.o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/runtime.o"
+        ],
+        "seconds": 0.007280981000803877,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "execution": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/public_call_inference-public"
+        ],
+        "seconds": 0.002228915000159759,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "1814098701\n7 2.5 value 3.5\nBool Int Float\n",
+        "stderr": ""
+      },
+      "expected_sha256": "b1232326d26e39f3b9da45926f9fd62f306e3a3b989d831e83084ff878aba7e7",
+      "output_equal": true
+    },
+    {
+      "source": "tests/qbe/public_call_inference.lsl",
+      "source_sha256": "d1ac81c85ecb0c287e05cdaa6361f59f21406c8c8826efa1c98acc7b869baf63",
+      "mode": "internal",
+      "before": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-before",
+          "/home/antonin/LSL-QBE-cli-finish/tests/qbe/public_call_inference.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/public_call_inference-internal-before",
+          "internal"
+        ],
+        "seconds": 0.5301627640001243,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "after": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-after",
+          "/home/antonin/LSL-QBE-cli-finish/tests/qbe/public_call_inference.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/public_call_inference-internal-after",
+          "internal"
+        ],
+        "seconds": 0.5079121199960355,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "4c2ba37382006d5506f1b019b5c19fbd0fcebdd76ec02ec5ffd9def0bdb18988",
+      "function_scope_count": 139,
+      "ssa_equal": true,
+      "ssa_sha256": "52c28faf37a90b792d5b06d08377d3e93a2f4a5c384c125685c3b43c51cc8251"
+    },
+    {
+      "source": "tests/compiler/frontend_conformance.lsl",
+      "source_sha256": "0e6d821db364dba76a72d84816233fa4557638e9e4a49037032cd09b9bdac679",
+      "mode": "public",
+      "before": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-before",
+          "/home/antonin/LSL-QBE-cli-finish/tests/compiler/frontend_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/frontend_conformance-public-before",
+          "public"
+        ],
+        "seconds": 6.225183925998863,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "after": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-after",
+          "/home/antonin/LSL-QBE-cli-finish/tests/compiler/frontend_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/frontend_conformance-public-after",
+          "public"
+        ],
+        "seconds": 6.859802099002991,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "a11a64f88b50a88632e2ea8b04c73b5f3b5ef496c6425cd91469e4c0e7c7dcfa",
+      "function_scope_count": 380,
+      "ssa_equal": true,
+      "ssa_sha256": "b355bc3af532fd463fe876a3d0d96ce6e7d793057d2c2e6f8d6ebc9158bce869",
+      "lower": {
+        "command": [
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+          "-t",
+          "amd64_sysv",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/frontend_conformance-public.s",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/frontend_conformance-public-after.ssa"
+        ],
+        "seconds": 1.7107475590019021,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "assemble": {
+        "command": [
+          "/usr/bin/as",
+          "--64",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/frontend_conformance-public.o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/frontend_conformance-public.s"
+        ],
+        "seconds": 0.28657276399462717,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "link": {
+        "command": [
+          "/usr/bin/ld",
+          "-nostdlib",
+          "-static",
+          "-pie",
+          "--no-dynamic-linker",
+          "-z",
+          "text",
+          "-z",
+          "noexecstack",
+          "--build-id=none",
+          "-s",
+          "-o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/frontend_conformance-public",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/frontend_conformance-public.o",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/runtime.o"
+        ],
+        "seconds": 0.015250426004058681,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "execution": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/frontend_conformance-public"
+        ],
+        "seconds": 0.007747005001874641,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "frontend bindings, inference, shadowing, callbacks and ABI provenance passed\n",
+        "stderr": ""
+      },
+      "expected_sha256": "af27be5ff08673b2e83210279437a6eb0e892f1866bbe22368e8b9448de70461",
+      "output_equal": true
+    },
+    {
+      "source": "tests/compiler/frontend_conformance.lsl",
+      "source_sha256": "0e6d821db364dba76a72d84816233fa4557638e9e4a49037032cd09b9bdac679",
+      "mode": "internal",
+      "before": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-before",
+          "/home/antonin/LSL-QBE-cli-finish/tests/compiler/frontend_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/frontend_conformance-internal-before",
+          "internal"
+        ],
+        "seconds": 5.883204771002056,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "after": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/probe-after",
+          "/home/antonin/LSL-QBE-cli-finish/tests/compiler/frontend_conformance.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-frontend-algorithms/differential-final/frontend_conformance-internal-after",
+          "internal"
+        ],
+        "seconds": 5.7690662189997965,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "pass": true,
+      "typed_equal": true,
+      "typed_sha256": "a11a64f88b50a88632e2ea8b04c73b5f3b5ef496c6425cd91469e4c0e7c7dcfa",
+      "function_scope_count": 380,
+      "ssa_equal": true,
+      "ssa_sha256": "5917655e1b5d77353a6f2c9863bfd2468e8c339e9f70e2f529038051c82f6b43"
+    }
+  ],
+  "typed_ssa_comparisons": 20,
+  "maintained_output_executions": 10,
+  "baseline_source_commit": "7a01a83fb1d80881209207aeb1e78f928bf95119",
+  "production_changes": {
+    "compiler/pure/linker.lsl": {
+      "before_sha256": "5e141b496debeb7b87abfecbabf912bdf20e8bc4d2b1bcece204f62d8d49f9b2",
+      "after_sha256": "05bde8e7d7ff5a7a004c51bb574a0a621b911df96e1d9c79666c2346a9abc9a5"
+    },
+    "compiler/pure/semantic.lsl": {
+      "before_sha256": "90bc7c816f7e6312fabc410168492a3ae7110b252f8c8da483a00170f8edfd8d",
+      "after_sha256": "3df3cf031534e85eb9ecfaa591068602e42ccee9e68f6c18152e5787ece38897"
+    }
+  },
+  "diagnostic_source_sha256": "36d36f43f4d5dff52c72db80dc111f5846e1f5a8b7214ef1060c4007909ae148",
+  "diagnostic_build": "The same native compiler and backend built frontend_algorithm_dump.lsl once with original linker/semantic sources and once with only the two structural caching changes. Both probes then analyzed identical source paths and current module inputs.",
+  "initial_harness_failure": "The first diagnostic incorrectly rejected any recorded validation errors, including unreachable helpers in frontend_conformance. Both baseline and candidate were rejected identically. That assertion was removed, both probes rebuilt, and all 20 typed/SSA comparisons and 10 maintained output executions passed."
+}

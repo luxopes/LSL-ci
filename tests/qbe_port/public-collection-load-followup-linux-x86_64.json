@@ -1,0 +1,456 @@
+{
+  "complete": true,
+  "source_sha256": "d389d0d1e936513b98b7f9ee99ff0b946e444f4fc9f86b18449b1d29d7fa4ed0",
+  "runtime_sha256": "59e4dc4f36ea755a74eb00d032f7d972944cf1f15e182378aa60ce8ed79654a5",
+  "build": {
+    "command": [
+      "/home/antonin/LSL-QBE-collections-finish/build/qbe-port-tools/native-selfhost/frontend-stage3",
+      "/home/antonin/LSL-QBE-collections-finish/compiler/pure/lslc_qbe.lsl",
+      "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/compiler10",
+      "/home/antonin/LSL-QBE-collections-finish/build/qbe-port-tools/native-selfhost/qbe-stage3"
+    ],
+    "seconds": 7.125878480997926,
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "controls": [
+    {
+      "source": "tests/qbe/dynamic_sequence_load.lsl",
+      "source_sha256": "2f8740d90079c6eb8966d99d1ea28486942246930da66ca8d7f55caa11326ee0",
+      "candidate": {
+        "build": {
+          "command": [
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/compiler10",
+            "/home/antonin/LSL-QBE-collections-finish/tests/qbe/dynamic_sequence_load.lsl",
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/10-qbe-dynamic_sequence_load-candidate",
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "seconds": 0.748164384996926,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/10-qbe-dynamic_sequence_load-candidate"
+          ],
+          "seconds": 0.0010204930003965273,
+          "returncode": 0,
+          "stdout": "dynamic sequence load passed\n",
+          "stderr": ""
+        },
+        "matches_expected": true
+      },
+      "v089": {
+        "build": {
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE-collections-finish/tests/qbe/dynamic_sequence_load.lsl",
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/10-qbe-dynamic_sequence_load-v089"
+          ],
+          "seconds": 0.6578546719974838,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/10-qbe-dynamic_sequence_load-v089"
+          ],
+          "seconds": 0.0018065869953716174,
+          "returncode": 0,
+          "stdout": "dynamic sequence load passed\n",
+          "stderr": ""
+        },
+        "matches_expected": true
+      }
+    },
+    {
+      "source": "tests/dynamic_method_boundary_conformance.lsl",
+      "source_sha256": "19a21a08712f2b8d29e3197152ebaa01709b1b3d1129d4f727ae41816833c39a",
+      "candidate": {
+        "build": {
+          "command": [
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/compiler10",
+            "/home/antonin/LSL-QBE-collections-finish/tests/dynamic_method_boundary_conformance.lsl",
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/10-dynamic_method_boundary_conformance-candidate",
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "seconds": 0.8354850780015113,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/10-dynamic_method_boundary_conformance-candidate"
+          ],
+          "seconds": 0.001532598995254375,
+          "returncode": 0,
+          "stdout": "[1, 2, 3] 1 2\n1 3 [2]\n['a'] 9\n2 {'a': 1, 'b': 2}\n1 7 {'b': 2}\n{'b': 2} AHOJ\nTrue a-b\n[1, 2, 3]\n{'a': 1, 'b': 2}\n[1, 2, 3]\n[True, 1.5, 2, 3] ['a', 'z', '\u017e']\nIntArray([4]) FloatArray([1.5]) ByteArray([65])\n[4] [1.5] [65]\nIntArray([]) FloatArray([]) ByteArray([])\nTypeError: object does not support clear\nTypeError: keys requires a Dictionary\nValueError: ByteArray value is outside 0..255\nTypeError: expected a String\nTypeError: expected a String\nTypeError: method requires an indexable sequence\nTypeError: method requires a Dictionary receiver\nTypeError: sequence index must be Int\nTypeError: sequence index must be Int\nTypeError: sort values must have compatible types\n",
+          "stderr": ""
+        },
+        "matches_expected": true
+      },
+      "v089": {
+        "build": {
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE-collections-finish/tests/dynamic_method_boundary_conformance.lsl",
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/10-dynamic_method_boundary_conformance-v089"
+          ],
+          "seconds": 0.6924300550017506,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/10-dynamic_method_boundary_conformance-v089"
+          ],
+          "seconds": 0.001724223002383951,
+          "returncode": 0,
+          "stdout": "[1, 2, 3] 1 2\n1 3 [2]\n['a'] 9\n2 {'a': 1, 'b': 2}\n1 7 {'b': 2}\n{'b': 2} AHOJ\nTrue a-b\n[1, 2, 3]\n{'a': 1, 'b': 2}\n[1, 2, 3]\n[True, 1.5, 2, 3] ['a', 'z', '\u017e']\nIntArray([4]) FloatArray([1.5]) ByteArray([65])\n[4] [1.5] [65]\nIntArray([]) FloatArray([]) ByteArray([])\nTypeError: object does not support clear\nTypeError: keys requires a Dictionary\nValueError: ByteArray value is outside 0..255\nTypeError: expected a String\nTypeError: expected a String\nTypeError: method requires an indexable sequence\nTypeError: method requires a Dictionary receiver\nTypeError: sequence index must be Int\nTypeError: sequence index must be Int\nTypeError: sort values must have compatible types\n",
+          "stderr": ""
+        },
+        "matches_expected": true
+      }
+    },
+    {
+      "source": "tests/loop_binding_types_conformance.lsl",
+      "source_sha256": "f46db1b482d2299d189bc04bd27cf2bc2258492b5b112ab90406c436d51331ea",
+      "candidate": {
+        "build": {
+          "command": [
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/compiler10",
+            "/home/antonin/LSL-QBE-collections-finish/tests/loop_binding_types_conformance.lsl",
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/10-loop_binding_types_conformance-candidate",
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "seconds": 0.6695930849964498,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/10-loop_binding_types_conformance-candidate"
+          ],
+          "seconds": 0.00089822500012815,
+          "returncode": 0,
+          "stdout": "reused loop bindings retain safe value representation\n",
+          "stderr": ""
+        },
+        "matches_expected": true
+      },
+      "v089": {
+        "build": {
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE-collections-finish/tests/loop_binding_types_conformance.lsl",
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/10-loop_binding_types_conformance-v089"
+          ],
+          "seconds": 0.5628240240039304,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/10-loop_binding_types_conformance-v089"
+          ],
+          "seconds": 0.0006966649962123483,
+          "returncode": 0,
+          "stdout": "reused loop bindings retain safe value representation\n",
+          "stderr": ""
+        },
+        "matches_expected": true
+      }
+    },
+    {
+      "source": "tests/list_find_conformance.lsl",
+      "source_sha256": "185f2b8a4717636bb2384e93c4a8d8efec537076acb5684df9110df982b3e8bc",
+      "candidate": {
+        "build": {
+          "command": [
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/compiler10",
+            "/home/antonin/LSL-QBE-collections-finish/tests/list_find_conformance.lsl",
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/10-list_find_conformance-candidate",
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "seconds": 0.7059532660059631,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/10-list_find_conformance-candidate"
+          ],
+          "seconds": 0.0008639130028313957,
+          "returncode": 0,
+          "stdout": "List.find conformance passed\n",
+          "stderr": ""
+        },
+        "matches_expected": true
+      },
+      "v089": {
+        "build": {
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE-collections-finish/tests/list_find_conformance.lsl",
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/10-list_find_conformance-v089"
+          ],
+          "seconds": 0.6406825930025661,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/10-list_find_conformance-v089"
+          ],
+          "seconds": 0.0007626860024174675,
+          "returncode": 0,
+          "stdout": "List.find conformance passed\n",
+          "stderr": ""
+        },
+        "matches_expected": true
+      }
+    },
+    {
+      "source": "tests/automatic_gc_conformance.lsl",
+      "source_sha256": "1b30392b69f47679d4799a81f10d2a1b8affa4603aa8e0e7855d939464db5006",
+      "candidate": {
+        "build": {
+          "command": [
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/compiler10",
+            "/home/antonin/LSL-QBE-collections-finish/tests/automatic_gc_conformance.lsl",
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/10-automatic_gc_conformance-candidate",
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "seconds": 1.130874780996237,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/10-automatic_gc_conformance-candidate"
+          ],
+          "seconds": 0.13806163000117522,
+          "returncode": 0,
+          "stdout": "automatic GC roots, cycles, deep graphs, callbacks, exceptions and memory bound passed\n",
+          "stderr": ""
+        },
+        "matches_expected": true
+      },
+      "v089": {
+        "build": {
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE-collections-finish/tests/automatic_gc_conformance.lsl",
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/10-automatic_gc_conformance-v089"
+          ],
+          "seconds": 0.6412452250006027,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/10-automatic_gc_conformance-v089"
+          ],
+          "seconds": 0.6304673019985785,
+          "returncode": 0,
+          "stdout": "automatic GC roots, cycles, deep graphs, callbacks, exceptions and memory bound passed\n",
+          "stderr": ""
+        },
+        "matches_expected": true
+      }
+    }
+  ],
+  "compiler_sha256": "3026d2c2b3ed4cf07e4c367c5fcfb8b3d94d3bc778a74922c250a2acce2f15b8",
+  "suite": {
+    "command": [
+      "python3",
+      "/home/antonin/LSL-QBE-collections-finish/tools/qbe/verify.py",
+      "--compiler",
+      "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/compiler10",
+      "--backend",
+      "/home/antonin/LSL-QBE-collections-finish/build/qbe-port-tools/native-selfhost/qbe-stage3",
+      "--tests-only",
+      "--build-directory",
+      "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/language10"
+    ],
+    "seconds": 16.01255241999752,
+    "returncode": 0,
+    "stdout": "PASS minimal.lsl\nPASS core.lsl\nPASS public_int_collision.lsl\nPASS public_gc_roots.lsl\nPASS intarray_store.lsl\nPASS checked_collection_casts.lsl\nPASS collection_codegen.lsl\nPASS dynamic_sequence_load.lsl\nPASS native_float_arithmetic.lsl\nPASS native_float_boundaries.lsl\nPASS native_float_effects.lsl\nPASS public_any_arithmetic.lsl\nPASS public_call_inference.lsl\nPASS public_default_call_flow.lsl\nPASS boxed_int_infrastructure_conformance.lsl\nPASS parameter_inference_conformance.lsl\nPASS bitwise_conformance.lsl\nPASS unicode_case_conformance.lsl\nPASS integer_wrap_conformance.lsl\nPASS truthiness_conformance.lsl\nPASS recursive_return_conformance.lsl\nPASS string_conversion_conformance.lsl\nPASS boxed_collection_conformance.lsl\nPASS float_conversion_conformance.lsl\nPASS: language regressions; self-host was not repeated\n",
+    "stderr": ""
+  },
+  "allocation_gc": {
+    "iterations": 500000,
+    "source_sha256": "e9af16681b4e8d2cf4cbcd6b58adb5127634cc7631db2dc9ba593afae038a79b",
+    "build": {
+      "command": [
+        "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/compiler10",
+        "/home/antonin/LSL-QBE-collections-finish/tests/benchmarks/v089/allocation_gc.lsl",
+        "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/10-allocation",
+        "/home/antonin/LSL-QBE-collections-finish/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 0.6615876659998321,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "samples": [
+      {
+        "kind": "candidate",
+        "repeat": 0,
+        "command": [
+          "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/10-allocation",
+          "500000"
+        ],
+        "seconds": 0.3736241739970865,
+        "returncode": 0,
+        "stdout": "500000\n",
+        "stderr": ""
+      },
+      {
+        "kind": "v089",
+        "repeat": 0,
+        "command": [
+          "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/preserved-controls/allocation_gc-v089",
+          "500000"
+        ],
+        "seconds": 0.396327428999939,
+        "returncode": 0,
+        "stdout": "500000\n",
+        "stderr": ""
+      },
+      {
+        "kind": "v089",
+        "repeat": 1,
+        "command": [
+          "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/preserved-controls/allocation_gc-v089",
+          "500000"
+        ],
+        "seconds": 0.39819716900092317,
+        "returncode": 0,
+        "stdout": "500000\n",
+        "stderr": ""
+      },
+      {
+        "kind": "candidate",
+        "repeat": 1,
+        "command": [
+          "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/10-allocation",
+          "500000"
+        ],
+        "seconds": 0.38370058199507184,
+        "returncode": 0,
+        "stdout": "500000\n",
+        "stderr": ""
+      },
+      {
+        "kind": "candidate",
+        "repeat": 2,
+        "command": [
+          "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/10-allocation",
+          "500000"
+        ],
+        "seconds": 0.39565910900273593,
+        "returncode": 0,
+        "stdout": "500000\n",
+        "stderr": ""
+      },
+      {
+        "kind": "v089",
+        "repeat": 2,
+        "command": [
+          "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/preserved-controls/allocation_gc-v089",
+          "500000"
+        ],
+        "seconds": 0.38893760299833957,
+        "returncode": 0,
+        "stdout": "500000\n",
+        "stderr": ""
+      },
+      {
+        "kind": "v089",
+        "repeat": 3,
+        "command": [
+          "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/preserved-controls/allocation_gc-v089",
+          "500000"
+        ],
+        "seconds": 0.3928228439981467,
+        "returncode": 0,
+        "stdout": "500000\n",
+        "stderr": ""
+      },
+      {
+        "kind": "candidate",
+        "repeat": 3,
+        "command": [
+          "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/10-allocation",
+          "500000"
+        ],
+        "seconds": 0.4285743300060858,
+        "returncode": 0,
+        "stdout": "500000\n",
+        "stderr": ""
+      },
+      {
+        "kind": "candidate",
+        "repeat": 4,
+        "command": [
+          "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/10-allocation",
+          "500000"
+        ],
+        "seconds": 0.4069614669933799,
+        "returncode": 0,
+        "stdout": "500000\n",
+        "stderr": ""
+      },
+      {
+        "kind": "v089",
+        "repeat": 4,
+        "command": [
+          "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/preserved-controls/allocation_gc-v089",
+          "500000"
+        ],
+        "seconds": 0.39837886399618583,
+        "returncode": 0,
+        "stdout": "500000\n",
+        "stderr": ""
+      }
+    ],
+    "medians": {
+      "candidate": 0.39565910900273593,
+      "v089": 0.396327428999939
+    },
+    "candidate_over_v089": 0.9983137175267192,
+    "binaries": {
+      "candidate": {
+        "path": "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/10-allocation",
+        "sha256": "0bdebad0e05a762e665f61944672ad1cc94425fff0703e137602cdf02824b3df"
+      },
+      "v089": {
+        "path": "/home/antonin/LSL-QBE-collections-finish/build/qbe-collections-finish/preserved-controls/allocation_gc-v089",
+        "sha256": "0148fede7aa592e32e82b49226ab3ff4259adcc42a49df1084fbfcecfead641b"
+      }
+    },
+    "interpretation": "Five same-N alternating old/new runs, independent compare_v089 checksum; elapsed time includes startup. Ratio within0.2% of parity; no meaningful speedup claimed."
+  },
+  "production_commit": "b2755a75fea73cfdbce1a30e75ab6fa9873e41fc",
+  "scope": "Guarded public sequence loads and collection checked method/index followup; base b55bad8 +67f9986; root later membership/numeric/classes patches excluded.",
+  "old_compiler_sha256": "f235b42d4998474c1bfee7eb02f17625bbc824f647f9ba33bdef8c20b0ff8696",
+  "remaining_integration_dependence": "Root-owned public membership fixes are required for the full dynamic_collection_boundary and collections_builtins fixtures. This followup does not independently claim those fixtures pass.",
+  "source_functions_changed": [
+    "read_at",
+    "expression(slice branch)",
+    "statements(range exhaustion branch)",
+    "call_expression"
+  ]
+}

@@ -434,6 +434,14 @@ function load_memory(destination, base_register, displacement):
     return result
 end
 
+function cmp_reg_memory(register, base_register, displacement):
+    mode = memory_mode(base_register, displacement)
+    result = [rex(True, register >= 8, False, base_register >= 8), 59]
+    result.extend(memory_tail(base_register, mode, register))
+    call append_displacement(result, mode, displacement)
+    return result
+end
+
 function store_memory(base_register, displacement, source_register):
     mode = memory_mode(base_register, displacement)
     result = [rex(True, source_register >= 8, False, base_register >= 8), 137]

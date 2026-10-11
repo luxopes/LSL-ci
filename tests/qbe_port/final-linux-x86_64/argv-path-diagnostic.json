@@ -1,0 +1,30 @@
+[
+  {
+    "kind": "relative-exe",
+    "command": [
+      "build/qbe-port-tools/native-selfhost/frontend-stage3",
+      "compiler/pure/lslc_qbe.lsl",
+      "/home/antonin/LSL-QBE/build/qbe-finish/argv-diag",
+      "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+    ],
+    "returncode": -9,
+    "reached_1second": true,
+    "seconds": 1.009750951998285,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "kind": "absolute-exe",
+    "command": [
+      "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+      "compiler/pure/lslc_qbe.lsl",
+      "build/qbe-finish/argv-diag",
+      "build/qbe-port-tools/native-selfhost/qbe-stage3"
+    ],
+    "returncode": -9,
+    "reached_1second": true,
+    "seconds": 1.0091504179945332,
+    "stdout": "",
+    "stderr": ""
+  }
+]

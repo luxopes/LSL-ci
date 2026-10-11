@@ -1,12 +1,28 @@
 # Pure-LSL native runtime ABI
 
-Stav: interní Linux x86_64 ABI vydání 0.8.4. Není to veřejné plugin ABI.
+Soukromé ABI backendu `lsl-x86_64-v1`. Není to veřejné plugin ABI.
+Kanonické strojové definice jsou v `pure/abi_x86_64.lsl`, tagy hodnot v
+`pure/value_abi.lsl`, Linux TLS a stav v `pure/runtime_abi_linux_x86_64.lsl`. Frontend nepoužívá registry ani paměťové offsety.
 
 ## Strojová hranice
 
-Compiler generuje SysV-like volání: prvních šest argumentů je v `rdi`, `rsi`, `rdx`, `rcx`, `r8`, `r9`, další argumenty jsou na zásobníku a výsledek je v `rax`. `r12` až `r15` jsou callee-saved registry pro statické Int/Bool lokály. `rbx` drží runtime state; `fs:0`, `fs:8`, `fs:16` nesou pending error, error flag a stack top vlákna. Stav a free-list hlavičky zabírají 1280 bajtů před globály.
+Privátní x86_64 ABI LSL používá následující volání: prvních šest argumentů je v `rdi`, `rsi`, `rdx`, `rcx`, `r8`, `r9`, další argumenty jsou na zásobníku a výsledek je v `rax`. `r12` až `r15` jsou callee-saved registry pro statické Int/Bool lokály. `rbx` drží runtime state. Následující layout patří Linux runtime: `fs:0`, `fs:8`, `fs:16` nesou pending error, error flag a stack top vlákna. Runtime stav, free-list hlavičky a I/O/bump-allocator pole zabírají 1344 bajtů
+před globály. Lokální ID `n` má offset `-8*n` od `rbp`; globální ID `n` má
+offset `1344 + 8*(n-1)` od `rbx`. Za hodnotami globálů následují stejně velké
+init flags; obě oblasti jsou GC roots.
 
-Runtime je emitován přímo jako x86_64 bytes z LSL modulů. Nepoužívá libc, C ABI runtime, assembler ani linker.
+Přímá LSL volání vyhodnocují argumenty zprava doleva. Parametr s indexem 6
+(první mimo registry) je na `rbp+16`, další po 8 bajtech; caller uklidí stack
+argumenty. Lokální frame se zaokrouhluje na 16 bajtů. Soukromé volání zaručuje
+8bajtové stack sloty; nevynucuje plný 16bajtový SysV C call alignment. C ABI
+funkce proto nelze volat jako LSL funkce. Registrové lokály `r12` až `r15`
+se ukládají do samostatných frame slotů a obnovují při každém návratu včetně
+propagace chyby. `rbx` a TLS musí všechny runtime helpery zachovat.
+
+Současný Linux runtime je emitován přímo jako x86_64 bytes z LSL modulů bez libc
+a externího assembleru/linkeru. CPU backend žádné TLS offsety nevkládá; významové
+sloty `error`, `error_flag`, `stack_top` zpracuje cílový runtime. Globální offset
+počítá z velikosti state získané od runtime, ne z Linux konstanty.
 
 ## Heap objekty
 
@@ -92,8 +108,43 @@ State offset `+88` drží interní EOF marker posledního `input`; veřejné CLI
 
 ## Exceptions
 
-`r14 != 0` znamená pending error a `r13` nese String message. Přímá LSL volání po návratu kontrolují flag a skáčou do nejbližšího `safe`/`try` handleru, nebo vypíšou fatal error na stderr a skončí nenulově.
+`fs:0` nese String message a `fs:8 != 0` znamená pending error. Přímá LSL
+volání po návratu kontrolují flag a skáčou do nejbližšího `safe`/`try` handleru,
+nebo do společného návratu funkce; nezachycená chyba skončí fatálně na stderr.
+`safe`/`try` obnoví stack na velikost aktuálního frame a při zotavení vynulují
+TLS flag. Zpráva pro `last_error()` se zachovává podle dosavadní sémantiky.
+
+Frontend předává zachytitelné statické chyby v `validation_errors`. Backend
+už neověřuje aritu ani typové podmínky: na připraveném checkpointu emituje
+chybu se source location. Kontroly runtime `Any`, bounds a selhání syscallů
+zůstávají v runtime. Syntaxe, bezpečnost a ostatní compile-only chyby se
+nadále odmítají ve frontendu.
 
 ## Native CPU plugin ABI
 
 Omezený ABI v1 mapuje self-contained Linux x86_64 ET_DYN bez libc, relocations a external symbols. Opaque library/function objekty mají type 11/12; veřejné volání přijímá nejvýše šest Int64 a vrací Int64, takže plugin nikdy nevidí LSL heap layout. Viz `docs/native-plugins.md`.
+
+## Cílový runtime a Linux UAPI
+
+Backend používá `runtime.lsl` a explicitní descriptor z `target.lsl`.
+`runtime_linux_x86_64.lsl` emituje počáteční stav, hlavní TLS, GC sigaction a
+ukončení. Strojové moduly `*_runtime_linux_x86_64.lsl` obsluhují heap, skaláry,
+I/O, procesy, vlákna a native loader. Původní názvy modulů jsou kompatibilní
+fasády. Labely, register ABI, TLS i veřejné plugin ABI zůstávají stejné.
+
+`stdlib/_platform_linux_x86_64.lsl` sdílí syscall čísla a kernelová rozložení
+pouze s konkrétními Linux poskytovateli. Veřejné knihovny načítají rezervované
+providery vybrané descriptorovou mapou v linkeru. Backend kontroluje, že frontend
+připravil knihovny pro tentýž cíl.
+
+`runtime.lsl` předává entry/exit, state size, thread sloty, GC poll, statický
+zápis (`rdi=handle`, `rsi=data`, `rdx=bytes`) a input cleanup. Makra thread state
+zachovávají registry kromě cíle load; compare určuje flags. GC poll zachovává
+stejný kontrakt scratch registrů a runtime helperů jako ostatní LSL volání.
+Privátní ABI není native ABI Windows ani macOS: volání systémových API musí
+runtime adaptovat včetně požadovaného zarovnání a zachování registrů.
+
+Objekt a importní rozhraní assembleru umožňuje writeru vytvořit PE import tables
+nebo Mach-O bindings bez přepisu CPU emise. Podrobný postup uvádí
+[porting.md](porting.md). Dostupný runtime i veřejné native ABI v1 jsou zatím
+pouze Linux x86_64; popis plánovaného cíle není funkční port.

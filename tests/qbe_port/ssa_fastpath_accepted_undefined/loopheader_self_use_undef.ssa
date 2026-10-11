@@ -1,0 +1,13 @@
+# One static definition in a loop header reads its own incoming undefined /
+# loop-carried value. The later-block use makes the fastpath consider it;
+# live-in must force the original phi insertion and renaming path.
+# Upstream QBE accepts this as an undefined initial loop value.
+export function w $loop_undef(w %again) {
+@start
+	jmp @header
+@header
+	%value =w add %value, 1
+	jnz %again, @header, @after
+@after
+	ret %value
+}

@@ -1,0 +1,78 @@
+# Registry cílových komponent. Neimplementovaný port není dostupný cíl překladu.
+
+function provider_modules(os):
+    suffix = os + "_x86_64"
+    result = {"_platform": "_platform_" + suffix}
+    for name in ["fd", "unixsock", "random", "tui", "system", "os", "sandbox", "luxos", "plugin", "native"]:
+        result["_" + name + "_platform"] = "_" + name + "_" + suffix
+    end
+    result["_httpserver_transport"] = "_httpserver_" + suffix
+    result["_cuda_transport"] = "_cuda_" + suffix
+    result["_ai_platform"] = "_ai_" + suffix
+    result["_compiler_host_platform"] = "host_" + suffix
+    result["_host_platform"] = "_host_" + suffix
+    for name in ["update", "update_install", "catalog", "package", "install"]:
+        result["_" + name + "_platform"] = name + "_" + suffix
+    end
+    return result
+end
+
+function describe(name):
+    os = ""
+    format = ""
+    available = False
+    if name == "linux-x86_64":
+        os = "linux"
+        format = "elf64-linux"
+        available = True
+    elif name == "windows-x86_64":
+        os = "windows"
+        format = "pe32plus-windows"
+    elif name == "macos-x86_64":
+        os = "macos"
+        format = "mach64-macos"
+    else:
+        Error(CompileError: "unsupported compilation target: " + String(name))
+    end
+    selected = {"name": name, "abi": "lsl-x86_64-v1", "backend": "x86_64", "runtime": "lsl-runtime-" + name + "-v1", "platform_module": "_platform_" + os + "_x86_64", "os": os, "architecture": "x86_64", "pointer_bytes": 8, "byte_order": "little", "image_format": format, "available": available, "modules": provider_modules(os)}
+    if os == "linux":
+        selected["elf_machine"] = 62
+        selected["segment_alignment"] = 4096
+    end
+    return selected
+end
+
+function resolve(name):
+    selected = describe(name)
+    if not selected["available"]:
+        Error(CompileError: "compilation target is not implemented: " + String(name) + " (runtime, image writer and platform providers)")
+    end
+    return selected
+end
+
+function modules_for_platform(platform_module):
+    for name in ["linux-x86_64", "windows-x86_64", "macos-x86_64"]:
+        selected = describe(name)
+        if selected["platform_module"] == platform_module:
+            return selected["modules"]
+        end
+    end
+    Error(CompileError: "unsupported target platform module: " + String(platform_module))
+end
+
+function builtin_provider(name):
+    for os in ["linux", "windows", "macos"]:
+        modules = provider_modules(os)
+        for alias in modules:
+            module = modules[alias]
+            if module.startswith("_") and name == alias:
+                return True
+            end
+            # Nástroje compileru mají vlastní provenance a nejsou veřejné stdlib.
+            if module.startswith("_") and name == module:
+                return True
+            end
+        end
+    end
+    return False
+end

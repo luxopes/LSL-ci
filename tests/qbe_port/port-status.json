@@ -1,0 +1,88 @@
+{
+  "upstream_version": "1.3",
+  "archive_sha256": "d587905d620dc5e1d2bfa7c2cc642b9b837aa89a3188c6e37b53d756cf66e320",
+  "upstream_commit": "c0818978acec60ebb6167fade60fb7012cbf20ca",
+  "production_translation_units": 32,
+  "production_functions": 405,
+  "shared_inline_functions": 16,
+  "generated_functions": 421,
+  "unsupported_functions": 0,
+  "native_backend_verified": true,
+  "selfhost_with_lsl_qbe_verified": true,
+  "last_integration_attempt": "Integrated public integer conversion fix from agent7ec0fff and endurance evidence e3c9103. Independent old-frontend control reproduces deterministic failure; fixed frontend passes30 targeted checks,13 language regressions,8 public workloads and three builds of the identical installed0.8.9 compiler source. Four native selfhost builds pass under60s with both binary fixed points. Historical failures preserved; ordinary program performance and preexisting language gaps still block release readiness.",
+  "bootstrap_reference": "C QBE 1.3",
+  "linux_native_tests_passed": 59,
+  "verified_backend_sha256": "3863bc4fed1630d0e10bd438a9433d6ea0229dabf4d9013f605717a482b86545",
+  "all_six_targets_differential_verified": true,
+  "differential_case_pairs": 456,
+  "differential_mismatches": 0,
+  "differential_timeouts": 0,
+  "verified_backend_source_sha256": "e86d33614ee622a1a4044ded158bd077127991b83114d5dd51332d6b17fbe84c",
+  "frontend_selfhost_seconds": [
+    8.541580566001358,
+    8.744884289000765
+  ],
+  "frontend_selfhost_fixed_point": true,
+  "selfhost_under_60_seconds_verified": true,
+  "backend_selfhost_seconds": [
+    51.08454991899998,
+    47.951971210997726
+  ],
+  "backend_selfhost_fixed_point": true,
+  "cli_cases_passed": 48,
+  "language_cases_passed": 11,
+  "c_backend_speed_parity_verified": false,
+  "backend_execution_ratios": [
+    1.0064703492981555,
+    0.6817693365519644
+  ],
+  "c_backend_speed_parity_criterion": "strict LSL median <= C median on both preserved inputs",
+  "backend_execution_within_one_percent_on_both_inputs": true,
+  "ready_for_release": false,
+  "known_correctness_blockers": [
+    "boxed_int_infrastructure: comparison is printed as 1 instead of True, same baseline/candidate output",
+    "boxed_int_operations: existing output mismatches remain byte-identical between baseline and candidate, including sum(values)",
+    "automatic_gc_conformance: both baseline and candidate stop at TypeError: method requires a Set receiver; separate public_gc_roots exercises automatic/explicit collection without this unrelated failure"
+  ],
+  "v089_comparison_report": "tests/qbe_port/comparison-v089-after-public-int-fix-linux-x86_64.json",
+  "backend_verification_checkpoint_commit": "0ed7c7b0084b657f5abb98a8e3758d361c1ac9f7",
+  "backend_verification_checkpoint_scope": "Existing backend hash, native/CLI counts and C-speed reports refer to the pre-integer-fix checkpoint; newer public-ABI/selfhost verification is separately recorded below.",
+  "resolved_correctness_blockers": [
+    "Nondeterministic public-ABI function-call checksum on 200000 iterations",
+    "Intermittent public List access checksum mismatch in longer workload",
+    "Intermittent public Dictionary access checksum mismatch in longer workload",
+    "Installed 0.8.9 compiler sources rejected with integer literal AST invariant"
+  ],
+  "v089_comparison_before_public_int_fix_report": "tests/qbe_port/comparison-v089-linux-x86_64.json",
+  "public_abi_fix": {
+    "independently_verified": true,
+    "integration_report": "tests/qbe_port/public-int-integration-linux-x86_64.json",
+    "frontend_sha256": "3936b3de9791efa5c9646f0c2948b0b86f04ff5a8f390371c127f118ec979cd0",
+    "backend_sha256": "5794177388dcb687243c54d1e871fd00ed92226cb4f0fc12479181f9fc02a96e",
+    "frontend_selfhost_seconds": [
+      6.8599656090009375,
+      6.87259231400094
+    ],
+    "backend_selfhost_seconds": [
+      46.993162017999566,
+      47.02417710000009
+    ],
+    "frontend_fixed_point": true,
+    "backend_fixed_point": true,
+    "targeted_cases_passed": 30,
+    "language_cases_passed": 13,
+    "public_runtime_workloads_passed": 8,
+    "common_installed_source_compile_verified": true,
+    "runtime_unchanged": true,
+    "performance_new_over_v089": {
+      "integer_loop": 4.088944150723749,
+      "function_calls": 3.8280516870640438,
+      "float_loop": 4.963097186072823,
+      "intarray_access": 17.534046664084826,
+      "list_access": 3.4264023076169097,
+      "dictionary_access": 2.539677035041078,
+      "string_split_join": 3.0204605475196833,
+      "allocation_gc": 2.0803922892187887
+    }
+  }
+}

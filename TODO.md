@@ -2,6 +2,29 @@
 
 Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktuální handoff, pořadí blockerů a ověřovací příkazy jsou v `COMPLETION_PLAN.md`.
 
+## Vydání 0.9.0 BETA a návazný plán — 11. 10. 2026
+
+Rozsah 0.9.0 BETA je Linux x86_64 s novým backendem odvozeným od QBE,
+implementovaným v LSL. Další operační systémy a architektury nejsou součástí
+ověřeného rozsahu této BETA. Výsledné release binárky, hashe a provedené
+ověřovací kroky musí dokládat příslušný release report; tento plán nepředjímá
+výsledky dosud neprovedených testů ani publikaci artefaktů.
+
+Všechny níže neuzavřené požadavky a nahlášené chyby jsou explicitně plánované
+pro **0.9.1**. Původní popisy, reprodukce a workaroundy z main 0.8.9 jsou
+zachovány; přepis backendu sám o sobě není důkazem opravy každého hlášení.
+Zvláště provozní hlášení poškození SSE při souběhu workeru a `gc()` zůstává
+otevřené do ověření konkrétního scénáře, i když nový backend obsahuje opravy
+vláknového GC. Historické dokončené položky a starší měření níže se vztahují
+k uvedeným starším verzím.
+
+Samostatný web a manuály mají jediný zdroj v
+[LuxAI/LSL-Web](https://git.lux-ai.cz/LuxAI/LSL-Web). Oddělení obsahu a lokální
+atomický deployer jsou dokončené; produkční hosting čeká na provozní údaje.
+Podepsaný stabilní kanál 0.8.9 zůstává zachován vedle 0.9.0 BETA.
+
+- [ ] **0.9.1:** Reprodukovatelné diagnostické cesty importů stdlib: CLI, instalátor a test runner nyní obsahují absolutní cesty build adresáře. Frontend a backend mají bitově shodný self-host i po přemístění; sjednotit source mapping také pro ostatní nástroje.
+
 ## Hotovo v 0.8.6 — 27. 9. 2026
 
 - [x] Více importů na jednom řádku: `load term, time`.
@@ -73,9 +96,9 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktu�
 - 0.7.0: lexikální `unsafe:` hranice, safe kontrola uživatelského importního
   grafu, sandbox zákaz unsafe kódu a oprava interní/public ABI hranice modulů.
 
-## Aktivní plán
+## Aktivní plán 0.9.1
 
-- [ ] Zpřesnit statickou kontrolu přiřazení pro prokazatelně neprázdné
+- [ ] **0.9.1:** Zpřesnit statickou kontrolu přiřazení pro prokazatelně neprázdné
   smyčky, aby přijala čtení proměnné po smyčce, pokud přiřazení proběhne
   na každé cestě vedoucí k tomuto čtení. Bez dodatečných běhových kontrol
   a bez automatické inicializace nulou či `None`. Analýzu omezit na bezpečně
@@ -84,21 +107,21 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktu�
   odmítnutí. Doplnit pozitivní i negativní regrese (včetně prázdných či
   vyprázdněných kolekcí) a změřit dopad na čas a paměť překladu; ověřit,
   že nevzniká dodatečná běhová režie ani oslabení paměťové bezpečnosti.
-- [ ] FIX: Opravit zdrojové pozice diagnostiky výrazů v interpolacích.
+- [ ] **0.9.1:** FIX: Opravit zdrojové pozice diagnostiky výrazů v interpolacích.
   Reprodukce v 0.8.9: E2002 při čtení `chyba` v
   `printl "Epocha: {epocha} loss: {chyba}"` nesprávně ukazuje na první
   řádek `load random`. Chyba musí označit skutečné použití `chyba`
   v původním souboru, se správným řádkem a sloupcem. Zachovat původní
   pozice při parsování interpolovaných výrazů a doplnit regresní testy
   pro `printl`, l-stringy a importované moduly.
-- [ ] Opravit čítače vnořených `for` smyček se stejným jménem proměnné:
+- [ ] **0.9.1:** Opravit čítače vnořených `for` smyček se stejným jménem proměnné:
   oddělit interní stav iterace od uživatelské proměnné, aby vnitřní `for i`
   neměnil počet iterací vnějšího `for i` ani nezpůsoboval zacyklení.
   Reprodukce v 0.8.9: vnější `rang(3)` s vnitřním `rang(2)` provede jen
   jednu vnější iteraci místo tří; kombinace `rang(100)` / `rang(10)` se
   zacyklí. Doplnit regrese pro oba případy, přiřazení do proměnné v těle,
   `break` a `continue`.
-- [ ] Sjednotit výpisy běhových chyb s obvyklým formátem diagnostiky LSL.
+- [ ] **0.9.1:** Sjednotit výpisy běhových chyb s obvyklým formátem diagnostiky LSL.
   Místo holého `LSL runtime error: TypeError: sequence index must be Int`
   zobrazit `error[...]`, typ a srozumitelný popis chyby, soubor, řádek,
   sloupec, příslušný zdrojový kód s označením chybného výrazu a vhodné
@@ -107,33 +130,33 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktu�
   barevný výstup dle stávajících pravidel terminálu a `NO_COLOR`.
   Pokrýt běh přes `lsl` i samostatné zkompilované binárky regresními testy;
   zachycené chyby v `try`/`safe` nesmí samovolně vypisovat diagnostiku.
-- [ ] Přidat výchozí hodnoty parametrů uživatelských funkcí po vzoru Pythonu,
+- [ ] **0.9.1:** Přidat výchozí hodnoty parametrů uživatelských funkcí po vzoru Pythonu,
   například `function f(x = 10):`. Vynechaný argument použije deklarovanou
   výchozí hodnotu, explicitně předaný argument ji nahradí. Doplnit pravidla
   pro povinné/volitelné parametry, dokumentaci a regresní testy.
-- [ ] Opravit hlášené chování `help("nonexist")`: neexistující téma má vypsat
+- [ ] **0.9.1:** Opravit hlášené chování `help("nonexist")`: neexistující téma má vypsat
   srozumitelnou anglickou zprávu, například `No help available for topic: nonexist.`,
   nikoli vyvolat chybu či ukončit program. Zachovat `help()` i známá témata
   a pokrýt všechny tyto případy regresními testy.
-- [ ] Doplnit volitelný druhý argument `Dictionary.get(key, default=None)`
+- [ ] **0.9.1:** Doplnit volitelný druhý argument `Dictionary.get(key, default=None)`
   po vzoru Pythonu. `.get(key)` vrátí existující hodnotu, při chybějícím klíči
   `None`; `.get(key, default)` místo toho vrátí zadanou výchozí hodnotu.
   Odstranit hlášené selhání při jednom argumentu; nesprávný počet argumentů
   musí mít srozumitelnou diagnostiku, nikdy pád runtime. Přidat dokumentaci
   a regrese včetně uložených hodnot `None`, `False` a `0`.
-- [ ] Pro další vydání doplnit rozbalování položek v běžném `for`, například
+- [ ] **0.9.1:** Pro další vydání doplnit rozbalování položek v běžném `for`, například
   `for x, target in data:` pro seznam dvojic. V LSL 0.8.9 tento zápis končí
   E1210 (`expected in after loop variable`), přestože comprehensions
   rozbalování podporují. Sjednotit chování, přidat srozumitelnou chybu při
   nesprávném počtu hodnot, dokumentaci a regresní testy včetně uvedené
   vnořené trénovací smyčky s výpočty Int/Float.
-- [ ] Přidat raw řetězce `r"..."` (r-string) bez interpretace escape sekvencí,
+- [ ] **0.9.1:** Přidat raw řetězce `r"..."` (r-string) bez interpretace escape sekvencí,
   interpolace a jiných automatických úprav. Doplnit `printr` pro výpis
   přesného obsahu bez přidaného odřádkování či oddělovačů; popsat syntaxi
   v dokumentaci a ověřit chování regresními testy.
-- [ ] Přidat podporu blokových komentářů `/* ... */`, včetně více řádků,
+- [ ] **0.9.1:** Přidat podporu blokových komentářů `/* ... */`, včetně více řádků,
   diagnostiky neukončeného komentáře, dokumentace a regresních testů.
-- [ ] Umožnit zaokrouhlit a oseknout (truncate) počet desetinných míst
+- [ ] **0.9.1:** Umožnit zaokrouhlit a oseknout (truncate) počet desetinných míst
   u Float. Dnes `math.round` vrací jen celé číslo a žádný přímý zápis pro
   počet míst neexistuje; běžné formátování typu „{x:.2f}" v LSL chybí.
   Cíl: jeden srozumitelný mechanismus (např. `round(x, digits)` a/nebo
@@ -143,12 +166,12 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktu�
   `digits = 0`, neceločíselného či jinak neplatného počtu míst
   s srozumitelnou diagnostikou a chování pro NaN/Infinity. Doplnit
   dokumentaci a regresní testy včetně interakce s Float formátováním.
-- [ ] Zpřístupnit opravené streamování z `aikit` také v instalované nativní
+- [ ] **0.9.1:** Zpřístupnit opravené streamování z `aikit` také v instalované nativní
   knihovně přes `load ai`. Vyřešit přednost vestavěného modulu tak, aby šlo
   používat `lsl update ai` bez aktualizace celého LSL a bez aliasu
   `load aikit as ai`. Spolu s knihovnou aktualizovat `lsl man ai`; ověřit
   výběr správné verze, původ knihovny a kompatibilitu existujících skriptů.
-- [ ] Oddělit web a webové manuály (`docs/developer_guides` včetně index.html
+- [x] **0.9.0 BETA — oddělení zdrojů dokončeno:** Oddělit web a webové manuály (`docs/developer_guides` včetně index.html
   a man stránek knihoven) od samotného LSL do vlastního repozitáře s vlastním
   deployerem, aby šlo web aktualizovat nezávisle na commitech do LuxAI/LSL
   main a bez čekání na vydání kompilátoru. Dnešní stav: oprava manuálu
@@ -161,6 +184,17 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktu�
   které by se rozjely). Zachovat přesměrování, hlavičky a routovatelná
   jména stránek; po přesunu ověřit web, offline `lsl man` i instalaci
   balíčků z registru.
+  Stav 11. 10. 2026: samostatný projekt
+  [LuxAI/LSL-Web](https://git.lux-ai.cz/LuxAI/LSL-Web), obsah v `public/`,
+  vlastní atomický deployer s rollbackem a připnutý zdroj offline manuálů.
+  Původní přesměrování, hlavičky, stažené archivy a stabilní kanál 0.8.9
+  jsou zachované. Dokončení oddělení zdrojů neznamená dokončené nasazení
+  na produkční hosting: to čeká na přístupové a provozní údaje.
+- [ ] **0.9.1 / provozní dokončení webu:** Napojit vlastní main webového
+  repozitáře na produkční hosting, nasadit atomický deploy a na živém webu
+  ověřit routy, hlavičky, offline manuály a instalaci balíčků z registru.
+  Zachovat podepsaný stabilní aktualizační kanál 0.8.9; BETA jej automaticky
+  nenahrazuje. Tato produkční ověření zatím nejsou označena jako PASS.
 - [x] Doplnit indexed augmented assignment pro List, RealArray a Dictionary.
 - [x] Odstranit omezení literal-only `rang` kroku; stop i step se vyhodnotí jednou.
 - [x] Dokončit Float round-trip/exponent formatting včetně subnormal, NaN a Infinity.
@@ -175,7 +209,7 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktu�
 - [x] Spustit závěrečný full suite, config, installed fixed-point a ELF audit.
 - [x] Ošetřit process pipe/memfd/fork/read/wait/lseek/dup2 failure a doplnit deadlock-free `capture_input`.
 - [x] Doplnit reálný RLIMIT_NOFILE fault corpus pro pipe/memfd cleanup a uzavřít close(2)/EINTR politiku.
-- [ ] Volitelně rozšířit syntetický fault injection na obtížně vyvolatelné fork/wait/read větve.
+- [ ] **0.9.1:** Volitelně rozšířit syntetický fault injection na obtížně vyvolatelné fork/wait/read větve.
 - [x] Ověřit 0.7.0 přes full suite, čistou instalaci, instalovaný fixed
   point, config, reálný loopback HTTP/HTTPS smoke test a audit generovaných ELF.
 - [x] Povýšit 0.7.0 na release, reprodukovat binárky a vytvořit archivy, tag
@@ -183,7 +217,7 @@ Přesný průběžný stav, hashe a důkazy jsou v `PURE_LSL_PROGRESS.md`. Aktu�
 - [x] Doplnit valid-source frontend fuzz, strict JSON malformed/round-trip corpus, generativní config corpus a GC cycle/deep/reuse stress.
 - [x] Změřit a zrychlit compiler bez změny deterministického výstupu; doplnit near-native IntArray/FloatArray kernely a packed ByteArray.
 
-### Nahlášeno z provozu 2026-10-09 — LUX AGENTS (LSL 0.8.9)
+### Nahlášeno z provozu 2026-10-09 — LUX AGENTS (LSL 0.8.9), plán oprav 0.9.1
 
 Kontext: agentní konzole (~3000 řádků LSL, HTTP server v produkci za Caddy
 + CDN), marketplace v LSL a pět sellerů; jazyk použit i na podepisované
@@ -191,7 +225,7 @@ kanonické JSON payloady. Všechny body níže jsou ověřené na 0.8.9; spustit
 reprodukce jsou v `~/Downloads/lsl-bugreport/` (README.md + `*.lsl`), zde
 jsou kvůli soběstačnosti uvedené i v tělech položek.
 
-- [ ] BUG: `httpserver` vrací 400 na **duplicitní request hlavičku**
+- [ ] **0.9.1:** BUG: `httpserver` vrací 400 na **duplicitní request hlavičku**
   (`stdlib/httpserver.lsl:404-405`):
 
   ```lsl
@@ -219,7 +253,7 @@ jsou kvůli soběstačnosti uvedené i v tělech položek.
   (`tests/http_security_conformance.lsl`, `tests/httpserver_conformance.lsl`),
   takže chování nejspíš není zamýšlené — doplnit conformance i negative test.
 
-- [ ] BUG: `json.encode` kazí Floaty (`stdlib/json.lsl`, `encode_value()`,
+- [ ] **0.9.1:** BUG: `json.encode` kazí Floaty (`stdlib/json.lsl`, `encode_value()`,
   větev `value_type == 6` → `__lsl_float_string(value)`). Dvě oddělené vady:
 
   ```
@@ -254,7 +288,7 @@ jsou kvůli soběstačnosti uvedené i v tělech položek.
   nebo `JsonError`); nikdy nevypsat INT64_MIN. Doplnit regresi
   v `tests/json_fuzz_conformance` a round-trip test velkých Floatů.
 
-- [ ] CHOVÁNÍ: **tichý shadow globálu** — zápis do globálu z funkce se tiše
+- [ ] **0.9.1:** CHOVÁNÍ: **tichý shadow globálu** — zápis do globálu z funkce se tiše
   neprovede (žádná chyba, žádné varování):
 
   ```lsl
@@ -276,7 +310,7 @@ jsou kvůli soběstačnosti uvedené i v tělech položek.
   varování/chyba, když funkce přiřazuje jméno existujícího globálu
   (obdoba `-Wshadow`). Tichý no-op zápis je nejhorší varianta.
 
-- [ ] BUG (nepodařilo se zminimalizovat): `gc()` vedle běžícího workeru
+- [ ] **0.9.1:** BUG (nepodařilo se zminimalizovat): `gc()` vedle běžícího workeru
   poškodil alokace **SSE parseru modelu**. Podle dokumentace
   (`docs/developer_guides/11-performance-and-optimization.md`, řádek ~593)
   je volání z hlavního vlákna bezpečné („zastaví workery přes `SIGUSR1`,
@@ -301,22 +335,22 @@ jsou kvůli soběstačnosti uvedené i v tělech položek.
   cílený conformance test (`capture_stream` + `gc()` ve smyčce) a dohledat,
   co v root setu/registrech STW nezachytí; do té doby platí workaround výše.
 
-- [ ] DROBNOST: `IntArray(1)` končí hláškou
+- [ ] **0.9.1:** DROBNOST: `IntArray(1)` končí hláškou
   `IntArray cast requires an existing IntArray`, která neřekne, co je
   špatně (správně `IntArray()` + `append`, viz
   `docs/developer_guides/04-collections.md:377`). Doplnit do chyby nápovědu.
 
-- [ ] PŘIDAT: **ISO-8601 / strftime v `time`** — modul má jen `time()`,
+- [ ] **0.9.1:** PŘIDAT: **ISO-8601 / strftime v `time`** — modul má jen `time()`,
   `now()`, `monotonic()`, `perf_counter()`, `sleep()`. Kanonické časové
   značky (`2026-10-09T04:01:53.833305+00:00`) do podepsaného payloadu jsem
   musel vyrábět dotazem do SQLite (`strftime`).
 
-- [ ] PŘIDAT: **streamovaná odpověď v `httpserver`** — odpovědi se bufferují
+- [ ] **0.9.1:** PŘIDAT: **streamovaná odpověď v `httpserver`** — odpovědi se bufferují
   (`Content-Length` + `close`), takže nelze poslat SSE. Kvůli tomu LSL port
   marketplace vypustil relay průběhu sellerů (konzole zobrazí až hotový
   job). Stačil by write handle / chunked režim.
 
-- [ ] ROBUSTNOST: **zámek přežije výjimku** — `lock()`/`unlock()` nad
+- [ ] **0.9.1:** ROBUSTNOST: **zámek přežije výjimku** — `lock()`/`unlock()` nad
   `IntArray` uvolní zámek jen explicitně, takže výjimka mezi nimi drží
   spinlock navždy (v provozu tvrdý hang celé konzole na ~48 % CPU, dokud
   jsem to nenašel). Bloková konstrukce (`lock x: … end`) nebo automatické
@@ -324,7 +358,7 @@ jsou kvůli soběstačnosti uvedené i v tělech položek.
   diagnostika, když workeři umře výjimka** — tichý zánik vlákna se ladí
   velmi těžko.
 
-- [ ] DOKUMENTACE/DEPLOY: přepsání běžící binárky končí `ETXTBSY`;
+- [ ] **0.9.1:** DOKUMENTACE/DEPLOY: přepsání běžící binárky končí `ETXTBSY`;
   řeším `stop → kopie → start`. Není to chyba jazyka, ale pár řádků
   v dokumentaci (nebo `lsl deploy` s atomickým replace) by ušetřilo
   překvapení. Zároveň: accept loop `httpserveru` je jednovláknový
@@ -347,7 +381,11 @@ jsou kvůli soběstačnosti uvedené i v tělech položek.
 
 Feature scope je implementovaný: self-host compiler/runtime, jazyk a collections, config lazy/default/provenance, AI retry/cancellation/SSE + live transport chunks, process JSON ABI, structured stdout/stderr/status, zero-copy CPU Tensor a omezený in-process CPU ET_DYN ABI v1.
 
-## Zbývá hardening/bugfix/audit
+## Zbývá hardening/bugfix/audit — plán 0.9.1
+
+Následující otevřené body patří do plánu 0.9.1; výslovně volitelné
+jazykové a ABI změny nejprve vyžadují návrh rozsahu. Historické odkazy
+na scope 0.5/0.7 ponecháváme pro kontext, nejde o testový důkaz 0.9.0.
 
 - plný Rust ownership/borrow checker ani statický důkaz absence data races
   zatím nejsou implementované; 0.7 poskytuje auditovatelnou `unsafe:` hranici,

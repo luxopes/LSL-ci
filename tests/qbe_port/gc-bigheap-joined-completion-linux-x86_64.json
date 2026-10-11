@@ -1,0 +1,32 @@
+{
+  "scope": "Deterministic completion ordering in original threaded large-heap allocator fixture",
+  "compiler_sha256": "efbcb2bbe51587b9728616cef23c0553acde66cceedc17aded04ae4c4602a7a9",
+  "source_sha256": "3bffe07ec2507230ef0c27c740609dcd1ca710cdf88e2a40f25982f8a53644de",
+  "correctness_only": true,
+  "commands": [
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-release-audit/compiler/pure/lslc-qbe",
+        "--unsafe",
+        "tests/gc_bigheap_threads_conformance.lsl",
+        "/home/antonin/LSL-QBE-release-audit/build/qbe-audit/final/gc-bigheap-joined"
+      ],
+      "seconds": 1.811989192996407,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-release-audit/build/qbe-audit/final/gc-bigheap-joined"
+      ],
+      "seconds": 25.39789510400442,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "big done 9437350\nCLI req 0\nCLI req 1\nCLI req 2\nCLI req 3\nCLI req 4\nCLI req 5\nCLI req 6\nCLI req 7\nCLI req 8\nCLI req 9\nCLI req 10\nCLI req 11\nCLI req 12\nCLI req 13\nCLI req 14\nCLI req 15\nCLI req 16\nCLI req 17\nCLI req 18\nCLI req 19\nCLI req 20\nCLI req 21\nCLI req 22\nCLI req 23\nCLI req 24\nCLI req 25\nCLI req 26\nCLI req 27\nCLI req 28\nCLI req 29\nmemory served\ndone\n",
+      "stderr": ""
+    }
+  ],
+  "all_pass": true
+}

@@ -1,0 +1,92 @@
+[
+  {
+    "component": "memory",
+    "status": "PASS",
+    "fixture_sha256": "11df6c54eab422ac81abdc86e55f259b5497707e90e3529df50c25feb7150475",
+    "compiler_sha256": "f7d615ea308281d72c05feaa5163fe3165151a6502139abead32a493f8f796bc",
+    "backend_sha256": "3863bc4fed1630d0e10bd438a9433d6ea0229dabf4d9013f605717a482b86545",
+    "compile_log": "build/qbe-port-tools/memory-parity-integrated-compile.log",
+    "run_log": "build/qbe-port-tools/memory-parity-integrated-run.log"
+  },
+  {
+    "component": "primitives",
+    "status": "PASS",
+    "fixture_sha256": "8f95e5dcdf4e791476084575df3f6698dc78ba3c640ecf80acddebb352d523a3",
+    "compiler_sha256": "f7d615ea308281d72c05feaa5163fe3165151a6502139abead32a493f8f796bc",
+    "backend_sha256": "3863bc4fed1630d0e10bd438a9433d6ea0229dabf4d9013f605717a482b86545",
+    "compile_log": "build/qbe-port-tools/primitives-parity-integrated-compile.log",
+    "run_log": "build/qbe-port-tools/primitives-parity-integrated-run.log"
+  },
+  {
+    "component": "gc",
+    "status": "PASS",
+    "fixture_sha256": "32232088940c6d77a99bf56c3de94d218eb0e76c0f431c22c50706164d47c059",
+    "compiler_sha256": "f7d615ea308281d72c05feaa5163fe3165151a6502139abead32a493f8f796bc",
+    "backend_sha256": "3863bc4fed1630d0e10bd438a9433d6ea0229dabf4d9013f605717a482b86545",
+    "compile_log": "build/qbe-port-tools/gc-parity-integrated-compile.log",
+    "run_log": "build/qbe-port-tools/gc-parity-integrated-run.log"
+  },
+  {
+    "component": "effects",
+    "status": "PASS",
+    "fixture_sha256": "9c064c265820c71c94ac230f89ee4e96c4bf45b7843bcc11fc724a2186829c9b",
+    "compiler_sha256": "f7d615ea308281d72c05feaa5163fe3165151a6502139abead32a493f8f796bc",
+    "backend_sha256": "3863bc4fed1630d0e10bd438a9433d6ea0229dabf4d9013f605717a482b86545",
+    "compile_log": "build/qbe-port-tools/effects-parity-integrated-compile.log",
+    "run_log": "build/qbe-port-tools/effects-parity-integrated-run.log"
+  },
+  {
+    "component": "stdio",
+    "status": "PASS",
+    "fixture_sha256": "caf57e17a0c4731414af1188c462f992722261a406f1d82dd86307d70a844183",
+    "compiler_sha256": "f7d615ea308281d72c05feaa5163fe3165151a6502139abead32a493f8f796bc",
+    "backend_sha256": "3863bc4fed1630d0e10bd438a9433d6ea0229dabf4d9013f605717a482b86545",
+    "compile_log": "build/qbe-port-tools/stdio-parity-integrated-compile.log",
+    "run_log": "build/qbe-port-tools/stdio-parity-integrated-run.log"
+  },
+  {
+    "component": "libc",
+    "status": "PASS",
+    "fixture_sha256": "78fc2b16f7c7b5df9df9ca214ffd467f43e0908f93e8cfe4fa5b78836f3bcb93",
+    "compiler_sha256": "f7d615ea308281d72c05feaa5163fe3165151a6502139abead32a493f8f796bc",
+    "backend_sha256": "3863bc4fed1630d0e10bd438a9433d6ea0229dabf4d9013f605717a482b86545",
+    "compile_log": "build/qbe-port-tools/libc-parity-integrated-compile.log",
+    "run_log": "build/qbe-port-tools/libc-parity-integrated-run.log"
+  },
+  {
+    "component": "float_conversion",
+    "status": "PASS",
+    "fixture_sha256": "f42f3372ce8d72e70f656e1876fb0e63e70b0be487df11466a2fb387ee7c9f89",
+    "compiler_sha256": "f7d615ea308281d72c05feaa5163fe3165151a6502139abead32a493f8f796bc",
+    "backend_sha256": "3863bc4fed1630d0e10bd438a9433d6ea0229dabf4d9013f605717a482b86545",
+    "compile_log": "build/qbe-port-tools/float_conversion-parity-integrated-compile.log",
+    "run_log": "build/qbe-port-tools/float_conversion-parity-integrated-run.log"
+  },
+  {
+    "component": "stdio_output",
+    "status": "PASS",
+    "fixture_sha256": "c8f1d38a40e7923e7978fe51c169cb6e78cca643d619a1557f0861349a92ab36",
+    "compiler_sha256": "f7d615ea308281d72c05feaa5163fe3165151a6502139abead32a493f8f796bc",
+    "backend_sha256": "3863bc4fed1630d0e10bd438a9433d6ea0229dabf4d9013f605717a482b86545",
+    "compile_log": "build/qbe-port-tools/stdio_output-parity-integrated-compile.log",
+    "run_log": "build/qbe-port-tools/stdio_output-parity-integrated-run.log"
+  },
+  {
+    "component": "function_arena",
+    "status": "PASS",
+    "fixture_sha256": "caae351fa013757880353441be72cb7100b9cf15c6acbd4b58f88f02d61559aa",
+    "compiler_sha256": "f7d615ea308281d72c05feaa5163fe3165151a6502139abead32a493f8f796bc",
+    "backend_sha256": "3863bc4fed1630d0e10bd438a9433d6ea0229dabf4d9013f605717a482b86545",
+    "compile_log": "build/qbe-port-tools/function_arena-parity-integrated-compile.log",
+    "run_log": "build/qbe-port-tools/function_arena-parity-integrated-run.log"
+  },
+  {
+    "component": "input_cache",
+    "status": "PASS",
+    "fixture_sha256": "7019c2bedb0bbea50307bac2557089c8c981a7544f20ee3e97f6da7479c96c96",
+    "compiler_sha256": "f7d615ea308281d72c05feaa5163fe3165151a6502139abead32a493f8f796bc",
+    "backend_sha256": "3863bc4fed1630d0e10bd438a9433d6ea0229dabf4d9013f605717a482b86545",
+    "compile_log": "build/qbe-port-tools/input_cache-parity-integrated-compile.log",
+    "run_log": "build/qbe-port-tools/input_cache-parity-integrated-run.log"
+  }
+]

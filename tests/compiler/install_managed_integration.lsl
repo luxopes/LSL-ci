@@ -1,4 +1,4 @@
-# Optional integration: SECURE_PARENT OLD_INSTALLER NEW_INSTALLER.
+# Optional integration: SECURE_PARENT OLD_INSTALLER NEW_INSTALLER [NEW_CLI].
 # Parent must have safe ancestors (not /tmp or a group-writable checkout).
 load fd
 load update_install
@@ -15,7 +15,10 @@ function main():
     call update_install.bounded(arg(2), [prefix], 16777216, 120)
     old_version = update_install.bounded(prefix + "/bin/lsl", ["version"], 1048576, 30).strip()
     call update_install.health(prefix, old_version, work)
-    expected_cli = arg(3)[:len(arg(3)) - len("lsl-install")] + "lsl"
+    expected_cli = arg(4)
+    if expected_cli == None:
+        expected_cli = arg(3)[:len(arg(3)) - len("lsl-install")] + "lsl"
+    end
     new_version = update_install.bounded(expected_cli, ["version"], 1048576, 30).strip()
     for attempt in rang(2):
         output = capture_clean("/usr/bin/env", ["-i", "HOME=" + work, arg(3), prefix])

@@ -1,0 +1,10 @@
+# %missing has no definition anywhere and is read on one branch. Reference
+# QBE must reject this undefined temporary.
+export function w $main(w %condition) {
+@start
+	jnz %condition, @defined, @undefined
+@defined
+	ret 0
+@undefined
+	ret %missing
+}

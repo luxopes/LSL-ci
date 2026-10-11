@@ -19,7 +19,7 @@ odpověď role `tool`. Ve streamu se tool cally skládají po částech
 (`delta.tool_calls`) a hotové volání dostane `on_tool_call`.
 
 Podrobné API, limity, chování při chybách a celý chatbot:
-[manuál AI knihovny](developer_guides/ai.md).
+[manuál AI knihovny](https://git.lux-ai.cz/LuxAI/LSL-Web/src/branch/main/public/ai.md).
 Krátká offline nápověda je přímo v balíčku: `printl "{ai.help()}"`.
 
 Knihovna používá `http`, `json` a `time`; token předává curlu přes konfiguraci

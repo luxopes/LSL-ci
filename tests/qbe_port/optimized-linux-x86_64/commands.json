@@ -1,0 +1,227 @@
+{
+  "complete": true,
+  "source_commit": "6529f6f45fa79f21095d63e4eca21aa41167d103",
+  "frontend_sha256": "1e123e69280d589e1c409f668c825476a30983e8c8f6f67a8048658cd9bf4b1f",
+  "backend_sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+  "runtime_sha256": "23a85294bf1087cc1b812172e1c95c0ee4b5b8d05486b375c25242c143b85c14",
+  "commands": [
+    {
+      "command": [
+        "python3",
+        "tools/qbe/verify_language.py",
+        "--compiler",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "--backend",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+        "--cases",
+        "build/qbe-repair/optimized-language-cases.json",
+        "--baseline",
+        "/home/antonin/.local/bin/lslc",
+        "--build-directory",
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/language",
+        "--report",
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/language.json"
+      ],
+      "seconds": 88.38337938699988,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "PASS abs_conformance.lsl \nPASS bigint_conformance.lsl \nPASS bit_builtins_conformance.lsl \nPASS bitwise_conformance.lsl \nPASS boxed_collection_conformance.lsl \nPASS boxed_int_infrastructure_conformance.lsl \nPASS boxed_int_operations_conformance.lsl \nPASS bytearray_conformance.lsl \nPASS bytearray_slice_conformance.lsl \nPASS class_method_return_conformance.lsl \nPASS codegen_optimization_conformance.lsl \nPASS collection_methods_conformance.lsl \nPASS collection_repr_conformance.lsl \nPASS collections_builtins_conformance.lsl \nPASS collections_pointer_conformance.lsl \nPASS comprehension_conformance.lsl \nPASS del_conformance.lsl \nPASS dict_keys_conformance.lsl \nPASS dictionary_key_conformance.lsl \nPASS dynamic_arith_conformance.lsl \nPASS dynamic_builtin_boundary_conformance.lsl \nPASS dynamic_collection_boundary_conformance.lsl \nPASS dynamic_method_boundary_conformance.lsl \nPASS dynamic_numeric_boundary_conformance.lsl \nPASS dynamic_value_conformance.lsl \nPASS equality_conformance.lsl \nPASS float_conversion_conformance.lsl \nPASS float_exponent_conformance.lsl \nPASS float_floordiv_conformance.lsl \nPASS float_format_allocation_conformance.lsl \nPASS float_format_conformance.lsl \nPASS float_power_conformance.lsl \nPASS float_special_conformance.lsl \nPASS floatarray_conformance.lsl \nPASS indexed_augmented_conformance.lsl \nPASS inheritance_conformance.lsl \nPASS int_conversion_conformance.lsl \nPASS intarray_conformance.lsl \nPASS integer_wrap_conformance.lsl \nPASS language_06_conformance.lsl \nPASS last_error_conformance.lsl \nPASS list_find_conformance.lsl \nPASS loop_binding_types_conformance.lsl \nPASS magic_division_conformance.lsl \nPASS math_conformance.lsl \nPASS minmax_help_conformance.lsl \nPASS numeric_builtins_conformance.lsl \nPASS origin_function_conformance.lsl \nPASS parameter_inference_conformance.lsl \nPASS pointer_collision_conformance.lsl \nPASS rang_dynamic_conformance.lsl \nPASS rang_value_conformance.lsl \nPASS realarray_conformance.lsl \nPASS recursive_return_conformance.lsl \nPASS register_locals_conformance.lsl \nPASS runtime_error_conformance.lsl \nPASS safe_recovery_conformance.lsl \nPASS sequence_ops_conformance.lsl \nPASS slice_step_conformance.lsl \nPASS sqrt_conformance.lsl \nPASS string_conversion_conformance.lsl \nPASS string_split_conformance.lsl \nPASS tagged_argument_conformance.lsl \nPASS tagged_function_conformance.lsl \nPASS truthiness_conformance.lsl \nPASS type_widening_conformance.lsl \nPASS unicode_case_conformance.lsl \nPASS wide_class_abi_conformance.lsl \nPASS table_growth_conformance.lsl \nPASS gc_raw_buffer_conformance.lsl \nPASS gc_stress_conformance.lsl \nPASS automatic_gc_conformance.lsl \nPASS automatic_gc_threads_conformance.lsl \nPASS thread_conformance.lsl \nPASS thread_reuse_conformance.lsl \nPASS atomic_conformance.lsl \nPASS time_conformance.lsl \nPASS io_error_conformance.lsl \nPASS io_conformance.lsl \nPASS env_conformance.lsl \nPASS security_runtime_conformance.lsl \nPASS native_elf_conformance.lsl \nPASS language_safety_features.lsl \nPASS validation_flow.lsl \nPASS native_float_literals.lsl \nPASS raster_kernel_conformance.lsl \nPASS selfhost_conformance.lsl \nPASS json_fuzz_conformance.lsl \nPASS help_conformance.lsl \nPASS random_conformance.lsl \nPASS syscall6_conformance.lsl \nPASS native_builtin_return_types.lsl \nPASS return_dependency_inference.lsl \nPASS scoped_validation_errors.lsl \n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "tools/qbe/verify_process_capture.py",
+        "--frontend",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "--backend",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+        "--build-directory",
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/process-capture"
+      ],
+      "seconds": 21.689493799996853,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "capture_input_conformance [True, True]\ncapture_stream_conformance [True, True]\ncapture_result_conformance [True, True]\nqbe/process_capture_variants [True, True]\nslice_step_conformance [True, True]\nsequence_ops_conformance [True, True]\nqbe/string_contiguous_slice [True, True]\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "tools/qbe/verify_public_int.py",
+        "--compiler",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "--backend",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+        "--build-directory",
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int"
+      ],
+      "seconds": 2.098225816997001,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "PASS: /home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/verification.json\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "tools/qbe/verify_constant_division.py",
+        "--compiler",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "--backend",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+        "--build-directory",
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/constant-division"
+      ],
+      "seconds": 2.015499512999668,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "PASS 14256 constant division/remainder pairs\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "--unsafe",
+        "tests/qbe_port/function_arena_conformance.lsl",
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/function-arena",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 0.711729260001448,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/function-arena"
+      ],
+      "seconds": 0.12305893999291584,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "PASS function arena zeroing, alignment, lifetime, reset\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "tests/qbe_port/float_conversion_oracle.py",
+        "--compiler",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "--qbe",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+        "--report",
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/float-conversion.json"
+      ],
+      "seconds": 1.142188369994983,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "2480/2480 exact float conversions; /home/antonin/LSL-QBE/build/qbe-repair/optimized/float-conversion.json\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "tests/qbe_port/word_stdio_oracle.py",
+        "--compiler",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "--qbe",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+        "--report",
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/word-stdio.json"
+      ],
+      "seconds": 3.7199821890026215,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "2502 word printf calls, 59739 bytes: exact=True\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "tests/qbe_port/bitset_iteration_oracle.py",
+        "--compiler",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "--qbe",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+        "--source",
+        "compiler/pure/qbe_port/qbe_backend.lsl",
+        "--report",
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/bitset.json"
+      ],
+      "seconds": 15.790264651994221,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "bsiter: 636 cases, complete=True\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "tools/qbe/verify_internal_numeric.py",
+        "--compiler",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "--backend",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+        "--build-directory",
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/numeric-budget"
+      ],
+      "seconds": 3.0157050779962447,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "PASS native_internal_numeric_collision -after\nPASS native_source_budget -after\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "tools/qbe/verify_image.py",
+        "--compiler",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "--backend",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+        "--build-directory",
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/image",
+        "--report",
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/image.json"
+      ],
+      "seconds": 10.664888607003377,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "PASS deterministic stripped static PIE, source-entry, ASLR, tool failure and cleanup\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "compiler/pure/cli.lsl",
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/lsl",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 12.483943421000731,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "tools/qbe/verify_cli_pipeline.py",
+        "--compiler",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "--cli",
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/lsl",
+        "--build-directory",
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-cli"
+      ],
+      "seconds": 7.564762936999614,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "PASS compiler default native backend\nPASS compiler output\nPASS compiler default rejects private intrinsic\nPASS compiler explicit safe rejects private intrinsic\nPASS compiler explicit unsafe\nPASS compiler unsafe output\nPASS compiler safe lexical unsafe block\nPASS compiler lexical output\nPASS compiler sandbox rejects unsafe block\nPASS compiler sandbox safe source\nPASS compiler sandbox output\nPASS compiler internal ABI compatibility\nPASS compiler internal ABI output\nPASS compiler explicit safe overrides internal ABI\nPASS compiler rejects unknown option\nPASS compiler missing target value\nPASS compiler unavailable target\nPASS public CLI compile\nPASS public CLI compiled output\nPASS public CLI safe compile\nPASS public CLI explicit unsafe\nPASS public CLI unsafe output\nPASS public CLI source run\nPASS public CLI source run remains safe\nPASS public CLI internal pragma grants no trust\nPASS public CLI compiled entry identity\nPASS compiled entry source is empty\nPASS source run entry identity and arguments\nPASS public CLI config evaluator\n",
+      "stderr": ""
+    }
+  ],
+  "unchanged_backend_evidence": "tests/qbe_port/repair-linux-x86_64/"
+}

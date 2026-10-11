@@ -2,6 +2,7 @@
 # authorization headers and other sensitive values never enter process argv.
 
 load json
+load _host_platform as host
 
 function byte_text_slice(source, start, stop):
     count = stop - start
@@ -52,7 +53,9 @@ function transport_response(output):
         # Závěrečný stavový kód curl není součástí chybové zprávy.
         if len(message) >= 4:
             tail = message[len(message) - 4:len(message)]
-            if tail[0] == chr(10) and tail[1] >= "0" and tail[1] <= "9" and tail[2] >= "0" and tail[2] <= "9" and tail[3] >= "0" and tail[3] <= "9":
+            # Ordered comparison is numeric-only. A curl status trailer is
+            # ASCII, so inspect bytes instead of comparing one-character text.
+            if __lsl_text_byte(tail, 0) == 10 and __lsl_text_byte(tail, 1) >= 48 and __lsl_text_byte(tail, 1) <= 57 and __lsl_text_byte(tail, 2) >= 48 and __lsl_text_byte(tail, 2) <= 57 and __lsl_text_byte(tail, 3) >= 48 and __lsl_text_byte(tail, 3) <= 57:
                 message = message[0:len(message) - 4]
             end
         end
@@ -322,7 +325,7 @@ function post_config(url, body, headers, timeout, streaming, method="POST"):
     if checked_method == "HEAD":
         # HEAD nečeká na tělo podle Content-Length a nevypisuje hlavičky.
         pieces.append("head" + chr(10))
-        pieces.append(config_line("output", "/dev/null"))
+        pieces.append(config_line("output", host.null_device()))
     else:
         pieces.append(config_line("data-raw", encoded_body))
     end
@@ -330,7 +333,7 @@ function post_config(url, body, headers, timeout, streaming, method="POST"):
 end
 
 # Transport-injection helpers keep conformance hermetic. Production callers
-# normally use get/post/post_stream below with /usr/bin/curl.
+# normally use get/post/post_stream with the selected host transport.
 function get_with(curl_path, url, headers=None, timeout=None):
     output = capture_input_clean(curl_path, ["-q", "--config", "-"], get_config(url, headers, timeout))
     return transport_response(output)
@@ -349,13 +352,13 @@ function post_stream_with(curl_path, url, body, headers, timeout, on_chunk, meth
 end
 
 function get(url, headers=None, timeout=None):
-    return get_with("/usr/bin/curl", url, headers, timeout)
+    return get_with(host.tool("curl"), url, headers, timeout)
 end
 
 function post(url, body, headers, timeout, method="POST"):
-    return post_with("/usr/bin/curl", url, body, headers, timeout, method)
+    return post_with(host.tool("curl"), url, body, headers, timeout, method)
 end
 
 function post_stream(url, body, headers, timeout, on_chunk, method="POST"):
-    return post_stream_with("/usr/bin/curl", url, body, headers, timeout, on_chunk, method)
+    return post_stream_with(host.tool("curl"), url, body, headers, timeout, on_chunk, method)
 end

@@ -1,28 +1,42 @@
 # Lux Simple Lang (LSL)
 
-**LSL 0.8.9** je vydání self-hostovaného jazyka pro běžné
-programování, deklarativní konfiguraci, AI orchestrace a volitelné CUDA
-výpočty. Compiler i host runtime
-jsou pouze LSL: compiler přímo zapisuje statický Linux x86_64 ELF a runtime
-používá přímé syscalls, bez libc, assembleru, linkeru, Pythonu nebo shell
-launcheru. Skutečný NVIDIA backend je záměrně oddělený proces
-`cuda/lsl-cuda-worker`, napsaný v CUDA C++; bez něj zůstává celé LSL jádro
-pure-LSL a Tensor používá CPU fallback.
+**LSL 0.9.0 BETA** je self-hostované vydání pro **Linux x86_64**. Frontend,
+backend LuxIR i host runtime jsou napsané v LSL. Výchozí překlad vede přes
+analyzovaný AST a LuxIR do assembleru; **GNU `as` a `ld` z balíku binutils**
+vytvoří statický PIE ELF. Výsledné programy používají přímé syscalls a nepotřebují
+libc ani dynamický loader. Binutils jsou potřeba také pro `lsl program.lsl`,
+protože CLI zdroj nejprve přeloží. Už zkompilovaný program je nepotřebuje.
+
+Volitelný NVIDIA worker `cuda/lsl-cuda-worker` je samostatný proces napsaný
+v CUDA C++; bez něj Tensor používá CPU fallback. Podpora dalších architektur
+nebo OS není součástí tohoto vydání.
 
 ## Self-hosted vydání
 
-LSL 0.8.9 přidává automatické načítání `.env` vedle skriptu,
-HTTP knihovnu `requests` s JSON a streamováním a offline manuály všech
-26 veřejných standardních knihoven (`lsl man env`, `lsl man requests`).
-Proměnné prostředí mají před `.env` přednost; hodnoty ze souboru se čtou
-za běhu a nevkládají se do zkompilovaných programů.
+0.9.0 BETA přechází z přímého AST backendu na samostatný nativní
+[LuxIR](https://git.lux-ai.cz/LuxAI/LuxIR). Běžné CLI i `compiler/lslc`
+používají tuto cestu s bezpečným výchozím režimem. Privilegované operace
+vyžadují `unsafe:` nebo explicitní `--unsafe`.
 
-Binární balík pro Linux x86_64, zdrojový archiv a český manuál jsou na
-[lsl.lux-ai.cz](https://lsl.lux-ai.cz/). Aktualizace: `lsl update`;
-podrobnosti v [poznámkách k vydání](docs/release-0.8.9.md).
+**Známé omezení pro 0.9.1:** překlad velkého společného zdroje compileru
+v měření na stejném stroji trval **11,399 s proti 8,062 s u 0.8.9**, tedy
+**o 41,4 % déle**. Rychlejší výsledné programy v osmi měřených úlohách tuto
+regresi času překladu neodstraňují. Podrobnosti a reprodukovatelná data jsou
+v [benchmarku LuxIR proti 0.8.9](tools/qbe/LUXIR_BENCHMARK_20261011.md).
+
+Vydání si ponechává `.env` vedle skriptu, `requests` a offline manuály
+standardních knihoven. Proměnné prostředí mají před `.env` přednost;
+hodnoty ze souboru se čtou za běhu a nevkládají se do binárky.
+
+BETA je prerelease; strojový výstup `lsl version` zůstává `0.9.0`.
+Instalátor použijte z příslušného archivu BETA. Příkaz `lsl update` sleduje
+podepsaný stabilní kanál a sám o sobě nevybírá prerelease.
+Web a manuály mají samostatný projekt
+[LSL-Web](https://git.lux-ai.cz/LuxAI/LSL-Web); veřejná dokumentace je na
+[lsl.lux-ai.cz](https://lsl.lux-ai.cz/).
 Starší manuály jsou v [historii vydání](https://lsl.lux-ai.cz/releases/):
 
-- [LSL 0.8.9](https://lsl.lux-ai.cz/) — `.env`, `requests` a manuály knihoven;
+- LSL 0.8.9 — `.env`, `requests` a manuály knihoven;
 - LSL 0.8.8 — bufferovaný stdin/stdout, rezerva haldy, nativní `split` a `Int`, oprava typů proměnných a diagnostika comprehension;
 - LSL 0.8.7 — `rang` jako hodnota a `List.find`;
 - LSL 0.8.6 — hromadné importy, editor `lsl --tui`, formátovaný manuál a `lsl about`;
@@ -97,8 +111,8 @@ Datovaný přehled změn je v
 ```
 
 `lsl` i `compiler/lslc` jsou LSL-generované statické PIE ELF soubory. Výstup
-compileru má ASLR, jediný RX LOAD, neproveditelný stack, žádný section header
-ani dynamic interpreter. Bez argumentů `lsl` na terminálu zobrazí `>>>`, sbírá
+compileru má ASLR, oddělené segmenty bez současného zápisu a spouštění,
+neproveditelný stack a žádný dynamický interpreter ani závislost na libc. Bez argumentů `lsl` na terminálu zobrazí `>>>`, sbírá
 jednu společnou translation unit do řádku `exit` a pak ji přeloží/spustí. Pipe
 skončí prostým EOF a nepotřebuje `exit`:
 
@@ -117,25 +131,64 @@ EOF
 
 Slovo `EOF` je libovolný marker shellu, nikoli součást LSL. Interaktivní TTY používá místo shellového markeru samostatný řádek `exit` nebo Ctrl-D.
 
-## Čistý build a test
+## Příprava zdrojů a test
+
+Pro překlad jsou potřeba GNU binutils (`as`, `ld`). Vývojová příprava
+používá navíc Git a Python 3; spuštění hotových LSL programů je nevyžaduje.
+`release.json` připíná konkrétní commity LuxIR a LSL-Web. **V Git checkoutu**
+spusťte přípravu, která potřebuje Git a síť, nebo lokální Git checkouty přes
+`--luxir-checkout` a `--web-checkout`:
 
 ```text
-./compiler/pure/lslc-direct compiler/pure/lslc_direct.lsl /tmp/lslc-next
-cmp compiler/pure/lslc-direct /tmp/lslc-next
-./tests/lsl-test              # plný suite (výchozí)
-./tests/lsl-test fast         # pozitivní conformance bez auditních kroků
-./tests/lsl-test fixed-point  # pouze bitová reprodukce compileru
+python3 tools/release/prepare_sources.py
+python3 tools/release/build_release.py
+./compiler/lslc compiler/pure/lslc_qbe.lsl /tmp/lslc-next ./build/luxir/luxir
+cmp compiler/lslc /tmp/lslc-next
+LUXIR_SOURCE="$PWD/build/dependencies/LuxIR/lsl/luxir.lsl" ./tests/lsl-test qbe ./compiler/lslc
+./tests/lsl-test qbe-fast ./compiler/lslc
+LUXIR_SOURCE="$PWD/build/dependencies/LuxIR/lsl/luxir.lsl" ./tests/lsl-test qbe-fixed-point ./compiler/lslc
 ```
 
-`lsl-test` bez shellu linkuje pozitivní corpus do jednoho agregovaného ELF se
-zachováním původních source spans; plný režim navíc spouští negative corpus,
-config a fixed-point kontrolu. Aktuální SHA-256 je v `PURE_LSL_PROGRESS.md`.
+`prepare_sources.py` exportuje připnuté offline Markdown manuály do
+`build/manual-source` a zpřístupní je přes `docs/developer_guides`. Soubor
+`SOURCE.json` obsahuje původ, commit a hashe kapitol. Web se nevyvíjí v tomto
+repozitáři. Backend se připravuje v `build/dependencies/LuxIR` a používá se
+jako `build/luxir/luxir`; produkční překlad nemá automatický fallback na C QBE.
+
+**Vydaný zdrojový archiv** už obsahuje připnuté zdroje LuxIR v
+`build/dependencies/LuxIR`, skutečný adresář offline manuálů
+`docs/developer_guides` včetně `SOURCE.json`, runtime `build/qbe/runtime.o`
+a backend `build/luxir/luxir` jako kopie kanonických artefaktů, bez symlinků.
+Neobsahuje Git metadata závislostí. `prepare_sources.py` zde nespouštějte;
+reprodukce se provede offline přímo:
+
+```text
+python3 tools/release/build_release.py
+```
+
+Plný runner agreguje pozitivní corpus se zachováním source spans a dále
+ověřuje diagnostiku, konfiguraci, runtime, instalované zdroje a fixed point.
+`LUXIR_SOURCE` zapíná také fixed point samostatného backendu. Kompletní
+release preflight přidává izolovanou migraci instalace, reinstalace,
+rollbacky a cílené nativní kontroly. Pro migrační gate navíc potřebuje
+funkční starší balík 0.8.9 s instalátorem a jeho sousedními nástroji;
+výchozí cesta je `~/.local/bin/lsl-install`, jinou lze předat výslovně:
+
+```text
+python3 tools/release/verify_release.py --luxir-source build/dependencies/LuxIR/lsl/luxir.lsl --old-installer /cesta/k/lsl-0.8.9/bin/lsl-install
+```
+
+Běžný self-host přes `build_release.py` ani původní runner starší
+nainstalované LSL nepotřebují. Pro offline preflight musí být starší balík
+předem dostupný; skript jej nestahuje.
+
+Podrobný vývojový postup je v [docs/compiler-development.md](docs/compiler-development.md).
 
 ## Instalace
 
 Při přechodu z 0.7.8 použijte jednou `lsl-install` z nového archivu: starý
 updater má chybu čtení tar hlavičky. Installer 0.8.3 zachová předchozí
-generaci a atomicky přepne instalaci. [Postup](docs/developer_guides/17-cli-and-packages.md#jednorázový-přechod-z-078).
+generaci a atomicky přepne instalaci. [Postup](https://git.lux-ai.cz/LuxAI/LSL-Web/src/branch/main/public/17-cli-and-packages.md#jednorázový-přechod-z-078).
 
 ```text
 ./compiler/pure/lsl-install /tmp/lsl-prefix
@@ -230,7 +283,7 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 - [Poznámky k vydání 0.8.6](docs/release-0.8.6.md)
 - [Poznámky k vydání 0.8.7](docs/release-0.8.7.md)
 - [Poznámky k vydání 0.8.8](docs/release-0.8.8.md)
-- [CLI, knihovny a terminálový manuál](docs/developer_guides/17-cli-and-packages.md)
+- [CLI, knihovny a terminálový manuál](https://git.lux-ai.cz/LuxAI/LSL-Web/src/branch/main/public/17-cli-and-packages.md)
 - [Poznámky k vydání 0.7.7](docs/release-0.7.7.md)
 - [Poznámky k vydání 0.7.6](docs/release-0.7.6.md)
 - [Poznámky k vydání 0.7.5](docs/release-0.7.5.md)
@@ -249,15 +302,20 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 - [Poznámky k lokálnímu vydání 0.6.2](docs/release-0.6.2.md)
 - [Poznámky k lokálnímu vydání 0.6.1](docs/release-0.6.1.md)
 - [Poznámky k lokálnímu vydání 0.6](docs/release-0.6.md)
-- [Datovaný changelog všech vydání](docs/developer_guides/CHANGELOG.md)
-- [Webová historie stabilních manuálů](docs/developer_guides/releases/index.html)
+- [Datovaný changelog všech vydání](https://git.lux-ai.cz/LuxAI/LSL-Web/src/branch/main/public/CHANGELOG.md)
+- [Webová historie stabilních manuálů](https://git.lux-ai.cz/LuxAI/LSL-Web/src/branch/main/public/releases/index.html)
 - [Linux target](docs/linux.md)
 
 ## Zdroj compileru
 
-Vstupní bod je `compiler/pure/lslc_direct.lsl`. Lexer, parser, linker, x86_64 encoder, ELF writer a runtime jsou moduly v `compiler/pure/`. Standardní moduly jsou v `stdlib/`.
+Výchozí vstup je `compiler/pure/lslc_qbe.lsl`, veřejná binárka `compiler/lslc`.
+Lexer, parser, modulový linker, sémantická analýza, LuxIR emitter a runtime jsou
+v `compiler/pure/`; standardní moduly v `stdlib/`. Samostatný LuxIR backend
+se připravuje z připnutého projektu. `lslc_direct.lsl` a původní strojový backend
+zůstávají pro kompatibilitu interních API a regresní testy.
 
-Známé zbývající mezery jsou vedené výhradně v `PURE_LSL_PROGRESS.md`; CUDA
+Známá omezení vydání a plán další práce jsou v `TODO.md` a výše uvedeném benchmarku;
+starší vývojové záznamy jsou v `PURE_LSL_PROGRESS.md`. CUDA
 LSL používá bundlovaný izolovaný NVIDIA CUDA Runtime worker s CPU fallbackem,
 nikoli přímý in-process CUDA driver ABI. FloatArray kernely jsou ručně
 vektorizované přes SSE2 a `thread_spawn`/`thread_join` poskytují sdílená

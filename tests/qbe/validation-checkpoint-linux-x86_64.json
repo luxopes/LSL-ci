@@ -1,0 +1,1012 @@
+{
+  "production_commit": "b3a48d8d7dcc6d49f7e6e953ee6d1e5d89a8fef0",
+  "scope": "Public callbacks, recorded validation errors, safe/try cleanup, rang loop semantics and nonnumeric builtins",
+  "full_language_conformance": false,
+  "full_backend_validation_complete": false,
+  "runtime_changes": false,
+  "known_remaining": [
+    "rang_value_conformance and comprehension_conformance fail on base8cf plus this checkpoint; rerun after coordinator numeric integration",
+    "Full native backend two-generation fixed point and QBE differential suite pending combined integration"
+  ],
+  "targeted": {
+    "complete": true,
+    "cases": [
+      {
+        "source": "tests/qbe/minimal.lsl",
+        "source_sha256": "ddd53969fc38cda90af92aeb987803974c34d3bdd9d63bd398d0f5f3d1ff2e93",
+        "expected": "",
+        "expected_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "runs": {
+          "v089": {
+            "build": {
+              "command": [
+                "/home/antonin/.local/bin/lslc",
+                "tests/qbe/minimal.lsl",
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/qbe-minimal-v089"
+              ],
+              "seconds": 0.5411509960031253,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "e530fa78bccfa044cdfe3369d142e9724fed3281a341ce8a8bbe55ca587c8fae",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/qbe-minimal-v089"
+              ],
+              "seconds": 0.002010363001318183,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "",
+              "stderr": ""
+            },
+            "passed": true
+          },
+          "candidate": {
+            "build": {
+              "command": [
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/frontend-generation-2",
+                "tests/qbe/minimal.lsl",
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/qbe-minimal-candidate",
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/backend-before"
+              ],
+              "seconds": 0.5413726120023057,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "c75468b32fddd65454764d4989059a0ad4e49be8dfcf77c77108bb39c1894af9",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/qbe-minimal-candidate"
+              ],
+              "seconds": 0.0033495779935037717,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "",
+              "stderr": ""
+            },
+            "passed": true
+          }
+        }
+      },
+      {
+        "source": "tests/qbe/validation_flow.lsl",
+        "source_sha256": "d27562b2856a7c18aad96badf93494a1e4daccea6932809e6c5f2f8c4811dd69",
+        "expected": "2 ['right', 'left']\nTrue ['right', 'left']\nTrue ['right', 'left']\nTrue\nTrue\nTrue\nTrue\n42 True\n3\n[0, 2, 4] 6\n[0, 3] 6\n7\n2\n",
+        "expected_sha256": "1257364f1e2da1b06a1ea2a4850f31912cc4b67377dfb3ec07ce3ed4a477c4ea",
+        "runs": {
+          "v089": {
+            "build": {
+              "command": [
+                "/home/antonin/.local/bin/lslc",
+                "tests/qbe/validation_flow.lsl",
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/qbe-validation_flow-v089"
+              ],
+              "seconds": 0.6652916870007175,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "7c953c0940bd5460b9154bb642f011ad5ce45288f3e48a7ef5876d30d165deb9",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/qbe-validation_flow-v089"
+              ],
+              "seconds": 0.0025963629959733225,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "2 ['right', 'left']\nTrue ['right', 'left']\nTrue ['right', 'left']\nTrue\nTrue\nTrue\nTrue\n42 True\n3\n[0, 2, 4] 6\n[0, 3] 6\n7\n2\n",
+              "stderr": ""
+            },
+            "passed": true
+          },
+          "candidate": {
+            "build": {
+              "command": [
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/frontend-generation-2",
+                "tests/qbe/validation_flow.lsl",
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/qbe-validation_flow-candidate",
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/backend-before"
+              ],
+              "seconds": 0.8652120210026624,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "c88f4f016d64a7b6d99ad0cf9e3d8753dbd76cc55cfcefca827f89b71a36ab61",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/qbe-validation_flow-candidate"
+              ],
+              "seconds": 0.0024214669974753633,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "2 ['right', 'left']\nTrue ['right', 'left']\nTrue ['right', 'left']\nTrue\nTrue\nTrue\nTrue\n42 True\n3\n[0, 2, 4] 6\n[0, 3] 6\n7\n2\n",
+              "stderr": ""
+            },
+            "passed": true
+          }
+        }
+      },
+      {
+        "source": "tests/safe_recovery_conformance.lsl",
+        "source_sha256": "70c3c46aa6f256f08ad214621bbca32180597b43c97cbff49324c9e2cba1401b",
+        "expected": "safe name/type/attribute errors, propagation and stack recovery passed\n",
+        "expected_sha256": "0527e59c067ada5e78d735881dd93cefec5fc17cd185a4a4a0ab3dea4e3f82cc",
+        "runs": {
+          "v089": {
+            "build": {
+              "command": [
+                "/home/antonin/.local/bin/lslc",
+                "tests/safe_recovery_conformance.lsl",
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/safe_recovery_conformance-v089"
+              ],
+              "seconds": 0.6787282509976649,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "a2d4c64692a2c96008d548980753ef503d7e91cbbea7ad8bca9430ae66ff41a0",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/safe_recovery_conformance-v089"
+              ],
+              "seconds": 0.025593637001293246,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "safe name/type/attribute errors, propagation and stack recovery passed\n",
+              "stderr": ""
+            },
+            "passed": true
+          },
+          "candidate": {
+            "build": {
+              "command": [
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/frontend-generation-2",
+                "tests/safe_recovery_conformance.lsl",
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/safe_recovery_conformance-candidate",
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/backend-before"
+              ],
+              "seconds": 0.7888354480019188,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "ee1d55294f04cdbd19c6436ac746a007aa84b78c1e00971db57f5a733677b131",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/safe_recovery_conformance-candidate"
+              ],
+              "seconds": 0.008860984002240002,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "safe name/type/attribute errors, propagation and stack recovery passed\n",
+              "stderr": ""
+            },
+            "passed": true
+          }
+        }
+      },
+      {
+        "source": "tests/tagged_function_conformance.lsl",
+        "source_sha256": "3ba04a159d3658af2bf8e066ce8a0f764075ccb1b5cf3252801bf3332e68db65",
+        "expected": "Function 10 True <Function>\n5\nFunction 10 9\nFunction 10 13 True\n17\nBool 4 False\nNone 5 None\nFunction 10 21\nInt 9 0\nString 1 text\n",
+        "expected_sha256": "6d369f12cc493c271993d6c4624c64eb527deb883e3d6e4bfa238f8c43c24865",
+        "runs": {
+          "v089": {
+            "build": {
+              "command": [
+                "/home/antonin/.local/bin/lslc",
+                "tests/tagged_function_conformance.lsl",
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/tagged_function_conformance-v089"
+              ],
+              "seconds": 0.5642855609985418,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "96956ba1c83659a2eb86d7ebbb66b114cfe7fad1390775182e8cdaa9e40fd0f8",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/tagged_function_conformance-v089"
+              ],
+              "seconds": 0.002269406002596952,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "Function 10 True <Function>\n5\nFunction 10 9\nFunction 10 13 True\n17\nBool 4 False\nNone 5 None\nFunction 10 21\nInt 9 0\nString 1 text\n",
+              "stderr": ""
+            },
+            "passed": true
+          },
+          "candidate": {
+            "build": {
+              "command": [
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/frontend-generation-2",
+                "tests/tagged_function_conformance.lsl",
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/tagged_function_conformance-candidate",
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/backend-before"
+              ],
+              "seconds": 0.7255711649995646,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "fded462c91f6ca6ffefadcf202ca64e0c8770fa55b8baa1b8d5d7b40875b1023",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/tagged_function_conformance-candidate"
+              ],
+              "seconds": 0.002561745001003146,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "Function 10 True <Function>\n5\nFunction 10 9\nFunction 10 13 True\n17\nBool 4 False\nNone 5 None\nFunction 10 21\nInt 9 0\nString 1 text\n",
+              "stderr": ""
+            },
+            "passed": true
+          }
+        }
+      },
+      {
+        "source": "tests/rang_dynamic_conformance.lsl",
+        "source_sha256": "56ce12d3e7fb1306cf26dce8ebea8c7614f8b4a453545dd74bbcc99cf9d25029",
+        "expected": "[1, 3, 5, 7]\n[8, 5, 2, -1]\n[0, 3, 6]\nValueError: rang step cannot be zero at tests/rang_dynamic_conformance.lsl:26\nValueError: rang step cannot be zero at tests/rang_dynamic_conformance.lsl:17\nTypeError: rang step must be an Int\n",
+        "expected_sha256": "593f73df0a390f1478939e851f3d701367d4208b524b0676a464050118db0701",
+        "runs": {
+          "v089": {
+            "build": {
+              "command": [
+                "/home/antonin/.local/bin/lslc",
+                "tests/rang_dynamic_conformance.lsl",
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/rang_dynamic_conformance-v089"
+              ],
+              "seconds": 0.6524558589953813,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "63e2909d2c1a23e3f3ad9397c7b860d20213fb83c2c2ad7c8b930fa778847d0f",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/rang_dynamic_conformance-v089"
+              ],
+              "seconds": 0.0020008740029879846,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "[1, 3, 5, 7]\n[8, 5, 2, -1]\n[0, 3, 6]\nValueError: rang step cannot be zero at tests/rang_dynamic_conformance.lsl:26\nValueError: rang step cannot be zero at tests/rang_dynamic_conformance.lsl:17\nTypeError: rang step must be an Int\n",
+              "stderr": ""
+            },
+            "passed": true
+          },
+          "candidate": {
+            "build": {
+              "command": [
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/frontend-generation-2",
+                "tests/rang_dynamic_conformance.lsl",
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/rang_dynamic_conformance-candidate",
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/backend-before"
+              ],
+              "seconds": 0.7819407119968673,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "bd05be62b6b4d44f132a1466c58c43740e6a0c9ee584d65646f5ab24dd008af8",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/rang_dynamic_conformance-candidate"
+              ],
+              "seconds": 0.0024254119998659007,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "[1, 3, 5, 7]\n[8, 5, 2, -1]\n[0, 3, 6]\nValueError: rang step cannot be zero at tests/rang_dynamic_conformance.lsl:26\nValueError: rang step cannot be zero at tests/rang_dynamic_conformance.lsl:17\nTypeError: rang step must be an Int\n",
+              "stderr": ""
+            },
+            "passed": true
+          }
+        }
+      },
+      {
+        "source": "tests/last_error_conformance.lsl",
+        "source_sha256": "bc6504524d789599de9313fcada194a9bf078de240838d0c2f975b0663eda8f6",
+        "expected": "None\ninitial error: None\nNone\nlast_error types, recovery, nesting, control flow and threads passed\n",
+        "expected_sha256": "66811015699a4eb177d0175806f4764e40d0b54b4770e51fc59cc5414badd621",
+        "runs": {
+          "v089": {
+            "build": {
+              "command": [
+                "/home/antonin/.local/bin/lslc",
+                "tests/last_error_conformance.lsl",
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/last_error_conformance-v089"
+              ],
+              "seconds": 0.5945458589994814,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "38123b6739f474dc4d9c30495f906b89c56dcf2cc9849eb7bc279dda58d17ff7",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/last_error_conformance-v089"
+              ],
+              "seconds": 0.002557317005994264,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "None\ninitial error: None\nNone\nlast_error types, recovery, nesting, control flow and threads passed\n",
+              "stderr": ""
+            },
+            "passed": true
+          },
+          "candidate": {
+            "build": {
+              "command": [
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/frontend-generation-2",
+                "tests/last_error_conformance.lsl",
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/last_error_conformance-candidate",
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/backend-before"
+              ],
+              "seconds": 0.7423547790021985,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "025962dc79465c0d936a386bddc99e33effefa76e9a7bac88fba6b8cbf55b8e1",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/last_error_conformance-candidate"
+              ],
+              "seconds": 0.002608608003356494,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "None\ninitial error: None\nNone\nlast_error types, recovery, nesting, control flow and threads passed\n",
+              "stderr": ""
+            },
+            "passed": true
+          }
+        }
+      },
+      {
+        "source": "tests/dynamic_builtin_boundary_conformance.lsl",
+        "source_sha256": "d1b77c4a8a1b34b651c88891d138c4a445f127159ecd0972e172a4bb8b7ddb37",
+        "expected": "A 65 String 6\nFalse\n[1, -2] [1.5] [65] ('a', 'b')\n![1, -2] ![1.5] {'a': 1}\nTypeError: numeric operand required\nTypeError: expected a String\nTypeError: numeric operand required\nTypeError: numeric operand required\nTypeError: expected a String\nTypeError: expected a String\nTypeError: expected a String\nTypeError: operation requires a ByteArray or List\nTypeError: expected a String\nTypeError: method requires a List receiver\nTypeError: numeric operand required\nTypeError: numeric operand required\nTypeError: method requires an indexable sequence\nTypeError: RealArray accepts only Int or Float values\nTypeError: method requires an indexable sequence\nTypeError: method requires an indexable sequence\n",
+        "expected_sha256": "390ce00616331b1ef47bb1b6f745c59b28a56077eb816674b47d73b939ae14e7",
+        "runs": {
+          "v089": {
+            "build": {
+              "command": [
+                "/home/antonin/.local/bin/lslc",
+                "tests/dynamic_builtin_boundary_conformance.lsl",
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/dynamic_builtin_boundary_conformance-v089"
+              ],
+              "seconds": 0.5867596690004575,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "20017e68312d2247f7c7388afbbdbfd32521c495ccb9f25e145942138c1421f0",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/dynamic_builtin_boundary_conformance-v089"
+              ],
+              "seconds": 0.002440313000988681,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "A 65 String 6\nFalse\n[1, -2] [1.5] [65] ('a', 'b')\n![1, -2] ![1.5] {'a': 1}\nTypeError: numeric operand required\nTypeError: expected a String\nTypeError: numeric operand required\nTypeError: numeric operand required\nTypeError: expected a String\nTypeError: expected a String\nTypeError: expected a String\nTypeError: operation requires a ByteArray or List\nTypeError: expected a String\nTypeError: method requires a List receiver\nTypeError: numeric operand required\nTypeError: numeric operand required\nTypeError: method requires an indexable sequence\nTypeError: RealArray accepts only Int or Float values\nTypeError: method requires an indexable sequence\nTypeError: method requires an indexable sequence\n",
+              "stderr": ""
+            },
+            "passed": true
+          },
+          "candidate": {
+            "build": {
+              "command": [
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/frontend-generation-2",
+                "tests/dynamic_builtin_boundary_conformance.lsl",
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/dynamic_builtin_boundary_conformance-candidate",
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/backend-before"
+              ],
+              "seconds": 0.8385021409994806,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "17de99d9ce5f1475c0c2e5b5d99066b040b810e08a953932ebde563a145b2264",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/dynamic_builtin_boundary_conformance-candidate"
+              ],
+              "seconds": 0.002444154000841081,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "A 65 String 6\nFalse\n[1, -2] [1.5] [65] ('a', 'b')\n![1, -2] ![1.5] {'a': 1}\nTypeError: numeric operand required\nTypeError: expected a String\nTypeError: numeric operand required\nTypeError: numeric operand required\nTypeError: expected a String\nTypeError: expected a String\nTypeError: expected a String\nTypeError: operation requires a ByteArray or List\nTypeError: expected a String\nTypeError: method requires a List receiver\nTypeError: numeric operand required\nTypeError: numeric operand required\nTypeError: method requires an indexable sequence\nTypeError: RealArray accepts only Int or Float values\nTypeError: method requires an indexable sequence\nTypeError: method requires an indexable sequence\n",
+              "stderr": ""
+            },
+            "passed": true
+          }
+        }
+      },
+      {
+        "source": "tests/minmax_help_conformance.lsl",
+        "source_sha256": "db35fee3bb112265325f73cbfbaa46f3e2340cbc8af8cb484ed8c5366b4aab3d",
+        "expected": "7\n1\n8\n3\n5\n6 3 1\nsurvived empty min\nLux Simple Lang (LSL) 0.8.9\nUse help(\"TOPIC\") for details; lsl man opens the full offline manual.\ntopics: Bool ByteArray Dictionary Error Float FloatArray Int IntArray List RealArray String Tuple about abs ai appendfile arg arg_count bigint break capture check chr class clock compile config continue ctype cuda dedup del exit fd for function gc help httpserver if input install json last_error len list load loop man math max min monotonic ord origin os print printl process random rang range readbytes readfile requests return run safe sandbox search server set sorted sqrt sum system tensor time try tui type unsafe update version while writebytes writefile\n",
+        "expected_sha256": "c7c7c716aed4f7937a2d9c8a8e11c82b7f4882493da83b02c418cb93a31a4101",
+        "runs": {
+          "v089": {
+            "build": {
+              "command": [
+                "/home/antonin/.local/bin/lslc",
+                "tests/minmax_help_conformance.lsl",
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/minmax_help_conformance-v089"
+              ],
+              "seconds": 0.5665297220039065,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "847b81416b85de8e42619efdfe9ef291dadab1df993023a89b960398efe60bb6",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/minmax_help_conformance-v089"
+              ],
+              "seconds": 0.004713529000582639,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "7\n1\n8\n3\n5\n6 3 1\nsurvived empty min\nLux Simple Lang (LSL) 0.8.9\nUse help(\"TOPIC\") for details; lsl man opens the full offline manual.\ntopics: Bool ByteArray Dictionary Error Float FloatArray Int IntArray List RealArray String Tuple about abs ai appendfile arg arg_count bigint break capture check chr class clock compile config continue ctype cuda dedup del exit fd for function gc help httpserver if input install json last_error len list load loop man math max min monotonic ord origin os print printl process random rang range readbytes readfile requests return run safe sandbox search server set sorted sqrt sum system tensor time try tui type unsafe update version while writebytes writefile\n",
+              "stderr": ""
+            },
+            "passed": true
+          },
+          "candidate": {
+            "build": {
+              "command": [
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/frontend-generation-2",
+                "tests/minmax_help_conformance.lsl",
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/minmax_help_conformance-candidate",
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/backend-before"
+              ],
+              "seconds": 0.9439834019940463,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "751674942a8c6bc1c697ac09508dfff3eb075b53a98767f873bbc82d1e7bd416",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/minmax_help_conformance-candidate"
+              ],
+              "seconds": 0.003110201003437396,
+              "returncode": 0,
+              "timed_out": false,
+              "stdout": "7\n1\n8\n3\n5\n6 3 1\nsurvived empty min\nLux Simple Lang (LSL) 0.8.9\nUse help(\"TOPIC\") for details; lsl man opens the full offline manual.\ntopics: Bool ByteArray Dictionary Error Float FloatArray Int IntArray List RealArray String Tuple about abs ai appendfile arg arg_count bigint break capture check chr class clock compile config continue ctype cuda dedup del exit fd for function gc help httpserver if input install json last_error len list load loop man math max min monotonic ord origin os print printl process random rang range readbytes readfile requests return run safe sandbox search server set sorted sqrt sum system tensor time try tui type unsafe update version while writebytes writefile\n",
+              "stderr": ""
+            },
+            "passed": true
+          }
+        }
+      }
+    ],
+    "self_host": [
+      {
+        "command": [
+          "/home/antonin/LSL-QBE-validation/build/qbe-validation/frontend-candidate3",
+          "compiler/pure/lslc_qbe.lsl",
+          "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/frontend-generation-1",
+          "/home/antonin/LSL-QBE-validation/build/qbe-validation/backend-before"
+        ],
+        "seconds": 7.385238085997116,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": "",
+        "binary_sha256": "6b0140b5e29b577c6d071f40374354c9da05cd7442d062bd0e2cda0e42c3bb18"
+      },
+      {
+        "command": [
+          "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/frontend-generation-1",
+          "compiler/pure/lslc_qbe.lsl",
+          "/home/antonin/LSL-QBE-validation/build/qbe-validation/checkpoint/frontend-generation-2",
+          "/home/antonin/LSL-QBE-validation/build/qbe-validation/backend-before"
+        ],
+        "seconds": 7.065255281995633,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": "",
+        "binary_sha256": "6b0140b5e29b577c6d071f40374354c9da05cd7442d062bd0e2cda0e42c3bb18"
+      }
+    ],
+    "inputs": {
+      "/home/antonin/.local/bin/lslc": "f235b42d4998474c1bfee7eb02f17625bbc824f647f9ba33bdef8c20b0ff8696",
+      "/home/antonin/LSL-QBE-validation/build/qbe-validation/frontend-candidate3": "abdfe2b6ef8c8d3ec439f09c51646da9c7fade4897498fa32864c2d5ee8f4c8f",
+      "/home/antonin/LSL-QBE-validation/build/qbe-validation/backend-before": "7e3d6233d2e8242a32909c5bcdb8468ce19164c376fe4689aef092476f4f6c18",
+      "/home/antonin/LSL-QBE-validation/build/qbe/runtime.o": "59e4dc4f36ea755a74eb00d032f7d972944cf1f15e182378aa60ce8ed79654a5",
+      "/home/antonin/LSL-QBE-validation/compiler/pure/qbe_emit.lsl": "51d41bfdd199df5590c395d6173f6a2f706d7a1f74b1bc1dd4c21e1794b3d8fc",
+      "/home/antonin/LSL-QBE-validation/compiler/pure/semantic.lsl": "c50e683ec43699d1c9f7d19cebce5b9c30c335f2fa426ac65bb5c930dd463555"
+    },
+    "fixed_point": true,
+    "inputs_unchanged": true
+  },
+  "diagnostics": {
+    "initial_bad_bootstrap": {
+      "complete": true,
+      "runs": [
+        {
+          "command": [
+            "build/qbe-validation/frontend-before",
+            "compiler/pure/lslc_qbe.lsl",
+            "build/qbe-validation/frontend-candidate",
+            "build/qbe-validation/backend-before"
+          ],
+          "seconds": 7.376345741999103,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "build/qbe-validation/frontend-candidate",
+            "tests/safe_recovery_conformance.lsl",
+            "build/qbe-validation/safe_recovery_conformance",
+            "build/qbe-validation/backend-before"
+          ],
+          "seconds": 0.15548596800363157,
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "LSL runtime error: TypeError: sequence index must be Int\n"
+        },
+        {
+          "command": [
+            "build/qbe-validation/frontend-candidate",
+            "tests/tagged_function_conformance.lsl",
+            "build/qbe-validation/tagged_function_conformance",
+            "build/qbe-validation/backend-before"
+          ],
+          "seconds": 0.15074071699928027,
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "LSL runtime error: TypeError: sequence index must be Int\n"
+        },
+        {
+          "command": [
+            "build/qbe-validation/frontend-candidate",
+            "tests/rang_value_conformance.lsl",
+            "build/qbe-validation/rang_value_conformance",
+            "build/qbe-validation/backend-before"
+          ],
+          "seconds": 0.1501891079969937,
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "LSL runtime error: TypeError: sequence index must be Int\n"
+        },
+        {
+          "command": [
+            "build/qbe-validation/frontend-candidate",
+            "tests/rang_dynamic_conformance.lsl",
+            "build/qbe-validation/rang_dynamic_conformance",
+            "build/qbe-validation/backend-before"
+          ],
+          "seconds": 0.15603793499758467,
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "LSL runtime error: TypeError: sequence index must be Int\n"
+        },
+        {
+          "command": [
+            "build/qbe-validation/frontend-candidate",
+            "tests/last_error_conformance.lsl",
+            "build/qbe-validation/last_error_conformance",
+            "build/qbe-validation/backend-before"
+          ],
+          "seconds": 0.15419938800187083,
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "LSL runtime error: TypeError: sequence index must be Int\n"
+        },
+        {
+          "command": [
+            "build/qbe-validation/frontend-candidate",
+            "tests/comprehension_conformance.lsl",
+            "build/qbe-validation/comprehension_conformance",
+            "build/qbe-validation/backend-before"
+          ],
+          "seconds": 0.15360282600158826,
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "LSL runtime error: TypeError: sequence index must be Int\n"
+        },
+        {
+          "command": [
+            "build/qbe-validation/frontend-candidate",
+            "tests/dynamic_builtin_boundary_conformance.lsl",
+            "build/qbe-validation/dynamic_builtin_boundary_conformance",
+            "build/qbe-validation/backend-before"
+          ],
+          "seconds": 0.15785075799794868,
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "LSL runtime error: TypeError: sequence index must be Int\n"
+        },
+        {
+          "command": [
+            "build/qbe-validation/frontend-candidate",
+            "tests/minmax_help_conformance.lsl",
+            "build/qbe-validation/minmax_help_conformance",
+            "build/qbe-validation/backend-before"
+          ],
+          "seconds": 0.14737570899887942,
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "LSL runtime error: TypeError: sequence index must be Int\n"
+        }
+      ],
+      "hashes": {
+        "build/qbe-validation/frontend-before": "496035382381cd770503524753a8a3c0d35ee2a39b967e6d1ddc917635cb271c",
+        "build/qbe-validation/backend-before": "7e3d6233d2e8242a32909c5bcdb8468ce19164c376fe4689aef092476f4f6c18",
+        "build/qbe/runtime.o": "59e4dc4f36ea755a74eb00d032f7d972944cf1f15e182378aa60ce8ed79654a5",
+        "compiler/pure/qbe_emit.lsl": "278f0cc5570d0d535c519b130b7095084a176b7750ef6759f751fcc0ec97b1f6"
+      }
+    },
+    "second_bad_bootstrap": [
+      {
+        "command": [
+          "build/qbe-validation/frontend-before",
+          "compiler/pure/lslc_qbe.lsl",
+          "build/qbe-validation/frontend-candidate2",
+          "build/qbe-validation/backend-before"
+        ],
+        "seconds": 7.294039948996215,
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "build/qbe-validation/frontend-candidate2",
+          "tests/qbe/minimal.lsl",
+          "build/qbe-validation/qbe-minimal-2",
+          "build/qbe-validation/backend-before"
+        ],
+        "seconds": 0.14898990499932552,
+        "returncode": 1,
+        "stdout": "",
+        "stderr": "LSL runtime error: TypeError: sequence index must be Int\n"
+      },
+      {
+        "command": [
+          "build/qbe-validation/frontend-candidate2",
+          "tests/safe_recovery_conformance.lsl",
+          "build/qbe-validation/safe_recovery_conformance-2",
+          "build/qbe-validation/backend-before"
+        ],
+        "seconds": 0.16159155900095357,
+        "returncode": 1,
+        "stdout": "",
+        "stderr": "LSL runtime error: TypeError: sequence index must be Int\n"
+      },
+      {
+        "command": [
+          "build/qbe-validation/frontend-candidate2",
+          "tests/tagged_function_conformance.lsl",
+          "build/qbe-validation/tagged_function_conformance-2",
+          "build/qbe-validation/backend-before"
+        ],
+        "seconds": 0.15125825699942652,
+        "returncode": 1,
+        "stdout": "",
+        "stderr": "LSL runtime error: TypeError: sequence index must be Int\n"
+      },
+      {
+        "command": [
+          "build/qbe-validation/frontend-candidate2",
+          "tests/rang_value_conformance.lsl",
+          "build/qbe-validation/rang_value_conformance-2",
+          "build/qbe-validation/backend-before"
+        ],
+        "seconds": 0.14977434799948242,
+        "returncode": 1,
+        "stdout": "",
+        "stderr": "LSL runtime error: TypeError: sequence index must be Int\n"
+      },
+      {
+        "command": [
+          "build/qbe-validation/frontend-candidate2",
+          "tests/rang_dynamic_conformance.lsl",
+          "build/qbe-validation/rang_dynamic_conformance-2",
+          "build/qbe-validation/backend-before"
+        ],
+        "seconds": 0.15140289499686332,
+        "returncode": 1,
+        "stdout": "",
+        "stderr": "LSL runtime error: TypeError: sequence index must be Int\n"
+      },
+      {
+        "command": [
+          "build/qbe-validation/frontend-candidate2",
+          "tests/last_error_conformance.lsl",
+          "build/qbe-validation/last_error_conformance-2",
+          "build/qbe-validation/backend-before"
+        ],
+        "seconds": 0.15073905600002035,
+        "returncode": 1,
+        "stdout": "",
+        "stderr": "LSL runtime error: TypeError: sequence index must be Int\n"
+      },
+      {
+        "command": [
+          "build/qbe-validation/frontend-candidate2",
+          "tests/comprehension_conformance.lsl",
+          "build/qbe-validation/comprehension_conformance-2",
+          "build/qbe-validation/backend-before"
+        ],
+        "seconds": 0.1491543800002546,
+        "returncode": 1,
+        "stdout": "",
+        "stderr": "LSL runtime error: TypeError: sequence index must be Int\n"
+      },
+      {
+        "command": [
+          "build/qbe-validation/frontend-candidate2",
+          "tests/dynamic_builtin_boundary_conformance.lsl",
+          "build/qbe-validation/dynamic_builtin_boundary_conformance-2",
+          "build/qbe-validation/backend-before"
+        ],
+        "seconds": 0.15792471099848626,
+        "returncode": 1,
+        "stdout": "",
+        "stderr": "LSL runtime error: TypeError: sequence index must be Int\n"
+      },
+      {
+        "command": [
+          "build/qbe-validation/frontend-candidate2",
+          "tests/minmax_help_conformance.lsl",
+          "build/qbe-validation/minmax_help_conformance-2",
+          "build/qbe-validation/backend-before"
+        ],
+        "seconds": 0.15190237799833994,
+        "returncode": 1,
+        "stdout": "",
+        "stderr": "LSL runtime error: TypeError: sequence index must be Int\n"
+      }
+    ],
+    "corrected_bootstrap_initial_probes": [
+      {
+        "command": [
+          "build/qbe-validation/frontend-verified-seed",
+          "compiler/pure/lslc_qbe.lsl",
+          "build/qbe-validation/frontend-candidate3",
+          "build/qbe-validation/backend-before"
+        ],
+        "seconds": 7.0557086629996775,
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "build/qbe-validation/frontend-candidate3",
+          "tests/qbe/minimal.lsl",
+          "build/qbe-validation/qbe-minimal-3",
+          "build/qbe-validation/backend-before"
+        ],
+        "seconds": 0.8369424099946627,
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "build/qbe-validation/qbe-minimal-3"
+        ],
+        "seconds": 0.0017297189988312311,
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "build/qbe-validation/frontend-candidate3",
+          "tests/qbe/validation_flow.lsl",
+          "build/qbe-validation/qbe-validation_flow-3",
+          "build/qbe-validation/backend-before"
+        ],
+        "seconds": 0.7657758459972683,
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "build/qbe-validation/qbe-validation_flow-3"
+        ],
+        "seconds": 0.0024473770026816055,
+        "returncode": 0,
+        "stdout": "2 ['right', 'left']\nTrue ['right', 'left']\nTrue ['right', 'left']\nTrue\nTrue\nTrue\nTrue\n42 True\n3\n[0, 2, 4] 6\n[0, 3] 6\n7\n2\n",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "build/qbe-validation/frontend-candidate3",
+          "tests/safe_recovery_conformance.lsl",
+          "build/qbe-validation/safe_recovery_conformance-3",
+          "build/qbe-validation/backend-before"
+        ],
+        "seconds": 0.7405807609975454,
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "build/qbe-validation/safe_recovery_conformance-3"
+        ],
+        "seconds": 0.009573069000907708,
+        "returncode": 0,
+        "stdout": "safe name/type/attribute errors, propagation and stack recovery passed\n",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "build/qbe-validation/frontend-candidate3",
+          "tests/tagged_function_conformance.lsl",
+          "build/qbe-validation/tagged_function_conformance-3",
+          "build/qbe-validation/backend-before"
+        ],
+        "seconds": 0.6658907020027982,
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "build/qbe-validation/tagged_function_conformance-3"
+        ],
+        "seconds": 0.002595122998172883,
+        "returncode": 0,
+        "stdout": "Function 10 True <Function>\n5\nFunction 10 9\nFunction 10 13 True\n17\nBool 4 False\nNone 5 None\nFunction 10 21\nInt 9 0\nString 1 text\n",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "build/qbe-validation/frontend-candidate3",
+          "tests/rang_value_conformance.lsl",
+          "build/qbe-validation/rang_value_conformance-3",
+          "build/qbe-validation/backend-before"
+        ],
+        "seconds": 0.7574052400013898,
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "build/qbe-validation/rang_value_conformance-3"
+        ],
+        "seconds": 0.002428635001706425,
+        "returncode": 1,
+        "stdout": "",
+        "stderr": "LSL runtime error: TypeError: numeric operands required\n"
+      },
+      {
+        "command": [
+          "build/qbe-validation/frontend-candidate3",
+          "tests/rang_dynamic_conformance.lsl",
+          "build/qbe-validation/rang_dynamic_conformance-3",
+          "build/qbe-validation/backend-before"
+        ],
+        "seconds": 0.7226161560029141,
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "build/qbe-validation/rang_dynamic_conformance-3"
+        ],
+        "seconds": 0.0025612829995225184,
+        "returncode": 0,
+        "stdout": "[1, 3, 5, 7]\n[8, 5, 2, -1]\n[0, 3, 6]\nValueError: rang step cannot be zero at tests/rang_dynamic_conformance.lsl:26\nValueError: rang step cannot be zero at tests/rang_dynamic_conformance.lsl:17\nTypeError: rang step must be an Int\n",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "build/qbe-validation/frontend-candidate3",
+          "tests/last_error_conformance.lsl",
+          "build/qbe-validation/last_error_conformance-3",
+          "build/qbe-validation/backend-before"
+        ],
+        "seconds": 0.6960578950020135,
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "build/qbe-validation/last_error_conformance-3"
+        ],
+        "seconds": 0.005216092999035027,
+        "returncode": 0,
+        "stdout": "0\ninitial error: 0\n0\nlast_error types, recovery, nesting, control flow and threads passed\n",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "build/qbe-validation/frontend-candidate3",
+          "tests/comprehension_conformance.lsl",
+          "build/qbe-validation/comprehension_conformance-3",
+          "build/qbe-validation/backend-before"
+        ],
+        "seconds": 0.7836335039974074,
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "build/qbe-validation/comprehension_conformance-3"
+        ],
+        "seconds": 0.001979893000680022,
+        "returncode": 1,
+        "stdout": "",
+        "stderr": "LSL runtime error: TypeError: Int expects Int, Float, String, or Bool\n"
+      },
+      {
+        "command": [
+          "build/qbe-validation/frontend-candidate3",
+          "tests/dynamic_builtin_boundary_conformance.lsl",
+          "build/qbe-validation/dynamic_builtin_boundary_conformance-3",
+          "build/qbe-validation/backend-before"
+        ],
+        "seconds": 0.7657364629994845,
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "build/qbe-validation/dynamic_builtin_boundary_conformance-3"
+        ],
+        "seconds": 0.002167581995308865,
+        "returncode": 0,
+        "stdout": "A 65 String 6\nFalse\n[1, -2] [1.5] [65] ('a', 'b')\n![1, -2] ![1.5] {'a': 1}\nTypeError: numeric operand required\nTypeError: expected a String\nTypeError: numeric operand required\nTypeError: numeric operand required\nTypeError: expected a String\nTypeError: expected a String\nTypeError: expected a String\nTypeError: operation requires a ByteArray or List\nTypeError: expected a String\nTypeError: method requires a List receiver\nTypeError: numeric operand required\nTypeError: numeric operand required\nTypeError: method requires an indexable sequence\nTypeError: RealArray accepts only Int or Float values\nTypeError: method requires an indexable sequence\nTypeError: method requires an indexable sequence\n",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "build/qbe-validation/frontend-candidate3",
+          "tests/minmax_help_conformance.lsl",
+          "build/qbe-validation/minmax_help_conformance-3",
+          "build/qbe-validation/backend-before"
+        ],
+        "seconds": 0.9632278670032974,
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "build/qbe-validation/minmax_help_conformance-3"
+        ],
+        "seconds": 0.002855810002074577,
+        "returncode": 0,
+        "stdout": "7\n1\n8\n3\n5\n6 3 1\nsurvived empty min\nLux Simple Lang (LSL) 0.8.9\nUse help(\"TOPIC\") for details; lsl man opens the full offline manual.\ntopics: Bool ByteArray Dictionary Error Float FloatArray Int IntArray List RealArray String Tuple about abs ai appendfile arg arg_count bigint break capture check chr class clock compile config continue ctype cuda dedup del exit fd for function gc help httpserver if input install json last_error len list load loop man math max min monotonic ord origin os print printl process random rang range readbytes readfile requests return run safe sandbox search server set sorted sqrt sum system tensor time try tui type unsafe update version while writebytes writefile\n",
+        "stderr": ""
+      }
+    ],
+    "root_cause": "Internal Any for-loop used public runtime_iter_get with raw index0. runtime59e classifies raw0asNone; compiler path annotation raised sequence-index TypeError. Mirroring read_at internal dispatch fixes it. Bootstrap must start from pre-collections verified seed489d46b5, not codegen emitted by affected combined1."
+  }
+}

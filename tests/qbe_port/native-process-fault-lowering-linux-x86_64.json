@@ -1,0 +1,109 @@
+{
+  "scope": "Maintained process descriptor fault injection on native QBE and installed0.8.9",
+  "correctness_only": true,
+  "commands": [
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-release-audit/compiler/pure/lslc-qbe",
+        "--unsafe",
+        "compiler/pure/lslc_qbe.lsl",
+        "/home/antonin/LSL-QBE-release-audit/build/qbe-audit/fd-fault/lslc"
+      ],
+      "seconds": 8.329265134998423,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "compile native compiler with fd fault lowering"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-release-audit/build/qbe-audit/fd-fault/lslc",
+        "--unsafe",
+        "tests/process_fault_conformance.lsl",
+        "/home/antonin/LSL-QBE-release-audit/build/qbe-audit/fd-fault/native"
+      ],
+      "seconds": 0.6917253069987055,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "compile native"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-release-audit/build/qbe-audit/fd-fault/native",
+        "0",
+        "/home/antonin/LSL-QBE-release-audit/build/qbe-audit/fd-fault"
+      ],
+      "seconds": 0.0036900449995300733,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "0 ProcessError: capture setup failed\n126 True\n",
+      "stderr": "",
+      "name": "native slots 0"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-release-audit/build/qbe-audit/fd-fault/native",
+        "2",
+        "/home/antonin/LSL-QBE-release-audit/build/qbe-audit/fd-fault"
+      ],
+      "seconds": 0.0032403879959019832,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "2 ProcessError: capture setup failed\n126 True\n",
+      "stderr": "",
+      "name": "native slots 2"
+    },
+    {
+      "command": [
+        "/home/antonin/.local/bin/lslc",
+        "tests/process_fault_conformance.lsl",
+        "/home/antonin/LSL-QBE-release-audit/build/qbe-audit/fd-fault/old0.8.9"
+      ],
+      "seconds": 0.5954754509948543,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "compile old0.8.9"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-release-audit/build/qbe-audit/fd-fault/old0.8.9",
+        "0",
+        "/home/antonin/LSL-QBE-release-audit/build/qbe-audit/fd-fault"
+      ],
+      "seconds": 0.002017402002820745,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "0 ProcessError: capture setup failed\n126 True\n",
+      "stderr": "",
+      "name": "old0.8.9 slots 0"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-release-audit/build/qbe-audit/fd-fault/old0.8.9",
+        "2",
+        "/home/antonin/LSL-QBE-release-audit/build/qbe-audit/fd-fault"
+      ],
+      "seconds": 0.006017003004672006,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "2 ProcessError: capture setup failed\n126 True\n",
+      "stderr": "",
+      "name": "old0.8.9 slots 2"
+    }
+  ],
+  "all_pass": true,
+  "candidate_sha256": "6c4bc0c57f10f3d8c9b46ea276a9460a1f151d76291f788f325b986c998970ab",
+  "source_sha256": {
+    "compiler/pure/qbe_emit.lsl": "6dcb2f34bf1476db852be0f3d2d5322e8e2eb40ac23049083f8eb34cfe63329b",
+    "tests/process_fault_conformance.lsl": "7f0671e082ca15918a273229d5950f5379d2a5f30b3a398b051ad34337eacce5",
+    "tests/process_fault_pipe.out": "b0feadb8360a9bec3f9d395d474db66913d0f11f9fbb031bf045f22bda626498",
+    "tests/process_fault_memfd.out": "ad95b5aa387f5f1f9a495aa858c673dc67988d04c4ff1933af55d02a584b8d95"
+  },
+  "runtime_sha256": "23a85294bf1087cc1b812172e1c95c0ee4b5b8d05486b375c25242c143b85c14",
+  "timing_note": "Shared correctness run, no performance claim."
+}

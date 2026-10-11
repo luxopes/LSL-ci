@@ -1,0 +1,135 @@
+{
+  "complete": true,
+  "commands": [
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/build/release-build/bootstrap-frontend",
+        "compiler/pure/lslc_qbe.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/build/release-build/frontend2",
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/build/release-build/bootstrap-backend"
+      ],
+      "seconds": 6.384108016995015,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/build/release-build/frontend2",
+        "compiler/pure/lslc_qbe.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/build/release-build/frontend3",
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/build/release-build/bootstrap-backend"
+      ],
+      "seconds": 6.887059198008501,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/build/release-build/frontend3",
+        "build/dependencies/LuxIR/lsl/luxir.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/build/release-build/luxir2",
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/build/release-build/bootstrap-backend"
+      ],
+      "seconds": 43.0404137190053,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/build/release-build/frontend3",
+        "build/dependencies/LuxIR/lsl/luxir.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/build/release-build/luxir3",
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/build/release-build/luxir2"
+      ],
+      "seconds": 40.74699148800573,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/build/release-build/frontend3",
+        "--unsafe",
+        "compiler/pure/lslc_direct.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/build/release-build/lslc-direct",
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/build/release-build/luxir3"
+      ],
+      "seconds": 6.438875810999889,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/build/release-build/frontend3",
+        "--unsafe",
+        "compiler/pure/cli.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/build/release-build/lsl-cli",
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/build/release-build/luxir3"
+      ],
+      "seconds": 11.259900625009323,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/build/release-build/frontend3",
+        "--unsafe",
+        "compiler/pure/install.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/build/release-build/lsl-install",
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/build/release-build/luxir3"
+      ],
+      "seconds": 1.3874430159921758,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/build/release-build/frontend3",
+        "--unsafe",
+        "stdlib/configure.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/build/release-build/lsl-configure",
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/build/release-build/luxir3"
+      ],
+      "seconds": 0.9555599940067623,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/build/release-build/frontend3",
+        "--unsafe",
+        "tests/test_runner.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/build/release-build/lsl-test",
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/build/release-build/luxir3"
+      ],
+      "seconds": 1.9631205730111105,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "bootstrap": {
+    "frontend_sha256": "96f89d00192d57965fd56ff828ad277b9155acb894fc6182296eb6d95f734645",
+    "backend_sha256": "33723db8368e75bbd3609ded54753e0a2cd0595ea981020731785ae38558850e"
+  },
+  "frontend_fixed_point": true,
+  "backend_fixed_point": true,
+  "artifacts": {
+    "compiler/pure/lslc-qbe": "96f89d00192d57965fd56ff828ad277b9155acb894fc6182296eb6d95f734645",
+    "compiler/lslc": "96f89d00192d57965fd56ff828ad277b9155acb894fc6182296eb6d95f734645",
+    "compiler/pure/luxir": "33723db8368e75bbd3609ded54753e0a2cd0595ea981020731785ae38558850e",
+    "compiler/pure/lslc-direct": "598aa0c7e7993f507a9c9f71eaf6111bb1663653cf9f525649ff9a3704399df8",
+    "compiler/pure/lsl-cli": "c0141286d7c0fccdf70f654b57f3d3178dee7a3126d0e8d1c57dc9e4b13e5607",
+    "compiler/pure/lsl-install": "32b257fce5282a280a9e4d8600c2517f454e088cbfd9e07072ee24780b0085a4",
+    "compiler/pure/lsl-configure": "e555e01a578330d157c8b586e25b74c8a5bf1377f1da8d6094c6c86ee745da39",
+    "tests/lsl-test": "5d36029854abf86dda539e14b9d11d0958ffbf613876d2dec1ee20f0a8d01873",
+    "lsl": "c0141286d7c0fccdf70f654b57f3d3178dee7a3126d0e8d1c57dc9e4b13e5607"
+  }
+}

@@ -1,0 +1,7 @@
+# The read precedes any possible definition; %missing is never defined.
+# Reference QBE must reject this undefined use.
+export function w $main() {
+@start
+	%early =w add %missing, 1
+	ret %early
+}

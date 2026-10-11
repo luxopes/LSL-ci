@@ -1,0 +1,21 @@
+# A same-block use after the definition plus a successor use has no live-in;
+# the cross-block use makes this reach the new dominance test.
+export function w $sameblock(w %input) {
+@start
+	%enabled =w copy 1
+	jnz %enabled, @define, @other
+@define
+	%value =w add %input, 3
+	%local_use =w add %value, 4
+	jmp @successor
+@successor
+	%result =w add %local_use, %value
+	ret %result
+@other
+	ret 0
+}
+
+# >>> driver
+# extern int sameblock(int);
+# int main(void) { return sameblock(5) == 20 ? 0 : 1; }
+# <<<

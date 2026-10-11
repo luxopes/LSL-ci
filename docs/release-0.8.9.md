@@ -10,7 +10,7 @@ mají přednost včetně prázdných hodnot. Podporuje komentáře, uvozovky,
 UTF-8/CRLF a `export`; nespouští shell ani interpolaci. Chybějící soubor
 nevadí, neplatný vyvolá chybu bez zveřejnění hodnot. Limitem je 1 MiB.
 `env.load_dotenv(path)` umožní explicitní načtení. Prostředí potomků se nemění.
-Podrobnosti: [env](developer_guides/env.md).
+Podrobnosti: [env](https://git.lux-ai.cz/LuxAI/LSL-Web/src/branch/main/public/env.md).
 
 ## Requests a manuály
 

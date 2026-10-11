@@ -1,0 +1,20 @@
+{
+  "scope": "Original CLI 0.8.0 integration fixture after nullable command argument repair",
+  "all_pass": true,
+  "compiler": "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/lslc",
+  "compiler_sha256": "e099f50cce59b554f27314e968f4a1fbde65c1f239afc9f452e99eb79e333237",
+  "cli_sha256": "0c2f200d512069d37a432382f201cfd9872f9077413927cab075a686bc5b0a54",
+  "source_commits": [
+    "516124f",
+    "cbe4b64"
+  ],
+  "command": [
+    "/tmp/lsl-test-161826/cli-080-test",
+    "/home/antonin/LSL-QBE-release-audit/build/qbe-audit/final/cli-nullable-arg",
+    "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/lslc"
+  ],
+  "returncode": 0,
+  "stdout": "CLI 0.8.0 conformance passed\n",
+  "stderr": "",
+  "limitation": "Targeted original CLI fixture; complete original corpus and canonical fixed points must still be rerun with final generated compiler."
+}

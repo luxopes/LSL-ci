@@ -1,3 +1,4 @@
+load _random_platform as transport
 # Python-shaped random API, entirely in LSL. MT19937 is NOT cryptographic.
 # Use SystemRandom for operating-system randomness. See docs/random.md for
 # compatibility, Int64/BigInt boundaries, limits and algorithm references.
@@ -48,18 +49,7 @@ function _finite(value):
 end
 
 function _entropy(n):
-    data = __lsl_byte_zeros(n)
-    offset = 0
-    while offset < n:
-        count = __lsl_syscall(318, __lsl_data_address(data) + offset, n - offset, 0, 0)
-        if count == -4:
-            continue
-        elif count <= 0 or count > n - offset:
-            Error(OSError: "random: getrandom failed")
-        end
-        offset += count
-    end
-    return data
+    return transport._entropy(n)
 end
 
 function _words64(value):

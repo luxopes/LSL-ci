@@ -91,7 +91,9 @@ listener_box[0] = memory_listener
 port_box[0] = httpserver.local_port(memory_listener)
 memory_worker = thread_spawn(memory_client_worker)
 call httpserver.serve_listener(memory_listener, -1, garbage_handler, 30, False)
-print "memory served"
+# The worker prints its final request after the server writes the response;
+# join before reporting completion so stdout does not depend on scheduling.
 check(thread_join(memory_worker) == 0, "join memory")
+print "memory served"
 print "done"
 call __lsl_syscall(37, 0, 0, 0, 0)

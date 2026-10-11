@@ -1,3 +1,4 @@
+load _plugin_platform as transport
 # Pure-LSL process plugin ABI v1. Requests use JSON stdin and responses use
 # JSON stdout, so payloads and secrets do not appear in process argv.
 
@@ -27,33 +28,15 @@ function response(output):
 end
 
 function timeout_tool():
-    if exists("/usr/bin/timeout"):
-        return "/usr/bin/timeout"
-    elif exists("/bin/timeout"):
-        return "/bin/timeout"
-    end
-    Error(PluginError: "a trusted timeout executable is required for plugin isolation")
-    return ""
+    return transport.timeout_tool()
 end
 
 function checked_timeout(seconds):
-    value = Int(seconds)
-    if value < 1 or value > 3600:
-        Error(PluginError: "plugin timeout must be between 1 and 3600 seconds")
-    end
-    return value
+    return transport.checked_timeout(seconds)
 end
 
 function capture_with_timeout(executable, arguments, input_text, seconds):
-    if type(arguments) != "List" or len(arguments) > 4096:
-        Error(PluginError: "plugin arguments must be a bounded List")
-    end
-    timeout = checked_timeout(seconds)
-    wrapped = ["--signal=TERM", "--kill-after=1s", "--", String(timeout) + "s", String(executable)]
-    for argument in arguments:
-        wrapped.append(String(argument))
-    end
-    return capture_input_clean(timeout_tool(), wrapped, String(input_text))
+    return transport.capture_with_timeout(executable, arguments, input_text, seconds)
 end
 
 function checked_response(output):
@@ -103,14 +86,10 @@ function request_input(executable, operation, payload):
 end
 
 # Explicit legacy transport for old workers. It is unsafe for secrets and
-# bounded by Linux MAX_ARG_STRLEN; new integrations must use request().
+# omezený limitem argumentů hostitele; nové integrace používají request().
 function request_argv(executable, operation, payload):
     envelope = {"abi": 1, "operation": operation_name(operation), "payload": payload}
     encoded = json.encode(envelope)
-    if __lsl_text_byte_length(String(encoded)) > 131071:
-        Error(PluginError: "legacy argv plugin request exceeds Linux MAX_ARG_STRLEN")
-    end
-    wrapped = ["--signal=TERM", "--kill-after=1s", "--", "30s", String(executable), encoded]
-    output = capture_clean(timeout_tool(), wrapped)
+    output = transport.capture_argv(executable, encoded)
     return checked_response(output)
 end

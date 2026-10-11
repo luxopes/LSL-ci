@@ -19,7 +19,28 @@ All test runners, fixtures and generated test tools live under this tree.
 - `compiler/` contains compiler-focused smoke drivers and their local fixtures.
 - `config/` and `modules/` contain subsystem-specific fixtures.
 
-The suite requires no C, Python, shell launcher, assembler or linker.
+The original AST suite requires no C, Python, shell launcher, assembler or linker.
+The native QBE path uses the same complete runner and fixtures:
+
+```text
+./tests/lsl-test qbe ./compiler/pure/lslc-qbe
+./tests/lsl-test qbe-fast ./compiler/pure/lslc-qbe
+./tests/lsl-test qbe-fixed-point ./compiler/pure/lslc-qbe
+python3 tools/qbe/verify_integration.py --compiler ./compiler/pure/lslc-qbe \
+  --build-directory build/qbe-integration --report build/qbe-integration.json
+```
+
+The native path requires its own `lsl-qbe`, trusted compiler resources and
+runtime object, plus a system assembler/linker. Low-level private-runtime tests
+explicitly request `--unsafe`; tests of the ordinary CLI retain safe defaults.
+ELF checks require static PIE, no dynamic interpreter, W^X, no text relocations
+and a non-executable stack. AST-specific object/encoder tests remain present;
+the production pipeline is checked for equivalent behavior. Both paths retain the original 110400-byte standalone ELF ceiling.
+The native QBE optimization fixture measures 86064 bytes after stripping.
+Fixed-point mode checks both native frontend and native QBE backend. Optional
+CUDA hardware and capability-sandbox gates are unchanged. Signed public-release
+archive and managed-install migration tests are separate optional integrations
+and are not claimed by the ordinary full runner.
 
 CUDA 0.7.7: `cuda_session_conformance.lsl` runs on CPU by default; the runner
 also compares its complete output against an NVIDIA device when

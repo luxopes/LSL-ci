@@ -102,9 +102,62 @@ function rewrite(value, types, path, source, serial):
     end
 end
 
+# Declarations are statements. Expressions, source spans and ABI annotations
+# cannot introduce a lexical type constraint. Keep the generic collect/rewrite
+# helpers above for nonempty scopes; ordinary untyped functions need only this
+# statement walk and the discovery of nested function/class scopes.
+function collect_scope(body, types, path, source):
+    for statement in body:
+        kind = statement["kind"]
+        if kind == "function" or kind == "class":
+            continue
+        end
+        if "declared_type" in statement:
+            name = statement["target"]["name"]
+            declared = statement["declared_type"]
+            if name in types and types[name] != declared:
+                call fail(path, source, statement, "conflicting declared types for '" + name + "'")
+            end
+            types[name] = declared
+        end
+        if kind == "if":
+            for branch in statement["branches"]:
+                call collect_scope(branch[1], types, path, source)
+            end
+            call collect_scope(statement["otherwise"], types, path, source)
+        elif kind in ["for", "while", "loop", "unsafe"]:
+            call collect_scope(statement["body"], types, path, source)
+        elif kind == "safe" or kind == "try":
+            call collect_scope(statement["body"], types, path, source)
+            call collect_scope(statement["otherwise"], types, path, source)
+        end
+    end
+end
+
+function nested_scopes(body, path, source, serial):
+    for statement in body:
+        kind = statement["kind"]
+        if kind == "function":
+            call scope(statement["body"], statement["parameters"], path, source, serial)
+        elif kind == "class":
+            call scope(statement["body"], [], path, source, serial)
+        elif kind == "if":
+            for branch in statement["branches"]:
+                call nested_scopes(branch[1], path, source, serial)
+            end
+            call nested_scopes(statement["otherwise"], path, source, serial)
+        elif kind in ["for", "while", "loop", "unsafe"]:
+            call nested_scopes(statement["body"], path, source, serial)
+        elif kind == "safe" or kind == "try":
+            call nested_scopes(statement["body"], path, source, serial)
+            call nested_scopes(statement["otherwise"], path, source, serial)
+        end
+    end
+end
+
 function scope(body, parameters, path, source, serial):
     types = {}
-    call collect(body, types, path, source)
+    call collect_scope(body, types, path, source)
     for parameter in parameters:
         if parameter in types:
             # A declaration constrains a variable, not an existing parameter's
@@ -112,7 +165,11 @@ function scope(body, parameters, path, source, serial):
             call fail(path, source, body[0], "typed declaration cannot redeclare parameter '" + parameter + "'; use a new local variable")
         end
     end
-    call rewrite(body, types, path, source, serial)
+    if len(types) == 0:
+        call nested_scopes(body, path, source, serial)
+    else:
+        call rewrite(body, types, path, source, serial)
+    end
 end
 
 function lower(program, path, source):

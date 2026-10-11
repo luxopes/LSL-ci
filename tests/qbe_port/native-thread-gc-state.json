@@ -1,0 +1,2187 @@
+{
+  "complete": true,
+  "scope": "Worker TLS runtime state fix in isolation. Same production program object relinked with fixed runtime; no frontend/codegen changes. Correctness stress only, no timing benchmark. Shared root runtime.o left unchanged.",
+  "cause": "SIGUSR1 GC handler used interrupted QBE RBX as runtime state. RBX actually held a List object; thread table lookup dereferenced 0x11 at handler_found_scan ELF+0x112c9.",
+  "original_executable_sha256": "40e9b61d350bc9c8fd664c1b2c4894a68d5062b3516451f02134282a8e8e1b5f",
+  "original_runtime_sha256": "6780bb856d07a9017e40a90931487b0905c58dbe30b1ee08bc1f8f1d3e0d691b",
+  "original_production_artifact_proof": {
+    "compiler_sha256": "efbcb2bbe51587b9728616cef23c0553acde66cceedc17aded04ae4c4602a7a9",
+    "backend_sha256": "44c141c6ee0d0887c80111320fa2db80fe485f385cbf0a70dbfeee400754b26d",
+    "production_elf_sha256": "40e9b61d350bc9c8fd664c1b2c4894a68d5062b3516451f02134282a8e8e1b5f",
+    "origin": "explicit diagnostic re-emission",
+    "source_sha256": {
+      "compiler/pure/_catalog_platform.lsl": "82988ff5d7f2adc752cbe3e86da10faebc873f4857d9442124e538193e536006",
+      "compiler/pure/_compiler_host_platform.lsl": "50235c7e0176d1a72af26e33296c94c3557e2640268b1729f8d2e361958b2e96",
+      "compiler/pure/_install_platform.lsl": "2a5e28db11799527374a35b1c2a8b80a6f34d14f209c1f0336db779afc1132d4",
+      "compiler/pure/_package_platform.lsl": "5390924c2c8eb95ebc34099e05d88d0b77ce27693fce9f32d0f064317dd00100",
+      "compiler/pure/_update_install_platform.lsl": "b23a59ce6d202f03f7e25fe683ce23b293d0dcc82e2312f823b295266b0a6b59",
+      "compiler/pure/_update_platform.lsl": "b35cd3dbd1de9e582410c1c0078d5016c34a03d5b24440003a21e775ff41b041",
+      "compiler/pure/abi_x86_64.lsl": "5e6123581d7dec0223b03ff00e2ba5fd6fe7973bb665852d8d0a44820c3b8a60",
+      "compiler/pure/assembler.lsl": "8d6c68b1d9f40d37904704741d2fe6b00872309661baaf4951cf5e65baf78f7c",
+      "compiler/pure/assembler_x86_64.lsl": "af22e43292f7866cbb9348840d6cb52e05e4b0df10cb61aaef32a826abbd52f4",
+      "compiler/pure/backend_x86_64.lsl": "70bf7ed1cb4c7b23c97bdc170f5233dae7158c4a38503d1a8f3c60a5fe44f718",
+      "compiler/pure/browser.lsl": "eeb9f0d0ea05efb5b473a5ff89ef95c08217f3ebc4a4095ab534ea013f23db2a",
+      "compiler/pure/bytes.lsl": "6d5b630011129af9a936b448432e0cd8631437d20c809995e6fa78197b18f1b8",
+      "compiler/pure/catalog.lsl": "1dd32f76028e005b28a518c99df572941a3952ea6a72711fa4fc9c07bb6f433b",
+      "compiler/pure/catalog_linux_x86_64.lsl": "016b9de8341ee410286a7d2e6d540bfafa9ae79cd2de4be27dc2866613f53f39",
+      "compiler/pure/cli.lsl": "a5e4b55f211aa5522e72ce777967fd14d2d696f8a07766113f40abd22dc25088",
+      "compiler/pure/codegen.lsl": "058d58fbb77bf78d5a52a863f6fd8447321a70e8a00257b7076ae7423258c3cd",
+      "compiler/pure/compiler_backend.lsl": "a14da865d5cdef0e5599335884c3a1c9dffa8c19ef5ab3bd0b9c6ffe9ecb75b7",
+      "compiler/pure/console.lsl": "05ec9f84138198f65065f4c8aa2c451ac90961996947e7fad3e755e830cf505d",
+      "compiler/pure/declarations.lsl": "8b4027b210bb46c5db34d3a70c857ee26b088a31cf340b2e09c886137d2e82ac",
+      "compiler/pure/diagnostics.lsl": "e5b5d66ab05ae3e87b9c84103f8a69d6857416fabcebb17d7ca5a959af64ec74",
+      "compiler/pure/dynamic_stdlib.lsl": "6b78f1022da7021a48246f35d1224a501d2964ab59faae735922595f54e5797e",
+      "compiler/pure/editor.lsl": "381eb9980899eb6964cc72f07608e39b419c7f832a7b7f45f5977be3bca218d0",
+      "compiler/pure/elf_image.lsl": "2a05401fc3ff99dbd7364f9b26f42e114747e079dbcb22525f8acf91ac5f828e",
+      "compiler/pure/flow.lsl": "87adb7765087299b64a41997d1919ee362b679b6264388356d32576e25c28323",
+      "compiler/pure/frontend.lsl": "e708a35f8a44ba8002f05165ec864ae9aaa7b2d924d0cf67b282862c78c9be85",
+      "compiler/pure/heap_runtime.lsl": "3b4679d6104c1a0bc8fdfb2bb0165288c97482a30a51c9cf5edee1af38ba20e6",
+      "compiler/pure/heap_runtime_linux_x86_64.lsl": "f6b7ddc4e3c546ab592e2a1e39e53e4c1c695fe83cca1ff15fc251e928c30073",
+      "compiler/pure/highlight.lsl": "7bb02d0eb31f1435896ea2f447ace7c89b4bc286b5da1642c6f03e1e2c1ce87d",
+      "compiler/pure/host.lsl": "3b458a8d437aa50d2cebb7d613339c08df7816386babc2245c529ce1bb15cbf6",
+      "compiler/pure/host_linux_x86_64.lsl": "95fbed18a04238710eca734c09e73d7fa5b7f3f41d784f34f1a2401e2083745e",
+      "compiler/pure/image_elf64_linux.lsl": "44bf898add0a37fd9279459c5f7ff140dcd66c7abb87f557c47e5a854da6d739",
+      "compiler/pure/image_writer.lsl": "58cebb23435a57c9d3d723646bd444ac7c48f46c3bb2097374d94361eaeff492",
+      "compiler/pure/install.lsl": "e57e496e0d960293194bbdba5dcecf1210ffc131bd94c0b5a027cf33f72bea18",
+      "compiler/pure/install_linux_x86_64.lsl": "acd36f168730cc3904c34c827a700d3210a3e9722a8119d55cc004c250402d6d",
+      "compiler/pure/io_runtime.lsl": "3d5302d06c75e9fad5c628b739bdc3d06cfe0e803b2a129c863b997f6e4a7995",
+      "compiler/pure/io_runtime_linux_x86_64.lsl": "67518f93b0253792ed0f0ee1a8c8e34f8df9873b979e32f88308297166ca3a19",
+      "compiler/pure/lexer.lsl": "dcc607a576efd5b1a370737dc3c1075c8f815aed853c80097045e02e7147c101",
+      "compiler/pure/linker.lsl": "5e141b496debeb7b87abfecbabf912bdf20e8bc4d2b1bcece204f62d8d49f9b2",
+      "compiler/pure/lslc_direct.lsl": "c025015017dcca7300b893529d3de7bf97f9a89d58a1e6e6d924a8030269ce58",
+      "compiler/pure/lslc_qbe.lsl": "085e51564613f2468546cf45f054fdf74863d1032a873b2b71c491dab8b0540d",
+      "compiler/pure/manual.lsl": "565e91fc2003e4eadfa264991771dc9289a0ffd8a2f3621aa2fee32b58369dc0",
+      "compiler/pure/native_plugin_runtime.lsl": "c48e8995ddb131ac5d2808530cc1aa9d0e3ba618c44bf9a411f425c70b9fba7d",
+      "compiler/pure/native_plugin_runtime_linux_x86_64.lsl": "f1d07341cb011cb23df05caee61ccb3a5fc763c62b61d4b927c1dffaacf64241",
+      "compiler/pure/native_runtime.lsl": "97b15d1f9b2cbe3ecb8ac67a42affabe876dc8f2b9439150088232cfcc3bf461",
+      "compiler/pure/native_runtime_linux_x86_64.lsl": "89021b33402d8a8f2b746ddbaa85282df0a9f391a073ae813b558f0a392fe710",
+      "compiler/pure/object_code.lsl": "28c665c4799f59166c42c8673d9bf203a18a3bba95bec233571516037f1562f5",
+      "compiler/pure/package.lsl": "b344a5cc14db24b526c8c0dd256949541147e9462244207ac1319a2f026aa472",
+      "compiler/pure/package_linux_x86_64.lsl": "7bdb0f73c59a1de70cbd689d1c4560c3cb2ea37987550299e5462a96e4bf0a5b",
+      "compiler/pure/parser.lsl": "a5eb49774210c7c101014f344f91a58a9730a09e9028cce8ed190738ce3783bf",
+      "compiler/pure/pipeline.lsl": "84d20482156131be58360f56f0d47883b4d5a3797a59087473c240d85f8c9320",
+      "compiler/pure/process_runtime.lsl": "feb20eed99030a41b6bcf73c6ed925fea11b648272606ea42527954d064bb43d",
+      "compiler/pure/process_runtime_linux_x86_64.lsl": "c0f80dbaf0a72740ab6e69d802a12e889fffe7cf08e095672253081df5cf98a4",
+      "compiler/pure/qbe_emit.lsl": "32c63dd7e0c57c6b9db48614e30b9f3b5e4948b60c30ff1cffcb365b737ca2bb",
+      "compiler/pure/qbe_emit_diagnostic.lsl": "3dd7297e557fec1ddd58cadbfba7a75e22f7dd20bb8aef5e01b2b824d81c66d9",
+      "compiler/pure/qbe_runtime_dump.lsl": "1ed4e00498b6396680fb24138df48923cf4ae80c1c882b317834f0deb50e0bff",
+      "compiler/pure/qbe_toolchain.lsl": "786a5df6eace5885b342ef8ba85288352a28f7046548a1ddb9f4f1702b39b315",
+      "compiler/pure/relocations_x86_64.lsl": "53c7cbb52f6724dd4fab3337219acbb5c3c6e2042e8147d51e03b9f0d8373d42",
+      "compiler/pure/runtime.lsl": "6f54df34a08b9b8ce4b855e7bea82d3fe81b6a9f9750216c458641838634d860",
+      "compiler/pure/runtime_abi_linux_x86_64.lsl": "4cd8a2e91d2fa19a1fafbcd6ad87f57e79beefa66778fa5ebed90b5b7ede3a2f",
+      "compiler/pure/runtime_linux_x86_64.lsl": "2f4e16fec47238f243b88727c95ddcf056041a73edf42fba128846104274310e",
+      "compiler/pure/semantic.lsl": "90bc7c816f7e6312fabc410168492a3ae7110b252f8c8da483a00170f8edfd8d",
+      "compiler/pure/target.lsl": "2d913fa28cd778d02d0d4bebd18986cd5d68864cf2640a63db262ccb2977d9cf",
+      "compiler/pure/thread_runtime.lsl": "cf94f0a37f4e031a06ee52d4a759e368cda64583bcb6ff8f484650debb29adfd",
+      "compiler/pure/thread_runtime_linux_x86_64.lsl": "48d50da62b8ab3b164c5426a7fd4143f16efdf786528a3869897600e5a9bb517",
+      "compiler/pure/update.lsl": "fef774fac49493190b44c0d9444589005f8ff1194051662af67117c0afdda363",
+      "compiler/pure/update_install.lsl": "d8ccac15b846cd4b0d4e023f1a4804f9e265e781324d3e08c01cad110891058a",
+      "compiler/pure/update_install_linux_x86_64.lsl": "80ce50d927bffe1edc9f3abc226b25519399be2327a0576b469794b0d5fb39d6",
+      "compiler/pure/update_linux_x86_64.lsl": "07bf87e077446c6d76b2b7a5f6531f74705d605d0d84e73b4b0aefa0c8596e50",
+      "compiler/pure/validation.lsl": "82d3f45c9655cd169c878153900f58d17c32f6eab95fbafb562024cc694fd5e1",
+      "compiler/pure/value_abi.lsl": "6e61c4f92bb308cc95c37e5c5faad57303dd6cb2852518ff581753bdca5bac74",
+      "compiler/pure/x86_64.lsl": "060978b936d1f758565841725c648c506bf52cc1af2e6f2fc6879ed912461ce5"
+    },
+    "diagnostic_emitter_sha256": "51009c7b2f4f6f453497072b0841632ad1c0fef28e64578569646625a4f8805f",
+    "runtime_sha256": "6780bb856d07a9017e40a90931487b0905c58dbe30b1ee08bc1f8f1d3e0d691b",
+    "reconstructed_elf_sha256": "40e9b61d350bc9c8fd664c1b2c4894a68d5062b3516451f02134282a8e8e1b5f",
+    "matches_production_elf": true,
+    "ssa_sha256": "91f78dab73fbbd24840994276fc8f1a9f0b9472b44d9d0f8d5c70909557b13fb",
+    "assembly_sha256": "65cc7ccb5c851e880d7ff635246b5f7101b02c5b232db5984ee97f459ca96830"
+  },
+  "baseline": {
+    "repeat": 80,
+    "concurrency": 4,
+    "sigsegv_count": 14,
+    "runs": [
+      {
+        "n": 0,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 1,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 2,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 3,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 4,
+        "returncode": -11,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "n": 5,
+        "returncode": -11,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "n": 6,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 7,
+        "returncode": -11,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "n": 8,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 9,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 10,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 11,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 12,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 13,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 14,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 15,
+        "returncode": -11,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "n": 16,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 17,
+        "returncode": -11,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "n": 18,
+        "returncode": -11,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "n": 19,
+        "returncode": -11,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "n": 20,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 21,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 22,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 23,
+        "returncode": -11,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "n": 24,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 25,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 26,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 27,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 28,
+        "returncode": -11,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "n": 29,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 30,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 31,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 32,
+        "returncode": -11,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "n": 33,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 34,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 35,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 36,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 37,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 38,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 39,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 40,
+        "returncode": -11,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "n": 41,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 42,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 43,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 44,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 45,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 46,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 47,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 48,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 49,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 50,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 51,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 52,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 53,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 54,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 55,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 56,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 57,
+        "returncode": -11,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "n": 58,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 59,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 60,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 61,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 62,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 63,
+        "returncode": -11,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "n": 64,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 65,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 66,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 67,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 68,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 69,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 70,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 71,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 72,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 73,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 74,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 75,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 76,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 77,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      },
+      {
+        "n": 78,
+        "returncode": -11,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "n": 79,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": ""
+      }
+    ]
+  },
+  "crash_capture": {
+    "tid": 167129,
+    "registers": {
+      "r15": "0x55555dc199b0",
+      "r14": "0x0",
+      "r13": "0x55555e0dc188",
+      "r12": "0x55555e0dc278",
+      "rbp": "0x7f1e8f2fcf60",
+      "rbx": "0x55555e0dc330",
+      "r11": "0x7fffffffffffffff",
+      "r10": "0x0",
+      "r9": "0x11",
+      "r8": "0x9",
+      "rax": "0x28cd9",
+      "rcx": "0x0",
+      "rdx": "0x7f1e8f2fcac0",
+      "rsi": "0x7f1e8f2fcbf0",
+      "rdi": "0xa",
+      "orig_rax": "0xffffffffffffffff",
+      "rip": "0x7f1e8f3962c9",
+      "cs": "0x33",
+      "eflags": "0x10216",
+      "rsp": "0x7f1e8f2fcab8",
+      "ss": "0x2b",
+      "fs_base": "0x7f1e8f2fd028",
+      "gs_base": "0x0",
+      "ds": "0x0",
+      "es": "0x0",
+      "fs": "0x0",
+      "gs": "0x0"
+    },
+    "maps": "55555db19000-55555e11a000 rw-p 00000000 00:00 0                          [heap]\n7f1e8e600000-7f1e8e800000 rw-p 00000000 00:00 0 \n7f1e8e9fc000-7f1e8eafc000 rw-p 00000000 00:00 0 \n7f1e8eafc000-7f1e8eafd000 ---p 00000000 00:00 0 \n7f1e8eafd000-7f1e8f2fd000 rw-p 00000000 00:00 0 \n7f1e8f2fd000-7f1e8f37f000 rw-p 00000000 00:00 0 \n7f1e8f37f000-7f1e8f383000 r--p 00000000 00:00 0                          [vvar]\n7f1e8f383000-7f1e8f385000 r-xp 00000000 00:00 0                          [vdso]\n7f1e8f385000-7f1e8f386000 r--p 00000000 fe:03 7876279                    /home/antonin/LSL-QBE/build/qbe-repair/final/language/automatic_gc_threads_conformance\n7f1e8f386000-7f1e8f398000 r-xp 00001000 fe:03 7876279                    /home/antonin/LSL-QBE/build/qbe-repair/final/language/automatic_gc_threads_conformance\n7f1e8f398000-7f1e8f399000 r--p 00013000 fe:03 7876279                    /home/antonin/LSL-QBE/build/qbe-repair/final/language/automatic_gc_threads_conformance\n7f1e8f399000-7f1e8f39b000 rw-p 00013000 fe:03 7876279                    /home/antonin/LSL-QBE/build/qbe-repair/final/language/automatic_gc_threads_conformance\n7f1e8f39b000-7f1e8f39c000 rw-p 00000000 00:00 0 \n7ffe94d48000-7ffe94d6a000 rw-p 00000000 00:00 0                          [stack]\n",
+    "rbx_memory": "090000000000000000000000000000000000000000000000180000000000000010c30d5e5555000000000000000000000000000000000000090000000000000000000000000000000000000000000000180000000000000048c30d5e555500000000000000000000000000000000000009000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "rsp_memory": "2263398f1e7f0000060000000000000000000000000000000000000000000000020000005555000000000000000000000000608e1e7f0000ffff030000000000a0c30d5e55550000023a03000000000078c20d5e5555000088c10d5e555500000000000000000000b099c15d55550000a0c30d5e55550000a0c30d5e5555000060cf2f8f1e7f000030c30d5e55550000f2490200000000000000000000000000000000000000000038cf2f8f1e7f0000d179398f1e7f000046020000000000003300000000002b00000000000000000000000000000000000000000000000000000000000000000080cc2f8f1e7f000000000000000000000000000000000000"
+  },
+  "fixed_stress": {
+    "complete": true,
+    "all_pass": true,
+    "runs": [
+      {
+        "n": 0,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 1,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 2,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 3,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 4,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 5,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 6,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 7,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 8,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 9,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 10,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 11,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 12,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 13,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 14,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 15,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 16,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 17,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 18,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 19,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 20,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 21,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 22,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 23,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 24,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 25,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 26,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 27,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 28,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 29,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 30,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 31,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 32,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 33,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 34,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 35,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 36,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 37,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 38,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 39,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 40,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 41,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 42,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 43,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 44,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 45,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 46,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 47,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 48,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 49,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 50,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 51,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 52,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 53,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 54,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 55,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 56,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 57,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 58,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 59,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 60,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 61,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 62,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 63,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 64,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 65,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 66,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 67,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 68,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 69,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 70,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 71,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 72,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 73,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 74,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 75,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 76,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 77,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 78,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 79,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 80,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 81,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 82,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 83,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 84,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 85,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 86,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 87,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 88,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 89,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 90,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 91,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 92,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 93,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 94,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 95,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 96,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 97,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 98,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "n": 99,
+        "returncode": 0,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      }
+    ],
+    "concurrency": 4,
+    "executable_sha256": "71bbac4eca8362c0dfda602b542c8a6d3f8410286f08577264491b885884125a",
+    "runtime_sha256": "2800ae0cda1eccb68d034bd04fbf1d2151dce3fd7509b0dbd4b2bfc6de20df6d",
+    "scope": "Same production program object relinked against fixed runtime; correctness stress, no timing benchmark"
+  },
+  "controls": {
+    "complete": true,
+    "cases": [
+      {
+        "name": "thread_conformance",
+        "production_artifact_equal": true,
+        "returncode": 0,
+        "stdout": "True Int\n0 0 0 0\n200000\n0 0\n200002\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "name": "thread_reuse_conformance",
+        "production_artifact_equal": true,
+        "returncode": 0,
+        "stdout": "0\n0\n2\n126\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "name": "automatic_gc_conformance",
+        "production_artifact_equal": true,
+        "returncode": 0,
+        "stdout": "automatic GC roots, cycles, deep graphs, callbacks, exceptions and memory bound passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "name": "gc_stress_conformance",
+        "production_artifact_equal": true,
+        "returncode": 0,
+        "stdout": "10000 0 9999 True\nTrue\n3000 2999\nTrue\n10000 9999\n0 117 40 424242 5000\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "name": "gc_raw_buffer_conformance",
+        "production_artifact_equal": true,
+        "returncode": 0,
+        "stdout": "raw backing pointers are not traced or finalized as objects\n",
+        "stderr": "",
+        "pass": true
+      }
+    ],
+    "scope": "Identical production program objects, relinked with worker TLS state runtime fix only",
+    "all_pass": true
+  },
+  "source_sha256": {
+    "compiler/pure/runtime_abi_linux_x86_64.lsl": "6e2b067194db926dce39dc332c2ff8537db9bf58e81a3d0172f9bda01fe6d1ec",
+    "compiler/pure/thread_runtime_linux_x86_64.lsl": "e4df2c12dd90248ec2c23d236f3c157af87df5724736d2fc31328550b8765bdc"
+  },
+  "maintained_stress_harness": {
+    "complete": true,
+    "scope": "Correctness stress only; no timing benchmark",
+    "executable_sha256": "71bbac4eca8362c0dfda602b542c8a6d3f8410286f08577264491b885884125a",
+    "expected_stdout_sha256": "b7f7d66aea227b308cc9b4132570152f19239dc0e37392d371d0b04bac5d2e5d",
+    "concurrency": 4,
+    "repeat": 100,
+    "runs": [
+      {
+        "iteration": 0,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 1,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 2,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 3,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 4,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 5,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 6,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 7,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 8,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 9,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 10,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 11,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 12,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 13,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 14,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 15,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 16,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 17,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 18,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 19,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 20,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 21,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 22,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 23,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 24,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 25,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 26,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 27,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 28,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 29,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 30,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 31,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 32,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 33,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 34,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 35,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 36,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 37,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 38,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 39,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 40,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 41,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 42,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 43,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 44,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 45,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 46,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 47,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 48,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 49,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 50,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 51,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 52,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 53,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 54,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 55,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 56,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 57,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 58,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 59,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 60,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 61,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 62,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 63,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 64,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 65,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 66,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 67,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 68,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 69,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 70,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 71,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 72,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 73,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 74,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 75,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 76,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 77,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 78,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 79,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 80,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 81,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 82,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 83,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 84,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 85,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 86,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 87,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 88,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 89,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 90,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 91,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 92,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 93,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 94,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 95,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 96,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 97,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 98,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      },
+      {
+        "iteration": 99,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+        "stderr": "",
+        "pass": true
+      }
+    ],
+    "executable_unchanged": true,
+    "all_pass": true
+  }
+}

@@ -3,210 +3,76 @@
 # reads and nonblocking mode, which the path-based readbytes/writebytes
 # builtins cannot express.
 
-read_only = 0
-write_only = 1
-read_write = 2
-create = 64
-truncate = 512
-nonblock = 2048
+# Veřejné API; operace hostitele poskytuje modul vybraný cílem.
 
-# Negative result the runtime returns when a nonblocking read has no data.
-again = -11
+load _fd_platform as implementation
 
-# socket(2) domains and types.
-af_unix = 1
-sock_stream = 1
+read_only = implementation.read_only
+write_only = implementation.write_only
+read_write = implementation.read_write
+create = implementation.create
+truncate = implementation.truncate
+nonblock = implementation.nonblock
+again = implementation.again
+af_unix = implementation.af_unix
+sock_stream = implementation.sock_stream
 
 function checked_path(path):
-    p = String(path)
-    if len(p) == 0 or __lsl_text_byte_length(p) > 4095:
-        Error(ValueError: "file path must contain 1..4095 bytes")
-    end
-    for character in p:
-        if ord(character) == 0:
-            Error(ValueError: "file path must not contain NUL")
-        end
-    end
-    return p
+    return implementation.checked_path(path)
 end
 
 function checked_unix_path(path):
-    p = checked_path(path)
-    if len(p) > 107:
-        Error(ValueError: "unix socket path exceeds 107 bytes")
-    end
-    for character in p:
-        if ord(character) > 127:
-            Error(ValueError: "unix socket path must use ASCII")
-        end
-    end
-    return p
+    return implementation.checked_unix_path(path)
 end
 
 function socket(domain, kind):
-    handle = __lsl_fd_socket(domain, kind)
-    if handle < 0:
-        Error(FileError: "cannot create socket (" + String(handle) + ")")
-    end
-    return handle
+    return implementation.socket(domain, kind)
 end
 
-# Connect to a unix stream socket path; returns a nonblocking handle.
 function connect_unix(path):
-    p = checked_unix_path(path)
-    handle = socket(af_unix, sock_stream + nonblock)
-    address = ByteArray()
-    address.append(af_unix)
-    address.append(0)
-    for character in p:
-        address.append(ord(character))
-    end
-    address.append(0)
-    result = __lsl_fd_connect(handle, address, len(address))
-    # -115 is EINPROGRESS, which a nonblocking unix connect may report
-    # even though the socket is usable immediately.
-    if result < 0 and result != -115:
-        call close(handle)
-        Error(FileError: "cannot connect " + p + " (" + String(result) + ")")
-    end
-    return handle
+    return implementation.connect_unix(path)
 end
 
 function open(path, flags):
-    p = checked_path(path)
-    handle = __lsl_fd_open(p, flags)
-    if handle < 0:
-        Error(FileError: "cannot open " + p + " (" + String(handle) + ")")
-    end
-    return handle
+    return implementation.open(path, flags)
 end
 
-# Returns the byte count, 0 on end of file, or fd.again for an empty
-# nonblocking read. The runtime clamps count to the buffer length.
 function read(handle, buffer, count):
-    if type(buffer) != "ByteArray":
-        Error(TypeError: "read buffer must be a ByteArray")
-    end
-    amount = Int(count)
-    if amount < 0:
-        Error(ValueError: "read count must be non-negative")
-    end
-    result = __lsl_fd_read(handle, buffer, amount)
-    if result == again or result == -4:
-        return again
-    end
-    if result < 0:
-        Error(FileError: "read failed (" + String(result) + ")")
-    end
-    return result
+    return implementation.read(handle, buffer, count)
 end
 
 function write(handle, buffer, count):
-    if type(buffer) != "ByteArray":
-        Error(TypeError: "write buffer must be a ByteArray")
-    end
-    amount = Int(count)
-    if amount < 0:
-        Error(ValueError: "write count must be non-negative")
-    end
-    result = __lsl_fd_write(handle, buffer, amount)
-    if result < 0:
-        Error(FileError: "write failed (" + String(result) + ")")
-    end
-    return None
+    return implementation.write(handle, buffer, count)
 end
 
 function seek(handle, position):
-    result = __lsl_fd_seek(handle, position)
-    if result < 0:
-        Error(FileError: "seek failed (" + String(result) + ")")
-    end
-    return result
+    return implementation.seek(handle, position)
 end
 
 function close(handle):
-    call __lsl_fd_close(handle)
-    return None
+    return implementation.close(handle)
 end
 
-# ioctl(2). The buffer's bytes are the request argument (kernel reads and
-# writes them in place); an empty buffer passes NULL. Returns the raw
-# result, negative errno included — device control flows branch on it.
 function ioctl(handle, request, buffer):
-    if type(buffer) != "ByteArray":
-        return -22
-    end
-    return __lsl_fd_ioctl(handle, buffer, request)
+    return implementation.ioctl(handle, request, buffer)
 end
 
-# mmap(2) with PROT_READ|PROT_WRITE and MAP_SHARED: maps `length` bytes of
-# the descriptor at `offset` and returns the raw address (negative errno
-# on failure). Pair with __lsl_mem_pack to write pixels into the mapping.
 function mmap(handle, length, offset):
-    amount = Int(length)
-    start = Int(offset)
-    if amount <= 0 or amount > 1099511627776 or start < 0:
-        return -22
-    end
-    return __lsl_fd_mmap(handle, amount, start)
+    return implementation.mmap(handle, length, offset)
 end
 
-# Read a bounded file through the descriptor path. Unlike readfile this also
-# works for procfs/sysfs and device nodes whose stat size is zero.
 function read_all_limit(path, limit):
-    maximum = Int(limit)
-    if maximum < 0 or maximum > 268435456:
-        Error(ValueError: "descriptor read limit must be between 0 and 256 MiB")
-    end
-    handle = open(path, read_only)
-    chunk = __lsl_byte_zeros(4096)
-    capacity = min(4096, maximum)
-    collected = __lsl_byte_zeros(capacity)
-    total = 0
-    loop:
-        count = read(handle, chunk, 4096)
-        if count == again:
-            continue
-        end
-        if count == 0:
-            break
-        end
-        if count > maximum - total:
-            call close(handle)
-            Error(FileError: "descriptor input exceeds the configured limit")
-        end
-        required = total + count
-        if required > capacity:
-            next_capacity = max(1, capacity)
-            while next_capacity < required:
-                next_capacity = min(maximum, next_capacity * 2)
-            end
-            grown = __lsl_byte_zeros(next_capacity)
-            call __lsl_byte_copy(grown, collected, 0, 0, total)
-            collected = grown
-            capacity = next_capacity
-        end
-        call __lsl_byte_copy(collected, chunk, total, 0, count)
-        total = total + count
-    end
-    call close(handle)
-    exact = __lsl_byte_zeros(total)
-    call __lsl_byte_copy(exact, collected, 0, 0, total)
-    return exact
+    return implementation.read_all_limit(path, limit)
 end
 
 function read_all(path):
-    return read_all_limit(path, 268435456)
+    return implementation.read_all(path)
 end
 
 function read_text(path):
-    # One native copy instead of a string per byte: with chr()+join this
-    # cost hundreds of milliseconds per second of Monitor sampling.
-    data = read_all(path)
-    return __lsl_text_from_bytes(data, 0, len(data))
+    return implementation.read_text(path)
 end
 
 function read_text_limit(path, limit):
-    data = read_all_limit(path, limit)
-    return __lsl_text_from_bytes(data, 0, len(data))
+    return implementation.read_text_limit(path, limit)
 end

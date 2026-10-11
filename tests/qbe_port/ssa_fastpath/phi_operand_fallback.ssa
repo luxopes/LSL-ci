@@ -1,0 +1,20 @@
+# Both branch-local values are operands of an existing phi and must take the
+# conservative fallback rather than the unique-definition fastpath.
+export function w $choose(w %condition) {
+@start
+	jnz %condition, @left, @right
+@left
+	%left_value =w copy 17
+	jmp @join
+@right
+	%right_value =w copy 29
+	jmp @join
+@join
+	%result =w phi @left %left_value, @right %right_value
+	ret %result
+}
+
+# >>> driver
+# extern int choose(int);
+# int main(void) { return choose(1) == 17 && choose(0) == 29 ? 0 : 1; }
+# <<<

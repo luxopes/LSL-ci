@@ -1,0 +1,51 @@
+{
+  "scope": "Native LSL frontend + QBE 1.3 LSL backend, Linux x86_64; final repaired checkpoint before further compile-time optimization",
+  "source_freeze_commit": "033950982f92f728f561a1f60cb59d64a6379b64",
+  "compiler_sha256": "d26a3b71df3b643aed58264e3eb8bb03360c468da41d351117f151142cc94f32",
+  "backend_sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+  "runtime_sha256": "23a85294bf1087cc1b812172e1c95c0ee4b5b8d05486b375c25242c143b85c14",
+  "proofs": {
+    "native_selfhost": "selfhost-repaired-linux-x86_64.json",
+    "complete_original_runner": "complete-original-native-linux-x86_64.json",
+    "managed_installation": "managed-and-bundle-final-linux-x86_64.json",
+    "maintained_language": "language-repaired-linux-x86_64.json",
+    "targeted": "../qbe/final-native-regressions-0339509-linux-x86_64.json",
+    "artifact_provenance_and_thread_gc": "native-artifact-harness-production-final.json",
+    "broad_specialized_regressions": "repair-linux-x86_64/commands.json",
+    "native_vs_c": "benchmark-repaired-linux-x86_64.json",
+    "v089": "comparison-v089-repaired-linux-x86_64.json"
+  },
+  "correctness_gates_pass": true,
+  "native_selfhost_under_60_seconds": true,
+  "whole_generation_seconds": [
+    54.160217946002376,
+    53.624845350001124,
+    53.389358399006596
+  ],
+  "fixed_points": {
+    "frontend": [
+      3,
+      4
+    ],
+    "backend": [
+      2,
+      3,
+      4
+    ]
+  },
+  "performance": {
+    "native_vs_c_strict_speed_goal_met": false,
+    "fixed_frontend_il_native_over_c": 1.0291002755755105,
+    "fixed_backend_il_native_over_c": 0.7113301352223629,
+    "v089_common_source_compile_native_over_old": 1.5193568306631273,
+    "v089_eight_runtime_workloads_all_checksums_pass": true,
+    "v089_eight_runtime_workloads_faster_in_this_measurement": true
+  },
+  "limits": [
+    "Native runtime supports Linux x86_64; six QBE assembly ABI targets across three ISAs are not six runtime ports.",
+    "CUDA protocol verified; GPU hardware not exercised.",
+    "Compilation still slower than 0.8.9 on measured common source.",
+    "Native backend 2.9% slower than C on one fixed IL workload; strict 1.0 goal not met.",
+    "No release, main update or global installation change."
+  ]
+}

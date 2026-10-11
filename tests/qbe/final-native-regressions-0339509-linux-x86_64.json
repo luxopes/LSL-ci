@@ -1,0 +1,2431 @@
+{
+  "source_freeze": "0339509",
+  "created_utc": "2026-10-10T20:55:50.059774+00:00",
+  "all_pass": true,
+  "correctness_only": true,
+  "source_graph_matches_freeze": true,
+  "counts": {
+    "registered": 42,
+    "capture_limits": 12,
+    "nullable_identity": 4,
+    "builtin_return_type_checks_including_known_bad_before": 6,
+    "http_failed_transport": 52,
+    "numeric_only_string_ordering_negatives": 16,
+    "total": 132
+  },
+  "artifacts_sha256": {
+    "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/frontend-stage3": "d26a3b71df3b643aed58264e3eb8bb03360c468da41d351117f151142cc94f32",
+    "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+    "/home/antonin/LSL-QBE-string-order/build/qbe/runtime.o": "23a85294bf1087cc1b812172e1c95c0ee4b5b8d05486b375c25242c143b85c14",
+    "/home/antonin/LSL-QBE/build/qbe-repair/seeds/frontend-before-final-metadata": "917f4d67a2a53047a90663a20d3d69a7076ccd61345602b68bf4cbdde0d6b4fa",
+    "/home/antonin/.local/bin/lslc": "f235b42d4998474c1bfee7eb02f17625bbc824f647f9ba33bdef8c20b0ff8696"
+  },
+  "scope": [
+    "Linux x86_64; exact final native LSL frontend/backend pair; no C QBE used.",
+    "Runs overlapped other correctness tests; their durations are not performance benchmarks.",
+    "HTTP baseline and native compilers use the same patched checkout stdlib, with original baseline executable bytes preserved.",
+    "The two before-compiler ABI checks are expected mismatches that prove the regression existed; baseline and final native match maintained output.",
+    "HTTP message arguments are represented by their named verifier case to avoid repeating long messages.",
+    "This report does not claim complete original integration corpus success; that is verified separately by the coordinator."
+  ],
+  "checks": {
+    "registered": {
+      "platform": "Linux-6.12.74+deb13+1-amd64-x86_64-with-glibc2.41",
+      "cpu_count": 4,
+      "qbe_version": "1.3",
+      "selfhost": [],
+      "tests": [
+        {
+          "source": "tests/qbe/minimal.lsl",
+          "status": "PASS",
+          "compile_seconds": 0.597400396996818
+        },
+        {
+          "source": "tests/qbe/core.lsl",
+          "status": "PASS",
+          "compile_seconds": 0.5683259279976483
+        },
+        {
+          "source": "tests/qbe/native_global_initialization.lsl",
+          "status": "PASS",
+          "compile_seconds": 0.8633276740001747
+        },
+        {
+          "source": "tests/qbe/native_builtin_return_types.lsl",
+          "status": "PASS",
+          "compile_seconds": 0.6548624470015056
+        },
+        {
+          "source": "tests/qbe/public_int_collision.lsl",
+          "status": "PASS",
+          "compile_seconds": 0.8494811109994771
+        },
+        {
+          "source": "tests/qbe/public_gc_roots.lsl",
+          "status": "PASS",
+          "compile_seconds": 0.8226797249953961
+        },
+        {
+          "source": "tests/qbe/intarray_store.lsl",
+          "status": "PASS",
+          "compile_seconds": 0.8592455409961985
+        },
+        {
+          "source": "tests/qbe/checked_collection_casts.lsl",
+          "status": "PASS",
+          "compile_seconds": 0.8436099919999833
+        },
+        {
+          "source": "tests/qbe/collection_codegen.lsl",
+          "status": "PASS",
+          "compile_seconds": 0.9672263160027796
+        },
+        {
+          "source": "tests/qbe/dynamic_sequence_load.lsl",
+          "status": "PASS",
+          "compile_seconds": 0.9203861049973057
+        },
+        {
+          "source": "tests/qbe/atomic_native.lsl",
+          "status": "PASS",
+          "compile_seconds": 0.8468725490020006
+        },
+        {
+          "source": "tests/qbe/startup_tables.lsl",
+          "status": "PASS",
+          "compile_seconds": 0.8093376340038958
+        },
+        {
+          "source": "tests/qbe/string_contiguous_slice.lsl",
+          "status": "PASS",
+          "compile_seconds": 0.9613902429991867
+        },
+        {
+          "source": "tests/qbe/native_float_arithmetic.lsl",
+          "status": "PASS",
+          "compile_seconds": 0.9482184260050417
+        },
+        {
+          "source": "tests/qbe/native_float_boundaries.lsl",
+          "status": "PASS",
+          "compile_seconds": 1.9971221150044585
+        },
+        {
+          "source": "tests/qbe/native_float_effects.lsl",
+          "status": "PASS",
+          "compile_seconds": 1.6788723489953554
+        },
+        {
+          "source": "tests/qbe/native_float_literals.lsl",
+          "status": "PASS",
+          "compile_seconds": 0.8817537270006142
+        },
+        {
+          "source": "tests/qbe/public_any_arithmetic.lsl",
+          "status": "PASS",
+          "compile_seconds": 1.4961342999959015
+        },
+        {
+          "source": "tests/qbe/public_call_inference.lsl",
+          "status": "PASS",
+          "compile_seconds": 1.7985446539969416
+        },
+        {
+          "source": "tests/qbe/public_default_call_flow.lsl",
+          "status": "PASS",
+          "compile_seconds": 1.6700020850039436
+        },
+        {
+          "source": "tests/qbe/classes.lsl",
+          "status": "PASS",
+          "compile_seconds": 1.3066785060000257
+        },
+        {
+          "source": "tests/qbe/class_default_call_flow.lsl",
+          "status": "PASS",
+          "compile_seconds": 1.0164682089962298
+        },
+        {
+          "source": "tests/class_method_return_conformance.lsl",
+          "status": "PASS",
+          "compile_seconds": 1.0610099029945559
+        },
+        {
+          "source": "tests/wide_class_abi_conformance.lsl",
+          "status": "PASS",
+          "compile_seconds": 0.9833750309990137
+        },
+        {
+          "source": "tests/inheritance_conformance.lsl",
+          "status": "PASS",
+          "compile_seconds": 0.8949083150000661
+        },
+        {
+          "source": "tests/class_module_smoke.lsl",
+          "status": "PASS",
+          "compile_seconds": 1.2384653179979068
+        },
+        {
+          "source": "tests/origin_function_conformance.lsl",
+          "status": "PASS",
+          "compile_seconds": 0.8474527279977337
+        },
+        {
+          "source": "tests/abs_conformance.lsl",
+          "status": "PASS",
+          "compile_seconds": 1.004466301004868
+        },
+        {
+          "source": "tests/dynamic_arith_conformance.lsl",
+          "status": "PASS",
+          "compile_seconds": 1.1905232130011427
+        },
+        {
+          "source": "tests/dynamic_numeric_boundary_conformance.lsl",
+          "status": "PASS",
+          "compile_seconds": 0.9738855100004002
+        },
+        {
+          "source": "tests/float_power_conformance.lsl",
+          "status": "PASS",
+          "compile_seconds": 0.8854151359992102
+        },
+        {
+          "source": "tests/float_floordiv_conformance.lsl",
+          "status": "PASS",
+          "compile_seconds": 1.1340986970026279
+        },
+        {
+          "source": "tests/boxed_int_infrastructure_conformance.lsl",
+          "status": "PASS",
+          "compile_seconds": 0.8636049319975427
+        },
+        {
+          "source": "tests/parameter_inference_conformance.lsl",
+          "status": "PASS",
+          "compile_seconds": 0.9066097690010793
+        },
+        {
+          "source": "tests/bitwise_conformance.lsl",
+          "status": "PASS",
+          "compile_seconds": 1.0815126720044645
+        },
+        {
+          "source": "tests/unicode_case_conformance.lsl",
+          "status": "PASS",
+          "compile_seconds": 1.6263887759996578
+        },
+        {
+          "source": "tests/integer_wrap_conformance.lsl",
+          "status": "PASS",
+          "compile_seconds": 1.8729414290064597
+        },
+        {
+          "source": "tests/truthiness_conformance.lsl",
+          "status": "PASS",
+          "compile_seconds": 0.8515545159971225
+        },
+        {
+          "source": "tests/recursive_return_conformance.lsl",
+          "status": "PASS",
+          "compile_seconds": 1.6292346129994257
+        },
+        {
+          "source": "tests/string_conversion_conformance.lsl",
+          "status": "PASS",
+          "compile_seconds": 1.706161976995645
+        },
+        {
+          "source": "tests/boxed_collection_conformance.lsl",
+          "status": "PASS",
+          "compile_seconds": 2.3848485790003906
+        },
+        {
+          "source": "tests/float_conversion_conformance.lsl",
+          "status": "PASS",
+          "compile_seconds": 1.6272214529963094
+        }
+      ],
+      "tests_only": true,
+      "backend": "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3",
+      "maxrss_kib": 87640,
+      "source_sha256": {
+        "compiler/pure/_catalog_platform.lsl": "82988ff5d7f2adc752cbe3e86da10faebc873f4857d9442124e538193e536006",
+        "compiler/pure/_compiler_host_platform.lsl": "50235c7e0176d1a72af26e33296c94c3557e2640268b1729f8d2e361958b2e96",
+        "compiler/pure/_install_platform.lsl": "2a5e28db11799527374a35b1c2a8b80a6f34d14f209c1f0336db779afc1132d4",
+        "compiler/pure/_package_platform.lsl": "5390924c2c8eb95ebc34099e05d88d0b77ce27693fce9f32d0f064317dd00100",
+        "compiler/pure/_update_install_platform.lsl": "b23a59ce6d202f03f7e25fe683ce23b293d0dcc82e2312f823b295266b0a6b59",
+        "compiler/pure/_update_platform.lsl": "b35cd3dbd1de9e582410c1c0078d5016c34a03d5b24440003a21e775ff41b041",
+        "compiler/pure/abi_x86_64.lsl": "5e6123581d7dec0223b03ff00e2ba5fd6fe7973bb665852d8d0a44820c3b8a60",
+        "compiler/pure/assembler.lsl": "8d6c68b1d9f40d37904704741d2fe6b00872309661baaf4951cf5e65baf78f7c",
+        "compiler/pure/assembler_x86_64.lsl": "af22e43292f7866cbb9348840d6cb52e05e4b0df10cb61aaef32a826abbd52f4",
+        "compiler/pure/backend_x86_64.lsl": "70bf7ed1cb4c7b23c97bdc170f5233dae7158c4a38503d1a8f3c60a5fe44f718",
+        "compiler/pure/browser.lsl": "eeb9f0d0ea05efb5b473a5ff89ef95c08217f3ebc4a4095ab534ea013f23db2a",
+        "compiler/pure/bytes.lsl": "6d5b630011129af9a936b448432e0cd8631437d20c809995e6fa78197b18f1b8",
+        "compiler/pure/catalog.lsl": "1dd32f76028e005b28a518c99df572941a3952ea6a72711fa4fc9c07bb6f433b",
+        "compiler/pure/catalog_linux_x86_64.lsl": "016b9de8341ee410286a7d2e6d540bfafa9ae79cd2de4be27dc2866613f53f39",
+        "compiler/pure/cli.lsl": "a5e4b55f211aa5522e72ce777967fd14d2d696f8a07766113f40abd22dc25088",
+        "compiler/pure/codegen.lsl": "058d58fbb77bf78d5a52a863f6fd8447321a70e8a00257b7076ae7423258c3cd",
+        "compiler/pure/compiler_backend.lsl": "a14da865d5cdef0e5599335884c3a1c9dffa8c19ef5ab3bd0b9c6ffe9ecb75b7",
+        "compiler/pure/console.lsl": "05ec9f84138198f65065f4c8aa2c451ac90961996947e7fad3e755e830cf505d",
+        "compiler/pure/declarations.lsl": "8b4027b210bb46c5db34d3a70c857ee26b088a31cf340b2e09c886137d2e82ac",
+        "compiler/pure/diagnostics.lsl": "e5b5d66ab05ae3e87b9c84103f8a69d6857416fabcebb17d7ca5a959af64ec74",
+        "compiler/pure/dynamic_stdlib.lsl": "6b78f1022da7021a48246f35d1224a501d2964ab59faae735922595f54e5797e",
+        "compiler/pure/editor.lsl": "381eb9980899eb6964cc72f07608e39b419c7f832a7b7f45f5977be3bca218d0",
+        "compiler/pure/elf_image.lsl": "2a05401fc3ff99dbd7364f9b26f42e114747e079dbcb22525f8acf91ac5f828e",
+        "compiler/pure/flow.lsl": "87adb7765087299b64a41997d1919ee362b679b6264388356d32576e25c28323",
+        "compiler/pure/frontend.lsl": "e708a35f8a44ba8002f05165ec864ae9aaa7b2d924d0cf67b282862c78c9be85",
+        "compiler/pure/heap_runtime.lsl": "3b4679d6104c1a0bc8fdfb2bb0165288c97482a30a51c9cf5edee1af38ba20e6",
+        "compiler/pure/heap_runtime_linux_x86_64.lsl": "f6b7ddc4e3c546ab592e2a1e39e53e4c1c695fe83cca1ff15fc251e928c30073",
+        "compiler/pure/highlight.lsl": "7bb02d0eb31f1435896ea2f447ace7c89b4bc286b5da1642c6f03e1e2c1ce87d",
+        "compiler/pure/host.lsl": "3b458a8d437aa50d2cebb7d613339c08df7816386babc2245c529ce1bb15cbf6",
+        "compiler/pure/host_linux_x86_64.lsl": "95fbed18a04238710eca734c09e73d7fa5b7f3f41d784f34f1a2401e2083745e",
+        "compiler/pure/image_elf64_linux.lsl": "44bf898add0a37fd9279459c5f7ff140dcd66c7abb87f557c47e5a854da6d739",
+        "compiler/pure/image_writer.lsl": "58cebb23435a57c9d3d723646bd444ac7c48f46c3bb2097374d94361eaeff492",
+        "compiler/pure/install.lsl": "e57e496e0d960293194bbdba5dcecf1210ffc131bd94c0b5a027cf33f72bea18",
+        "compiler/pure/install_linux_x86_64.lsl": "acd36f168730cc3904c34c827a700d3210a3e9722a8119d55cc004c250402d6d",
+        "compiler/pure/io_runtime.lsl": "3d5302d06c75e9fad5c628b739bdc3d06cfe0e803b2a129c863b997f6e4a7995",
+        "compiler/pure/io_runtime_linux_x86_64.lsl": "67518f93b0253792ed0f0ee1a8c8e34f8df9873b979e32f88308297166ca3a19",
+        "compiler/pure/lexer.lsl": "dcc607a576efd5b1a370737dc3c1075c8f815aed853c80097045e02e7147c101",
+        "compiler/pure/linker.lsl": "05bde8e7d7ff5a7a004c51bb574a0a621b911df96e1d9c79666c2346a9abc9a5",
+        "compiler/pure/lslc_direct.lsl": "c025015017dcca7300b893529d3de7bf97f9a89d58a1e6e6d924a8030269ce58",
+        "compiler/pure/lslc_qbe.lsl": "085e51564613f2468546cf45f054fdf74863d1032a873b2b71c491dab8b0540d",
+        "compiler/pure/manual.lsl": "565e91fc2003e4eadfa264991771dc9289a0ffd8a2f3621aa2fee32b58369dc0",
+        "compiler/pure/native_plugin_runtime.lsl": "c48e8995ddb131ac5d2808530cc1aa9d0e3ba618c44bf9a411f425c70b9fba7d",
+        "compiler/pure/native_plugin_runtime_linux_x86_64.lsl": "f1d07341cb011cb23df05caee61ccb3a5fc763c62b61d4b927c1dffaacf64241",
+        "compiler/pure/native_runtime.lsl": "97b15d1f9b2cbe3ecb8ac67a42affabe876dc8f2b9439150088232cfcc3bf461",
+        "compiler/pure/native_runtime_linux_x86_64.lsl": "89021b33402d8a8f2b746ddbaa85282df0a9f391a073ae813b558f0a392fe710",
+        "compiler/pure/object_code.lsl": "28c665c4799f59166c42c8673d9bf203a18a3bba95bec233571516037f1562f5",
+        "compiler/pure/package.lsl": "b344a5cc14db24b526c8c0dd256949541147e9462244207ac1319a2f026aa472",
+        "compiler/pure/package_linux_x86_64.lsl": "7bdb0f73c59a1de70cbd689d1c4560c3cb2ea37987550299e5462a96e4bf0a5b",
+        "compiler/pure/parser.lsl": "a5eb49774210c7c101014f344f91a58a9730a09e9028cce8ed190738ce3783bf",
+        "compiler/pure/pipeline.lsl": "84d20482156131be58360f56f0d47883b4d5a3797a59087473c240d85f8c9320",
+        "compiler/pure/process_runtime.lsl": "feb20eed99030a41b6bcf73c6ed925fea11b648272606ea42527954d064bb43d",
+        "compiler/pure/process_runtime_linux_x86_64.lsl": "c1508d4c69fb952bbe89417d897a4a165182e07afd773a335d65088f96d9620f",
+        "compiler/pure/qbe_emit.lsl": "4f7d281eb5f452021a12cb9b4823b05fbac74db7e23fa98dfa77159303de6301",
+        "compiler/pure/qbe_emit_diagnostic.lsl": "3dd7297e557fec1ddd58cadbfba7a75e22f7dd20bb8aef5e01b2b824d81c66d9",
+        "compiler/pure/qbe_runtime_dump.lsl": "1ed4e00498b6396680fb24138df48923cf4ae80c1c882b317834f0deb50e0bff",
+        "compiler/pure/qbe_toolchain.lsl": "786a5df6eace5885b342ef8ba85288352a28f7046548a1ddb9f4f1702b39b315",
+        "compiler/pure/relocations_x86_64.lsl": "53c7cbb52f6724dd4fab3337219acbb5c3c6e2042e8147d51e03b9f0d8373d42",
+        "compiler/pure/runtime.lsl": "6f54df34a08b9b8ce4b855e7bea82d3fe81b6a9f9750216c458641838634d860",
+        "compiler/pure/runtime_abi_linux_x86_64.lsl": "6e2b067194db926dce39dc332c2ff8537db9bf58e81a3d0172f9bda01fe6d1ec",
+        "compiler/pure/runtime_linux_x86_64.lsl": "2f4e16fec47238f243b88727c95ddcf056041a73edf42fba128846104274310e",
+        "compiler/pure/semantic.lsl": "dc78c7511a58e0afcff35e75156b3c10560ec151aa111050b128894289494a29",
+        "compiler/pure/target.lsl": "2d913fa28cd778d02d0d4bebd18986cd5d68864cf2640a63db262ccb2977d9cf",
+        "compiler/pure/thread_runtime.lsl": "cf94f0a37f4e031a06ee52d4a759e368cda64583bcb6ff8f484650debb29adfd",
+        "compiler/pure/thread_runtime_linux_x86_64.lsl": "e4df2c12dd90248ec2c23d236f3c157af87df5724736d2fc31328550b8765bdc",
+        "compiler/pure/update.lsl": "fef774fac49493190b44c0d9444589005f8ff1194051662af67117c0afdda363",
+        "compiler/pure/update_install.lsl": "d8ccac15b846cd4b0d4e023f1a4804f9e265e781324d3e08c01cad110891058a",
+        "compiler/pure/update_install_linux_x86_64.lsl": "80ce50d927bffe1edc9f3abc226b25519399be2327a0576b469794b0d5fb39d6",
+        "compiler/pure/update_linux_x86_64.lsl": "07bf87e077446c6d76b2b7a5f6531f74705d605d0d84e73b4b0aefa0c8596e50",
+        "compiler/pure/validation.lsl": "82d3f45c9655cd169c878153900f58d17c32f6eab95fbafb562024cc694fd5e1",
+        "compiler/pure/value_abi.lsl": "6e61c4f92bb308cc95c37e5c5faad57303dd6cb2852518ff581753bdca5bac74",
+        "compiler/pure/x86_64.lsl": "060978b936d1f758565841725c648c506bf52cc1af2e6f2fc6879ed912461ce5"
+      },
+      "runtime_sha256": "23a85294bf1087cc1b812172e1c95c0ee4b5b8d05486b375c25242c143b85c14",
+      "qbe_sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9"
+    },
+    "capture_limits": {
+      "scope": "Check native capture preserves inherited RLIMIT_FSIZE bounds.",
+      "compiler_sha256": "d26a3b71df3b643aed58264e3eb8bb03360c468da41d351117f151142cc94f32",
+      "source_sha256": "ca12f7c0cc0850bf8d3c742494c59d3e41f6cccd02703042d4f411a54cedf6fd",
+      "runtime_object_sha256": "23a85294bf1087cc1b812172e1c95c0ee4b5b8d05486b375c25242c143b85c14",
+      "runtime_source_sha256": "c1508d4c69fb952bbe89417d897a4a165182e07afd773a335d65088f96d9620f",
+      "correctness_only": true,
+      "commands": [
+        {
+          "mode": "public",
+          "command": [
+            "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "--unsafe",
+            "/home/antonin/LSL-QBE-string-order/tests/qbe_port/native_capture_file_limits.lsl",
+            "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/capture/capture-limits-public"
+          ],
+          "seconds": 1.7732935789972544,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "",
+          "stderr": "",
+          "binary_sha256": "4ee29f569696595e3d89d66af2a5adb5aac57ca6e94981ab0cfd55fd24a06593"
+        },
+        {
+          "mode": "internal",
+          "command": [
+            "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "--unsafe",
+            "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/capture/capture-limits-internal.lsl",
+            "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/capture/capture-limits-internal"
+          ],
+          "seconds": 1.9796532159962226,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "",
+          "stderr": "",
+          "binary_sha256": "cc642bdcdb8057751587508aaa7b7e1322740fd21f7123203858e9a1c0eb3617"
+        }
+      ],
+      "rows": [
+        {
+          "mode": "public",
+          "inherited_limits": [
+            16777216,
+            16777216
+          ],
+          "returncode": 0,
+          "stdout": "before 16777216 16777216\ncaptured 16777216 16777216\nafter 16777216 16777216\n",
+          "stderr": "",
+          "expected_stdout": "before 16777216 16777216\ncaptured 16777216 16777216\nafter 16777216 16777216\n",
+          "pass": true
+        },
+        {
+          "mode": "public",
+          "inherited_limits": [
+            67108864,
+            67108864
+          ],
+          "returncode": 0,
+          "stdout": "before 67108864 67108864\ncaptured 67108864 67108864\nafter 67108864 67108864\n",
+          "stderr": "",
+          "expected_stdout": "before 67108864 67108864\ncaptured 67108864 67108864\nafter 67108864 67108864\n",
+          "pass": true
+        },
+        {
+          "mode": "public",
+          "inherited_limits": [
+            134217728,
+            134217728
+          ],
+          "returncode": 0,
+          "stdout": "before 134217728 134217728\ncaptured 134217728 134217728\nafter 134217728 134217728\n",
+          "stderr": "",
+          "expected_stdout": "before 134217728 134217728\ncaptured 134217728 134217728\nafter 134217728 134217728\n",
+          "pass": true
+        },
+        {
+          "mode": "public",
+          "inherited_limits": [
+            1048576,
+            67108864
+          ],
+          "returncode": 0,
+          "stdout": "before 1048576 67108864\ncaptured 1048576 67108864\nafter 1048576 67108864\n",
+          "stderr": "",
+          "expected_stdout": "before 1048576 67108864\ncaptured 1048576 67108864\nafter 1048576 67108864\n",
+          "pass": true
+        },
+        {
+          "mode": "public",
+          "inherited_limits": [
+            16777216,
+            268435456
+          ],
+          "returncode": 0,
+          "stdout": "before 16777216 268435456\ncaptured 16777216 134217728\nafter 16777216 268435456\n",
+          "stderr": "",
+          "expected_stdout": "before 16777216 268435456\ncaptured 16777216 134217728\nafter 16777216 268435456\n",
+          "pass": true
+        },
+        {
+          "mode": "public",
+          "inherited_limits": [
+            -1,
+            -1
+          ],
+          "returncode": 0,
+          "stdout": "before -1 -1\ncaptured 134217728 134217728\nafter -1 -1\n",
+          "stderr": "",
+          "expected_stdout": "before -1 -1\ncaptured 134217728 134217728\nafter -1 -1\n",
+          "pass": true
+        },
+        {
+          "mode": "internal",
+          "inherited_limits": [
+            16777216,
+            16777216
+          ],
+          "returncode": 0,
+          "stdout": "before 16777216 16777216\ncaptured 16777216 16777216\nafter 16777216 16777216\n",
+          "stderr": "",
+          "expected_stdout": "before 16777216 16777216\ncaptured 16777216 16777216\nafter 16777216 16777216\n",
+          "pass": true
+        },
+        {
+          "mode": "internal",
+          "inherited_limits": [
+            67108864,
+            67108864
+          ],
+          "returncode": 0,
+          "stdout": "before 67108864 67108864\ncaptured 67108864 67108864\nafter 67108864 67108864\n",
+          "stderr": "",
+          "expected_stdout": "before 67108864 67108864\ncaptured 67108864 67108864\nafter 67108864 67108864\n",
+          "pass": true
+        },
+        {
+          "mode": "internal",
+          "inherited_limits": [
+            134217728,
+            134217728
+          ],
+          "returncode": 0,
+          "stdout": "before 134217728 134217728\ncaptured 134217728 134217728\nafter 134217728 134217728\n",
+          "stderr": "",
+          "expected_stdout": "before 134217728 134217728\ncaptured 134217728 134217728\nafter 134217728 134217728\n",
+          "pass": true
+        },
+        {
+          "mode": "internal",
+          "inherited_limits": [
+            1048576,
+            67108864
+          ],
+          "returncode": 0,
+          "stdout": "before 1048576 67108864\ncaptured 1048576 67108864\nafter 1048576 67108864\n",
+          "stderr": "",
+          "expected_stdout": "before 1048576 67108864\ncaptured 1048576 67108864\nafter 1048576 67108864\n",
+          "pass": true
+        },
+        {
+          "mode": "internal",
+          "inherited_limits": [
+            16777216,
+            268435456
+          ],
+          "returncode": 0,
+          "stdout": "before 16777216 268435456\ncaptured 16777216 134217728\nafter 16777216 268435456\n",
+          "stderr": "",
+          "expected_stdout": "before 16777216 268435456\ncaptured 16777216 134217728\nafter 16777216 268435456\n",
+          "pass": true
+        },
+        {
+          "mode": "internal",
+          "inherited_limits": [
+            -1,
+            -1
+          ],
+          "returncode": 0,
+          "stdout": "before -1 -1\ncaptured 134217728 134217728\nafter -1 -1\n",
+          "stderr": "",
+          "expected_stdout": "before -1 -1\ncaptured 134217728 134217728\nafter -1 -1\n",
+          "pass": true
+        }
+      ],
+      "all_pass": true
+    },
+    "nullable_identity": {
+      "compiler_sha256": "d26a3b71df3b643aed58264e3eb8bb03360c468da41d351117f151142cc94f32",
+      "backend_sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+      "checks": [
+        {
+          "mode": "public",
+          "source_sha256": "f795e325e8f014b7ed238b00f90fd5a087fdf96c3592258d26a063eb2a23d031",
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/frontend-stage3",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/nullable/arg-public.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/nullable/arg-public",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3"
+            ],
+            "seconds": 0.9270560599979945,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/nullable/arg-public",
+              "present"
+            ],
+            "seconds": 0.005880497003090568,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "True False None\nNone\nTrue False True False\nNone False\nTrue False None\nTrue False None\nTrue True String\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "mode": "internal",
+          "source_sha256": "57aedc35ad0773179dcd64f8c09d3ba635d338e615a2ce74a14a3d231f62d2ec",
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/frontend-stage3",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/nullable/arg-internal.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/nullable/arg-internal",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3"
+            ],
+            "seconds": 1.839509168996301,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/nullable/arg-internal",
+              "present"
+            ],
+            "seconds": 0.012050739998812787,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "True False None\nNone\nTrue False True False\nNone False\nTrue False None\nTrue False None\nTrue True String\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "mode": "public",
+          "source_sha256": "93bcf0f66fddfa7442fa4ce940c1a251f97593988a886ecbd876e6da09f9e30b",
+          "baseline_build": {
+            "command": [
+              "/home/antonin/.local/bin/lslc",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/nullable/identity-public.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/nullable/identity-public.baseline"
+            ],
+            "seconds": 1.774870754998119,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          },
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/frontend-stage3",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/nullable/identity-public.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/nullable/identity-public",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3"
+            ],
+            "seconds": 2.3490893979978864,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          },
+          "baseline_execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/nullable/identity-public.baseline"
+            ],
+            "seconds": 0.006880020999233238,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "True False\nTrue False True True\nFalse True\nTrue True True True\nTrue True False False\nTrue False True False\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nTrue False True False\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nTrue False True False\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nTrue False True False\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nTrue False True False\nTrue False True False\nTrue False True False\nFalse True False True\nFalse True False True\nTrue False True False\nTrue False True False\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nTrue False True False\nFalse True True False True\nFalse True\n",
+            "stderr": ""
+          },
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/nullable/identity-public"
+            ],
+            "seconds": 0.0066397999980836175,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "True False\nTrue False True True\nFalse True\nTrue True True True\nTrue True False False\nTrue False True False\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nTrue False True False\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nTrue False True False\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nTrue False True False\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nTrue False True False\nTrue False True False\nTrue False True False\nFalse True False True\nFalse True False True\nTrue False True False\nTrue False True False\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nTrue False True False\nFalse True True False True\nFalse True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "mode": "internal",
+          "source_sha256": "f1ce23433efc531bb455d5b714b835c3cf49d386221c02a099d9918a66307559",
+          "baseline_build": {
+            "command": [
+              "/home/antonin/.local/bin/lslc",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/nullable/identity-internal.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/nullable/identity-internal.baseline"
+            ],
+            "seconds": 1.5239971299961326,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          },
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/frontend-stage3",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/nullable/identity-internal.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/nullable/identity-internal",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3"
+            ],
+            "seconds": 1.739127502994961,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          },
+          "baseline_execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/nullable/identity-internal.baseline"
+            ],
+            "seconds": 0.007665826000447851,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "True False\nTrue False True True\nFalse True\nTrue True True True\nTrue True True True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nTrue False True False\nTrue False True False\nFalse True False True\nFalse True False True\nTrue False True False\nTrue False True False\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nTrue False True False\nFalse True True False True\nFalse True\n",
+            "stderr": ""
+          },
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/nullable/identity-internal"
+            ],
+            "seconds": 0.006476441994891502,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "True False\nTrue False True True\nFalse True\nTrue True True True\nTrue True True True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nTrue False True False\nTrue False True False\nFalse True False True\nFalse True False True\nTrue False True False\nTrue False True False\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nTrue False True False\nFalse True True False True\nFalse True\n",
+            "stderr": ""
+          },
+          "pass": true
+        }
+      ],
+      "all_pass": true,
+      "baseline_sha256": "f235b42d4998474c1bfee7eb02f17625bbc824f647f9ba33bdef8c20b0ff8696"
+    },
+    "builtin_return_types": {
+      "compiler_sha256": "d26a3b71df3b643aed58264e3eb8bb03360c468da41d351117f151142cc94f32",
+      "backend_sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+      "baseline_sha256": "f235b42d4998474c1bfee7eb02f17625bbc824f647f9ba33bdef8c20b0ff8696",
+      "fixture_sha256": "019fde36201cc200faf69e29f23bc289ce634bb882e3bb37335a83029d22373a",
+      "checks": [
+        {
+          "abi": "public",
+          "compiler": "baseline",
+          "build": {
+            "command": [
+              "/home/antonin/.local/bin/lslc",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/builtins/public.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/builtins/baseline-public"
+            ],
+            "seconds": 1.5381636979946052,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/builtins/baseline-public"
+            ],
+            "seconds": 0.0051723240030696616,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "1 0\nInt Int\n1 0 Int Int\n1 0\nInt Int\n-22\nInt\n",
+            "stderr": ""
+          },
+          "matches_oracle": true,
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "native",
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/frontend-stage3",
+              "--unsafe",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/builtins/public.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/builtins/native-public",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3"
+            ],
+            "seconds": 1.7263570650029578,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/builtins/native-public"
+            ],
+            "seconds": 0.011775075996411033,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "1 0\nInt Int\n1 0 Int Int\n1 0\nInt Int\n-22\nInt\n",
+            "stderr": ""
+          },
+          "matches_oracle": true,
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "before",
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-repair/seeds/frontend-before-final-metadata",
+              "--unsafe",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/builtins/public.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/builtins/before-public",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3"
+            ],
+            "seconds": 1.8464333310039365,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/builtins/before-public"
+            ],
+            "seconds": 0.010337671999877784,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "True False\nBool Bool\n1 0 Int Int\n1 0\nInt Int\n-22\nByteArray\n",
+            "stderr": ""
+          },
+          "matches_oracle": false,
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "baseline",
+          "build": {
+            "command": [
+              "/home/antonin/.local/bin/lslc",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/builtins/internal.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/builtins/baseline-internal"
+            ],
+            "seconds": 0.8529945430054795,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/builtins/baseline-internal"
+            ],
+            "seconds": 0.00320767499943031,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "1 0\nInt Int\n1 0 Int Int\n1 0\nInt Int\n-22\nInt\n",
+            "stderr": ""
+          },
+          "matches_oracle": true,
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "native",
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/frontend-stage3",
+              "--unsafe",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/builtins/internal.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/builtins/native-internal",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3"
+            ],
+            "seconds": 1.307969977002358,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/builtins/native-internal"
+            ],
+            "seconds": 0.006383435997122433,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "1 0\nInt Int\n1 0 Int Int\n1 0\nInt Int\n-22\nInt\n",
+            "stderr": ""
+          },
+          "matches_oracle": true,
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "before",
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-repair/seeds/frontend-before-final-metadata",
+              "--unsafe",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/builtins/internal.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/builtins/before-internal",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3"
+            ],
+            "seconds": 1.477692822998506,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/builtins/before-internal"
+            ],
+            "seconds": 0.005989985998894554,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "True False\nBool Bool\n1 0 Int Int\n1 0\nInt Int\n-22\nByteArray\n",
+            "stderr": ""
+          },
+          "matches_oracle": false,
+          "pass": true
+        }
+      ],
+      "all_pass": true
+    },
+    "http_transport_errors": {
+      "compiler_sha256": "d26a3b71df3b643aed58264e3eb8bb03360c468da41d351117f151142cc94f32",
+      "backend_sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+      "baseline_sha256": "f235b42d4998474c1bfee7eb02f17625bbc824f647f9ba33bdef8c20b0ff8696",
+      "http_source_sha256": "e38d245316bc8eb0c56e5324291592a5fa8b65c8f93fec8acd8c33df6f78baee",
+      "scope": "Both ABIs, installed 0.8.9 compiler and native compiler, same patched stdlib; no network or C QBE.",
+      "builds": [
+        {
+          "abi": "public",
+          "compiler": "baseline",
+          "result": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-baseline"
+            ],
+            "seconds": 2.1391087000010884,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          }
+        },
+        {
+          "abi": "public",
+          "compiler": "native",
+          "result": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3"
+            ],
+            "seconds": 1.7806676429972867,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          }
+        },
+        {
+          "abi": "internal",
+          "compiler": "baseline",
+          "result": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-baseline"
+            ],
+            "seconds": 1.348149266996188,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          }
+        },
+        {
+          "abi": "internal",
+          "compiler": "native",
+          "result": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3"
+            ],
+            "seconds": 1.5001562489997013,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          }
+        }
+      ],
+      "checks": [
+        {
+          "abi": "public",
+          "compiler": "baseline",
+          "case": "valid-zero",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case valid-zero>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.06862121599988313,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "baseline",
+          "case": "valid-999",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case valid-999>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.10395398800028488,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "baseline",
+          "case": "unicode-message",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case unicode-message>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.053861277003306895,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "baseline",
+          "case": "empty-after-trailer",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case empty-after-trailer>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.09819156500452664,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "baseline",
+          "case": "empty-stderr",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case empty-stderr>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.05717195999750402,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "baseline",
+          "case": "short-stderr",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case short-stderr>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.09031881899863947,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "baseline",
+          "case": "lowercase-malformed",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case lowercase-malformed>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.10377351400529733,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "baseline",
+          "case": "uppercase-malformed",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case uppercase-malformed>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.07219904099474661,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "baseline",
+          "case": "first-digit-malformed",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case first-digit-malformed>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.07600129600177752,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "baseline",
+          "case": "last-digit-malformed",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case last-digit-malformed>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.08705700599966804,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "baseline",
+          "case": "wrong-separator",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case wrong-separator>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.044500299998617265,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "baseline",
+          "case": "unicode-digits",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case unicode-digits>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.08440051800425863,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "baseline",
+          "case": "bounded-message",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case bounded-message>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.06419475499569671,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "native",
+          "case": "valid-zero",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case valid-zero>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.028466305004258174,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "native",
+          "case": "valid-999",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case valid-999>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.032445828001073096,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "native",
+          "case": "unicode-message",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case unicode-message>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.07226601400179788,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "native",
+          "case": "empty-after-trailer",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case empty-after-trailer>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.05467887700069696,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "native",
+          "case": "empty-stderr",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case empty-stderr>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.05017761899944162,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "native",
+          "case": "short-stderr",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case short-stderr>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.05619299600220984,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "native",
+          "case": "lowercase-malformed",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case lowercase-malformed>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.046152038004947826,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "native",
+          "case": "uppercase-malformed",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case uppercase-malformed>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.05444346299918834,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "native",
+          "case": "first-digit-malformed",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case first-digit-malformed>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.0753007209932548,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "native",
+          "case": "last-digit-malformed",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case last-digit-malformed>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.060078921997046564,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "native",
+          "case": "wrong-separator",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case wrong-separator>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.05129873700207099,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "native",
+          "case": "unicode-digits",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case unicode-digits>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.053695139999035746,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "native",
+          "case": "bounded-message",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case bounded-message>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.04956066099839518,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "baseline",
+          "case": "valid-zero",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case valid-zero>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.060220581995963585,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "baseline",
+          "case": "valid-999",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case valid-999>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.033594267995795235,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "baseline",
+          "case": "unicode-message",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case unicode-message>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.039352274005068466,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "baseline",
+          "case": "empty-after-trailer",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case empty-after-trailer>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.05342888200539164,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "baseline",
+          "case": "empty-stderr",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case empty-stderr>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.0430570099997567,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "baseline",
+          "case": "short-stderr",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case short-stderr>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.046941175998654217,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "baseline",
+          "case": "lowercase-malformed",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case lowercase-malformed>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.05044495600304799,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "baseline",
+          "case": "uppercase-malformed",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case uppercase-malformed>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.029756882002402563,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "baseline",
+          "case": "first-digit-malformed",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case first-digit-malformed>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.02456057199742645,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "baseline",
+          "case": "last-digit-malformed",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case last-digit-malformed>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.032778619999589864,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "baseline",
+          "case": "wrong-separator",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case wrong-separator>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.042171396999037825,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "baseline",
+          "case": "unicode-digits",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case unicode-digits>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.05674551799893379,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "baseline",
+          "case": "bounded-message",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case bounded-message>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.0576886260023457,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "native",
+          "case": "valid-zero",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case valid-zero>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.05061479500000132,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "native",
+          "case": "valid-999",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case valid-999>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.039224779000505805,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "native",
+          "case": "unicode-message",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case unicode-message>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.03442231499502668,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "native",
+          "case": "empty-after-trailer",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case empty-after-trailer>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.056326309000723995,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "native",
+          "case": "empty-stderr",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case empty-stderr>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.05321979200380156,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "native",
+          "case": "short-stderr",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case short-stderr>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.06165139899530914,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "native",
+          "case": "lowercase-malformed",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case lowercase-malformed>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.04932795600325335,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "native",
+          "case": "uppercase-malformed",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case uppercase-malformed>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.05656037899461808,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "native",
+          "case": "first-digit-malformed",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case first-digit-malformed>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.06342576499446295,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "native",
+          "case": "last-digit-malformed",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case last-digit-malformed>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.03209145300206728,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "native",
+          "case": "wrong-separator",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case wrong-separator>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.05299909099994693,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "native",
+          "case": "unicode-digits",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case unicode-digits>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.027247685997281224,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "native",
+          "case": "bounded-message",
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/failed-transport",
+              "<message from verifier case bounded-message>",
+              "<expected text from verifier case>"
+            ],
+            "seconds": 0.030893873998138588,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 False True\n",
+            "stderr": ""
+          },
+          "pass": true
+        }
+      ],
+      "numeric_only": [
+        {
+          "abi": "public",
+          "compiler": "baseline",
+          "operator": "<",
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering-baseline"
+            ],
+            "seconds": 1.292180617005215,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl:1:7\n  |\n1 | print \"a\" < \"b\"\n  |       ^~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "rejection": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering-baseline"
+            ],
+            "seconds": 1.292180617005215,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl:1:7\n  |\n1 | print \"a\" < \"b\"\n  |       ^~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "native",
+          "operator": "<",
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3"
+            ],
+            "seconds": 0.5609962019952945,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl:1:7\n  |\n1 | print \"a\" < \"b\"\n  |       ^~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "rejection": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3"
+            ],
+            "seconds": 0.5609962019952945,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl:1:7\n  |\n1 | print \"a\" < \"b\"\n  |       ^~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "baseline",
+          "operator": "<=",
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering-baseline"
+            ],
+            "seconds": 0.7695031539988122,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl:1:7\n  |\n1 | print \"a\" <= \"b\"\n  |       ^~~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "rejection": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering-baseline"
+            ],
+            "seconds": 0.7695031539988122,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl:1:7\n  |\n1 | print \"a\" <= \"b\"\n  |       ^~~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "native",
+          "operator": "<=",
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3"
+            ],
+            "seconds": 0.660429068004305,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl:1:7\n  |\n1 | print \"a\" <= \"b\"\n  |       ^~~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "rejection": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3"
+            ],
+            "seconds": 0.660429068004305,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl:1:7\n  |\n1 | print \"a\" <= \"b\"\n  |       ^~~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "baseline",
+          "operator": ">",
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering-baseline"
+            ],
+            "seconds": 1.3571386149997124,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl:1:7\n  |\n1 | print \"a\" > \"b\"\n  |       ^~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "rejection": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering-baseline"
+            ],
+            "seconds": 1.3571386149997124,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl:1:7\n  |\n1 | print \"a\" > \"b\"\n  |       ^~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "native",
+          "operator": ">",
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3"
+            ],
+            "seconds": 0.5695272919983836,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl:1:7\n  |\n1 | print \"a\" > \"b\"\n  |       ^~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "rejection": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3"
+            ],
+            "seconds": 0.5695272919983836,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl:1:7\n  |\n1 | print \"a\" > \"b\"\n  |       ^~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "baseline",
+          "operator": ">=",
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering-baseline"
+            ],
+            "seconds": 0.7923321409980417,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl:1:7\n  |\n1 | print \"a\" >= \"b\"\n  |       ^~~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "rejection": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering-baseline"
+            ],
+            "seconds": 0.7923321409980417,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl:1:7\n  |\n1 | print \"a\" >= \"b\"\n  |       ^~~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "public",
+          "compiler": "native",
+          "operator": ">=",
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3"
+            ],
+            "seconds": 0.5097602610039758,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl:1:7\n  |\n1 | print \"a\" >= \"b\"\n  |       ^~~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "rejection": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3"
+            ],
+            "seconds": 0.5097602610039758,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/public-ordering.lsl:1:7\n  |\n1 | print \"a\" >= \"b\"\n  |       ^~~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "baseline",
+          "operator": "<",
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering-baseline"
+            ],
+            "seconds": 0.8980921869951999,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl:2:7\n  |\n2 | print \"a\" < \"b\"\n  |       ^~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "rejection": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering-baseline"
+            ],
+            "seconds": 0.8980921869951999,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl:2:7\n  |\n2 | print \"a\" < \"b\"\n  |       ^~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "native",
+          "operator": "<",
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3"
+            ],
+            "seconds": 0.5562875649993657,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl:2:7\n  |\n2 | print \"a\" < \"b\"\n  |       ^~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "rejection": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3"
+            ],
+            "seconds": 0.5562875649993657,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl:2:7\n  |\n2 | print \"a\" < \"b\"\n  |       ^~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "baseline",
+          "operator": "<=",
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering-baseline"
+            ],
+            "seconds": 0.8666284639984951,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl:2:7\n  |\n2 | print \"a\" <= \"b\"\n  |       ^~~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "rejection": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering-baseline"
+            ],
+            "seconds": 0.8666284639984951,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl:2:7\n  |\n2 | print \"a\" <= \"b\"\n  |       ^~~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "native",
+          "operator": "<=",
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3"
+            ],
+            "seconds": 0.6743367450035294,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl:2:7\n  |\n2 | print \"a\" <= \"b\"\n  |       ^~~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "rejection": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3"
+            ],
+            "seconds": 0.6743367450035294,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl:2:7\n  |\n2 | print \"a\" <= \"b\"\n  |       ^~~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "baseline",
+          "operator": ">",
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering-baseline"
+            ],
+            "seconds": 0.7309985259998939,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl:2:7\n  |\n2 | print \"a\" > \"b\"\n  |       ^~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "rejection": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering-baseline"
+            ],
+            "seconds": 0.7309985259998939,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl:2:7\n  |\n2 | print \"a\" > \"b\"\n  |       ^~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "native",
+          "operator": ">",
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3"
+            ],
+            "seconds": 0.4807572819991037,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl:2:7\n  |\n2 | print \"a\" > \"b\"\n  |       ^~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "rejection": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3"
+            ],
+            "seconds": 0.4807572819991037,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl:2:7\n  |\n2 | print \"a\" > \"b\"\n  |       ^~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "baseline",
+          "operator": ">=",
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering-baseline"
+            ],
+            "seconds": 0.5950741670021671,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl:2:7\n  |\n2 | print \"a\" >= \"b\"\n  |       ^~~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "rejection": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/baseline",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering-baseline"
+            ],
+            "seconds": 0.5950741670021671,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl:2:7\n  |\n2 | print \"a\" >= \"b\"\n  |       ^~~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "pass": true
+        },
+        {
+          "abi": "internal",
+          "compiler": "native",
+          "operator": ">=",
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3"
+            ],
+            "seconds": 0.4573168060014723,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl:2:7\n  |\n2 | print \"a\" >= \"b\"\n  |       ^~~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "rejection": {
+            "command": [
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/tools/native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering-native",
+              "/home/antonin/LSL-QBE-string-order/build/qbe-port-tools/native-selfhost/qbe-stage3"
+            ],
+            "seconds": 0.4573168060014723,
+            "returncode": 1,
+            "timed_out": false,
+            "stdout": "error[E2001]: ordered comparison requires numeric operands\n --> /home/antonin/LSL-QBE-string-order/build/qbe-final-cli-proof/http/internal-ordering.lsl:2:7\n  |\n2 | print \"a\" >= \"b\"\n  |       ^~~~~~~~~~\n help: compare Int, Bool, or Float values\n",
+            "stderr": ""
+          },
+          "pass": true
+        }
+      ],
+      "all_pass": true
+    }
+  }
+}

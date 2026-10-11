@@ -1,0 +1,22 @@
+# A loop-header definition dominates the body and exit uses; an unrelated
+# induction phi exercises the loop CFG while the candidate has no live-in.
+export function w $loopheader(w %limit) {
+@start
+	jmp @header
+@header
+	%index =w phi @start 0, @body %next
+	%value =w add %index, 40
+	%more =w csltw %index, %limit
+	jnz %more, @body, @exit
+@body
+	%use =w add %value, 1
+	%next =w add %index, 1
+	jmp @header
+@exit
+	ret %value
+}
+
+# >>> driver
+# extern int loopheader(int);
+# int main(void) { return loopheader(3) == 43 ? 0 : 1; }
+# <<<

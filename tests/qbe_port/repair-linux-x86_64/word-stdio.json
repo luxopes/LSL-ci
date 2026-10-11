@@ -1,0 +1,11 @@
+{
+  "formats": 696,
+  "calls": 2088,
+  "expected_bytes": 50313,
+  "actual_bytes": 50313,
+  "expected_sha256": "1253815a99179f7b940a2e900c8a07d948deac68fa665a50b9dc52e52016e79c",
+  "actual_sha256": "1253815a99179f7b940a2e900c8a07d948deac68fa665a50b9dc52e52016e79c",
+  "returncode": 0,
+  "stderr": "",
+  "complete": true
+}

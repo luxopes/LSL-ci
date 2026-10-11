@@ -1,0 +1,109 @@
+{
+  "scope": "Unmodified maintained source/output fixtures; sequential execution",
+  "compiler": "/home/antonin/LSL-QBE/build/qbe-finish/compiler-gc-final",
+  "compiler_sha256": "6ef7077dd1e9e122a2884851c3024b015f95ef8993b05c61071fd622fc645182",
+  "backend": "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+  "backend_sha256": "24996ab6ae8d78238e8066c1de2b33e676ad332b1c2d007469e94bd9e42d5448",
+  "runtime_sha256": "6780bb856d07a9017e40a90931487b0905c58dbe30b1ee08bc1f8f1d3e0d691b",
+  "cases": [
+    {
+      "source": "tests/selfhost_conformance.lsl",
+      "source_sha256": "49b91eb48bdba25d2675982df6c48bd4567a92eeb9b886b5ae5fa83547ec7c14",
+      "expected_sha256": "ee3e3d2248aeaa7c7e554a514abd5b8fad31d7072972fd287550f99a7f1b7d3d",
+      "candidate": {
+        "build": {
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-finish/compiler-gc-final",
+            "tests/selfhost_conformance.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-finish/gc-result/selfhost_conformance",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "seconds": 1.2550031619975925,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-finish/gc-result/selfhost_conformance"
+          ],
+          "seconds": 0.0028444279960240237,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "factorial=720 letters=abc\n120 24 6 Function\n0 5 1 3 8 20\nLSL True fallback 3 3\nLux Native Lang 2 2 a-b-c\nTrue True True True\nTestError: expected\nA 65 6 3 8 RealArray Tuple\n3 \ud83d\ude00 \u017e \ud83d\ude00\u017e \u017e 2\n1\n2 native-counter 5 5 Class Instance\nmodule-ok 12 module-ok 15\n12 Class Instance\n{\"ok\":true,\"values\":[1,null,\"x\"]} True None\n\ud83d\ude00 1 True\n",
+          "stderr": ""
+        },
+        "matches_expected": true,
+        "status": "PASS"
+      }
+    },
+    {
+      "source": "tests/gc_raw_buffer_conformance.lsl",
+      "source_sha256": "44ba48fa4b4283537089e326f7e121f3251b3d59284837566ac6395c9d32fa30",
+      "expected_sha256": "1d2fb0a2ad2f882a2d9e8d3f71ca86021b6fae1e3ee576168dfedae4de197c1e",
+      "candidate": {
+        "build": {
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-finish/compiler-gc-final",
+            "tests/gc_raw_buffer_conformance.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-finish/gc-result/gc_raw_buffer_conformance",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "seconds": 0.7121898639961728,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-finish/gc-result/gc_raw_buffer_conformance"
+          ],
+          "seconds": 0.004165425998507999,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "raw backing pointers are not traced or finalized as objects\n",
+          "stderr": ""
+        },
+        "matches_expected": true,
+        "status": "PASS"
+      }
+    },
+    {
+      "source": "tests/gc_stress_conformance.lsl",
+      "source_sha256": "d3871d358cb923f872f433dd72c2084d4f5991ec43e0daf557c3e049be20eed5",
+      "expected_sha256": "4cc77f7b833c7bcb64f0e0fc9aa05dcc823003a0b708936e2ddcd88c23b9d046",
+      "candidate": {
+        "build": {
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-finish/compiler-gc-final",
+            "tests/gc_stress_conformance.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-finish/gc-result/gc_stress_conformance",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "seconds": 0.7243973209988326,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "",
+          "stderr": ""
+        },
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-finish/gc-result/gc_stress_conformance"
+          ],
+          "seconds": 0.037057923997053877,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "10000 0 9999 True\nTrue\n3000 2999\nTrue\n10000 9999\n0 117 40 424242 5000\n",
+          "stderr": ""
+        },
+        "matches_expected": true,
+        "status": "PASS"
+      }
+    }
+  ],
+  "complete": true,
+  "all_pass": true,
+  "binaries_unchanged": true
+}

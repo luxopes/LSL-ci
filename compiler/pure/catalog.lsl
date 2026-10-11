@@ -1,3 +1,4 @@
+load _catalog_platform as transport
 # Read-only package inventory and production catalog v1. No shell commands.
 load console
 load fd
@@ -82,75 +83,11 @@ function search(items, query):
 end
 
 function library_file(path):
-    encoded = __lsl_byte_zeros(__lsl_text_byte_length(String(path)) + 1)
-    for index in rang(len(encoded) - 1):
-        encoded[index] = __lsl_text_byte(String(path), index)
-    end
-    metadata = __lsl_byte_zeros(144)
-    status = __lsl_syscall(4, __lsl_data_address(encoded), __lsl_data_address(metadata), 0, 0)
-    if status == -2 or status == -20:
-        return False
-    elif status < 0:
-        call fail("cannot inspect library: " + console.clean(path))
-    end
-    return ((metadata[24] + metadata[25] * 256) & 61440) == 32768
+    return transport.library_file(path)
 end
 
 function directory_names(directory):
-    # getdents64 is bounded, accepts only validated module basenames and closes
-    # the descriptor on every error. Listing does not create HOME directories.
-    if not exists(directory):
-        return []
-    end
-    handle = fd.open(directory, 65536 + 524288)
-    result = []
-    failure = None
-    try:
-        buffer = __lsl_byte_zeros(32768)
-        entries = 0
-        loop:
-            count = __lsl_syscall(217, handle, __lsl_data_address(buffer), len(buffer), 0)
-            if count < 0:
-                call fail("cannot list library directory")
-            elif count == 0:
-                break
-            end
-            offset = 0
-            while offset < count:
-                if count - offset < 20:
-                    call fail("invalid directory entry")
-                end
-                size = buffer[offset + 16] + buffer[offset + 17] * 256
-                if size < 20 or size > count - offset:
-                    call fail("invalid directory record length")
-                end
-                limit = offset + 19
-                while limit < offset + size and buffer[limit] != 0:
-                    limit += 1
-                end
-                name = __lsl_text_from_bytes(buffer, offset + 19, limit - offset - 19)
-                if name.endswith(".lsl"):
-                    name = name[0:len(name) - 4]
-                    if package.valid_name(name) and library_file(directory + "/" + name + ".lsl"):
-                        result.append(name)
-                    end
-                end
-                entries += 1
-                if entries > 16384:
-                    call fail("library directory contains too many entries")
-                end
-                offset += size
-            end
-        end
-    else:
-        failure = last_error()
-    end
-    call fd.close(handle)
-    if failure != None:
-        call fail(String(failure))
-    end
-    call result.sort()
-    return result
+    return transport.directory_names(directory)
 end
 
 function installed(home, bundled):

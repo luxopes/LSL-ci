@@ -1,0 +1,534 @@
+{
+  "base_compiler_graph": "0339509",
+  "scope": "Isolated rejected experiment: share unsigned quotient/remainder in raw integer printf renderer only.",
+  "decision": "Do not integrate: no measured end-to-end backend speed improvement on either fixed workload.",
+  "unsigned_arithmetic": "QBE udiv quotient; l multiply/subtract wrap modulo 2^64. Test words above INT64_MAX are represented by signed64 bit patterns.",
+  "original_stdio_calls": 2088,
+  "additional_unsigned_edge_calls": 414,
+  "stdio": {
+    "formats": 834,
+    "calls": 2502,
+    "expected_bytes": 59739,
+    "actual_bytes": 59739,
+    "expected_sha256": "a2b0058caa792fe7862b52b2fa2a0ec76ec1ba7e160cc7594fb419688d09b4eb",
+    "actual_sha256": "a2b0058caa792fe7862b52b2fa2a0ec76ec1ba7e160cc7594fb419688d09b4eb",
+    "returncode": 0,
+    "stderr": "",
+    "complete": true
+  },
+  "benchmark": {
+    "scope": "isolated backend execution on unchanged identical IL",
+    "binaries": {
+      "baseline": {
+        "path": "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+        "sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9"
+      },
+      "candidate": {
+        "path": "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/qbe-candidate",
+        "sha256": "d15704fd6d48759d51a1bd6d64d7f36df19c4efec3ea3716df5eb8e012d2b397"
+      },
+      "c_oracle": {
+        "path": "/home/antonin/LSL-QBE/build/qbe/qbe",
+        "sha256": "9b2142227068a52f0f1e2efd73f34923b7dadd88b1fdf3205deb6d1a0c61429e"
+      }
+    },
+    "repeats": 5,
+    "workloads": [
+      {
+        "input": "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-frontend.ssa",
+        "input_sha256": "08b1a637a6aed4d3be05421690180b26cf20ad126150a0b4455c5694af7c2403",
+        "samples": [
+          {
+            "kind": "baseline",
+            "repeat": 0,
+            "seconds": 1.6633858690038323,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-frontend-baseline.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-frontend.ssa"
+            ],
+            "assembly_sha256": "f76e46df3955d4e3625649a4598626a0d1ab342d990a8a78c4066129932ad2f4"
+          },
+          {
+            "kind": "candidate",
+            "repeat": 0,
+            "seconds": 1.6599897950000013,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/qbe-candidate",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-frontend-candidate.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-frontend.ssa"
+            ],
+            "assembly_sha256": "f76e46df3955d4e3625649a4598626a0d1ab342d990a8a78c4066129932ad2f4"
+          },
+          {
+            "kind": "c_oracle",
+            "repeat": 0,
+            "seconds": 1.6140878220030572,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe/qbe",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-frontend-c_oracle.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-frontend.ssa"
+            ],
+            "assembly_sha256": "f76e46df3955d4e3625649a4598626a0d1ab342d990a8a78c4066129932ad2f4"
+          },
+          {
+            "kind": "candidate",
+            "repeat": 1,
+            "seconds": 1.6668519329978153,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/qbe-candidate",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-frontend-candidate.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-frontend.ssa"
+            ],
+            "assembly_sha256": "f76e46df3955d4e3625649a4598626a0d1ab342d990a8a78c4066129932ad2f4"
+          },
+          {
+            "kind": "c_oracle",
+            "repeat": 1,
+            "seconds": 1.619757730004494,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe/qbe",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-frontend-c_oracle.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-frontend.ssa"
+            ],
+            "assembly_sha256": "f76e46df3955d4e3625649a4598626a0d1ab342d990a8a78c4066129932ad2f4"
+          },
+          {
+            "kind": "baseline",
+            "repeat": 1,
+            "seconds": 1.6583615409981576,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-frontend-baseline.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-frontend.ssa"
+            ],
+            "assembly_sha256": "f76e46df3955d4e3625649a4598626a0d1ab342d990a8a78c4066129932ad2f4"
+          },
+          {
+            "kind": "c_oracle",
+            "repeat": 2,
+            "seconds": 1.61351683200337,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe/qbe",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-frontend-c_oracle.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-frontend.ssa"
+            ],
+            "assembly_sha256": "f76e46df3955d4e3625649a4598626a0d1ab342d990a8a78c4066129932ad2f4"
+          },
+          {
+            "kind": "baseline",
+            "repeat": 2,
+            "seconds": 1.6551523730013287,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-frontend-baseline.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-frontend.ssa"
+            ],
+            "assembly_sha256": "f76e46df3955d4e3625649a4598626a0d1ab342d990a8a78c4066129932ad2f4"
+          },
+          {
+            "kind": "candidate",
+            "repeat": 2,
+            "seconds": 1.6538903129985556,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/qbe-candidate",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-frontend-candidate.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-frontend.ssa"
+            ],
+            "assembly_sha256": "f76e46df3955d4e3625649a4598626a0d1ab342d990a8a78c4066129932ad2f4"
+          },
+          {
+            "kind": "c_oracle",
+            "repeat": 3,
+            "seconds": 1.609773240001232,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe/qbe",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-frontend-c_oracle.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-frontend.ssa"
+            ],
+            "assembly_sha256": "f76e46df3955d4e3625649a4598626a0d1ab342d990a8a78c4066129932ad2f4"
+          },
+          {
+            "kind": "candidate",
+            "repeat": 3,
+            "seconds": 1.680345586995827,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/qbe-candidate",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-frontend-candidate.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-frontend.ssa"
+            ],
+            "assembly_sha256": "f76e46df3955d4e3625649a4598626a0d1ab342d990a8a78c4066129932ad2f4"
+          },
+          {
+            "kind": "baseline",
+            "repeat": 3,
+            "seconds": 1.6967809429988847,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-frontend-baseline.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-frontend.ssa"
+            ],
+            "assembly_sha256": "f76e46df3955d4e3625649a4598626a0d1ab342d990a8a78c4066129932ad2f4"
+          },
+          {
+            "kind": "baseline",
+            "repeat": 4,
+            "seconds": 1.6597878339962335,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-frontend-baseline.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-frontend.ssa"
+            ],
+            "assembly_sha256": "f76e46df3955d4e3625649a4598626a0d1ab342d990a8a78c4066129932ad2f4"
+          },
+          {
+            "kind": "c_oracle",
+            "repeat": 4,
+            "seconds": 1.6336709690003772,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe/qbe",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-frontend-c_oracle.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-frontend.ssa"
+            ],
+            "assembly_sha256": "f76e46df3955d4e3625649a4598626a0d1ab342d990a8a78c4066129932ad2f4"
+          },
+          {
+            "kind": "candidate",
+            "repeat": 4,
+            "seconds": 1.66047443899879,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/qbe-candidate",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-frontend-candidate.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-frontend.ssa"
+            ],
+            "assembly_sha256": "f76e46df3955d4e3625649a4598626a0d1ab342d990a8a78c4066129932ad2f4"
+          }
+        ],
+        "assembly_matches": true,
+        "median_seconds": {
+          "baseline": 1.6597878339962335,
+          "candidate": 1.66047443899879,
+          "c_oracle": 1.6140878220030572
+        },
+        "candidate_vs_baseline": 1.000413670342976,
+        "candidate_vs_c": 1.028738595486191
+      },
+      {
+        "input": "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-backend.ssa",
+        "input_sha256": "04e1e3d9728f3c43831fc331588f227bd7b74d8a1ec30f7eba3f8cd7cf017f14",
+        "samples": [
+          {
+            "kind": "baseline",
+            "repeat": 0,
+            "seconds": 3.063342475994432,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-backend-baseline.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-backend.ssa"
+            ],
+            "assembly_sha256": "f879568f202849b95b776ea16bbb380d074df00e04d0b3b12b724a0231a51927"
+          },
+          {
+            "kind": "candidate",
+            "repeat": 0,
+            "seconds": 3.0888753670005826,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/qbe-candidate",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-backend-candidate.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-backend.ssa"
+            ],
+            "assembly_sha256": "f879568f202849b95b776ea16bbb380d074df00e04d0b3b12b724a0231a51927"
+          },
+          {
+            "kind": "c_oracle",
+            "repeat": 0,
+            "seconds": 4.203719487995841,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe/qbe",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-backend-c_oracle.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-backend.ssa"
+            ],
+            "assembly_sha256": "f879568f202849b95b776ea16bbb380d074df00e04d0b3b12b724a0231a51927"
+          },
+          {
+            "kind": "candidate",
+            "repeat": 1,
+            "seconds": 3.0578234679996967,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/qbe-candidate",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-backend-candidate.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-backend.ssa"
+            ],
+            "assembly_sha256": "f879568f202849b95b776ea16bbb380d074df00e04d0b3b12b724a0231a51927"
+          },
+          {
+            "kind": "c_oracle",
+            "repeat": 1,
+            "seconds": 4.172031899994181,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe/qbe",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-backend-c_oracle.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-backend.ssa"
+            ],
+            "assembly_sha256": "f879568f202849b95b776ea16bbb380d074df00e04d0b3b12b724a0231a51927"
+          },
+          {
+            "kind": "baseline",
+            "repeat": 1,
+            "seconds": 3.0743607390031684,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-backend-baseline.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-backend.ssa"
+            ],
+            "assembly_sha256": "f879568f202849b95b776ea16bbb380d074df00e04d0b3b12b724a0231a51927"
+          },
+          {
+            "kind": "c_oracle",
+            "repeat": 2,
+            "seconds": 4.167082976004167,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe/qbe",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-backend-c_oracle.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-backend.ssa"
+            ],
+            "assembly_sha256": "f879568f202849b95b776ea16bbb380d074df00e04d0b3b12b724a0231a51927"
+          },
+          {
+            "kind": "baseline",
+            "repeat": 2,
+            "seconds": 3.0758870459976606,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-backend-baseline.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-backend.ssa"
+            ],
+            "assembly_sha256": "f879568f202849b95b776ea16bbb380d074df00e04d0b3b12b724a0231a51927"
+          },
+          {
+            "kind": "candidate",
+            "repeat": 2,
+            "seconds": 3.1243238909955835,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/qbe-candidate",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-backend-candidate.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-backend.ssa"
+            ],
+            "assembly_sha256": "f879568f202849b95b776ea16bbb380d074df00e04d0b3b12b724a0231a51927"
+          },
+          {
+            "kind": "c_oracle",
+            "repeat": 3,
+            "seconds": 4.218613992998144,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe/qbe",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-backend-c_oracle.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-backend.ssa"
+            ],
+            "assembly_sha256": "f879568f202849b95b776ea16bbb380d074df00e04d0b3b12b724a0231a51927"
+          },
+          {
+            "kind": "candidate",
+            "repeat": 3,
+            "seconds": 3.0845448469990515,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/qbe-candidate",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-backend-candidate.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-backend.ssa"
+            ],
+            "assembly_sha256": "f879568f202849b95b776ea16bbb380d074df00e04d0b3b12b724a0231a51927"
+          },
+          {
+            "kind": "baseline",
+            "repeat": 3,
+            "seconds": 3.103352434998669,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-backend-baseline.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-backend.ssa"
+            ],
+            "assembly_sha256": "f879568f202849b95b776ea16bbb380d074df00e04d0b3b12b724a0231a51927"
+          },
+          {
+            "kind": "baseline",
+            "repeat": 4,
+            "seconds": 3.0732992339981138,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-backend-baseline.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-backend.ssa"
+            ],
+            "assembly_sha256": "f879568f202849b95b776ea16bbb380d074df00e04d0b3b12b724a0231a51927"
+          },
+          {
+            "kind": "c_oracle",
+            "repeat": 4,
+            "seconds": 4.187710452999454,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe/qbe",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-backend-c_oracle.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-backend.ssa"
+            ],
+            "assembly_sha256": "f879568f202849b95b776ea16bbb380d074df00e04d0b3b12b724a0231a51927"
+          },
+          {
+            "kind": "candidate",
+            "repeat": 4,
+            "seconds": 3.061247536999872,
+            "returncode": 0,
+            "command": [
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/qbe-candidate",
+              "-t",
+              "amd64_sysv",
+              "-o",
+              "/home/antonin/LSL-QBE-integer-format/build/qbe-integer-format/bench-input-backend-candidate.s",
+              "/home/antonin/LSL-QBE/build/qbe-port-tools/bench-input-backend.ssa"
+            ],
+            "assembly_sha256": "f879568f202849b95b776ea16bbb380d074df00e04d0b3b12b724a0231a51927"
+          }
+        ],
+        "assembly_matches": true,
+        "median_seconds": {
+          "baseline": 3.0743607390031684,
+          "candidate": 3.0845448469990515,
+          "c_oracle": 4.187710452999454
+        },
+        "candidate_vs_baseline": 1.0033125936936031,
+        "candidate_vs_c": 0.736570706503775
+      }
+    ],
+    "complete": true
+  },
+  "source_sha256": {
+    "compiler/pure/qbe_port/qbe_stdio_raw.lsl": "425a2605c149bf383bfacb7d7559d125e44f7dd62aa93eb7966ba2978b9acc82",
+    "tests/qbe_port/word_stdio_oracle.py": "eb63e743a1f9816879f8e19572ee44f733fc41f49c250808d98581715fcd1bc6"
+  },
+  "build_command": [
+    "build/qbe-port-tools/native-selfhost/frontend-stage3",
+    "compiler/pure/qbe_port/qbe_backend.lsl",
+    "build/qbe-integer-format/qbe-candidate",
+    "build/qbe-port-tools/native-selfhost/qbe-stage3"
+  ],
+  "benchmark_method": "5 rotated baseline/candidate/C orders for each of the two unchanged identical IL inputs; every assembler output must match. No concurrent CPU-heavy processes.",
+  "runtime_sha256": "23a85294bf1087cc1b812172e1c95c0ee4b5b8d05486b375c25242c143b85c14",
+  "complete": true,
+  "production_integration": false,
+  "candidate_patch": "diff --git a/compiler/pure/qbe_port/qbe_stdio_raw.lsl b/compiler/pure/qbe_port/qbe_stdio_raw.lsl\nindex 64f774d..4f6c1d4 100644\n--- a/compiler/pure/qbe_port/qbe_stdio_raw.lsl\n+++ b/compiler/pure/qbe_port/qbe_stdio_raw.lsl\n@@ -93,7 +93,10 @@ function _write_integer(raw_base, raw_offset, number, base, digits, sign, raw_wi\n         position = offset + digit_count - 1\n         remaining = value\n         while position >= offset:\n-            digit = __lsl_qbe_urem(remaining, radix)\n+            # Keep one unsigned division per digit. These raw integer\n+            # operations wrap at 64 bits, including values above INT64_MAX.\n+            quotient = __lsl_qbe_udiv(remaining, radix)\n+            digit = remaining - quotient * radix\n             byte = digit + 48\n             if digit >= 10:\n                 if uppercase:\n@@ -103,7 +106,7 @@ function _write_integer(raw_base, raw_offset, number, base, digits, sign, raw_wi\n                 end\n             end\n             __lsl_qbe_store8(destination + position, byte)\n-            remaining = __lsl_qbe_udiv(remaining, radix)\n+            remaining = quotient\n             position -= 1\n         end\n         offset += digit_count\n",
+  "source_sha256_scope": "Candidate sources before reverting rejected renderer change; candidate patch retained below for reproduction."
+}

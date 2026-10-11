@@ -1,0 +1,1712 @@
+{
+  "platform": "Linux-6.12.74+deb13+1-amd64-x86_64-with-glibc2.41",
+  "machine": "x86_64",
+  "scope": "complete compiler builds and execution of identical public LSL programs",
+  "baseline_version": "0.8.9",
+  "memory_limit_gib": 4,
+  "compile_repeats": 3,
+  "run_repeats": 5,
+  "timing": "wall clock including process startup; alternating execution order; medians",
+  "calibration": "one pilot per binary; scale shared iterations to about 0.5s for the slower binary",
+  "binaries": {
+    "v089": {
+      "path": "/home/antonin/.local/bin/lslc",
+      "sha256": "f235b42d4998474c1bfee7eb02f17625bbc824f647f9ba33bdef8c20b0ff8696"
+    },
+    "qbe_lsl": {
+      "path": "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+      "sha256": "489d46b56766d85071b23017c7bf31313fc5881efaf81223a5b17cf3e8b852ad"
+    }
+  },
+  "backend": {
+    "path": "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+    "sha256": "7e3d6233d2e8242a32909c5bcdb8468ce19164c376fe4689aef092476f4f6c18"
+  },
+  "runtime_sha256": "13eda5f780821651241e385be3688255b21efcc1bb4e69da5582b4cd889e3cdf",
+  "stdlib_sha256": {
+    "v089": "fb6ccb85a6c338008783ceba77c03d96f101f3befe31f36e96656f08fd0e64df",
+    "qbe_lsl": "fe2255087818e8e9c8a08caefd7827409b343fb0d877d6ffcee2b76ce9c61a2f"
+  },
+  "workloads": [
+    {
+      "name": "integer_loop",
+      "source": "tests/benchmarks/v089/integer_loop.lsl",
+      "source_sha256": "81e030943b3ddf1c147d9041de292c028d7ec7ce6810faebd18830e686a29ad0",
+      "compile_samples": [
+        {
+          "seconds": 0.5377768920006929,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "v089",
+          "repeat": 0,
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/integer_loop.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/integer_loop-v089"
+          ],
+          "binary_sha256": "53d667a44f9a97951d08d2621426e3c557c2007ab79a723d04622f373f87bced"
+        },
+        {
+          "seconds": 0.6911835709979641,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "qbe_lsl",
+          "repeat": 0,
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/integer_loop.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/integer_loop-qbe_lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "binary_sha256": "fa526ea5c515c54c41a38c1f2ab7d96af82c34bc55b18fc2c1a2b30201c2e174"
+        },
+        {
+          "seconds": 0.6962795819999883,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "qbe_lsl",
+          "repeat": 1,
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/integer_loop.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/integer_loop-qbe_lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "binary_sha256": "fa526ea5c515c54c41a38c1f2ab7d96af82c34bc55b18fc2c1a2b30201c2e174"
+        },
+        {
+          "seconds": 0.5404972320029628,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "v089",
+          "repeat": 1,
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/integer_loop.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/integer_loop-v089"
+          ],
+          "binary_sha256": "53d667a44f9a97951d08d2621426e3c557c2007ab79a723d04622f373f87bced"
+        },
+        {
+          "seconds": 0.5408069389959564,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "v089",
+          "repeat": 2,
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/integer_loop.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/integer_loop-v089"
+          ],
+          "binary_sha256": "53d667a44f9a97951d08d2621426e3c557c2007ab79a723d04622f373f87bced"
+        },
+        {
+          "seconds": 0.6833721329967375,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "qbe_lsl",
+          "repeat": 2,
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/integer_loop.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/integer_loop-qbe_lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "binary_sha256": "fa526ea5c515c54c41a38c1f2ab7d96af82c34bc55b18fc2c1a2b30201c2e174"
+        }
+      ],
+      "run_samples": [
+        {
+          "seconds": 0.3720420280005783,
+          "returncode": 0,
+          "stdout_sha256": "5c5f614dad1da0d080c6934b3d2867125974fa64a71836e33a91dd2f906ca55f",
+          "kind": "v089",
+          "repeat": 0,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.2836503630023799,
+          "returncode": 0,
+          "stdout_sha256": "5c5f614dad1da0d080c6934b3d2867125974fa64a71836e33a91dd2f906ca55f",
+          "kind": "qbe_lsl",
+          "repeat": 0,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.27744141400035005,
+          "returncode": 0,
+          "stdout_sha256": "5c5f614dad1da0d080c6934b3d2867125974fa64a71836e33a91dd2f906ca55f",
+          "kind": "qbe_lsl",
+          "repeat": 1,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.37174526099988725,
+          "returncode": 0,
+          "stdout_sha256": "5c5f614dad1da0d080c6934b3d2867125974fa64a71836e33a91dd2f906ca55f",
+          "kind": "v089",
+          "repeat": 1,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.3697535049941507,
+          "returncode": 0,
+          "stdout_sha256": "5c5f614dad1da0d080c6934b3d2867125974fa64a71836e33a91dd2f906ca55f",
+          "kind": "v089",
+          "repeat": 2,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.28698776900273515,
+          "returncode": 0,
+          "stdout_sha256": "5c5f614dad1da0d080c6934b3d2867125974fa64a71836e33a91dd2f906ca55f",
+          "kind": "qbe_lsl",
+          "repeat": 2,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.2798070720018586,
+          "returncode": 0,
+          "stdout_sha256": "5c5f614dad1da0d080c6934b3d2867125974fa64a71836e33a91dd2f906ca55f",
+          "kind": "qbe_lsl",
+          "repeat": 3,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.40213666199997533,
+          "returncode": 0,
+          "stdout_sha256": "5c5f614dad1da0d080c6934b3d2867125974fa64a71836e33a91dd2f906ca55f",
+          "kind": "v089",
+          "repeat": 3,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.396828782002558,
+          "returncode": 0,
+          "stdout_sha256": "5c5f614dad1da0d080c6934b3d2867125974fa64a71836e33a91dd2f906ca55f",
+          "kind": "v089",
+          "repeat": 4,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.2908994250028627,
+          "returncode": 0,
+          "stdout_sha256": "5c5f614dad1da0d080c6934b3d2867125974fa64a71836e33a91dd2f906ca55f",
+          "kind": "qbe_lsl",
+          "repeat": 4,
+          "checksum_matches": true
+        }
+      ],
+      "iterations": 93710471,
+      "pilot_iterations": 2000000,
+      "pilots": [
+        {
+          "seconds": 0.010671165997337084,
+          "returncode": 0,
+          "stdout_sha256": "0b74e682a8a22b538b9b242ff168d357111a07be94b8e1df558a49e309ed6340",
+          "kind": "v089"
+        },
+        {
+          "seconds": 0.008537133006029762,
+          "returncode": 0,
+          "stdout_sha256": "0b74e682a8a22b538b9b242ff168d357111a07be94b8e1df558a49e309ed6340",
+          "kind": "qbe_lsl"
+        }
+      ],
+      "expected_stdout": "4498101568\n",
+      "compile_median_seconds": {
+        "v089": 0.5404972320029628,
+        "qbe_lsl": 0.6911835709979641
+      },
+      "compile_new_over_old": 1.2787920641824402,
+      "run_median_seconds": {
+        "v089": 0.3720420280005783,
+        "qbe_lsl": 0.2836503630023799
+      },
+      "run_new_over_old": 0.7624148393308376,
+      "status": "PASS"
+    },
+    {
+      "name": "function_calls",
+      "source": "tests/benchmarks/v089/function_calls.lsl",
+      "source_sha256": "aa571a151fee7534ffc641cabe664fe9831719c9bc499bdf92d4e47a0cdc8171",
+      "compile_samples": [
+        {
+          "seconds": 0.7045871629961766,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "qbe_lsl",
+          "repeat": 0,
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/function_calls.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/function_calls-qbe_lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "binary_sha256": "6652cdad0ad83c513152cc595ec4f17a590dbf63cffc098d4771f7dfc44e748b"
+        },
+        {
+          "seconds": 0.5480828269937774,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "v089",
+          "repeat": 0,
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/function_calls.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/function_calls-v089"
+          ],
+          "binary_sha256": "8985d3412322a783eab320889fca482702e435d83edce02d5ba1bdf0a29eafef"
+        },
+        {
+          "seconds": 0.5428997470007744,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "v089",
+          "repeat": 1,
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/function_calls.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/function_calls-v089"
+          ],
+          "binary_sha256": "8985d3412322a783eab320889fca482702e435d83edce02d5ba1bdf0a29eafef"
+        },
+        {
+          "seconds": 0.7038822160029667,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "qbe_lsl",
+          "repeat": 1,
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/function_calls.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/function_calls-qbe_lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "binary_sha256": "6652cdad0ad83c513152cc595ec4f17a590dbf63cffc098d4771f7dfc44e748b"
+        },
+        {
+          "seconds": 0.7045238360005897,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "qbe_lsl",
+          "repeat": 2,
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/function_calls.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/function_calls-qbe_lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "binary_sha256": "6652cdad0ad83c513152cc595ec4f17a590dbf63cffc098d4771f7dfc44e748b"
+        },
+        {
+          "seconds": 0.5598649680032395,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "v089",
+          "repeat": 2,
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/function_calls.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/function_calls-v089"
+          ],
+          "binary_sha256": "8985d3412322a783eab320889fca482702e435d83edce02d5ba1bdf0a29eafef"
+        }
+      ],
+      "run_samples": [
+        {
+          "seconds": 0.4750066060005338,
+          "returncode": 0,
+          "stdout_sha256": "0fa2714f4be2576ed54980c303a72f49f936d344d202201a878be4a915e44954",
+          "kind": "qbe_lsl",
+          "repeat": 0,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.12096818899590289,
+          "returncode": 0,
+          "stdout_sha256": "0fa2714f4be2576ed54980c303a72f49f936d344d202201a878be4a915e44954",
+          "kind": "v089",
+          "repeat": 0,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.1241430180016323,
+          "returncode": 0,
+          "stdout_sha256": "0fa2714f4be2576ed54980c303a72f49f936d344d202201a878be4a915e44954",
+          "kind": "v089",
+          "repeat": 1,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.47302454199962085,
+          "returncode": 0,
+          "stdout_sha256": "0fa2714f4be2576ed54980c303a72f49f936d344d202201a878be4a915e44954",
+          "kind": "qbe_lsl",
+          "repeat": 1,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.47344636500201887,
+          "returncode": 0,
+          "stdout_sha256": "0fa2714f4be2576ed54980c303a72f49f936d344d202201a878be4a915e44954",
+          "kind": "qbe_lsl",
+          "repeat": 2,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.12246025899366941,
+          "returncode": 0,
+          "stdout_sha256": "0fa2714f4be2576ed54980c303a72f49f936d344d202201a878be4a915e44954",
+          "kind": "v089",
+          "repeat": 2,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.12910133099649101,
+          "returncode": 0,
+          "stdout_sha256": "0fa2714f4be2576ed54980c303a72f49f936d344d202201a878be4a915e44954",
+          "kind": "v089",
+          "repeat": 3,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.4832680710023851,
+          "returncode": 0,
+          "stdout_sha256": "0fa2714f4be2576ed54980c303a72f49f936d344d202201a878be4a915e44954",
+          "kind": "qbe_lsl",
+          "repeat": 3,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.4807531740007107,
+          "returncode": 0,
+          "stdout_sha256": "0fa2714f4be2576ed54980c303a72f49f936d344d202201a878be4a915e44954",
+          "kind": "qbe_lsl",
+          "repeat": 4,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.12308151300385362,
+          "returncode": 0,
+          "stdout_sha256": "0fa2714f4be2576ed54980c303a72f49f936d344d202201a878be4a915e44954",
+          "kind": "v089",
+          "repeat": 4,
+          "checksum_matches": true
+        }
+      ],
+      "iterations": 313785,
+      "pilot_iterations": 200000,
+      "pilots": [
+        {
+          "seconds": 0.09557509599835612,
+          "returncode": 0,
+          "stdout_sha256": "b1ea13e9a9508894a72e9cc37a684d83cbb825dd73ed62ce9cee5fc07b98ee9a",
+          "kind": "v089"
+        },
+        {
+          "seconds": 0.31868886199663393,
+          "returncode": 0,
+          "stdout_sha256": "b1ea13e9a9508894a72e9cc37a684d83cbb825dd73ed62ce9cee5fc07b98ee9a",
+          "kind": "qbe_lsl"
+        }
+      ],
+      "expected_stdout": "321328644\n",
+      "compile_median_seconds": {
+        "v089": 0.5480828269937774,
+        "qbe_lsl": 0.7045238360005897
+      },
+      "compile_new_over_old": 1.2854331522570919,
+      "run_median_seconds": {
+        "v089": 0.12308151300385362,
+        "qbe_lsl": 0.4750066060005338
+      },
+      "run_new_over_old": 3.859284748844951,
+      "status": "PASS"
+    },
+    {
+      "name": "float_loop",
+      "source": "tests/benchmarks/v089/float_loop.lsl",
+      "source_sha256": "1d6f26fc7a06ba8160964a5937dce1a10f5147ff18850e2c3151d856a1e90ca3",
+      "compile_samples": [
+        {
+          "seconds": 0.5420419749934808,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "v089",
+          "repeat": 0,
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/float_loop.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/float_loop-v089"
+          ],
+          "binary_sha256": "9a83b606be69776b8cf9b8e87919ecece56b16f4b7d72942fbaf45da9476e06f"
+        },
+        {
+          "seconds": 0.6851254490029532,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "qbe_lsl",
+          "repeat": 0,
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/float_loop.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/float_loop-qbe_lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "binary_sha256": "b650e03a1496201385d9a111764bf8816e334dc39c6a2771d5539162cd55964e"
+        },
+        {
+          "seconds": 0.6908806569990702,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "qbe_lsl",
+          "repeat": 1,
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/float_loop.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/float_loop-qbe_lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "binary_sha256": "b650e03a1496201385d9a111764bf8816e334dc39c6a2771d5539162cd55964e"
+        },
+        {
+          "seconds": 0.5386467669959529,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "v089",
+          "repeat": 1,
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/float_loop.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/float_loop-v089"
+          ],
+          "binary_sha256": "9a83b606be69776b8cf9b8e87919ecece56b16f4b7d72942fbaf45da9476e06f"
+        },
+        {
+          "seconds": 0.5404343269983656,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "v089",
+          "repeat": 2,
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/float_loop.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/float_loop-v089"
+          ],
+          "binary_sha256": "9a83b606be69776b8cf9b8e87919ecece56b16f4b7d72942fbaf45da9476e06f"
+        },
+        {
+          "seconds": 0.6908762460006983,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "qbe_lsl",
+          "repeat": 2,
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/float_loop.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/float_loop-qbe_lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "binary_sha256": "b650e03a1496201385d9a111764bf8816e334dc39c6a2771d5539162cd55964e"
+        }
+      ],
+      "run_samples": [
+        {
+          "seconds": 0.10558904600475216,
+          "returncode": 0,
+          "stdout_sha256": "d01d084c4c8e36a814444be3a761fa6a5d14928375d3763d0aa0b64aa12bd99e",
+          "kind": "v089",
+          "repeat": 0,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.09909395699651213,
+          "returncode": 0,
+          "stdout_sha256": "d01d084c4c8e36a814444be3a761fa6a5d14928375d3763d0aa0b64aa12bd99e",
+          "kind": "qbe_lsl",
+          "repeat": 0,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.09796739000012167,
+          "returncode": 0,
+          "stdout_sha256": "d01d084c4c8e36a814444be3a761fa6a5d14928375d3763d0aa0b64aa12bd99e",
+          "kind": "qbe_lsl",
+          "repeat": 1,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.10600527399947168,
+          "returncode": 0,
+          "stdout_sha256": "d01d084c4c8e36a814444be3a761fa6a5d14928375d3763d0aa0b64aa12bd99e",
+          "kind": "v089",
+          "repeat": 1,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.10947501799819293,
+          "returncode": 0,
+          "stdout_sha256": "d01d084c4c8e36a814444be3a761fa6a5d14928375d3763d0aa0b64aa12bd99e",
+          "kind": "v089",
+          "repeat": 2,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.10332958600338316,
+          "returncode": 0,
+          "stdout_sha256": "d01d084c4c8e36a814444be3a761fa6a5d14928375d3763d0aa0b64aa12bd99e",
+          "kind": "qbe_lsl",
+          "repeat": 2,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.09812008999870159,
+          "returncode": 0,
+          "stdout_sha256": "d01d084c4c8e36a814444be3a761fa6a5d14928375d3763d0aa0b64aa12bd99e",
+          "kind": "qbe_lsl",
+          "repeat": 3,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.10538137699768413,
+          "returncode": 0,
+          "stdout_sha256": "d01d084c4c8e36a814444be3a761fa6a5d14928375d3763d0aa0b64aa12bd99e",
+          "kind": "v089",
+          "repeat": 3,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.11237867000454571,
+          "returncode": 0,
+          "stdout_sha256": "d01d084c4c8e36a814444be3a761fa6a5d14928375d3763d0aa0b64aa12bd99e",
+          "kind": "v089",
+          "repeat": 4,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.10374519499600865,
+          "returncode": 0,
+          "stdout_sha256": "d01d084c4c8e36a814444be3a761fa6a5d14928375d3763d0aa0b64aa12bd99e",
+          "kind": "qbe_lsl",
+          "repeat": 4,
+          "checksum_matches": true
+        }
+      ],
+      "iterations": 509277,
+      "pilot_iterations": 50000,
+      "pilots": [
+        {
+          "seconds": 0.04430867799965199,
+          "returncode": 0,
+          "stdout_sha256": "c92d8949dcb7ba6b0e0949e8f5b758c1b0fa4be75588d82aef088dfc5d0f297c",
+          "kind": "v089"
+        },
+        {
+          "seconds": 0.04908912099926965,
+          "returncode": 0,
+          "stdout_sha256": "c92d8949dcb7ba6b0e0949e8f5b758c1b0fa4be75588d82aef088dfc5d0f297c",
+          "kind": "qbe_lsl"
+        }
+      ],
+      "expected_stdout": "340012986\n",
+      "compile_median_seconds": {
+        "v089": 0.5404343269983656,
+        "qbe_lsl": 0.6908762460006983
+      },
+      "compile_new_over_old": 1.2783722489241283,
+      "run_median_seconds": {
+        "v089": 0.10600527399947168,
+        "qbe_lsl": 0.09909395699651213
+      },
+      "run_new_over_old": 0.934802140099237,
+      "status": "PASS"
+    },
+    {
+      "name": "intarray_access",
+      "source": "tests/benchmarks/v089/intarray_access.lsl",
+      "source_sha256": "0bfaf4d02ccc9c9c6fb63e5325b4246d25c942f0d9b9e5edb7a4a8d7cdd74b75",
+      "compile_samples": [
+        {
+          "seconds": 0.6880972070066491,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "qbe_lsl",
+          "repeat": 0,
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/intarray_access.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/intarray_access-qbe_lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "binary_sha256": "52c116975eb43ae38a3f682ffc70675785eb324e680c89ff39b5bfd0436e399a"
+        },
+        {
+          "seconds": 0.5446957160020247,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "v089",
+          "repeat": 0,
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/intarray_access.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/intarray_access-v089"
+          ],
+          "binary_sha256": "4996e0c945fc534f89b207be927f1ee25dfc38b29c18e6b95accaeffb78cc115"
+        },
+        {
+          "seconds": 0.5453846420059563,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "v089",
+          "repeat": 1,
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/intarray_access.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/intarray_access-v089"
+          ],
+          "binary_sha256": "4996e0c945fc534f89b207be927f1ee25dfc38b29c18e6b95accaeffb78cc115"
+        },
+        {
+          "seconds": 0.6984632219973719,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "qbe_lsl",
+          "repeat": 1,
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/intarray_access.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/intarray_access-qbe_lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "binary_sha256": "52c116975eb43ae38a3f682ffc70675785eb324e680c89ff39b5bfd0436e399a"
+        },
+        {
+          "seconds": 0.6941679919982562,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "qbe_lsl",
+          "repeat": 2,
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/intarray_access.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/intarray_access-qbe_lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "binary_sha256": "52c116975eb43ae38a3f682ffc70675785eb324e680c89ff39b5bfd0436e399a"
+        },
+        {
+          "seconds": 0.5866057130042464,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "v089",
+          "repeat": 2,
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/intarray_access.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/intarray_access-v089"
+          ],
+          "binary_sha256": "4996e0c945fc534f89b207be927f1ee25dfc38b29c18e6b95accaeffb78cc115"
+        }
+      ],
+      "run_samples": [
+        {
+          "seconds": 0.035665030001837295,
+          "returncode": 0,
+          "stdout_sha256": "749da05b68a2792bf62c77752d2892f09bd286b475e5503c274a4dd008805c03",
+          "kind": "qbe_lsl",
+          "repeat": 0,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.07611699400149519,
+          "returncode": 0,
+          "stdout_sha256": "749da05b68a2792bf62c77752d2892f09bd286b475e5503c274a4dd008805c03",
+          "kind": "v089",
+          "repeat": 0,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.07488953799474984,
+          "returncode": 0,
+          "stdout_sha256": "749da05b68a2792bf62c77752d2892f09bd286b475e5503c274a4dd008805c03",
+          "kind": "v089",
+          "repeat": 1,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.03833520699845394,
+          "returncode": 0,
+          "stdout_sha256": "749da05b68a2792bf62c77752d2892f09bd286b475e5503c274a4dd008805c03",
+          "kind": "qbe_lsl",
+          "repeat": 1,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.03856722400087165,
+          "returncode": 0,
+          "stdout_sha256": "749da05b68a2792bf62c77752d2892f09bd286b475e5503c274a4dd008805c03",
+          "kind": "qbe_lsl",
+          "repeat": 2,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.0741956019992358,
+          "returncode": 0,
+          "stdout_sha256": "749da05b68a2792bf62c77752d2892f09bd286b475e5503c274a4dd008805c03",
+          "kind": "v089",
+          "repeat": 2,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.07232210600341205,
+          "returncode": 0,
+          "stdout_sha256": "749da05b68a2792bf62c77752d2892f09bd286b475e5503c274a4dd008805c03",
+          "kind": "v089",
+          "repeat": 3,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.03494375899754232,
+          "returncode": 0,
+          "stdout_sha256": "749da05b68a2792bf62c77752d2892f09bd286b475e5503c274a4dd008805c03",
+          "kind": "qbe_lsl",
+          "repeat": 3,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.03853802799858386,
+          "returncode": 0,
+          "stdout_sha256": "749da05b68a2792bf62c77752d2892f09bd286b475e5503c274a4dd008805c03",
+          "kind": "qbe_lsl",
+          "repeat": 4,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.07662536799762165,
+          "returncode": 0,
+          "stdout_sha256": "749da05b68a2792bf62c77752d2892f09bd286b475e5503c274a4dd008805c03",
+          "kind": "v089",
+          "repeat": 4,
+          "checksum_matches": true
+        }
+      ],
+      "iterations": 5000000,
+      "pilot_iterations": 100000,
+      "pilots": [
+        {
+          "seconds": 0.005917492999287788,
+          "returncode": 0,
+          "stdout_sha256": "fbdeccd15b071326abb527137e99dee041dde573d99027b36ee3fb97f8f32ba8",
+          "kind": "v089"
+        },
+        {
+          "seconds": 0.003059606002352666,
+          "returncode": 0,
+          "stdout_sha256": "fbdeccd15b071326abb527137e99dee041dde573d99027b36ee3fb97f8f32ba8",
+          "kind": "qbe_lsl"
+        }
+      ],
+      "expected_stdout": "14766951456\n",
+      "compile_median_seconds": {
+        "v089": 0.5453846420059563,
+        "qbe_lsl": 0.6941679919982562
+      },
+      "compile_new_over_old": 1.272804436599216,
+      "run_median_seconds": {
+        "v089": 0.07488953799474984,
+        "qbe_lsl": 0.03833520699845394
+      },
+      "run_new_over_old": 0.5118900186183742,
+      "status": "PASS"
+    },
+    {
+      "name": "list_access",
+      "source": "tests/benchmarks/v089/list_access.lsl",
+      "source_sha256": "68e62198d813b8f65a2bd4108e987e31f736a4f31bd8f6493806c6b0a9b119f1",
+      "compile_samples": [
+        {
+          "seconds": 0.5465941170041333,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "v089",
+          "repeat": 0,
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/list_access.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/list_access-v089"
+          ],
+          "binary_sha256": "b3468bb14c391e17ca826abaa972809ce815d923658a4c74a25585f52130c687"
+        },
+        {
+          "seconds": 0.7060328779989504,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "qbe_lsl",
+          "repeat": 0,
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/list_access.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/list_access-qbe_lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "binary_sha256": "6e70b4d6f6827ba8124772ffb331bac50d2953c5139d94ecabf816d49f12c50e"
+        },
+        {
+          "seconds": 0.7155288989961264,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "qbe_lsl",
+          "repeat": 1,
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/list_access.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/list_access-qbe_lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "binary_sha256": "6e70b4d6f6827ba8124772ffb331bac50d2953c5139d94ecabf816d49f12c50e"
+        },
+        {
+          "seconds": 0.5444395359954797,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "v089",
+          "repeat": 1,
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/list_access.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/list_access-v089"
+          ],
+          "binary_sha256": "b3468bb14c391e17ca826abaa972809ce815d923658a4c74a25585f52130c687"
+        },
+        {
+          "seconds": 0.5420092010026565,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "v089",
+          "repeat": 2,
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/list_access.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/list_access-v089"
+          ],
+          "binary_sha256": "b3468bb14c391e17ca826abaa972809ce815d923658a4c74a25585f52130c687"
+        },
+        {
+          "seconds": 0.7138360989993089,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "qbe_lsl",
+          "repeat": 2,
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/list_access.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/list_access-qbe_lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "binary_sha256": "6e70b4d6f6827ba8124772ffb331bac50d2953c5139d94ecabf816d49f12c50e"
+        }
+      ],
+      "run_samples": [
+        {
+          "seconds": 0.11117081100383075,
+          "returncode": 0,
+          "stdout_sha256": "d7e225951e53ee9bcb3a34d9dbbfe06ada6919c44814d474d4f6273aad13201c",
+          "kind": "v089",
+          "repeat": 0,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.42181801000697305,
+          "returncode": 0,
+          "stdout_sha256": "d7e225951e53ee9bcb3a34d9dbbfe06ada6919c44814d474d4f6273aad13201c",
+          "kind": "qbe_lsl",
+          "repeat": 0,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.3905601940059569,
+          "returncode": 0,
+          "stdout_sha256": "d7e225951e53ee9bcb3a34d9dbbfe06ada6919c44814d474d4f6273aad13201c",
+          "kind": "qbe_lsl",
+          "repeat": 1,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.11112107699591434,
+          "returncode": 0,
+          "stdout_sha256": "d7e225951e53ee9bcb3a34d9dbbfe06ada6919c44814d474d4f6273aad13201c",
+          "kind": "v089",
+          "repeat": 1,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.11340821700287051,
+          "returncode": 0,
+          "stdout_sha256": "d7e225951e53ee9bcb3a34d9dbbfe06ada6919c44814d474d4f6273aad13201c",
+          "kind": "v089",
+          "repeat": 2,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.3946087649965193,
+          "returncode": 0,
+          "stdout_sha256": "d7e225951e53ee9bcb3a34d9dbbfe06ada6919c44814d474d4f6273aad13201c",
+          "kind": "qbe_lsl",
+          "repeat": 2,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.3919024069982697,
+          "returncode": 0,
+          "stdout_sha256": "d7e225951e53ee9bcb3a34d9dbbfe06ada6919c44814d474d4f6273aad13201c",
+          "kind": "qbe_lsl",
+          "repeat": 3,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.11288463699747808,
+          "returncode": 0,
+          "stdout_sha256": "d7e225951e53ee9bcb3a34d9dbbfe06ada6919c44814d474d4f6273aad13201c",
+          "kind": "v089",
+          "repeat": 3,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.10855197299679276,
+          "returncode": 0,
+          "stdout_sha256": "d7e225951e53ee9bcb3a34d9dbbfe06ada6919c44814d474d4f6273aad13201c",
+          "kind": "v089",
+          "repeat": 4,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.3896988699998474,
+          "returncode": 0,
+          "stdout_sha256": "d7e225951e53ee9bcb3a34d9dbbfe06ada6919c44814d474d4f6273aad13201c",
+          "kind": "qbe_lsl",
+          "repeat": 4,
+          "checksum_matches": true
+        }
+      ],
+      "iterations": 326316,
+      "pilot_iterations": 100000,
+      "pilots": [
+        {
+          "seconds": 0.06025528800091706,
+          "returncode": 0,
+          "stdout_sha256": "fbdeccd15b071326abb527137e99dee041dde573d99027b36ee3fb97f8f32ba8",
+          "kind": "v089"
+        },
+        {
+          "seconds": 0.15322549499978777,
+          "returncode": 0,
+          "stdout_sha256": "fbdeccd15b071326abb527137e99dee041dde573d99027b36ee3fb97f8f32ba8",
+          "kind": "qbe_lsl"
+        }
+      ],
+      "expected_stdout": "218950854\n",
+      "compile_median_seconds": {
+        "v089": 0.5444395359954797,
+        "qbe_lsl": 0.7138360989993089
+      },
+      "compile_new_over_old": 1.31113934937531,
+      "run_median_seconds": {
+        "v089": 0.11117081100383075,
+        "qbe_lsl": 0.3919024069982697
+      },
+      "run_new_over_old": 3.5252275616192588,
+      "status": "PASS"
+    },
+    {
+      "name": "dictionary_access",
+      "source": "tests/benchmarks/v089/dictionary_access.lsl",
+      "source_sha256": "0b05906fe8fb9d18b4f8ff8fbd58aceb33f6369c376635bd1b0d77b1cce1b307",
+      "compile_samples": [
+        {
+          "seconds": 0.7050820320000639,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "qbe_lsl",
+          "repeat": 0,
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/dictionary_access.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/dictionary_access-qbe_lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "binary_sha256": "96f250e4f83a5937c92bb4772e70a81dc0458885926f0b5be9ac458d576a319e"
+        },
+        {
+          "seconds": 0.5492888930020854,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "v089",
+          "repeat": 0,
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/dictionary_access.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/dictionary_access-v089"
+          ],
+          "binary_sha256": "4e03e5ef4b26e687d743225585cd6219f37b61403f87319e340713c04bc7a1f7"
+        },
+        {
+          "seconds": 0.5487673550014733,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "v089",
+          "repeat": 1,
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/dictionary_access.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/dictionary_access-v089"
+          ],
+          "binary_sha256": "4e03e5ef4b26e687d743225585cd6219f37b61403f87319e340713c04bc7a1f7"
+        },
+        {
+          "seconds": 0.7119473009952344,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "qbe_lsl",
+          "repeat": 1,
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/dictionary_access.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/dictionary_access-qbe_lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "binary_sha256": "96f250e4f83a5937c92bb4772e70a81dc0458885926f0b5be9ac458d576a319e"
+        },
+        {
+          "seconds": 0.7115432310019969,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "qbe_lsl",
+          "repeat": 2,
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/dictionary_access.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/dictionary_access-qbe_lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "binary_sha256": "96f250e4f83a5937c92bb4772e70a81dc0458885926f0b5be9ac458d576a319e"
+        },
+        {
+          "seconds": 0.5533068139993702,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "v089",
+          "repeat": 2,
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/dictionary_access.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/dictionary_access-v089"
+          ],
+          "binary_sha256": "4e03e5ef4b26e687d743225585cd6219f37b61403f87319e340713c04bc7a1f7"
+        }
+      ],
+      "run_samples": [
+        {
+          "seconds": 0.32257076400128426,
+          "returncode": 0,
+          "stdout_sha256": "af14cd832ee49431eddf06fce0bdec3791a7b0c807865e886fbbce3409e740fe",
+          "kind": "qbe_lsl",
+          "repeat": 0,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.12041796199628152,
+          "returncode": 0,
+          "stdout_sha256": "af14cd832ee49431eddf06fce0bdec3791a7b0c807865e886fbbce3409e740fe",
+          "kind": "v089",
+          "repeat": 0,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.11898669099900872,
+          "returncode": 0,
+          "stdout_sha256": "af14cd832ee49431eddf06fce0bdec3791a7b0c807865e886fbbce3409e740fe",
+          "kind": "v089",
+          "repeat": 1,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.3140713160028099,
+          "returncode": 0,
+          "stdout_sha256": "af14cd832ee49431eddf06fce0bdec3791a7b0c807865e886fbbce3409e740fe",
+          "kind": "qbe_lsl",
+          "repeat": 1,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.3103813790003187,
+          "returncode": 0,
+          "stdout_sha256": "af14cd832ee49431eddf06fce0bdec3791a7b0c807865e886fbbce3409e740fe",
+          "kind": "qbe_lsl",
+          "repeat": 2,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.12027475799550302,
+          "returncode": 0,
+          "stdout_sha256": "af14cd832ee49431eddf06fce0bdec3791a7b0c807865e886fbbce3409e740fe",
+          "kind": "v089",
+          "repeat": 2,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.12480596900422825,
+          "returncode": 0,
+          "stdout_sha256": "af14cd832ee49431eddf06fce0bdec3791a7b0c807865e886fbbce3409e740fe",
+          "kind": "v089",
+          "repeat": 3,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.3117038700002013,
+          "returncode": 0,
+          "stdout_sha256": "af14cd832ee49431eddf06fce0bdec3791a7b0c807865e886fbbce3409e740fe",
+          "kind": "qbe_lsl",
+          "repeat": 3,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.31765194200124824,
+          "returncode": 0,
+          "stdout_sha256": "af14cd832ee49431eddf06fce0bdec3791a7b0c807865e886fbbce3409e740fe",
+          "kind": "qbe_lsl",
+          "repeat": 4,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.11601354699814692,
+          "returncode": 0,
+          "stdout_sha256": "af14cd832ee49431eddf06fce0bdec3791a7b0c807865e886fbbce3409e740fe",
+          "kind": "v089",
+          "repeat": 4,
+          "checksum_matches": true
+        }
+      ],
+      "iterations": 248930,
+      "pilot_iterations": 50000,
+      "pilots": [
+        {
+          "seconds": 0.05007481999928132,
+          "returncode": 0,
+          "stdout_sha256": "32241603c1366ed2006c9933d281778935f9482fa0d2761fcb3d515a1943ee5c",
+          "kind": "v089"
+        },
+        {
+          "seconds": 0.10042974699899787,
+          "returncode": 0,
+          "stdout_sha256": "32241603c1366ed2006c9933d281778935f9482fa0d2761fcb3d515a1943ee5c",
+          "kind": "qbe_lsl"
+        }
+      ],
+      "expected_stdout": "257985315\n",
+      "compile_median_seconds": {
+        "v089": 0.5492888930020854,
+        "qbe_lsl": 0.7115432310019969
+      },
+      "compile_new_over_old": 1.2953898031928628,
+      "run_median_seconds": {
+        "v089": 0.12027475799550302,
+        "qbe_lsl": 0.3140713160028099
+      },
+      "run_new_over_old": 2.61128204485394,
+      "status": "PASS"
+    },
+    {
+      "name": "string_split_join",
+      "source": "tests/benchmarks/v089/string_split_join.lsl",
+      "source_sha256": "45a2619dc0cf723c31c83396cb7ee781294d7cae5fc38ce03eba09f25ebdba77",
+      "compile_samples": [
+        {
+          "seconds": 0.5449835330000496,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "v089",
+          "repeat": 0,
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/string_split_join.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/string_split_join-v089"
+          ],
+          "binary_sha256": "9c2269cd013514f0c21db46e616d19c7fdbb8e0f358bb0fd6a83a052800be7c2"
+        },
+        {
+          "seconds": 0.7119197330030147,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "qbe_lsl",
+          "repeat": 0,
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/string_split_join.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/string_split_join-qbe_lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "binary_sha256": "1eb6a429269d383ca6c5658f23339b1af7a7233990ad0785f9f399d43a67d16f"
+        },
+        {
+          "seconds": 0.7189626390027115,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "qbe_lsl",
+          "repeat": 1,
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/string_split_join.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/string_split_join-qbe_lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "binary_sha256": "1eb6a429269d383ca6c5658f23339b1af7a7233990ad0785f9f399d43a67d16f"
+        },
+        {
+          "seconds": 0.5479289160066401,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "v089",
+          "repeat": 1,
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/string_split_join.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/string_split_join-v089"
+          ],
+          "binary_sha256": "9c2269cd013514f0c21db46e616d19c7fdbb8e0f358bb0fd6a83a052800be7c2"
+        },
+        {
+          "seconds": 0.546789201995125,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "v089",
+          "repeat": 2,
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/string_split_join.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/string_split_join-v089"
+          ],
+          "binary_sha256": "9c2269cd013514f0c21db46e616d19c7fdbb8e0f358bb0fd6a83a052800be7c2"
+        },
+        {
+          "seconds": 0.705034569997224,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "qbe_lsl",
+          "repeat": 2,
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/string_split_join.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/string_split_join-qbe_lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "binary_sha256": "1eb6a429269d383ca6c5658f23339b1af7a7233990ad0785f9f399d43a67d16f"
+        }
+      ],
+      "run_samples": [
+        {
+          "seconds": 0.15394519399706041,
+          "returncode": 0,
+          "stdout_sha256": "af79a7a9f489c7c7ce0f1ab314bfa64096ab147f46e5db91191cd94b33aaef86",
+          "kind": "v089",
+          "repeat": 0,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.47390330099733546,
+          "returncode": 0,
+          "stdout_sha256": "af79a7a9f489c7c7ce0f1ab314bfa64096ab147f46e5db91191cd94b33aaef86",
+          "kind": "qbe_lsl",
+          "repeat": 0,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.47401102599542355,
+          "returncode": 0,
+          "stdout_sha256": "af79a7a9f489c7c7ce0f1ab314bfa64096ab147f46e5db91191cd94b33aaef86",
+          "kind": "qbe_lsl",
+          "repeat": 1,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.15376462700078264,
+          "returncode": 0,
+          "stdout_sha256": "af79a7a9f489c7c7ce0f1ab314bfa64096ab147f46e5db91191cd94b33aaef86",
+          "kind": "v089",
+          "repeat": 1,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.14809484900615644,
+          "returncode": 0,
+          "stdout_sha256": "af79a7a9f489c7c7ce0f1ab314bfa64096ab147f46e5db91191cd94b33aaef86",
+          "kind": "v089",
+          "repeat": 2,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.47305821400368586,
+          "returncode": 0,
+          "stdout_sha256": "af79a7a9f489c7c7ce0f1ab314bfa64096ab147f46e5db91191cd94b33aaef86",
+          "kind": "qbe_lsl",
+          "repeat": 2,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.4754393339972012,
+          "returncode": 0,
+          "stdout_sha256": "af79a7a9f489c7c7ce0f1ab314bfa64096ab147f46e5db91191cd94b33aaef86",
+          "kind": "qbe_lsl",
+          "repeat": 3,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.1525492509972537,
+          "returncode": 0,
+          "stdout_sha256": "af79a7a9f489c7c7ce0f1ab314bfa64096ab147f46e5db91191cd94b33aaef86",
+          "kind": "v089",
+          "repeat": 3,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.15299825699912617,
+          "returncode": 0,
+          "stdout_sha256": "af79a7a9f489c7c7ce0f1ab314bfa64096ab147f46e5db91191cd94b33aaef86",
+          "kind": "v089",
+          "repeat": 4,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.47783926500414964,
+          "returncode": 0,
+          "stdout_sha256": "af79a7a9f489c7c7ce0f1ab314bfa64096ab147f46e5db91191cd94b33aaef86",
+          "kind": "qbe_lsl",
+          "repeat": 4,
+          "checksum_matches": true
+        }
+      ],
+      "iterations": 16566,
+      "pilot_iterations": 10000,
+      "pilots": [
+        {
+          "seconds": 0.09945171199797187,
+          "returncode": 0,
+          "stdout_sha256": "52ae5a914e624dc7c89e7ed5b091d4a04077778dafac1a3f222886b71c44bebb",
+          "kind": "v089"
+        },
+        {
+          "seconds": 0.30181961900234455,
+          "returncode": 0,
+          "stdout_sha256": "52ae5a914e624dc7c89e7ed5b091d4a04077778dafac1a3f222886b71c44bebb",
+          "kind": "qbe_lsl"
+        }
+      ],
+      "expected_stdout": "1176186\n",
+      "compile_median_seconds": {
+        "v089": 0.546789201995125,
+        "qbe_lsl": 0.7119197330030147
+      },
+      "compile_new_over_old": 1.3020003511506102,
+      "run_median_seconds": {
+        "v089": 0.15299825699912617,
+        "qbe_lsl": 0.47401102599542355
+      },
+      "run_new_over_old": 3.0981465756053077,
+      "status": "PASS"
+    },
+    {
+      "name": "allocation_gc",
+      "source": "tests/benchmarks/v089/allocation_gc.lsl",
+      "source_sha256": "e9af16681b4e8d2cf4cbcd6b58adb5127634cc7631db2dc9ba593afae038a79b",
+      "compile_samples": [
+        {
+          "seconds": 0.7141594429995166,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "qbe_lsl",
+          "repeat": 0,
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/allocation_gc.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/allocation_gc-qbe_lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "binary_sha256": "af448bff5552c928e133ed13183c93b8aeb2b0aefd2cbc95c67ad27fd8b06476"
+        },
+        {
+          "seconds": 0.5554820600009407,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "v089",
+          "repeat": 0,
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/allocation_gc.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/allocation_gc-v089"
+          ],
+          "binary_sha256": "0148fede7aa592e32e82b49226ab3ff4259adcc42a49df1084fbfcecfead641b"
+        },
+        {
+          "seconds": 0.5536997900053393,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "v089",
+          "repeat": 1,
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/allocation_gc.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/allocation_gc-v089"
+          ],
+          "binary_sha256": "0148fede7aa592e32e82b49226ab3ff4259adcc42a49df1084fbfcecfead641b"
+        },
+        {
+          "seconds": 0.7207476510011475,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "qbe_lsl",
+          "repeat": 1,
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/allocation_gc.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/allocation_gc-qbe_lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "binary_sha256": "af448bff5552c928e133ed13183c93b8aeb2b0aefd2cbc95c67ad27fd8b06476"
+        },
+        {
+          "seconds": 0.7119867539950064,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "qbe_lsl",
+          "repeat": 2,
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/allocation_gc.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/allocation_gc-qbe_lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "binary_sha256": "af448bff5552c928e133ed13183c93b8aeb2b0aefd2cbc95c67ad27fd8b06476"
+        },
+        {
+          "seconds": 0.5488219190010568,
+          "returncode": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "kind": "v089",
+          "repeat": 2,
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/allocation_gc.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/allocation_gc-v089"
+          ],
+          "binary_sha256": "0148fede7aa592e32e82b49226ab3ff4259adcc42a49df1084fbfcecfead641b"
+        }
+      ],
+      "run_samples": [
+        {
+          "seconds": 0.36114524099684786,
+          "returncode": 0,
+          "stdout_sha256": "221a29f6345627317398ad69634bc8d9176faecabb84a2c6d14e14b0a7af9371",
+          "kind": "qbe_lsl",
+          "repeat": 0,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.17349717800243525,
+          "returncode": 0,
+          "stdout_sha256": "221a29f6345627317398ad69634bc8d9176faecabb84a2c6d14e14b0a7af9371",
+          "kind": "v089",
+          "repeat": 0,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.174193489998288,
+          "returncode": 0,
+          "stdout_sha256": "221a29f6345627317398ad69634bc8d9176faecabb84a2c6d14e14b0a7af9371",
+          "kind": "v089",
+          "repeat": 1,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.3639581769966753,
+          "returncode": 0,
+          "stdout_sha256": "221a29f6345627317398ad69634bc8d9176faecabb84a2c6d14e14b0a7af9371",
+          "kind": "qbe_lsl",
+          "repeat": 1,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.3606885940025677,
+          "returncode": 0,
+          "stdout_sha256": "221a29f6345627317398ad69634bc8d9176faecabb84a2c6d14e14b0a7af9371",
+          "kind": "qbe_lsl",
+          "repeat": 2,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.1669312359954347,
+          "returncode": 0,
+          "stdout_sha256": "221a29f6345627317398ad69634bc8d9176faecabb84a2c6d14e14b0a7af9371",
+          "kind": "v089",
+          "repeat": 2,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.16849068000010448,
+          "returncode": 0,
+          "stdout_sha256": "221a29f6345627317398ad69634bc8d9176faecabb84a2c6d14e14b0a7af9371",
+          "kind": "v089",
+          "repeat": 3,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.3638660849974258,
+          "returncode": 0,
+          "stdout_sha256": "221a29f6345627317398ad69634bc8d9176faecabb84a2c6d14e14b0a7af9371",
+          "kind": "qbe_lsl",
+          "repeat": 3,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.3622961500004749,
+          "returncode": 0,
+          "stdout_sha256": "221a29f6345627317398ad69634bc8d9176faecabb84a2c6d14e14b0a7af9371",
+          "kind": "qbe_lsl",
+          "repeat": 4,
+          "checksum_matches": true
+        },
+        {
+          "seconds": 0.17072977800125955,
+          "returncode": 0,
+          "stdout_sha256": "221a29f6345627317398ad69634bc8d9176faecabb84a2c6d14e14b0a7af9371",
+          "kind": "v089",
+          "repeat": 4,
+          "checksum_matches": true
+        }
+      ],
+      "iterations": 196806,
+      "pilot_iterations": 50000,
+      "pilots": [
+        {
+          "seconds": 0.0606092880043434,
+          "returncode": 0,
+          "stdout_sha256": "1833dec4f1106eb4e293cc1cdf906c6c3c576d000a51b001d8da50a853dd22ec",
+          "kind": "v089"
+        },
+        {
+          "seconds": 0.12702809199981857,
+          "returncode": 0,
+          "stdout_sha256": "1833dec4f1106eb4e293cc1cdf906c6c3c576d000a51b001d8da50a853dd22ec",
+          "kind": "qbe_lsl"
+        }
+      ],
+      "expected_stdout": "196806\n",
+      "compile_median_seconds": {
+        "v089": 0.5536997900053393,
+        "qbe_lsl": 0.7141594429995166
+      },
+      "compile_new_over_old": 1.2897954015706417,
+      "run_median_seconds": {
+        "v089": 0.17072977800125955,
+        "qbe_lsl": 0.3622961500004749
+      },
+      "run_new_over_old": 2.122044286836723,
+      "status": "PASS"
+    }
+  ],
+  "correctness_failures": [],
+  "complete": true,
+  "common_compiler_source": {
+    "source": "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+    "source_sha256": "ca5306deaf8612930f7648df9f5540faba69de2c78a9fa604b29fdded1452418",
+    "samples": [
+      {
+        "seconds": 8.009870283000055,
+        "returncode": 0,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "v089",
+        "repeat": 0,
+        "command": [
+          "/home/antonin/.local/bin/lslc",
+          "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/common-compiler-v089"
+        ],
+        "output_sha256": "ff5353f6c367cd4316112c07e711b71ae58c06e60de7229ad316190a61285ff6"
+      },
+      {
+        "seconds": 14.248241417997633,
+        "returncode": 0,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "qbe_lsl",
+        "repeat": 0,
+        "command": [
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+          "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/common-compiler-qbe_lsl",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+        ],
+        "output_sha256": "10829fc6c739c3d278bced2f39d7ed81e583824da32cc5ab1dc77f9fd78ca4b8"
+      },
+      {
+        "seconds": 14.413225889999012,
+        "returncode": 0,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "qbe_lsl",
+        "repeat": 1,
+        "command": [
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+          "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/common-compiler-qbe_lsl",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+        ],
+        "output_sha256": "10829fc6c739c3d278bced2f39d7ed81e583824da32cc5ab1dc77f9fd78ca4b8"
+      },
+      {
+        "seconds": 7.98559749800188,
+        "returncode": 0,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "v089",
+        "repeat": 1,
+        "command": [
+          "/home/antonin/.local/bin/lslc",
+          "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/common-compiler-v089"
+        ],
+        "output_sha256": "ff5353f6c367cd4316112c07e711b71ae58c06e60de7229ad316190a61285ff6"
+      },
+      {
+        "seconds": 8.077400060996297,
+        "returncode": 0,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "v089",
+        "repeat": 2,
+        "command": [
+          "/home/antonin/.local/bin/lslc",
+          "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/common-compiler-v089"
+        ],
+        "output_sha256": "ff5353f6c367cd4316112c07e711b71ae58c06e60de7229ad316190a61285ff6"
+      },
+      {
+        "seconds": 14.320244860995444,
+        "returncode": 0,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "qbe_lsl",
+        "repeat": 2,
+        "command": [
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+          "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/v089-comparison/common-compiler-qbe_lsl",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+        ],
+        "output_sha256": "10829fc6c739c3d278bced2f39d7ed81e583824da32cc5ab1dc77f9fd78ca4b8"
+      }
+    ],
+    "median_seconds": {
+      "v089": 8.009870283000055,
+      "qbe_lsl": 14.320244860995444
+    },
+    "new_over_old": 1.787824815513975
+  },
+  "measurements_finished": true,
+  "binaries_unchanged": true
+}

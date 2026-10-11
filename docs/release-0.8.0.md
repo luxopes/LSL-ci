@@ -20,7 +20,7 @@ Vydání přidává správu knihoven, TUI a tematickou nápovědu v čistém LSL
 - Odstraněné staré BUG*.md a netlify.toml jsou dostupné v historii Gitu.
 
 Použití a přesná sémantika příkazů:
-[CLI, knihovny a terminálový manuál](developer_guides/17-cli-and-packages.md).
+[CLI, knihovny a terminálový manuál](https://git.lux-ai.cz/LuxAI/LSL-Web/src/branch/main/public/17-cli-and-packages.md).
 
 Compiler, runtime, CLI i testy zůstávají self-hosted LSL. CUDA worker se
 nemění. Systémové nástroje jsou používány pouze přes přímé argv, bez shellu.

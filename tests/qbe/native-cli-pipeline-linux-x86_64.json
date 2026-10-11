@@ -1,0 +1,452 @@
+{
+  "complete": true,
+  "compiler_sha256": "1c1b6cf5f78739a56a67eb535b401466041b1d28221b4bf95a91fcb34403d37b",
+  "cli_sha256": "79f92261aa719125299b01c7a7a5b21ca2fa4f0ba44d483dcc4c3d2d1c0775f0",
+  "checks": [
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/lslc",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/safe.lsl",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/program"
+      ],
+      "seconds": 0.5793882709986065,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "compiler default native backend",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/program"
+      ],
+      "seconds": 0.0021670599962817505,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "native public 42\n",
+      "stderr": "",
+      "name": "compiler output",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/lslc",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/private.lsl",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/program"
+      ],
+      "seconds": 0.16117469199525658,
+      "returncode": 1,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "LSL runtime error: CompileError: unsafe operation outside an unsafe block at /home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/private.lsl:1: __lsl_syscall\n",
+      "name": "compiler default rejects private intrinsic",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/lslc",
+        "--safe",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/private.lsl",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/program"
+      ],
+      "seconds": 0.17505958200490568,
+      "returncode": 1,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "LSL runtime error: CompileError: unsafe operation outside an unsafe block at /home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/private.lsl:1: __lsl_syscall\n",
+      "name": "compiler explicit safe rejects private intrinsic",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/lslc",
+        "--unsafe",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/private.lsl",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/program"
+      ],
+      "seconds": 0.5591416780007421,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "compiler explicit unsafe",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/program"
+      ],
+      "seconds": 0.0018889299972215667,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "True\n",
+      "stderr": "",
+      "name": "compiler unsafe output",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/lslc",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/lexical.lsl",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/program"
+      ],
+      "seconds": 0.583236478996696,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "compiler safe lexical unsafe block",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/program"
+      ],
+      "seconds": 0.002311041003849823,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "True\n",
+      "stderr": "",
+      "name": "compiler lexical output",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/lslc",
+        "--sandbox",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/lexical.lsl",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/program"
+      ],
+      "seconds": 0.18242930400447221,
+      "returncode": 1,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "LSL runtime error: CompileError: unsafe block is forbidden in sandbox compilation at /home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/lexical.lsl:1\n",
+      "name": "compiler sandbox rejects unsafe block",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/lslc",
+        "--sandbox",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/safe.lsl",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/program"
+      ],
+      "seconds": 0.5841110219989787,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "compiler sandbox safe source",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/program"
+      ],
+      "seconds": 0.0025798150018090382,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "native public 42\n",
+      "stderr": "",
+      "name": "compiler sandbox output",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/lslc",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/internal.lsl",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/program"
+      ],
+      "seconds": 0.5970176859991625,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "compiler internal ABI compatibility",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/program"
+      ],
+      "seconds": 0.001867863000370562,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "True\n",
+      "stderr": "",
+      "name": "compiler internal ABI output",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/lslc",
+        "--safe",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/internal.lsl",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/program"
+      ],
+      "seconds": 0.011318881995975971,
+      "returncode": 1,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "LSL runtime error: CompileError: internal ABI requires compiler trust mode\n",
+      "name": "compiler explicit safe overrides internal ABI",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/lslc",
+        "--missing",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/safe.lsl",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/program"
+      ],
+      "seconds": 0.011371478998626117,
+      "returncode": 2,
+      "timed_out": false,
+      "stdout": "unknown compiler option: --missing\n",
+      "stderr": "",
+      "name": "compiler rejects unknown option",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/lslc",
+        "--target"
+      ],
+      "seconds": 0.0077294340007938445,
+      "returncode": 2,
+      "timed_out": false,
+      "stdout": "usage: lslc [--safe | --unsafe | --sandbox] [--target NAME] SOURCE OUTPUT [LSL-QBE]\n",
+      "stderr": "",
+      "name": "compiler missing target value",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/lslc",
+        "--target",
+        "windows-x86_64",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/safe.lsl",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/program"
+      ],
+      "seconds": 0.011561193001398351,
+      "returncode": 1,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "LSL runtime error: CompileError: compilation target is not implemented: windows-x86_64 (runtime, image writer and platform providers)\n",
+      "name": "compiler unavailable target",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/lsl",
+        "compile",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/safe.lsl",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/program"
+      ],
+      "seconds": 0.5656478319942835,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "public CLI compile",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/program"
+      ],
+      "seconds": 0.001991450997593347,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "native public 42\n",
+      "stderr": "",
+      "name": "public CLI compiled output",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/lsl",
+        "compile",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/private.lsl",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/program"
+      ],
+      "seconds": 0.16420845999527955,
+      "returncode": 1,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "error: CompileError: unsafe operation outside an unsafe block at /home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/private.lsl:1: __lsl_syscall\n",
+      "name": "public CLI safe compile",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/lsl",
+        "compile",
+        "--unsafe",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/private.lsl",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/program"
+      ],
+      "seconds": 0.5684853100028704,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "public CLI explicit unsafe",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/program"
+      ],
+      "seconds": 0.0021799320020363666,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "True\n",
+      "stderr": "",
+      "name": "public CLI unsafe output",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/lsl",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/safe.lsl"
+      ],
+      "seconds": 0.559786432000692,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "native public 42\n",
+      "stderr": "",
+      "name": "public CLI source run",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/lsl",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/private.lsl"
+      ],
+      "seconds": 0.16846543900464894,
+      "returncode": 1,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "error: CompileError: unsafe operation outside an unsafe block at /home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/private.lsl:1: __lsl_syscall\n",
+      "name": "public CLI source run remains safe",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/lsl",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/internal.lsl"
+      ],
+      "seconds": 0.16768533699359978,
+      "returncode": 1,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "error: CompileError: unsafe operation outside an unsafe block at /home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/internal.lsl:2: __lsl_syscall\n",
+      "name": "public CLI internal pragma grants no trust",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/lsl",
+        "compile",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/entry.lsl",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/program"
+      ],
+      "seconds": 0.7250615610028035,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "public CLI compiled entry identity",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/program",
+        "probe"
+      ],
+      "seconds": 0.006546411001181696,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "\nprobe\n",
+      "stderr": "",
+      "name": "compiled entry source is empty",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/lsl",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/entry.lsl",
+        "probe"
+      ],
+      "seconds": 0.7576584499984165,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/checks/entry.lsl\nprobe\n",
+      "stderr": "",
+      "name": "source run entry identity and arguments",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/lsl",
+        "config",
+        "/home/antonin/LSL-QBE-cli-finish/tests/config/defaults.lsl"
+      ],
+      "seconds": 1.0586117240018211,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "{\"service\":{\"enable\":true,\"port\":9000},\"labels\":[\"default\"]}\n",
+      "stderr": "",
+      "name": "public CLI config evaluator",
+      "matches": true
+    }
+  ],
+  "all_pass": true,
+  "binaries_unchanged": true,
+  "builds": [
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "compiler/pure/lslc_qbe.lsl",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/lslc",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 8.013078136995318,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/lslc",
+        "compiler/pure/cli.lsl",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-cli-contract/lsl",
+        "/home/antonin/LSL-QBE-cli-finish/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 13.77546612900187,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "source_commit": "d21f631",
+  "scope": "Linux x86_64; real new compiler and public CLI; native LSL QBE selected by default; 29 safety, command, identity and config checks",
+  "source_sha256": {
+    "compiler/pure/lslc_qbe.lsl": "085e51564613f2468546cf45f054fdf74863d1032a873b2b71c491dab8b0540d",
+    "compiler/pure/pipeline.lsl": "84d20482156131be58360f56f0d47883b4d5a3797a59087473c240d85f8c9320",
+    "compiler/pure/qbe_toolchain.lsl": "786a5df6eace5885b342ef8ba85288352a28f7046548a1ddb9f4f1702b39b315",
+    "compiler/pure/qbe_emit.lsl": "dd854bbc2683bb33c9d37194d92b7452710166da44256400e67c04d8012e80d8",
+    "compiler/pure/cli.lsl": "a5e4b55f211aa5522e72ce777967fd14d2d696f8a07766113f40abd22dc25088",
+    "compiler/pure/frontend.lsl": "e708a35f8a44ba8002f05165ec864ae9aaa7b2d924d0cf67b282862c78c9be85",
+    "tools/qbe/verify_cli_pipeline.py": "9718beebc15ea75a2dbbe07b286d46f54ada9a80c9a992b8e378459a72b89367"
+  },
+  "backend_sha256": "24996ab6ae8d78238e8066c1de2b33e676ad332b1c2d007469e94bd9e42d5448",
+  "runtime_sha256": "6780bb856d07a9017e40a90931487b0905c58dbe30b1ee08bc1f8f1d3e0d691b",
+  "installed_v089_untouched_sha256": "f235b42d4998474c1bfee7eb02f17625bbc824f647f9ba33bdef8c20b0ff8696",
+  "release_ready": false
+}

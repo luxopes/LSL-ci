@@ -2,6 +2,25 @@
 # until every reachable path to its read has assigned it. No runtime flags.
 load diagnostics
 
+# Expression child order is part of definite-assignment analysis. Known
+# expression shapes avoid allocating and probing the entire field list at
+# each leaf; the fallback preserves traversal of other AST shapes.
+EXPRESSION_FIELDS = {
+    "literal": [],
+    "binary": ["left", "right"],
+    "unary": ["operand"],
+    "compare": ["operands"],
+    "call": ["target", "arguments"],
+    "member": ["target"],
+    "index": ["target", "index"],
+    "slice": ["target", "start", "stop", "step"],
+    "list": ["items"],
+    "tuple": ["items"],
+    "real_array": ["items"],
+    "dictionary": ["entries"]
+}
+OTHER_EXPRESSION_FIELDS = ["target", "value", "condition", "expression", "iterable", "left", "right", "operand", "index", "start", "stop", "step", "message", "parent", "arguments", "items", "operands", "expressions", "entries"]
+
 function terminating_call(node, known):
     if type(node) != "Dictionary" or node.get("kind", "") != "call":
         return False
@@ -118,7 +137,7 @@ function expression(context, node, assigned):
         call expression(context, node["right"], assigned)
         return
     end
-    for field in ["target", "value", "condition", "expression", "iterable", "left", "right", "operand", "index", "start", "stop", "step", "message", "parent", "arguments", "items", "operands", "expressions", "entries"]:
+    for field in EXPRESSION_FIELDS.get(kind, OTHER_EXPRESSION_FIELDS):
         if field in node:
             call expression(context, node[field], assigned)
         end

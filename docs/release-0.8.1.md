@@ -25,9 +25,9 @@ print values        # [3, 1, 3, 2]
 
 Stávající `list.sort()` nadále řadí seznam na místě a vrací None.
 Set zatím nemá literál, comprehension, indexaci ani operátorové zkratky;
-podporované metody a typy prvků uvádí [kolekce](developer_guides/04-collections.md).
+podporované metody a typy prvků uvádí [kolekce](https://git.lux-ai.cz/LuxAI/LSL-Web/src/branch/main/public/04-collections.md).
 
 Compiler, runtime, CLI a testy zůstávají self-hosted LSL. CUDA worker ani
 formát podepsaného aktualizačního kanálu se nemění. Z 0.8.0 lze přejít přes
 `lsl update`, pro systémovou instalaci `sudo /usr/local/bin/lsl update --system`.
-Pro starší 0.7.8 platí [jednorázový instalační postup](developer_guides/17-cli-and-packages.md#jednorázový-přechod-z-078).
+Pro starší 0.7.8 platí [jednorázový instalační postup](https://git.lux-ai.cz/LuxAI/LSL-Web/src/branch/main/public/17-cli-and-packages.md#jednorázový-přechod-z-078).

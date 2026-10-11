@@ -1,3 +1,4 @@
+load _cuda_transport as transport
 # Optional CUDA process backend. The bundled worker owns the NVIDIA CUDA
 # Runtime; metadata uses lsl-cuda-v1 JSON and FloatArray kernels use raw binary
 # stdin/stdout. Every operation retains a native FloatArray CPU fallback.
@@ -140,17 +141,7 @@ function worker_path():
     if worker != "":
         return checked_worker(worker)
     end
-    executable_directory = dirname(executable_path())
-    if exists(executable_directory + "/lsl-cuda-worker"):
-        return executable_directory + "/lsl-cuda-worker"
-    elif exists(executable_directory + "/cuda/lsl-cuda-worker"):
-        return executable_directory + "/cuda/lsl-cuda-worker"
-    elif exists("/usr/local/bin/lsl-cuda-worker"):
-        return "/usr/local/bin/lsl-cuda-worker"
-    elif exists("/usr/bin/lsl-cuda-worker"):
-        return "/usr/bin/lsl-cuda-worker"
-    end
-    return None
+    return transport.worker_path()
 end
 
 function policy():
@@ -498,46 +489,11 @@ function session_count(value):
 end
 
 function session_send(handle, text, deadline):
-    data = String(text)
-    count = __lsl_text_byte_length(data)
-    offset = 0
-    # String payload is inline at +16. Keep data rooted for the entire syscall.
-    while offset < count:
-        sent = __lsl_syscall6(44, Int(handle), __lsl_address(data) + 16 + offset, count - offset, 16448, 0, 0)
-        if sent > 0:
-            offset += sent
-        elif sent == -11 or sent == -4:
-            if monotonic() >= Float(deadline):
-                Error(CudaTimeoutError: "CUDA session write timed out")
-            end
-            call time.sleep(0.001)
-        else:
-            Error(CudaProtocolError: "CUDA session connection closed while writing")
-        end
-    end
+    return transport.session_send(handle, text, deadline)
 end
 
 function session_read(handle, size, deadline):
-    count = Int(size)
-    if count < 0 or count > MAX_CUDA_BINARY_ELEMENTS * 8:
-        Error(CudaProtocolError: "CUDA session response exceeds its byte limit")
-    end
-    bytes = __lsl_byte_zeros(count)
-    offset = 0
-    while offset < count:
-        received = __lsl_syscall6(45, Int(handle), __lsl_data_address(bytes) + offset, count - offset, 64, 0, 0)
-        if received > 0:
-            offset += received
-        elif received == -11 or received == -4:
-            if monotonic() >= Float(deadline):
-                Error(CudaTimeoutError: "CUDA session read timed out")
-            end
-            call time.sleep(0.001)
-        else:
-            Error(CudaProtocolError: "CUDA session connection closed while reading")
-        end
-    end
-    return __lsl_text_from_bytes(bytes, 0, count)
+    return transport.session_read(handle, size, deadline)
 end
 
 function scalar_bytes(value):
@@ -553,7 +509,7 @@ class Session(True):
         self.closed = False
         self.backend = "cpu"
         self.device = device()
-        self.thread = __lsl_syscall(186, 0, 0, 0, 0)
+        self.thread = transport.thread_id()
         self.buffers = 0
         self.elements = 0
         self.next_id = 1
@@ -568,7 +524,7 @@ class Session(True):
                 self.handle = fd.connect_unix(String(path))
                 # Do not leak the live session into programs launched outside
                 # the clean process helpers either (F_SETFD, FD_CLOEXEC).
-                if __lsl_syscall(72, self.handle, 2, 1, 0) < 0:
+                if transport.close_on_exec(self.handle) < 0:
                     Error(CudaUnavailableError: "cannot protect CUDA session descriptor")
                 end
                 self.backend = "cuda"
@@ -721,7 +677,7 @@ end
 function session_check(self):
     if self["closed"]:
         Error(CudaResourceError: "CUDA session is closed")
-    elif self["thread"] != __lsl_syscall(186, 0, 0, 0, 0):
+    elif self["thread"] != transport.thread_id():
         Error(CudaResourceError: "use a separate CUDA session for each thread")
     end
 end

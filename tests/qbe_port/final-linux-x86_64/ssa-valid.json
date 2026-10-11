@@ -1,0 +1,92 @@
+{
+  "reference": "/home/antonin/LSL-QBE/build/qbe/qbe",
+  "backend": "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+  "test_directory": "/home/antonin/LSL-QBE/tests/qbe_port/ssa_fastpath",
+  "timeout_seconds_per_command": 30.0,
+  "sha256": {
+    "reference_binary": "9b2142227068a52f0f1e2efd73f34923b7dadd88b1fdf3205deb6d1a0c61429e",
+    "backend_binary": "24996ab6ae8d78238e8066c1de2b33e676ad332b1c2d007469e94bd9e42d5448",
+    "backend_source": "e86d33614ee622a1a4044ded158bd077127991b83114d5dd51332d6b17fbe84c",
+    "stdio_source": "4957ded1e56b4a35a42fb1465510520e21772dceb41581df5ac94ba032d9a094",
+    "libc_source": "84ade93359f6b4091b8c90fae6095b932075ffbc0d3d9915ba525b1425d206d5",
+    "stdio_test": "caf57e17a0c4731414af1188c462f992722261a406f1d82dd86307d70a844183",
+    "libc_test": "78fc2b16f7c7b5df9df9ca214ffd467f43e0908f93e8cfe4fa5b78836f3bcb93"
+  },
+  "targets": [
+    "amd64_sysv",
+    "amd64_apple",
+    "amd64_win",
+    "arm64",
+    "arm64_apple",
+    "rv64"
+  ],
+  "input_count": 8,
+  "started_at_epoch": 1791658678.693178,
+  "completed_target_count": 6,
+  "completed_case_pairs": 48,
+  "summary": {
+    "amd64_sysv": {
+      "cases": 8,
+      "matching_success": 8,
+      "matching_failure": 0,
+      "mismatches": 0,
+      "timeouts": 0,
+      "reference_seconds": 0.012608838987944182,
+      "backend_seconds": 0.4292734710033983,
+      "status": "complete"
+    },
+    "amd64_apple": {
+      "cases": 8,
+      "matching_success": 8,
+      "matching_failure": 0,
+      "mismatches": 0,
+      "timeouts": 0,
+      "reference_seconds": 0.011948567007493693,
+      "backend_seconds": 0.45766971099510556,
+      "status": "complete"
+    },
+    "amd64_win": {
+      "cases": 8,
+      "matching_success": 8,
+      "matching_failure": 0,
+      "mismatches": 0,
+      "timeouts": 0,
+      "reference_seconds": 0.01552969598560594,
+      "backend_seconds": 0.4529934840029455,
+      "status": "complete"
+    },
+    "arm64": {
+      "cases": 8,
+      "matching_success": 8,
+      "matching_failure": 0,
+      "mismatches": 0,
+      "timeouts": 0,
+      "reference_seconds": 0.016594750013609882,
+      "backend_seconds": 0.42562844500207575,
+      "status": "complete"
+    },
+    "arm64_apple": {
+      "cases": 8,
+      "matching_success": 8,
+      "matching_failure": 0,
+      "mismatches": 0,
+      "timeouts": 0,
+      "reference_seconds": 0.016711572992790025,
+      "backend_seconds": 0.4398871269877418,
+      "status": "complete"
+    },
+    "rv64": {
+      "cases": 8,
+      "matching_success": 8,
+      "matching_failure": 0,
+      "mismatches": 0,
+      "timeouts": 0,
+      "reference_seconds": 0.023879631000454538,
+      "backend_seconds": 0.48261892299342435,
+      "status": "complete"
+    }
+  },
+  "errors": [],
+  "elapsed_seconds": 2.8090769960035686,
+  "finished_at_epoch": 1791658681.5022604
+}

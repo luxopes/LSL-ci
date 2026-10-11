@@ -1,0 +1,508 @@
+{
+  "complete": true,
+  "compiler_sha256": "1e123e69280d589e1c409f668c825476a30983e8c8f6f67a8048658cd9bf4b1f",
+  "backend_sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+  "runtime_sha256": "23a85294bf1087cc1b812172e1c95c0ee4b5b8d05486b375c25242c143b85c14",
+  "emitter_sha256": "4f7d281eb5f452021a12cb9b4823b05fbac74db7e23fa98dfa77159303de6301",
+  "builds": [
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "--unsafe",
+        "/home/antonin/LSL-QBE/tests/qbe/public_int_collision.lsl",
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_collision-fixed",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 0.7787571609951556,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "source_sha256": "336dd5f1fd1dbd3d0401b0b8b7525ea840fb5c98596ed896b2b34a2a57db80bf",
+      "binary_sha256": "c65b5f7c06d6629281fc6f5fdc3706c95a420f7da268c4ccdaa07f0b6ec0ca88"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "--unsafe",
+        "/home/antonin/LSL-QBE/tests/qbe/public_int_recurrence.lsl",
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_recurrence-fixed",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 0.749979241998517,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "source_sha256": "9a0cd13cf549a067875488aeddd31298ef690e87f6e505cba4f250311b997d70",
+      "binary_sha256": "aaec4607ba85dcf6121bac7c8b670a193ce2041e1bda14f82732152fb12a445b"
+    }
+  ],
+  "checks": [
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_collision-fixed"
+      ],
+      "seconds": 0.003407552001590375,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "True True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\n0 -1 1 0 3 -42\n-9223372036854775808 9223372036854775807\n",
+      "stderr": "",
+      "case": "collision",
+      "repeat": 0,
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_collision-fixed"
+      ],
+      "seconds": 0.002888868999434635,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "True True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\n0 -1 1 0 3 -42\n-9223372036854775808 9223372036854775807\n",
+      "stderr": "",
+      "case": "collision",
+      "repeat": 1,
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_collision-fixed"
+      ],
+      "seconds": 0.0044430890047806315,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "True True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\n0 -1 1 0 3 -42\n-9223372036854775808 9223372036854775807\n",
+      "stderr": "",
+      "case": "collision",
+      "repeat": 2,
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_collision-fixed"
+      ],
+      "seconds": 0.0037035819987067953,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "True True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\n0 -1 1 0 3 -42\n-9223372036854775808 9223372036854775807\n",
+      "stderr": "",
+      "case": "collision",
+      "repeat": 3,
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_collision-fixed"
+      ],
+      "seconds": 0.0032577910023974255,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "True True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\nTrue True\n0 -1 1 0 3 -42\n-9223372036854775808 9223372036854775807\n",
+      "stderr": "",
+      "case": "collision",
+      "repeat": 4,
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_recurrence-fixed",
+        "0"
+      ],
+      "seconds": 0.002292971999850124,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 0,
+      "repeat": 0,
+      "expected": "1\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_recurrence-fixed",
+        "0"
+      ],
+      "seconds": 0.003425312002946157,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 0,
+      "repeat": 1,
+      "expected": "1\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_recurrence-fixed",
+        "0"
+      ],
+      "seconds": 0.008786017002421431,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 0,
+      "repeat": 2,
+      "expected": "1\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_recurrence-fixed",
+        "0"
+      ],
+      "seconds": 0.0033107159979408607,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 0,
+      "repeat": 3,
+      "expected": "1\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_recurrence-fixed",
+        "0"
+      ],
+      "seconds": 0.002077274999464862,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 0,
+      "repeat": 4,
+      "expected": "1\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_recurrence-fixed",
+        "1"
+      ],
+      "seconds": 0.002146293998521287,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1015568748\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 1,
+      "repeat": 0,
+      "expected": "1015568748\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_recurrence-fixed",
+        "1"
+      ],
+      "seconds": 0.003503558000375051,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1015568748\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 1,
+      "repeat": 1,
+      "expected": "1015568748\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_recurrence-fixed",
+        "1"
+      ],
+      "seconds": 0.005377087996748742,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1015568748\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 1,
+      "repeat": 2,
+      "expected": "1015568748\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_recurrence-fixed",
+        "1"
+      ],
+      "seconds": 0.002273520003654994,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1015568748\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 1,
+      "repeat": 3,
+      "expected": "1015568748\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_recurrence-fixed",
+        "1"
+      ],
+      "seconds": 0.004615113000909332,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1015568748\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 1,
+      "repeat": 4,
+      "expected": "1015568748\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_recurrence-fixed",
+        "100"
+      ],
+      "seconds": 0.0027023119982914068,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "2146152485\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 100,
+      "repeat": 0,
+      "expected": "2146152485\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_recurrence-fixed",
+        "100"
+      ],
+      "seconds": 0.006957596000574995,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "2146152485\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 100,
+      "repeat": 1,
+      "expected": "2146152485\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_recurrence-fixed",
+        "100"
+      ],
+      "seconds": 0.0052357859967742115,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "2146152485\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 100,
+      "repeat": 2,
+      "expected": "2146152485\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_recurrence-fixed",
+        "100"
+      ],
+      "seconds": 0.004116432995942887,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "2146152485\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 100,
+      "repeat": 3,
+      "expected": "2146152485\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_recurrence-fixed",
+        "100"
+      ],
+      "seconds": 0.0037089809993631206,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "2146152485\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 100,
+      "repeat": 4,
+      "expected": "2146152485\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_recurrence-fixed",
+        "200000"
+      ],
+      "seconds": 0.0050398379971738905,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1636339521\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 200000,
+      "repeat": 0,
+      "expected": "1636339521\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_recurrence-fixed",
+        "200000"
+      ],
+      "seconds": 0.004852709003898781,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1636339521\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 200000,
+      "repeat": 1,
+      "expected": "1636339521\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_recurrence-fixed",
+        "200000"
+      ],
+      "seconds": 0.003526817003148608,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1636339521\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 200000,
+      "repeat": 2,
+      "expected": "1636339521\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_recurrence-fixed",
+        "200000"
+      ],
+      "seconds": 0.0037771150018670596,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1636339521\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 200000,
+      "repeat": 3,
+      "expected": "1636339521\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_recurrence-fixed",
+        "200000"
+      ],
+      "seconds": 0.005038404000515584,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "1636339521\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 200000,
+      "repeat": 4,
+      "expected": "1636339521\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_recurrence-fixed",
+        "1000000"
+      ],
+      "seconds": 0.009750559001986403,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "366300225\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 1000000,
+      "repeat": 0,
+      "expected": "366300225\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_recurrence-fixed",
+        "1000000"
+      ],
+      "seconds": 0.0069353129947558045,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "366300225\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 1000000,
+      "repeat": 1,
+      "expected": "366300225\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_recurrence-fixed",
+        "1000000"
+      ],
+      "seconds": 0.008109501999570057,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "366300225\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 1000000,
+      "repeat": 2,
+      "expected": "366300225\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_recurrence-fixed",
+        "1000000"
+      ],
+      "seconds": 0.005635744004393928,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "366300225\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 1000000,
+      "repeat": 3,
+      "expected": "366300225\n",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-repair/optimized/public-int/public_int_recurrence-fixed",
+        "1000000"
+      ],
+      "seconds": 0.008657685997604858,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "366300225\n",
+      "stderr": "",
+      "case": "recurrence",
+      "iterations": 1000000,
+      "repeat": 4,
+      "expected": "366300225\n",
+      "matches": true
+    }
+  ]
+}

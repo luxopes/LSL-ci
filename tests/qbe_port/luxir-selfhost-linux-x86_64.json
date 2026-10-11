@@ -1,0 +1,188 @@
+{
+  "frontend_commit": "5318b1a89d0b87bae10fc8b274360b34d91bfc25",
+  "backend_commit": "7480a0fe0a70ec9525cbae7363cf9da457194fce",
+  "steps": [
+    {
+      "command": [
+        "make",
+        "-C",
+        "/home/antonin/LuxIR-benchmark/src",
+        "luxir"
+      ],
+      "seconds": 9.747578648995841,
+      "returncode": 0,
+      "stdout": "make: Entering directory '/home/antonin/LuxIR-benchmark/src'\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c main.c -o main.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c util.c -o util.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c parse.c -o parse.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c abi.c -o abi.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c cfg.c -o cfg.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c mem.c -o mem.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c ssa.c -o ssa.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c alias.c -o alias.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c load.c -o load.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c copy.c -o copy.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c fold.c -o fold.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c gvn.c -o gvn.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c gcm.c -o gcm.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c simpl.c -o simpl.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c ifopt.c -o ifopt.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c live.c -o live.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c spill.c -o spill.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c rega.c -o rega.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c emit.c -o emit.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c amd64/targ.c -o amd64/targ.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c amd64/sysv.c -o amd64/sysv.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c amd64/isel.c -o amd64/isel.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c amd64/emit.c -o amd64/emit.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c amd64/winabi.c -o amd64/winabi.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c arm64/targ.c -o arm64/targ.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c arm64/abi.c -o arm64/abi.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c arm64/isel.c -o arm64/isel.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c arm64/emit.c -o arm64/emit.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c rv64/targ.c -o rv64/targ.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c rv64/abi.c -o rv64/abi.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c rv64/isel.c -o rv64/isel.o\ncc -std=c99 -O2 -Wall -Wextra -Wpedantic -c rv64/emit.c -o rv64/emit.o\ncc  main.o util.o parse.o abi.o cfg.o mem.o ssa.o alias.o load.o  copy.o fold.o gvn.o gcm.o simpl.o ifopt.o live.o spill.o rega.o  emit.o amd64/targ.o amd64/sysv.o amd64/isel.o amd64/emit.o amd64/winabi.o arm64/targ.o arm64/abi.o arm64/isel.o arm64/emit.o rv64/targ.o rv64/abi.o rv64/isel.o rv64/emit.o -o luxir\nmake: Leaving directory '/home/antonin/LuxIR-benchmark/src'\n",
+      "stderr": "In function \u2018lcabid\u2019,\n    inlined from \u2018schedlate\u2019 at gcm.c:181:13:\ngcm.c:104:12: warning: \u2018uselatebid\u2019 may be used uninitialized [-Wmaybe-uninitialized]\n  104 |         if (bid2 == NOBID)\n      |            ^\ngcm.c: In function \u2018schedlate\u2019:\ngcm.c:147:14: note: \u2018uselatebid\u2019 was declared here\n  147 |         uint uselatebid;\n      |              ^~~~~~~~~~\nemit.c: In function \u2018emitfin\u2019:\nemit.c:186:50: warning: dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]\n  186 |                                                 *(double *)&b->n);\n      |                                                  ^~~~~~~~~~~~~~~\n"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-LuxIR-benchmark/build/luxir-benchmark/seed",
+        "compiler/pure/lslc_qbe.lsl",
+        "/home/antonin/LSL-LuxIR-benchmark/build/luxir-benchmark/frontend1",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 6.624945452000247,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-LuxIR-benchmark/build/luxir-benchmark/frontend1",
+        "/home/antonin/LuxIR-benchmark/lsl/luxir.lsl",
+        "/home/antonin/LSL-LuxIR-benchmark/build/luxir/luxir",
+        "/home/antonin/LuxIR-benchmark/src/luxir"
+      ],
+      "seconds": 39.51239522600372,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-LuxIR-benchmark/build/luxir-benchmark/frontend1",
+        "compiler/pure/lslc_qbe.lsl",
+        "/home/antonin/LSL-LuxIR-benchmark/build/luxir-benchmark/frontend2",
+        "/home/antonin/LSL-LuxIR-benchmark/build/luxir/luxir"
+      ],
+      "seconds": 6.2901149920071475,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-LuxIR-benchmark/build/luxir-benchmark/frontend2",
+        "compiler/pure/lslc_qbe.lsl",
+        "/home/antonin/LSL-LuxIR-benchmark/build/luxir-benchmark/frontend3",
+        "/home/antonin/LSL-LuxIR-benchmark/build/luxir/luxir"
+      ],
+      "seconds": 6.313733440998476,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-LuxIR-benchmark/build/luxir-benchmark/frontend3",
+        "/home/antonin/LuxIR-benchmark/lsl/luxir.lsl",
+        "/home/antonin/LSL-LuxIR-benchmark/build/luxir/luxir2",
+        "/home/antonin/LSL-LuxIR-benchmark/build/luxir/luxir"
+      ],
+      "seconds": 40.31243416600046,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-LuxIR-benchmark/build/luxir-benchmark/frontend3",
+        "/home/antonin/LuxIR-benchmark/lsl/luxir.lsl",
+        "/home/antonin/LSL-LuxIR-benchmark/build/luxir/luxir3",
+        "/home/antonin/LSL-LuxIR-benchmark/build/luxir/luxir2"
+      ],
+      "seconds": 40.322349552006926,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "complete": true,
+  "frontend_fixed_point": true,
+  "backend_fixed_point": true,
+  "artifacts": {
+    "build/luxir-benchmark/frontend2": "ca3e171e5523e3ba51906f9b4224040d3c036cf05fbe1f842c4979eb2b8cf566",
+    "build/luxir-benchmark/frontend3": "ca3e171e5523e3ba51906f9b4224040d3c036cf05fbe1f842c4979eb2b8cf566",
+    "build/luxir/luxir": "33723db8368e75bbd3609ded54753e0a2cd0595ea981020731785ae38558850e",
+    "build/luxir/luxir2": "33723db8368e75bbd3609ded54753e0a2cd0595ea981020731785ae38558850e",
+    "build/luxir/luxir3": "33723db8368e75bbd3609ded54753e0a2cd0595ea981020731785ae38558850e",
+    "build/qbe/runtime.o": "23a85294bf1087cc1b812172e1c95c0ee4b5b8d05486b375c25242c143b85c14",
+    "build/luxir-benchmark/frontend1": "ca3e171e5523e3ba51906f9b4224040d3c036cf05fbe1f842c4979eb2b8cf566"
+  },
+  "seed_compiler_sha256": "1e123e69280d589e1c409f668c825476a30983e8c8f6f67a8048658cd9bf4b1f",
+  "seed_qbe_sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+  "compiler_source_sha256": {
+    "compiler/pure/_catalog_platform.lsl": "82988ff5d7f2adc752cbe3e86da10faebc873f4857d9442124e538193e536006",
+    "compiler/pure/_compiler_host_platform.lsl": "50235c7e0176d1a72af26e33296c94c3557e2640268b1729f8d2e361958b2e96",
+    "compiler/pure/_install_platform.lsl": "2a5e28db11799527374a35b1c2a8b80a6f34d14f209c1f0336db779afc1132d4",
+    "compiler/pure/_package_platform.lsl": "5390924c2c8eb95ebc34099e05d88d0b77ce27693fce9f32d0f064317dd00100",
+    "compiler/pure/_update_install_platform.lsl": "b23a59ce6d202f03f7e25fe683ce23b293d0dcc82e2312f823b295266b0a6b59",
+    "compiler/pure/_update_platform.lsl": "b35cd3dbd1de9e582410c1c0078d5016c34a03d5b24440003a21e775ff41b041",
+    "compiler/pure/abi_x86_64.lsl": "5e6123581d7dec0223b03ff00e2ba5fd6fe7973bb665852d8d0a44820c3b8a60",
+    "compiler/pure/assembler.lsl": "8d6c68b1d9f40d37904704741d2fe6b00872309661baaf4951cf5e65baf78f7c",
+    "compiler/pure/assembler_x86_64.lsl": "af22e43292f7866cbb9348840d6cb52e05e4b0df10cb61aaef32a826abbd52f4",
+    "compiler/pure/backend_x86_64.lsl": "70bf7ed1cb4c7b23c97bdc170f5233dae7158c4a38503d1a8f3c60a5fe44f718",
+    "compiler/pure/browser.lsl": "eeb9f0d0ea05efb5b473a5ff89ef95c08217f3ebc4a4095ab534ea013f23db2a",
+    "compiler/pure/bytes.lsl": "6d5b630011129af9a936b448432e0cd8631437d20c809995e6fa78197b18f1b8",
+    "compiler/pure/catalog.lsl": "1dd32f76028e005b28a518c99df572941a3952ea6a72711fa4fc9c07bb6f433b",
+    "compiler/pure/catalog_linux_x86_64.lsl": "016b9de8341ee410286a7d2e6d540bfafa9ae79cd2de4be27dc2866613f53f39",
+    "compiler/pure/cli.lsl": "a5e4b55f211aa5522e72ce777967fd14d2d696f8a07766113f40abd22dc25088",
+    "compiler/pure/codegen.lsl": "058d58fbb77bf78d5a52a863f6fd8447321a70e8a00257b7076ae7423258c3cd",
+    "compiler/pure/compiler_backend.lsl": "a14da865d5cdef0e5599335884c3a1c9dffa8c19ef5ab3bd0b9c6ffe9ecb75b7",
+    "compiler/pure/console.lsl": "05ec9f84138198f65065f4c8aa2c451ac90961996947e7fad3e755e830cf505d",
+    "compiler/pure/declarations.lsl": "5564cc74ff24a18d19831b0436fd4e6934147a15b4fb609ce525ade3fe1426b7",
+    "compiler/pure/diagnostics.lsl": "e5b5d66ab05ae3e87b9c84103f8a69d6857416fabcebb17d7ca5a959af64ec74",
+    "compiler/pure/dynamic_stdlib.lsl": "6b78f1022da7021a48246f35d1224a501d2964ab59faae735922595f54e5797e",
+    "compiler/pure/editor.lsl": "381eb9980899eb6964cc72f07608e39b419c7f832a7b7f45f5977be3bca218d0",
+    "compiler/pure/elf_image.lsl": "2a05401fc3ff99dbd7364f9b26f42e114747e079dbcb22525f8acf91ac5f828e",
+    "compiler/pure/flow.lsl": "87adb7765087299b64a41997d1919ee362b679b6264388356d32576e25c28323",
+    "compiler/pure/frontend.lsl": "e708a35f8a44ba8002f05165ec864ae9aaa7b2d924d0cf67b282862c78c9be85",
+    "compiler/pure/heap_runtime.lsl": "3b4679d6104c1a0bc8fdfb2bb0165288c97482a30a51c9cf5edee1af38ba20e6",
+    "compiler/pure/heap_runtime_linux_x86_64.lsl": "f6b7ddc4e3c546ab592e2a1e39e53e4c1c695fe83cca1ff15fc251e928c30073",
+    "compiler/pure/highlight.lsl": "7bb02d0eb31f1435896ea2f447ace7c89b4bc286b5da1642c6f03e1e2c1ce87d",
+    "compiler/pure/host.lsl": "3b458a8d437aa50d2cebb7d613339c08df7816386babc2245c529ce1bb15cbf6",
+    "compiler/pure/host_linux_x86_64.lsl": "95fbed18a04238710eca734c09e73d7fa5b7f3f41d784f34f1a2401e2083745e",
+    "compiler/pure/image_elf64_linux.lsl": "44bf898add0a37fd9279459c5f7ff140dcd66c7abb87f557c47e5a854da6d739",
+    "compiler/pure/image_writer.lsl": "58cebb23435a57c9d3d723646bd444ac7c48f46c3bb2097374d94361eaeff492",
+    "compiler/pure/install.lsl": "e57e496e0d960293194bbdba5dcecf1210ffc131bd94c0b5a027cf33f72bea18",
+    "compiler/pure/install_linux_x86_64.lsl": "39e4f62558666322117c712e352f9ba40cac5e647b395c35915b020e014236e7",
+    "compiler/pure/io_runtime.lsl": "3d5302d06c75e9fad5c628b739bdc3d06cfe0e803b2a129c863b997f6e4a7995",
+    "compiler/pure/io_runtime_linux_x86_64.lsl": "67518f93b0253792ed0f0ee1a8c8e34f8df9873b979e32f88308297166ca3a19",
+    "compiler/pure/lexer.lsl": "dcc607a576efd5b1a370737dc3c1075c8f815aed853c80097045e02e7147c101",
+    "compiler/pure/linker.lsl": "a98c0515f30c75d89428b33c55a33f762270b59fb28a3c4498b31d615519ee5e",
+    "compiler/pure/lslc_direct.lsl": "c025015017dcca7300b893529d3de7bf97f9a89d58a1e6e6d924a8030269ce58",
+    "compiler/pure/lslc_qbe.lsl": "085e51564613f2468546cf45f054fdf74863d1032a873b2b71c491dab8b0540d",
+    "compiler/pure/manual.lsl": "565e91fc2003e4eadfa264991771dc9289a0ffd8a2f3621aa2fee32b58369dc0",
+    "compiler/pure/native_plugin_runtime.lsl": "c48e8995ddb131ac5d2808530cc1aa9d0e3ba618c44bf9a411f425c70b9fba7d",
+    "compiler/pure/native_plugin_runtime_linux_x86_64.lsl": "f1d07341cb011cb23df05caee61ccb3a5fc763c62b61d4b927c1dffaacf64241",
+    "compiler/pure/native_runtime.lsl": "97b15d1f9b2cbe3ecb8ac67a42affabe876dc8f2b9439150088232cfcc3bf461",
+    "compiler/pure/native_runtime_linux_x86_64.lsl": "89021b33402d8a8f2b746ddbaa85282df0a9f391a073ae813b558f0a392fe710",
+    "compiler/pure/object_code.lsl": "28c665c4799f59166c42c8673d9bf203a18a3bba95bec233571516037f1562f5",
+    "compiler/pure/package.lsl": "b344a5cc14db24b526c8c0dd256949541147e9462244207ac1319a2f026aa472",
+    "compiler/pure/package_linux_x86_64.lsl": "7bdb0f73c59a1de70cbd689d1c4560c3cb2ea37987550299e5462a96e4bf0a5b",
+    "compiler/pure/parser.lsl": "a5eb49774210c7c101014f344f91a58a9730a09e9028cce8ed190738ce3783bf",
+    "compiler/pure/pipeline.lsl": "84d20482156131be58360f56f0d47883b4d5a3797a59087473c240d85f8c9320",
+    "compiler/pure/process_runtime.lsl": "feb20eed99030a41b6bcf73c6ed925fea11b648272606ea42527954d064bb43d",
+    "compiler/pure/process_runtime_linux_x86_64.lsl": "c1508d4c69fb952bbe89417d897a4a165182e07afd773a335d65088f96d9620f",
+    "compiler/pure/qbe_emit.lsl": "64f83ff601f3a820a478da542d74a7f2100151b2c88687deffc88dcf7824e1e5",
+    "compiler/pure/qbe_emit_diagnostic.lsl": "3dd7297e557fec1ddd58cadbfba7a75e22f7dd20bb8aef5e01b2b824d81c66d9",
+    "compiler/pure/qbe_runtime_dump.lsl": "1ed4e00498b6396680fb24138df48923cf4ae80c1c882b317834f0deb50e0bff",
+    "compiler/pure/qbe_toolchain.lsl": "076af02dca8ee79e4dd212fa29c2067154aace7745c4906be546dcab4d25a791",
+    "compiler/pure/relocations_x86_64.lsl": "53c7cbb52f6724dd4fab3337219acbb5c3c6e2042e8147d51e03b9f0d8373d42",
+    "compiler/pure/runtime.lsl": "6f54df34a08b9b8ce4b855e7bea82d3fe81b6a9f9750216c458641838634d860",
+    "compiler/pure/runtime_abi_linux_x86_64.lsl": "6e2b067194db926dce39dc332c2ff8537db9bf58e81a3d0172f9bda01fe6d1ec",
+    "compiler/pure/runtime_linux_x86_64.lsl": "2f4e16fec47238f243b88727c95ddcf056041a73edf42fba128846104274310e",
+    "compiler/pure/semantic.lsl": "4c5f0a50c9c7ab2a930268c06f0efe51e4055811060d1635288c2d7121cdfd33",
+    "compiler/pure/target.lsl": "2d913fa28cd778d02d0d4bebd18986cd5d68864cf2640a63db262ccb2977d9cf",
+    "compiler/pure/thread_runtime.lsl": "cf94f0a37f4e031a06ee52d4a759e368cda64583bcb6ff8f484650debb29adfd",
+    "compiler/pure/thread_runtime_linux_x86_64.lsl": "e4df2c12dd90248ec2c23d236f3c157af87df5724736d2fc31328550b8765bdc",
+    "compiler/pure/update.lsl": "fef774fac49493190b44c0d9444589005f8ff1194051662af67117c0afdda363",
+    "compiler/pure/update_install.lsl": "d8ccac15b846cd4b0d4e023f1a4804f9e265e781324d3e08c01cad110891058a",
+    "compiler/pure/update_install_linux_x86_64.lsl": "58ab432d9c64660907d4dea8586a4c9efde66457c34716244da1a36af87d97ce",
+    "compiler/pure/update_linux_x86_64.lsl": "07bf87e077446c6d76b2b7a5f6531f74705d605d0d84e73b4b0aefa0c8596e50",
+    "compiler/pure/validation.lsl": "82d3f45c9655cd169c878153900f58d17c32f6eab95fbafb562024cc694fd5e1",
+    "compiler/pure/value_abi.lsl": "6e61c4f92bb308cc95c37e5c5faad57303dd6cb2852518ff581753bdca5bac74",
+    "compiler/pure/x86_64.lsl": "060978b936d1f758565841725c648c506bf52cc1af2e6f2fc6879ed912461ce5"
+  },
+  "backend_source_sha256": {
+    "lsl/luxir.lsl": "64034e255699544ff1400b9c8bd22cb1e7c611af36474622843425d996c42410",
+    "lsl/luxir_float.lsl": "1e40c2301c0c11deb494a6a76a7d9b959f6240745f49c58d814162e960fe427a",
+    "lsl/luxir_libc.lsl": "4ed8ef93367d10d329fefa78ebf331127d2d2a274aa4cb4e668e51aaf8665537",
+    "lsl/luxir_memory.lsl": "202ed04843c3acfacf681779cbc697244781b74d2bb924c24482f12e41b57e05",
+    "lsl/luxir_stdio.lsl": "8be00e91991374141a6e6e0304e1dc843f5fec26f341e3aa5f798d829fdd7b05",
+    "lsl/luxir_stdio_raw.lsl": "723decc359039da5b43950b145f4fcae1e3d512a8bf4d9824b2dd6dd167a12cb"
+  },
+  "note": "C reference is only an initial bootstrap dependency. All ordinary benchmark compiles use the native LSL LuxIR backend luxir3. Frontend1/2/3 and backend1/2/3 hashes match independently.",
+  "all_three_frontends_identical": true,
+  "all_three_backends_identical": true
+}

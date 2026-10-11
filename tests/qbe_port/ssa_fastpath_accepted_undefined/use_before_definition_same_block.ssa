@@ -1,0 +1,13 @@
+# A same-block use precedes the only definition, with a downstream use too.
+# The incoming-live check must reject the fastpath. QBE accepts the undefined
+# early value and lowers it according to its undef semantics.
+export function w $use_before_def() {
+@start
+	jmp @define
+@define
+	%early =w add %value, 1
+	%value =w copy 7
+	jmp @later
+@later
+	ret %value
+}

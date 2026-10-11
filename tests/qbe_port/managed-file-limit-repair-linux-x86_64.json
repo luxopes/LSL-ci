@@ -1,0 +1,77 @@
+{
+  "scope": "Managed installation with inherited-file-limit runtime repair",
+  "correctness_only": true,
+  "runtime_sha256": "f149de1788ca46b9a89ea31d91cbea93af95b83cd763a46301637a492267e123",
+  "commands": [
+    {
+      "name": "stage compiler/pure/lsl-cli",
+      "command": [
+        "/home/antonin/LSL-QBE-capture-limits/compiler/pure/lslc-qbe",
+        "--unsafe",
+        "compiler/pure/cli.lsl",
+        "/home/antonin/LSL-QBE-capture-limits/compiler/pure/lsl-cli"
+      ],
+      "seconds": 13.885985025000991,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "name": "stage compiler/pure/lsl-install",
+      "command": [
+        "/home/antonin/LSL-QBE-capture-limits/compiler/pure/lslc-qbe",
+        "--unsafe",
+        "compiler/pure/install.lsl",
+        "/home/antonin/LSL-QBE-capture-limits/compiler/pure/lsl-install"
+      ],
+      "seconds": 1.8145563660000334,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "name": "compile managed integration",
+      "command": [
+        "/home/antonin/LSL-QBE-capture-limits/compiler/pure/lslc-qbe",
+        "--unsafe",
+        "tests/compiler/install_managed_integration.lsl",
+        "/home/antonin/LSL-QBE-capture-limits/build/qbe/managed-integration"
+      ],
+      "seconds": 1.5205052419987624,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "name": "migrate reinstall rollback",
+      "command": [
+        "/home/antonin/LSL-QBE-capture-limits/build/qbe/managed-integration",
+        "/home/antonin",
+        "/home/antonin/.local/bin/lsl-install",
+        "/home/antonin/LSL-QBE-capture-limits/compiler/pure/lsl-install",
+        "/home/antonin/LSL-QBE-capture-limits/compiler/pure/lsl-cli"
+      ],
+      "seconds": 19.78775653699995,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "Legacy migration, managed reinstall and rollback passed.\n",
+      "stderr": ""
+    }
+  ],
+  "all_pass": true,
+  "installed_tools_before": {
+    "/home/antonin/.local/bin/lsl-configure": "143d61d803c9bbd2898fe81dd32ad6bd1164f67875fce427ed38f15dad4f0993",
+    "/home/antonin/.local/bin/lsl-cuda-worker": "e6822df1ceff1df15ab9b21502e1fb9a14038801638d0a0162b5ac8032c90016",
+    "/home/antonin/.local/bin/lsl": "d5569f009a0c9bce01e3dbc979dd4ab5e84c5400e929a6e4a978185cf1b13348",
+    "/home/antonin/.local/bin/lsl-install": "eda6c7587fa53c15adcd11ba25edcda566dbd294e5ac5b8e36d26f8933c1500f",
+    "/home/antonin/.local/bin/lslc": "f235b42d4998474c1bfee7eb02f17625bbc824f647f9ba33bdef8c20b0ff8696",
+    "/home/antonin/.local/bin/lsl-test": "42538487c2733bf9516d845a05e2bfe210c5f7927e82af40fb2f0bae636311d1"
+  },
+  "installed_tools_unchanged": true,
+  "cli_sha256": "2e006a1ead52682f0b76f9acab3c013ef6c77300d4aa2a7549c3e22055b33025",
+  "installer_sha256": "364e951be4409713837861e646acbd2ed5bef6032d470acb665e0ea4baf44cee",
+  "scope_limitation": "Isolated FSIZE runtime repair proof. Final combined compiler/runtime canonical fixed points and full corpus must still pass."
+}

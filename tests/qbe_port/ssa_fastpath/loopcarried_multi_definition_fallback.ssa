@@ -1,0 +1,22 @@
+# The loop body both reads and redefines %value. The entry definition and
+# loop-carried self-use require the original phi insertion/renaming fallback.
+export function w $loopcarried(w %limit) {
+@start
+	%value =w copy 0
+	jmp @header
+@header
+	%index =w phi @start 0, @body %next
+	%more =w csltw %index, %limit
+	jnz %more, @body, @exit
+@body
+	%value =w add %value, 1
+	%next =w add %index, 1
+	jmp @header
+@exit
+	ret %value
+}
+
+# >>> driver
+# extern int loopcarried(int);
+# int main(void) { return loopcarried(5) == 5 ? 0 : 1; }
+# <<<

@@ -1,0 +1,80 @@
+[
+  {
+    "name": "fsize",
+    "command": [
+      "/usr/bin/prlimit",
+      "--fsize=16777216",
+      "--",
+      "/home/antonin/g-165479-0/.local/lib/lsl-updates/generations/g-165493-0/bin/lsl",
+      "compile",
+      "/tmp/qbe-managed-health-probe.lsl",
+      "/tmp/qbe-managed-health-fsize"
+    ],
+    "returncode": 1,
+    "stdout": "",
+    "stderr": "error: CompileError: CompileError: QBE backend failed (status 126): \n"
+  },
+  {
+    "name": "cpu",
+    "command": [
+      "/usr/bin/prlimit",
+      "--cpu=60",
+      "--",
+      "/home/antonin/g-165479-0/.local/lib/lsl-updates/generations/g-165493-0/bin/lsl",
+      "compile",
+      "/tmp/qbe-managed-health-probe.lsl",
+      "/tmp/qbe-managed-health-cpu"
+    ],
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "core",
+    "command": [
+      "/usr/bin/prlimit",
+      "--core=0",
+      "--",
+      "/home/antonin/g-165479-0/.local/lib/lsl-updates/generations/g-165493-0/bin/lsl",
+      "compile",
+      "/tmp/qbe-managed-health-probe.lsl",
+      "/tmp/qbe-managed-health-core"
+    ],
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "timeout",
+    "command": [
+      "/usr/bin/prlimit",
+      "--as=1073741824",
+      "--cpu=60",
+      "--core=0",
+      "--nofile=64",
+      "--",
+      "/home/antonin/g-165479-0/.local/lib/lsl-updates/generations/g-165493-0/bin/lsl",
+      "compile",
+      "/tmp/qbe-managed-health-probe.lsl",
+      "/tmp/qbe-managed-health-timeout"
+    ],
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "name": "fsize-max",
+    "command": [
+      "/usr/bin/prlimit",
+      "--fsize=67108864",
+      "--",
+      "/home/antonin/g-165479-0/.local/lib/lsl-updates/generations/g-165493-0/bin/lsl",
+      "compile",
+      "/tmp/qbe-managed-health-probe.lsl",
+      "/tmp/qbe-managed-health-fsize-max"
+    ],
+    "returncode": 1,
+    "stdout": "",
+    "stderr": "error: CompileError: CompileError: QBE backend failed (status 126): \n"
+  }
+]

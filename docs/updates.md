@@ -121,7 +121,7 @@ Nevytváří ani nepodepisuje produkční release.
 CLI 0.7.8 nedokáže kvůli raw-ABI převodu nuly rozbalit archiv aktualizace.
 V 0.8.0 je chyba opravená. Jednou použijte `lsl-install` z ověřeného nového
 archivu; instalátor bezpečně přepne generaci a zachová rollback.
-[Přesný postup](developer_guides/17-cli-and-packages.md#jednorázový-přechod-z-078).
+[Přesný postup](https://git.lux-ai.cz/LuxAI/LSL-Web/src/branch/main/public/17-cli-and-packages.md#jednorázový-přechod-z-078).
 
 ## Aktualizované sestavení 0.8.8 (28. 9. 2026)
 

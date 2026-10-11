@@ -1,0 +1,399 @@
+{
+  "binaries": [
+    {
+      "path": "/home/antonin/LSL-QBE/build/qbe/qbe",
+      "sha256": "9b2142227068a52f0f1e2efd73f34923b7dadd88b1fdf3205deb6d1a0c61429e"
+    },
+    {
+      "path": "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+      "sha256": "3863bc4fed1630d0e10bd438a9433d6ea0229dabf4d9013f605717a482b86545"
+    }
+  ],
+  "cases": [
+    {
+      "target": "amd64_sysv",
+      "variant": 0,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 129426
+    },
+    {
+      "target": "amd64_sysv",
+      "variant": 1,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 129426
+    },
+    {
+      "target": "amd64_sysv",
+      "variant": 2,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 129426
+    },
+    {
+      "target": "amd64_sysv",
+      "variant": 3,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 129426
+    },
+    {
+      "target": "amd64_sysv",
+      "variant": 4,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 129426
+    },
+    {
+      "target": "amd64_sysv",
+      "variant": 5,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 129426
+    },
+    {
+      "target": "amd64_sysv",
+      "variant": 6,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 129426
+    },
+    {
+      "target": "amd64_sysv",
+      "variant": 7,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 129426
+    },
+    {
+      "target": "amd64_apple",
+      "variant": 0,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 126706
+    },
+    {
+      "target": "amd64_apple",
+      "variant": 1,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 126706
+    },
+    {
+      "target": "amd64_apple",
+      "variant": 2,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 126706
+    },
+    {
+      "target": "amd64_apple",
+      "variant": 3,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 126706
+    },
+    {
+      "target": "amd64_apple",
+      "variant": 4,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 126706
+    },
+    {
+      "target": "amd64_apple",
+      "variant": 5,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 126706
+    },
+    {
+      "target": "amd64_apple",
+      "variant": 6,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 126706
+    },
+    {
+      "target": "amd64_apple",
+      "variant": 7,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 126706
+    },
+    {
+      "target": "amd64_win",
+      "variant": 0,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 119286
+    },
+    {
+      "target": "amd64_win",
+      "variant": 1,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 119286
+    },
+    {
+      "target": "amd64_win",
+      "variant": 2,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 119286
+    },
+    {
+      "target": "amd64_win",
+      "variant": 3,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 119286
+    },
+    {
+      "target": "amd64_win",
+      "variant": 4,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 119286
+    },
+    {
+      "target": "amd64_win",
+      "variant": 5,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 119286
+    },
+    {
+      "target": "amd64_win",
+      "variant": 6,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 119286
+    },
+    {
+      "target": "amd64_win",
+      "variant": 7,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 119286
+    },
+    {
+      "target": "arm64",
+      "variant": 0,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 143619
+    },
+    {
+      "target": "arm64",
+      "variant": 1,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 143619
+    },
+    {
+      "target": "arm64",
+      "variant": 2,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 143619
+    },
+    {
+      "target": "arm64",
+      "variant": 3,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 143619
+    },
+    {
+      "target": "arm64",
+      "variant": 4,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 143619
+    },
+    {
+      "target": "arm64",
+      "variant": 5,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 143619
+    },
+    {
+      "target": "arm64",
+      "variant": 6,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 143619
+    },
+    {
+      "target": "arm64",
+      "variant": 7,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 143619
+    },
+    {
+      "target": "arm64_apple",
+      "variant": 0,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 140898
+    },
+    {
+      "target": "arm64_apple",
+      "variant": 1,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 140898
+    },
+    {
+      "target": "arm64_apple",
+      "variant": 2,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 140898
+    },
+    {
+      "target": "arm64_apple",
+      "variant": 3,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 140898
+    },
+    {
+      "target": "arm64_apple",
+      "variant": 4,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 140898
+    },
+    {
+      "target": "arm64_apple",
+      "variant": 5,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 140898
+    },
+    {
+      "target": "arm64_apple",
+      "variant": 6,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 140898
+    },
+    {
+      "target": "arm64_apple",
+      "variant": 7,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 140898
+    },
+    {
+      "target": "rv64",
+      "variant": 0,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 115348
+    },
+    {
+      "target": "rv64",
+      "variant": 1,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 115348
+    },
+    {
+      "target": "rv64",
+      "variant": 2,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 115348
+    },
+    {
+      "target": "rv64",
+      "variant": 3,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 115348
+    },
+    {
+      "target": "rv64",
+      "variant": 4,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 115348
+    },
+    {
+      "target": "rv64",
+      "variant": 5,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 115348
+    },
+    {
+      "target": "rv64",
+      "variant": 6,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 115348
+    },
+    {
+      "target": "rv64",
+      "variant": 7,
+      "pass": true,
+      "reference_exit": 0,
+      "backend_exit": 0,
+      "output_bytes": 115348
+    }
+  ],
+  "complete": true
+}

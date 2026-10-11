@@ -1,0 +1,765 @@
+{
+  "scope": "Numeric, Float literal/formatter and checked FloatArray source checkpoint; not final combined validation/selfhost or release evidence",
+  "release_ready": false,
+  "parent": "1319617",
+  "compiler": {
+    "path": "build/qbe-finish/compiler-combined5",
+    "sha256": "3333a12ca7e56eb092780343115dccaf1c7d5fb84be7d3dabaa0dea8946672fe"
+  },
+  "backend": {
+    "path": "build/qbe-finish/seed-qbe-stage3",
+    "sha256": "7e3d6233d2e8242a32909c5bcdb8468ce19164c376fe4689aef092476f4f6c18"
+  },
+  "runtime": {
+    "sha256": "f46a1c9d8e7f3eb7d87407954453c840c5c7761acab799993efe8de4e2c1a05d",
+    "recipe": [
+      "seed-frontend-stage3 compiler/pure/qbe_runtime_dump.lsl build/qbe-finish/runtime-dump-float seed-qbe-stage3",
+      "build/qbe-finish/runtime-dump-float build/qbe-finish/runtime-float",
+      "python3 tools/qbe/runtime_object.py build/qbe-finish/runtime-float"
+    ]
+  },
+  "source_sha256": {
+    "compiler/pure/_catalog_platform.lsl": "82988ff5d7f2adc752cbe3e86da10faebc873f4857d9442124e538193e536006",
+    "compiler/pure/_compiler_host_platform.lsl": "50235c7e0176d1a72af26e33296c94c3557e2640268b1729f8d2e361958b2e96",
+    "compiler/pure/_install_platform.lsl": "2a5e28db11799527374a35b1c2a8b80a6f34d14f209c1f0336db779afc1132d4",
+    "compiler/pure/_package_platform.lsl": "5390924c2c8eb95ebc34099e05d88d0b77ce27693fce9f32d0f064317dd00100",
+    "compiler/pure/_update_install_platform.lsl": "b23a59ce6d202f03f7e25fe683ce23b293d0dcc82e2312f823b295266b0a6b59",
+    "compiler/pure/_update_platform.lsl": "b35cd3dbd1de9e582410c1c0078d5016c34a03d5b24440003a21e775ff41b041",
+    "compiler/pure/abi_x86_64.lsl": "5e6123581d7dec0223b03ff00e2ba5fd6fe7973bb665852d8d0a44820c3b8a60",
+    "compiler/pure/assembler.lsl": "8d6c68b1d9f40d37904704741d2fe6b00872309661baaf4951cf5e65baf78f7c",
+    "compiler/pure/assembler_x86_64.lsl": "af22e43292f7866cbb9348840d6cb52e05e4b0df10cb61aaef32a826abbd52f4",
+    "compiler/pure/backend_x86_64.lsl": "70bf7ed1cb4c7b23c97bdc170f5233dae7158c4a38503d1a8f3c60a5fe44f718",
+    "compiler/pure/browser.lsl": "eeb9f0d0ea05efb5b473a5ff89ef95c08217f3ebc4a4095ab534ea013f23db2a",
+    "compiler/pure/bytes.lsl": "6d5b630011129af9a936b448432e0cd8631437d20c809995e6fa78197b18f1b8",
+    "compiler/pure/catalog.lsl": "1dd32f76028e005b28a518c99df572941a3952ea6a72711fa4fc9c07bb6f433b",
+    "compiler/pure/catalog_linux_x86_64.lsl": "016b9de8341ee410286a7d2e6d540bfafa9ae79cd2de4be27dc2866613f53f39",
+    "compiler/pure/cli.lsl": "a5e4b55f211aa5522e72ce777967fd14d2d696f8a07766113f40abd22dc25088",
+    "compiler/pure/codegen.lsl": "058d58fbb77bf78d5a52a863f6fd8447321a70e8a00257b7076ae7423258c3cd",
+    "compiler/pure/compiler_backend.lsl": "a14da865d5cdef0e5599335884c3a1c9dffa8c19ef5ab3bd0b9c6ffe9ecb75b7",
+    "compiler/pure/console.lsl": "05ec9f84138198f65065f4c8aa2c451ac90961996947e7fad3e755e830cf505d",
+    "compiler/pure/declarations.lsl": "8b4027b210bb46c5db34d3a70c857ee26b088a31cf340b2e09c886137d2e82ac",
+    "compiler/pure/diagnostics.lsl": "e5b5d66ab05ae3e87b9c84103f8a69d6857416fabcebb17d7ca5a959af64ec74",
+    "compiler/pure/dynamic_stdlib.lsl": "6b78f1022da7021a48246f35d1224a501d2964ab59faae735922595f54e5797e",
+    "compiler/pure/editor.lsl": "381eb9980899eb6964cc72f07608e39b419c7f832a7b7f45f5977be3bca218d0",
+    "compiler/pure/elf_image.lsl": "2a05401fc3ff99dbd7364f9b26f42e114747e079dbcb22525f8acf91ac5f828e",
+    "compiler/pure/flow.lsl": "d9d24a6847035fc67d83de9393c584985ebf249118e180ebc5d5bd84fd62792b",
+    "compiler/pure/frontend.lsl": "e708a35f8a44ba8002f05165ec864ae9aaa7b2d924d0cf67b282862c78c9be85",
+    "compiler/pure/heap_runtime.lsl": "3b4679d6104c1a0bc8fdfb2bb0165288c97482a30a51c9cf5edee1af38ba20e6",
+    "compiler/pure/heap_runtime_linux_x86_64.lsl": "f6b7ddc4e3c546ab592e2a1e39e53e4c1c695fe83cca1ff15fc251e928c30073",
+    "compiler/pure/highlight.lsl": "7bb02d0eb31f1435896ea2f447ace7c89b4bc286b5da1642c6f03e1e2c1ce87d",
+    "compiler/pure/host.lsl": "3b458a8d437aa50d2cebb7d613339c08df7816386babc2245c529ce1bb15cbf6",
+    "compiler/pure/host_linux_x86_64.lsl": "95fbed18a04238710eca734c09e73d7fa5b7f3f41d784f34f1a2401e2083745e",
+    "compiler/pure/image_elf64_linux.lsl": "44bf898add0a37fd9279459c5f7ff140dcd66c7abb87f557c47e5a854da6d739",
+    "compiler/pure/image_writer.lsl": "58cebb23435a57c9d3d723646bd444ac7c48f46c3bb2097374d94361eaeff492",
+    "compiler/pure/install.lsl": "e57e496e0d960293194bbdba5dcecf1210ffc131bd94c0b5a027cf33f72bea18",
+    "compiler/pure/install_linux_x86_64.lsl": "a6f076ebd1a7da3966d502096f9f0a5c7e11cd6914d4e758170f5696a7925c4b",
+    "compiler/pure/io_runtime.lsl": "3d5302d06c75e9fad5c628b739bdc3d06cfe0e803b2a129c863b997f6e4a7995",
+    "compiler/pure/io_runtime_linux_x86_64.lsl": "67518f93b0253792ed0f0ee1a8c8e34f8df9873b979e32f88308297166ca3a19",
+    "compiler/pure/lexer.lsl": "207ce6dcb9b8d0445cc2280f2e340e0480dc5c6db8c3369f903591a7825ae15b",
+    "compiler/pure/linker.lsl": "237d0442d5f3d5e0f3317d7e7c462f6b81c9195875cb329a220a10683c87a01e",
+    "compiler/pure/lslc_direct.lsl": "c025015017dcca7300b893529d3de7bf97f9a89d58a1e6e6d924a8030269ce58",
+    "compiler/pure/lslc_qbe.lsl": "bac982dc68572529e9e2a861915e5a354ec6d49f438946108c4f836a2f6e9cf8",
+    "compiler/pure/manual.lsl": "565e91fc2003e4eadfa264991771dc9289a0ffd8a2f3621aa2fee32b58369dc0",
+    "compiler/pure/native_plugin_runtime.lsl": "c48e8995ddb131ac5d2808530cc1aa9d0e3ba618c44bf9a411f425c70b9fba7d",
+    "compiler/pure/native_plugin_runtime_linux_x86_64.lsl": "f1d07341cb011cb23df05caee61ccb3a5fc763c62b61d4b927c1dffaacf64241",
+    "compiler/pure/native_runtime.lsl": "97b15d1f9b2cbe3ecb8ac67a42affabe876dc8f2b9439150088232cfcc3bf461",
+    "compiler/pure/native_runtime_linux_x86_64.lsl": "89021b33402d8a8f2b746ddbaa85282df0a9f391a073ae813b558f0a392fe710",
+    "compiler/pure/object_code.lsl": "28c665c4799f59166c42c8673d9bf203a18a3bba95bec233571516037f1562f5",
+    "compiler/pure/package.lsl": "b344a5cc14db24b526c8c0dd256949541147e9462244207ac1319a2f026aa472",
+    "compiler/pure/package_linux_x86_64.lsl": "7bdb0f73c59a1de70cbd689d1c4560c3cb2ea37987550299e5462a96e4bf0a5b",
+    "compiler/pure/parser.lsl": "a5eb49774210c7c101014f344f91a58a9730a09e9028cce8ed190738ce3783bf",
+    "compiler/pure/pipeline.lsl": "6834b65918e3da10a1e8e5ef16ae42ee9633c29e038763943d79cbfe0edb5f4e",
+    "compiler/pure/process_runtime.lsl": "feb20eed99030a41b6bcf73c6ed925fea11b648272606ea42527954d064bb43d",
+    "compiler/pure/process_runtime_linux_x86_64.lsl": "c0f80dbaf0a72740ab6e69d802a12e889fffe7cf08e095672253081df5cf98a4",
+    "compiler/pure/qbe_emit.lsl": "ad2541c8a8915c408abcfffe42bf02ab7cbb8a252c6615ae0f694ad4c8b52bb0",
+    "compiler/pure/qbe_runtime_dump.lsl": "1ed4e00498b6396680fb24138df48923cf4ae80c1c882b317834f0deb50e0bff",
+    "compiler/pure/relocations_x86_64.lsl": "53c7cbb52f6724dd4fab3337219acbb5c3c6e2042e8147d51e03b9f0d8373d42",
+    "compiler/pure/runtime.lsl": "6f54df34a08b9b8ce4b855e7bea82d3fe81b6a9f9750216c458641838634d860",
+    "compiler/pure/runtime_abi_linux_x86_64.lsl": "4cd8a2e91d2fa19a1fafbcd6ad87f57e79beefa66778fa5ebed90b5b7ede3a2f",
+    "compiler/pure/runtime_linux_x86_64.lsl": "2f4e16fec47238f243b88727c95ddcf056041a73edf42fba128846104274310e",
+    "compiler/pure/semantic.lsl": "c50e683ec43699d1c9f7d19cebce5b9c30c335f2fa426ac65bb5c930dd463555",
+    "compiler/pure/target.lsl": "2d913fa28cd778d02d0d4bebd18986cd5d68864cf2640a63db262ccb2977d9cf",
+    "compiler/pure/thread_runtime.lsl": "cf94f0a37f4e031a06ee52d4a759e368cda64583bcb6ff8f484650debb29adfd",
+    "compiler/pure/thread_runtime_linux_x86_64.lsl": "32b157162dee6b24bc3ae3dfe8a6ade3d4f14c950c8aefd4282c86e26253614e",
+    "compiler/pure/update.lsl": "fef774fac49493190b44c0d9444589005f8ff1194051662af67117c0afdda363",
+    "compiler/pure/update_install.lsl": "d8ccac15b846cd4b0d4e023f1a4804f9e265e781324d3e08c01cad110891058a",
+    "compiler/pure/update_install_linux_x86_64.lsl": "55aed78183fdbfc630ecb5ac9b904b3cdf2b18d7b87900047562367c8374e818",
+    "compiler/pure/update_linux_x86_64.lsl": "07bf87e077446c6d76b2b7a5f6531f74705d605d0d84e73b4b0aefa0c8596e50",
+    "compiler/pure/validation.lsl": "58a93ecf05b4ccb0bd2ed663660e3c72255deb6c28629b0781d45dff59291979",
+    "compiler/pure/value_abi.lsl": "6e61c4f92bb308cc95c37e5c5faad57303dd6cb2852518ff581753bdca5bac74",
+    "compiler/pure/x86_64.lsl": "060978b936d1f758565841725c648c506bf52cc1af2e6f2fc6879ed912461ce5"
+  },
+  "numeric_controls": {
+    "scope": "Unmodified maintained source/output fixtures; sequential execution",
+    "compiler": "/home/antonin/LSL-QBE/build/qbe-finish/compiler-combined5",
+    "compiler_sha256": "3333a12ca7e56eb092780343115dccaf1c7d5fb84be7d3dabaa0dea8946672fe",
+    "backend": "/home/antonin/LSL-QBE/build/qbe-finish/seed-qbe-stage3",
+    "backend_sha256": "7e3d6233d2e8242a32909c5bcdb8468ce19164c376fe4689aef092476f4f6c18",
+    "runtime_sha256": "f46a1c9d8e7f3eb7d87407954453c840c5c7761acab799993efe8de4e2c1a05d",
+    "cases": [
+      {
+        "source": "tests/abs_conformance.lsl",
+        "source_sha256": "d40088686ab787c65324a4963c09592f6746dec7885b09bc2463285d00a5cf94",
+        "expected_sha256": "cac4b98394d2adc5216d1c9a6f8b6a6aaca552e79eb1823e2c94e08f263b2e83",
+        "candidate": {
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-finish/compiler-combined5",
+              "tests/abs_conformance.lsl",
+              "/home/antonin/LSL-QBE/build/qbe-finish/numeric5/abs_conformance",
+              "/home/antonin/LSL-QBE/build/qbe-finish/seed-qbe-stage3"
+            ],
+            "seconds": 0.6426574129945948,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-finish/numeric5/abs_conformance"
+            ],
+            "seconds": 0.0023192230000859126,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "3.5 3.5 5 5\n0.0 0.0 0\n2.5\n7\n1.0 2.0 3.0\n7 9\n4.0\n4.5\n1000000000000\n",
+            "stderr": ""
+          },
+          "matches_expected": true,
+          "status": "PASS"
+        }
+      },
+      {
+        "source": "tests/bit_builtins_conformance.lsl",
+        "source_sha256": "bd4faae320e4713485fb944f8246419d39fb5d9042c5535a022fd23578b12d63",
+        "expected_sha256": "2c1c4571ad85134c60324dd12862818d71589a053490c0a4acda67a2b7643a61",
+        "candidate": {
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-finish/compiler-combined5",
+              "tests/bit_builtins_conformance.lsl",
+              "/home/antonin/LSL-QBE/build/qbe-finish/numeric5/bit_builtins_conformance",
+              "/home/antonin/LSL-QBE/build/qbe-finish/seed-qbe-stage3"
+            ],
+            "seconds": 0.5143142640008591,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-finish/numeric5/bit_builtins_conformance"
+            ],
+            "seconds": 0.0018840070042642765,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0 8 64 1\n3 0 64 63\n3 0 0\n",
+            "stderr": ""
+          },
+          "matches_expected": true,
+          "status": "PASS"
+        }
+      },
+      {
+        "source": "tests/bytearray_conformance.lsl",
+        "source_sha256": "a9362bf63b0e079df046be5b9f7c129a6b6f0f07a83d0fb65f18321b6e66d290",
+        "expected_sha256": "160b9427980e0b76183ed5e80e2a0e39b0c302efd87ab4c8266e178311e9c41e",
+        "candidate": {
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-finish/compiler-combined5",
+              "tests/bytearray_conformance.lsl",
+              "/home/antonin/LSL-QBE/build/qbe-finish/numeric5/bytearray_conformance",
+              "/home/antonin/LSL-QBE/build/qbe-finish/seed-qbe-stage3"
+            ],
+            "seconds": 0.6768965410010424,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-finish/numeric5/bytearray_conformance",
+              "/home/antonin/LSL-QBE/build/qbe-finish/numeric5"
+            ],
+            "seconds": 0.0031791270012035966,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "ByteArray 3 True ByteArray([0, 65, 255]) 65 255\nByteArray([7, 66, 255]) [7, 66, 255] 328\nByteArray ByteArray([7, 66, 255]) True\nByteArray([7, 66, 255, 1])\nTrue\nValueError: ByteArray value is outside 0..255\nValueError: ByteArray value is outside 0..255\n300 0 255 43 True\n0 False ByteArray([])\n",
+            "stderr": ""
+          },
+          "matches_expected": true,
+          "status": "PASS"
+        }
+      },
+      {
+        "source": "tests/collections_builtins_conformance.lsl",
+        "source_sha256": "d483d9852ba5346958b5d27fcf8745512d4e6a7a532990f33afadeeb15a5cc80",
+        "expected_sha256": "ac063718f586adaec57d5035884bc3fc3bad1c8a7b78a5312179b571dc110cd2",
+        "candidate": {
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-finish/compiler-combined5",
+              "tests/collections_builtins_conformance.lsl",
+              "/home/antonin/LSL-QBE/build/qbe-finish/numeric5/collections_builtins_conformance",
+              "/home/antonin/LSL-QBE/build/qbe-finish/seed-qbe-stage3"
+            ],
+            "seconds": 0.9695559579995461,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-finish/numeric5/collections_builtins_conformance"
+            ],
+            "seconds": 0.005724975999328308,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "[1, 1, 2, 3, 3] [3, 1, 2] [3, 1, 3, 2, 1]\n['a', 'a', 'b', '\u017e'] [1, 2, 4]\n['a', 'z']\nSet 3 True [1, 2, 3]\nTrue True\n0 0 [1, 2, 3, 4]\n0 0 [1, 2, 4]\nTrue True\n[1, 2, 4, 5] [4]\n[2, 4] [2, 4, 9]\nTrue True True\n0 [1, 2, 4, 9]\n[2, 4, 8, 18]\n[1, 2, 4, 9]\n0 0 False set()\nset() {'a', 'b'} [3, 1]\n[[1], {'a': 2}, None]\n{(1, 2)}\nTypeError: object is not indexable\nTypeError: object does not support append\nTypeError: object does not support indexed assignment\nTypeError: method requires an indexable sequence\nTypeError: pop requires a List or Dictionary\nTypeError: mutable Set cannot be a Dictionary key\nsorted/set/dedup conformance passed\n",
+            "stderr": ""
+          },
+          "matches_expected": true,
+          "status": "PASS"
+        }
+      },
+      {
+        "source": "tests/dynamic_collection_boundary_conformance.lsl",
+        "source_sha256": "40125bcfd5c0a04ec89a92ad9661b35e4f7b7886a8bf70185f201ee2bc8f1167",
+        "expected_sha256": "b82686ae51714fbf534ca80bd720028a963cf971df362403a168474113bb1ef4",
+        "candidate": {
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-finish/compiler-combined5",
+              "tests/dynamic_collection_boundary_conformance.lsl",
+              "/home/antonin/LSL-QBE/build/qbe-finish/numeric5/dynamic_collection_boundary_conformance",
+              "/home/antonin/LSL-QBE/build/qbe-finish/seed-qbe-stage3"
+            ],
+            "seconds": 0.6786993320056354,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-finish/numeric5/dynamic_collection_boundary_conformance"
+            ],
+            "seconds": 0.004086807995918207,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "LSL\n3 {'name': 'LSL', 'count': 3}\n{'count': 3} {'count': 3}\n30\n25 [10, 25, 30]\n[25, 30] [25, 30]\n2 55\n5 7 IntArray([7, 5])\n1.5 3.5 FloatArray([1.5, 3.5])\n65 67 ByteArray([65, 67])\nTrue True True\nTrue True True\nell [25, 30]\nIntArray FloatArray ByteArray\nIndexError: index out of range\nIndexError: index out of range\nTypeError: object has no length\nTypeError: object has no length\nTypeError: right operand of in is not a collection\nTypeError: method requires an indexable sequence\nTypeError: sequence index must be Int\n",
+            "stderr": ""
+          },
+          "matches_expected": true,
+          "status": "PASS"
+        }
+      },
+      {
+        "source": "tests/dynamic_numeric_boundary_conformance.lsl",
+        "source_sha256": "48be69706e0bc6ec0b2e1f37e0c935963a06a233672365150f7ff37a22342b48",
+        "expected_sha256": "4c2bfe9865f8d3b4b2b8f43b7a70a64a3b61a6d4fc1d544201b8d79dc342d66f",
+        "candidate": {
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-finish/compiler-combined5",
+              "tests/dynamic_numeric_boundary_conformance.lsl",
+              "/home/antonin/LSL-QBE/build/qbe-finish/numeric5/dynamic_numeric_boundary_conformance",
+              "/home/antonin/LSL-QBE/build/qbe-finish/seed-qbe-stage3"
+            ],
+            "seconds": 0.8036925970009179,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-finish/numeric5/dynamic_numeric_boundary_conformance"
+            ],
+            "seconds": 0.002552974001446273,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "12 3.5 LSL 3 [1, 2, 3]\n5 3.5 12 3.0 0 ababab xx\n3.5 0.5\n-3 3.0 0 2 1.5 1\n8 8.0 2 2.0 1.0\n4 -1.5 8 2.5\nTrue 2 True\n4.5 1.5 3\n9 24\n5 14\nTypeError: numeric operands required\nTypeError: numeric operands required\nTypeError: numeric operands required\nTypeError: numeric operand required\nTypeError: numeric operands required\nTypeError: numeric operands required\nTypeError: numeric operands required\nTypeError: numeric operand required\nTypeError: numeric operand required\nTypeError: numeric operands required\nTypeError: numeric operands required\nTypeError: sum values must be numeric\nTypeError: sort values must have compatible types\n",
+            "stderr": ""
+          },
+          "matches_expected": true,
+          "status": "PASS"
+        }
+      },
+      {
+        "source": "tests/float_format_conformance.lsl",
+        "source_sha256": "f816d1e4789a751acdfa1aeaecb440fba3c74914c5474b377f5843c9b374789c",
+        "expected_sha256": "05a7c92bee3bab3be4c5576aff2c6ee11a980c02d098383c88f7dc57d9ca9aa5",
+        "candidate": {
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-finish/compiler-combined5",
+              "tests/float_format_conformance.lsl",
+              "/home/antonin/LSL-QBE/build/qbe-finish/numeric5/float_format_conformance",
+              "/home/antonin/LSL-QBE/build/qbe-finish/seed-qbe-stage3"
+            ],
+            "seconds": 0.6337203180009965,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-finish/numeric5/float_format_conformance"
+            ],
+            "seconds": 0.0045560049984487705,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0.0 True\n-0.0 True\n0.1 True\n1.2345678901234567 True\n1.0e+20 True\n1.0e+300 True\n1.0e-20 True\n2.225073858507201e-308 True\n5.0e-324 True\n3.141592653589793 True\n-2.718281828459045 True\n0.3333333333333333 True\n1.7976931348623153e+308 True\n1000000000000000.4 True\ninf True\n-inf True\nnan True\n[1.25, 1.0e+20]\n",
+            "stderr": ""
+          },
+          "matches_expected": true,
+          "status": "PASS"
+        }
+      },
+      {
+        "source": "tests/float_special_conformance.lsl",
+        "source_sha256": "3de96469e498c34be8a21caebea69ea99c3121336589a0ddf177ca6fcc9d5ca8",
+        "expected_sha256": "5edc6f908a3d6f209b37e7b768b769cc38ca631867d074b0634eb91b4b1fd7e1",
+        "candidate": {
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-finish/compiler-combined5",
+              "tests/float_special_conformance.lsl",
+              "/home/antonin/LSL-QBE/build/qbe-finish/numeric5/float_special_conformance",
+              "/home/antonin/LSL-QBE/build/qbe-finish/seed-qbe-stage3"
+            ],
+            "seconds": 0.6522925609970116,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-finish/numeric5/float_special_conformance"
+            ],
+            "seconds": 0.0025987050030380487,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "inf -inf nan\ninf -inf nan\n2.5 -3.5 0.0\ninf is greater\nFalse True False\nTrue True True\nTrue True True\n",
+            "stderr": ""
+          },
+          "matches_expected": true,
+          "status": "PASS"
+        }
+      },
+      {
+        "source": "tests/floatarray_conformance.lsl",
+        "source_sha256": "28aab85cc261f8680ccfd473a59af1c8e9d1aeea85438dbe37eb342720c219ed",
+        "expected_sha256": "fa671d6bec5fa4f4d6262d2dbe12248c583e877de4a079b086fa7a45f9b608ad",
+        "candidate": {
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-finish/compiler-combined5",
+              "tests/floatarray_conformance.lsl",
+              "/home/antonin/LSL-QBE/build/qbe-finish/numeric5/floatarray_conformance",
+              "/home/antonin/LSL-QBE/build/qbe-finish/seed-qbe-stage3"
+            ],
+            "seconds": 0.6769183670039638,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-finish/numeric5/floatarray_conformance"
+            ],
+            "seconds": 0.002721863995247986,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "FloatArray 3 FloatArray([1.5, -2.25, 3.0]) 1.5 3.0\nFloatArray([1.5, 7.5, 3.5]) 12.5 70.75\nFloatArray FloatArray([7.5, 3.5])\nFloatArray([2.5, 8.5, 4.5]) 15.5\n24 24 True\n1 2\nFloatArray FloatArray([58.0, 64.0, 139.0, 154.0]) 415.0\nTrue\nTypeError: FloatArray cast requires an existing FloatArray\nValueError: float_zeros size cannot be negative\nValueError: float_dot requires equal lengths\n",
+            "stderr": ""
+          },
+          "matches_expected": true,
+          "status": "PASS"
+        }
+      },
+      {
+        "source": "tests/math_conformance.lsl",
+        "source_sha256": "951132fa4b5f0bcac0c562147f27559e8808f580d0792c9b6f67f5baa27acc91",
+        "expected_sha256": "afb2e7eec0a931fa781c221aa4db7eb96a057887b4d3663031296fd2397c0d88",
+        "candidate": {
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-finish/compiler-combined5",
+              "tests/math_conformance.lsl",
+              "/home/antonin/LSL-QBE/build/qbe-finish/numeric5/math_conformance",
+              "/home/antonin/LSL-QBE/build/qbe-finish/seed-qbe-stage3"
+            ],
+            "seconds": 0.9740720110057737,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-finish/numeric5/math_conformance"
+            ],
+            "seconds": 0.008339451997017022,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "3\n3.1415926535\n3.14159265358979323846264338327950288419716939937510\n3628800\n265252859812191058636308480000000\n6 42\n0.5 1.0 3.720075976020657e-44\n0 4 0.0\n5.0\n2.5 1.25\n1.118033988749895 2.5\nTrue\nTrue\nTrue\nTrue\n",
+            "stderr": ""
+          },
+          "matches_expected": true,
+          "status": "PASS"
+        }
+      },
+      {
+        "source": "tests/sequence_ops_conformance.lsl",
+        "source_sha256": "2bcd05d69e8a54922f21b4bda35262df147cc183695d22ba8276bc59f7c0d5e6",
+        "expected_sha256": "3959fd356908c6b909d689600d3955895ffdec18583ad7ae264dc605b0589842",
+        "candidate": {
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-finish/compiler-combined5",
+              "tests/sequence_ops_conformance.lsl",
+              "/home/antonin/LSL-QBE/build/qbe-finish/numeric5/sequence_ops_conformance",
+              "/home/antonin/LSL-QBE/build/qbe-finish/seed-qbe-stage3"
+            ],
+            "seconds": 0.6555788759942516,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-finish/numeric5/sequence_ops_conformance"
+            ],
+            "seconds": 0.0028005830026813783,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "[1, 2, 3, 4]\n['a', 'b', 'c']\n[1]\n[1]\nababab\nxyxyxy\n\n5\n[1, 2, 3]\n-----\n",
+            "stderr": ""
+          },
+          "matches_expected": true,
+          "status": "PASS"
+        }
+      },
+      {
+        "source": "tests/sqrt_conformance.lsl",
+        "source_sha256": "939d6454485833f47cd27cebbd809a34dbf088564194d3854511a6275af43800",
+        "expected_sha256": "d61bbc750b64a9f3016d665c657faedae9fae57167a322dbc1834e275fdce526",
+        "candidate": {
+          "build": {
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-finish/compiler-combined5",
+              "tests/sqrt_conformance.lsl",
+              "/home/antonin/LSL-QBE/build/qbe-finish/numeric5/sqrt_conformance",
+              "/home/antonin/LSL-QBE/build/qbe-finish/seed-qbe-stage3"
+            ],
+            "seconds": 0.7087772649974795,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "",
+            "stderr": ""
+          },
+          "execution": {
+            "command": [
+              "/home/antonin/LSL-QBE/build/qbe-finish/numeric5/sqrt_conformance"
+            ],
+            "seconds": 0.002115750998200383,
+            "returncode": 0,
+            "timed_out": false,
+            "stdout": "0.0\n1.5\n9.0\n-0.0\nValueError: sqrt domain error\n",
+            "stderr": ""
+          },
+          "matches_expected": true,
+          "status": "PASS"
+        }
+      }
+    ],
+    "complete": true,
+    "all_pass": true,
+    "binaries_unchanged": true
+  },
+  "registered_controls": {
+    "platform": "Linux-6.12.74+deb13+1-amd64-x86_64-with-glibc2.41",
+    "cpu_count": 4,
+    "qbe_version": "1.3",
+    "selfhost": [],
+    "tests": [
+      {
+        "source": "tests/qbe/minimal.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.5077152129961178
+      },
+      {
+        "source": "tests/qbe/core.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.5321262129946263
+      },
+      {
+        "source": "tests/qbe/public_int_collision.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.6882612359986524
+      },
+      {
+        "source": "tests/qbe/public_gc_roots.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.632661901996471
+      },
+      {
+        "source": "tests/qbe/intarray_store.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.6729865539964521
+      },
+      {
+        "source": "tests/qbe/checked_collection_casts.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.6553324580017943
+      },
+      {
+        "source": "tests/qbe/collection_codegen.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.6844776720026857
+      },
+      {
+        "source": "tests/qbe/dynamic_sequence_load.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.7316625470048166
+      },
+      {
+        "source": "tests/qbe/native_float_arithmetic.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.6844677289991523
+      },
+      {
+        "source": "tests/qbe/native_float_boundaries.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.701668616005918
+      },
+      {
+        "source": "tests/qbe/native_float_effects.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.6438628510004492
+      },
+      {
+        "source": "tests/qbe/native_float_literals.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.6378840269971988
+      },
+      {
+        "source": "tests/qbe/public_any_arithmetic.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.6785617639980046
+      },
+      {
+        "source": "tests/qbe/public_call_inference.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.7076034890051233
+      },
+      {
+        "source": "tests/qbe/public_default_call_flow.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.634874827999738
+      },
+      {
+        "source": "tests/qbe/classes.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.7275514979992295
+      },
+      {
+        "source": "tests/qbe/class_default_call_flow.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.6489409130008426
+      },
+      {
+        "source": "tests/class_method_return_conformance.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.7266341970025678
+      },
+      {
+        "source": "tests/wide_class_abi_conformance.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.7142951860005269
+      },
+      {
+        "source": "tests/inheritance_conformance.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.6701465489968541
+      },
+      {
+        "source": "tests/class_module_smoke.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.7246253479970619
+      },
+      {
+        "source": "tests/origin_function_conformance.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.5046768979955232
+      },
+      {
+        "source": "tests/abs_conformance.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.6430025580048095
+      },
+      {
+        "source": "tests/dynamic_arith_conformance.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.6904214379974292
+      },
+      {
+        "source": "tests/dynamic_numeric_boundary_conformance.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.7959321070011356
+      },
+      {
+        "source": "tests/float_power_conformance.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.6360482140007662
+      },
+      {
+        "source": "tests/float_floordiv_conformance.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.7363389970050775
+      },
+      {
+        "source": "tests/boxed_int_infrastructure_conformance.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.640427318001457
+      },
+      {
+        "source": "tests/parameter_inference_conformance.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.5830027780029923
+      },
+      {
+        "source": "tests/bitwise_conformance.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.5459250939966296
+      },
+      {
+        "source": "tests/unicode_case_conformance.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.6532293280033628
+      },
+      {
+        "source": "tests/integer_wrap_conformance.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.6515537500017672
+      },
+      {
+        "source": "tests/truthiness_conformance.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.5608121909972397
+      },
+      {
+        "source": "tests/recursive_return_conformance.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.7243693609998445
+      },
+      {
+        "source": "tests/string_conversion_conformance.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.6538902469983441
+      },
+      {
+        "source": "tests/boxed_collection_conformance.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.8931032989930827
+      },
+      {
+        "source": "tests/float_conversion_conformance.lsl",
+        "status": "PASS",
+        "compile_seconds": 0.7095616810038337
+      }
+    ],
+    "tests_only": true,
+    "backend": "/home/antonin/LSL-QBE/build/qbe-finish/seed-qbe-stage3",
+    "maxrss_kib": 70480,
+    "source_sha256": {
+      "compiler/pure/_catalog_platform.lsl": "82988ff5d7f2adc752cbe3e86da10faebc873f4857d9442124e538193e536006",
+      "compiler/pure/_compiler_host_platform.lsl": "50235c7e0176d1a72af26e33296c94c3557e2640268b1729f8d2e361958b2e96",
+      "compiler/pure/_install_platform.lsl": "2a5e28db11799527374a35b1c2a8b80a6f34d14f209c1f0336db779afc1132d4",
+      "compiler/pure/_package_platform.lsl": "5390924c2c8eb95ebc34099e05d88d0b77ce27693fce9f32d0f064317dd00100",
+      "compiler/pure/_update_install_platform.lsl": "b23a59ce6d202f03f7e25fe683ce23b293d0dcc82e2312f823b295266b0a6b59",
+      "compiler/pure/_update_platform.lsl": "b35cd3dbd1de9e582410c1c0078d5016c34a03d5b24440003a21e775ff41b041",
+      "compiler/pure/abi_x86_64.lsl": "5e6123581d7dec0223b03ff00e2ba5fd6fe7973bb665852d8d0a44820c3b8a60",
+      "compiler/pure/assembler.lsl": "8d6c68b1d9f40d37904704741d2fe6b00872309661baaf4951cf5e65baf78f7c",
+      "compiler/pure/assembler_x86_64.lsl": "af22e43292f7866cbb9348840d6cb52e05e4b0df10cb61aaef32a826abbd52f4",
+      "compiler/pure/backend_x86_64.lsl": "70bf7ed1cb4c7b23c97bdc170f5233dae7158c4a38503d1a8f3c60a5fe44f718",
+      "compiler/pure/browser.lsl": "eeb9f0d0ea05efb5b473a5ff89ef95c08217f3ebc4a4095ab534ea013f23db2a",
+      "compiler/pure/bytes.lsl": "6d5b630011129af9a936b448432e0cd8631437d20c809995e6fa78197b18f1b8",
+      "compiler/pure/catalog.lsl": "1dd32f76028e005b28a518c99df572941a3952ea6a72711fa4fc9c07bb6f433b",
+      "compiler/pure/catalog_linux_x86_64.lsl": "016b9de8341ee410286a7d2e6d540bfafa9ae79cd2de4be27dc2866613f53f39",
+      "compiler/pure/cli.lsl": "a5e4b55f211aa5522e72ce777967fd14d2d696f8a07766113f40abd22dc25088",
+      "compiler/pure/codegen.lsl": "058d58fbb77bf78d5a52a863f6fd8447321a70e8a00257b7076ae7423258c3cd",
+      "compiler/pure/compiler_backend.lsl": "a14da865d5cdef0e5599335884c3a1c9dffa8c19ef5ab3bd0b9c6ffe9ecb75b7",
+      "compiler/pure/console.lsl": "05ec9f84138198f65065f4c8aa2c451ac90961996947e7fad3e755e830cf505d",
+      "compiler/pure/declarations.lsl": "8b4027b210bb46c5db34d3a70c857ee26b088a31cf340b2e09c886137d2e82ac",
+      "compiler/pure/diagnostics.lsl": "e5b5d66ab05ae3e87b9c84103f8a69d6857416fabcebb17d7ca5a959af64ec74",
+      "compiler/pure/dynamic_stdlib.lsl": "6b78f1022da7021a48246f35d1224a501d2964ab59faae735922595f54e5797e",
+      "compiler/pure/editor.lsl": "381eb9980899eb6964cc72f07608e39b419c7f832a7b7f45f5977be3bca218d0",
+      "compiler/pure/elf_image.lsl": "2a05401fc3ff99dbd7364f9b26f42e114747e079dbcb22525f8acf91ac5f828e",
+      "compiler/pure/flow.lsl": "d9d24a6847035fc67d83de9393c584985ebf249118e180ebc5d5bd84fd62792b",
+      "compiler/pure/frontend.lsl": "e708a35f8a44ba8002f05165ec864ae9aaa7b2d924d0cf67b282862c78c9be85",
+      "compiler/pure/heap_runtime.lsl": "3b4679d6104c1a0bc8fdfb2bb0165288c97482a30a51c9cf5edee1af38ba20e6",
+      "compiler/pure/heap_runtime_linux_x86_64.lsl": "f6b7ddc4e3c546ab592e2a1e39e53e4c1c695fe83cca1ff15fc251e928c30073",
+      "compiler/pure/highlight.lsl": "7bb02d0eb31f1435896ea2f447ace7c89b4bc286b5da1642c6f03e1e2c1ce87d",
+      "compiler/pure/host.lsl": "3b458a8d437aa50d2cebb7d613339c08df7816386babc2245c529ce1bb15cbf6",
+      "compiler/pure/host_linux_x86_64.lsl": "95fbed18a04238710eca734c09e73d7fa5b7f3f41d784f34f1a2401e2083745e",
+      "compiler/pure/image_elf64_linux.lsl": "44bf898add0a37fd9279459c5f7ff140dcd66c7abb87f557c47e5a854da6d739",
+      "compiler/pure/image_writer.lsl": "58cebb23435a57c9d3d723646bd444ac7c48f46c3bb2097374d94361eaeff492",
+      "compiler/pure/install.lsl": "e57e496e0d960293194bbdba5dcecf1210ffc131bd94c0b5a027cf33f72bea18",
+      "compiler/pure/install_linux_x86_64.lsl": "a6f076ebd1a7da3966d502096f9f0a5c7e11cd6914d4e758170f5696a7925c4b",
+      "compiler/pure/io_runtime.lsl": "3d5302d06c75e9fad5c628b739bdc3d06cfe0e803b2a129c863b997f6e4a7995",
+      "compiler/pure/io_runtime_linux_x86_64.lsl": "67518f93b0253792ed0f0ee1a8c8e34f8df9873b979e32f88308297166ca3a19",
+      "compiler/pure/lexer.lsl": "207ce6dcb9b8d0445cc2280f2e340e0480dc5c6db8c3369f903591a7825ae15b",
+      "compiler/pure/linker.lsl": "237d0442d5f3d5e0f3317d7e7c462f6b81c9195875cb329a220a10683c87a01e",
+      "compiler/pure/lslc_direct.lsl": "c025015017dcca7300b893529d3de7bf97f9a89d58a1e6e6d924a8030269ce58",
+      "compiler/pure/lslc_qbe.lsl": "bac982dc68572529e9e2a861915e5a354ec6d49f438946108c4f836a2f6e9cf8",
+      "compiler/pure/manual.lsl": "565e91fc2003e4eadfa264991771dc9289a0ffd8a2f3621aa2fee32b58369dc0",
+      "compiler/pure/native_plugin_runtime.lsl": "c48e8995ddb131ac5d2808530cc1aa9d0e3ba618c44bf9a411f425c70b9fba7d",
+      "compiler/pure/native_plugin_runtime_linux_x86_64.lsl": "f1d07341cb011cb23df05caee61ccb3a5fc763c62b61d4b927c1dffaacf64241",
+      "compiler/pure/native_runtime.lsl": "97b15d1f9b2cbe3ecb8ac67a42affabe876dc8f2b9439150088232cfcc3bf461",
+      "compiler/pure/native_runtime_linux_x86_64.lsl": "89021b33402d8a8f2b746ddbaa85282df0a9f391a073ae813b558f0a392fe710",
+      "compiler/pure/object_code.lsl": "28c665c4799f59166c42c8673d9bf203a18a3bba95bec233571516037f1562f5",
+      "compiler/pure/package.lsl": "b344a5cc14db24b526c8c0dd256949541147e9462244207ac1319a2f026aa472",
+      "compiler/pure/package_linux_x86_64.lsl": "7bdb0f73c59a1de70cbd689d1c4560c3cb2ea37987550299e5462a96e4bf0a5b",
+      "compiler/pure/parser.lsl": "a5eb49774210c7c101014f344f91a58a9730a09e9028cce8ed190738ce3783bf",
+      "compiler/pure/pipeline.lsl": "6834b65918e3da10a1e8e5ef16ae42ee9633c29e038763943d79cbfe0edb5f4e",
+      "compiler/pure/process_runtime.lsl": "feb20eed99030a41b6bcf73c6ed925fea11b648272606ea42527954d064bb43d",
+      "compiler/pure/process_runtime_linux_x86_64.lsl": "c0f80dbaf0a72740ab6e69d802a12e889fffe7cf08e095672253081df5cf98a4",
+      "compiler/pure/qbe_emit.lsl": "ad2541c8a8915c408abcfffe42bf02ab7cbb8a252c6615ae0f694ad4c8b52bb0",
+      "compiler/pure/qbe_runtime_dump.lsl": "1ed4e00498b6396680fb24138df48923cf4ae80c1c882b317834f0deb50e0bff",
+      "compiler/pure/relocations_x86_64.lsl": "53c7cbb52f6724dd4fab3337219acbb5c3c6e2042e8147d51e03b9f0d8373d42",
+      "compiler/pure/runtime.lsl": "6f54df34a08b9b8ce4b855e7bea82d3fe81b6a9f9750216c458641838634d860",
+      "compiler/pure/runtime_abi_linux_x86_64.lsl": "4cd8a2e91d2fa19a1fafbcd6ad87f57e79beefa66778fa5ebed90b5b7ede3a2f",
+      "compiler/pure/runtime_linux_x86_64.lsl": "2f4e16fec47238f243b88727c95ddcf056041a73edf42fba128846104274310e",
+      "compiler/pure/semantic.lsl": "c50e683ec43699d1c9f7d19cebce5b9c30c335f2fa426ac65bb5c930dd463555",
+      "compiler/pure/target.lsl": "2d913fa28cd778d02d0d4bebd18986cd5d68864cf2640a63db262ccb2977d9cf",
+      "compiler/pure/thread_runtime.lsl": "cf94f0a37f4e031a06ee52d4a759e368cda64583bcb6ff8f484650debb29adfd",
+      "compiler/pure/thread_runtime_linux_x86_64.lsl": "32b157162dee6b24bc3ae3dfe8a6ade3d4f14c950c8aefd4282c86e26253614e",
+      "compiler/pure/update.lsl": "fef774fac49493190b44c0d9444589005f8ff1194051662af67117c0afdda363",
+      "compiler/pure/update_install.lsl": "d8ccac15b846cd4b0d4e023f1a4804f9e265e781324d3e08c01cad110891058a",
+      "compiler/pure/update_install_linux_x86_64.lsl": "55aed78183fdbfc630ecb5ac9b904b3cdf2b18d7b87900047562367c8374e818",
+      "compiler/pure/update_linux_x86_64.lsl": "07bf87e077446c6d76b2b7a5f6531f74705d605d0d84e73b4b0aefa0c8596e50",
+      "compiler/pure/validation.lsl": "58a93ecf05b4ccb0bd2ed663660e3c72255deb6c28629b0781d45dff59291979",
+      "compiler/pure/value_abi.lsl": "6e61c4f92bb308cc95c37e5c5faad57303dd6cb2852518ff581753bdca5bac74",
+      "compiler/pure/x86_64.lsl": "060978b936d1f758565841725c648c506bf52cc1af2e6f2fc6879ed912461ce5"
+    },
+    "runtime_sha256": "f46a1c9d8e7f3eb7d87407954453c840c5c7761acab799993efe8de4e2c1a05d",
+    "qbe_sha256": "7e3d6233d2e8242a32909c5bcdb8468ce19164c376fe4689aef092476f4f6c18"
+  },
+  "oracle_clarification": "native_float_arithmetic now checks Int overflow conversion against independent IEEE bits -4332462841530417152 rather than an imprecisely parsed decimal literal. Expected output unchanged; native_float_literals separately fixes four legacy decimal bit patterns against installed 0.8.9.",
+  "remaining": [
+    "Validation/callback/range checkpoint b3a48d8 pending integration",
+    "Broad core corpus rerun and remaining comprehension/rang value cases",
+    "Combined frontend and QBE native selfhost and fresh version performance comparison"
+  ]
+}

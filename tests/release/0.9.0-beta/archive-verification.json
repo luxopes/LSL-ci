@@ -1,0 +1,220 @@
+{
+  "all_pass": true,
+  "complete": true,
+  "archives": {
+    "lsl-0.9.0-beta-source.tar.gz": {
+      "sha256": "6be3c9d0da6ecf76a5dd06a12dcaccd009cc224e2ebb7eccd7e905864cdd2d3e",
+      "members": 1349
+    },
+    "lsl-0.9.0-beta-linux-x86_64.tar.gz": {
+      "sha256": "75ca198bbcd36849c491ef5e6d0b2892edb3fd7415d1406c429132a897d603b1",
+      "members": 187
+    }
+  },
+  "artifact_matches": {
+    "compiler/pure/lslc-qbe": {
+      "source_archive_rebuilt": "96f89d00192d57965fd56ff828ad277b9155acb894fc6182296eb6d95f734645",
+      "release": "96f89d00192d57965fd56ff828ad277b9155acb894fc6182296eb6d95f734645",
+      "identical": true
+    },
+    "compiler/lslc": {
+      "source_archive_rebuilt": "96f89d00192d57965fd56ff828ad277b9155acb894fc6182296eb6d95f734645",
+      "release": "96f89d00192d57965fd56ff828ad277b9155acb894fc6182296eb6d95f734645",
+      "identical": true
+    },
+    "compiler/pure/luxir": {
+      "source_archive_rebuilt": "33723db8368e75bbd3609ded54753e0a2cd0595ea981020731785ae38558850e",
+      "release": "33723db8368e75bbd3609ded54753e0a2cd0595ea981020731785ae38558850e",
+      "identical": true
+    },
+    "compiler/pure/lslc-direct": {
+      "source_archive_rebuilt": "598aa0c7e7993f507a9c9f71eaf6111bb1663653cf9f525649ff9a3704399df8",
+      "release": "598aa0c7e7993f507a9c9f71eaf6111bb1663653cf9f525649ff9a3704399df8",
+      "identical": true
+    },
+    "compiler/pure/lsl-cli": {
+      "source_archive_rebuilt": "c0141286d7c0fccdf70f654b57f3d3178dee7a3126d0e8d1c57dc9e4b13e5607",
+      "release": "aab9c3a37ab0e32281a8c5db00f1d7dced42b49598e71aae0248655827c2aa08",
+      "identical": false,
+      "note": "CLI/installer/test runner embed absolute stdlib diagnostic paths; cross-directory hashes differ."
+    },
+    "compiler/pure/lsl-install": {
+      "source_archive_rebuilt": "32b257fce5282a280a9e4d8600c2517f454e088cbfd9e07072ee24780b0085a4",
+      "release": "345fc0012aeb2415229089485a8a844bb27ead80dd955afb27777dc7f244f5de",
+      "identical": false,
+      "note": "CLI/installer/test runner embed absolute stdlib diagnostic paths; cross-directory hashes differ."
+    },
+    "compiler/pure/lsl-configure": {
+      "source_archive_rebuilt": "e555e01a578330d157c8b586e25b74c8a5bf1377f1da8d6094c6c86ee745da39",
+      "release": "e555e01a578330d157c8b586e25b74c8a5bf1377f1da8d6094c6c86ee745da39",
+      "identical": true
+    },
+    "tests/lsl-test": {
+      "source_archive_rebuilt": "5d36029854abf86dda539e14b9d11d0958ffbf613876d2dec1ee20f0a8d01873",
+      "release": "338fe9844aa0198ae359669d2c8aa1876db452a02e3f6a4930f60e5cc32164a8",
+      "identical": false,
+      "note": "CLI/installer/test runner embed absolute stdlib diagnostic paths; cross-directory hashes differ."
+    },
+    "lsl": {
+      "source_archive_rebuilt": "c0141286d7c0fccdf70f654b57f3d3178dee7a3126d0e8d1c57dc9e4b13e5607",
+      "release": "aab9c3a37ab0e32281a8c5db00f1d7dced42b49598e71aae0248655827c2aa08",
+      "identical": false,
+      "note": "CLI/installer/test runner embed absolute stdlib diagnostic paths; cross-directory hashes differ."
+    }
+  },
+  "commands": [
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/lsl",
+        "version"
+      ],
+      "cwd": "/home/antonin/LSL-Release-0.9.0/build/archive-proof",
+      "seconds": 0.012545090008643456,
+      "returncode": 0,
+      "stdout": "0.9.0\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta/lsl",
+        "compile",
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/smoke.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/rebuilt-smoke"
+      ],
+      "cwd": "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta",
+      "seconds": 0.3909495150001021,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/rebuilt-smoke"
+      ],
+      "cwd": "/home/antonin/LSL-Release-0.9.0/build/archive-proof",
+      "seconds": 0.000721806994988583,
+      "returncode": 0,
+      "stdout": "42\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta-linux-x86_64/bin/lsl",
+        "version"
+      ],
+      "cwd": "/home/antonin/LSL-Release-0.9.0/build/archive-proof",
+      "seconds": 0.013195248000556603,
+      "returncode": 0,
+      "stdout": "0.9.0\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta-linux-x86_64/bin/lsl",
+        "compile",
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/smoke.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/smoke"
+      ],
+      "cwd": "/home/antonin/LSL-Release-0.9.0/build/archive-proof",
+      "seconds": 0.4071895980014233,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/smoke"
+      ],
+      "cwd": "/home/antonin/LSL-Release-0.9.0/build/archive-proof",
+      "seconds": 0.001946542994119227,
+      "returncode": 0,
+      "stdout": "42\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta-linux-x86_64/bin/lsl",
+        "man",
+        "--plain",
+        "env"
+      ],
+      "cwd": "/home/antonin/LSL-Release-0.9.0/build/archive-proof",
+      "seconds": 0.07777993299532682,
+      "returncode": 0,
+      "stdout": "Knihovna env\n\nload env\n\n\u010cte prom\u011bnn\u00e9 prost\u0159ed\u00ed procesu a od LSL 0.8.9 automaticky na\u010d\u00edt\u00e1 .env.\nSoubor se \u010dte a\u017e za b\u011bhu; jeho hodnoty se p\u0159i kompilaci nevkl\u00e1daj\u00ed do bin\u00e1rky.\n\nKde se hled\u00e1 .env\n\n\u2022 lsl program.lsl: vedle vstupn\u00edho skriptu, i kdy\u017e jej spou\u0161t\u00edte z jin\u00e9ho adres\u00e1\u0159e.\n\u2022 Program vytvo\u0159en\u00fd lsl compile nebo lslc: vedle spustiteln\u00e9 bin\u00e1rky.\n\u2022 Interaktivn\u00ed re\u017eim a zdroj ze stdin: v aktu\u00e1ln\u00edm pracovn\u00edm adres\u00e1\u0159i.\n\nPlat\u00ed i pro nep\u0159\u00edm\u00fd import env z jin\u00e9 knihovny. Chyb\u011bj\u00edc\u00ed .env nevad\u00ed;\nexistuj\u00edc\u00ed ne\u010diteln\u00fd nebo neplatn\u00fd soubor vyvol\u00e1 chybu.\nNehledaj\u00ed se nad\u0159azen\u00e9 adres\u00e1\u0159e ani automaticky cel\u00fd domovsk\u00fd adres\u00e1\u0159.\n\nProm\u011bnn\u00e1 prost\u0159ed\u00ed procesu m\u00e1 p\u0159ednost, i kdy\u017e obsahuje pr\u00e1zdn\u00fd \u0159et\u011bzec.\nHodnoty z .env jsou ulo\u017een\u00e9 pouze v modulu env; nem\u011bn\u00ed prost\u0159ed\u00ed procesu\nani prost\u0159ed\u00ed jeho potomk\u016f. Soubor se automaticky na\u010dte jednou p\u0159i inicializaci\nmodulu; dal\u0161\u00ed proces jej na\u010dte znovu.\n\nForm\u00e1t souboru\n\n    # koment\u00e1\u0159\n    LUX_AI_API=hodnota\n    export DEBUG=true\n    EMPTY=\n    TITLE=\"Text s mezerami # uvnit\u0159 hodnoty\"\n    LITERAL='${HOME} se nerozv\u00edj\u00ed'\n    NAME=value # koment\u00e1\u0159 za hodnotou\n\nJm\u00e9na v .env odpov\u00eddaj\u00ed [A-Za-z_][A-Za-z0-9_]* (nejv\u00fd\u0161e 255 znak\u016f).\nPodporov\u00e1ny jsou LF/CRLF, UTF-8 v hodnot\u00e1ch, \u00favodn\u00ed BOM, pr\u00e1zdn\u00e9 \u0159\u00e1dky,\nmezery kolem = a voliteln\u00e9 export. Posledn\u00ed v\u00fdskyt stejn\u00e9ho jm\u00e9na vyhr\u00e1v\u00e1.\nNeuvozen\u00e9 # za\u010d\u00edn\u00e1 koment\u00e1\u0159 na za\u010d\u00e1tku hodnoty nebo po meze\u0159e/tabul\u00e1toru;\nabc#def z\u016fst\u00e1v\u00e1 celou hodnotou. Jednoduch\u00e9 uvozovky zachovaj\u00ed obsah doslova.\nV dvojit\u00fdch uvozovk\u00e1ch funguj\u00ed \\n, \\r, \\t, \\\" a \\\\;\nnezn\u00e1m\u00e9 escape sekvence z\u016fst\u00e1vaj\u00ed doslova. V\u00edce\u0159\u00e1dkov\u00e9 hodnoty nejsou podporovan\u00e9.\nShellov\u00e9 p\u0159\u00edkazy ani interpolace prom\u011bnn\u00fdch se neprov\u00e1d\u011bj\u00ed.\nLimit souboru je 1 MiB. Chyby uv\u00e1d\u011bj\u00ed cestu a \u010d\u00edslo \u0159\u00e1dku, nikoli jeho obsah.\n\nFunkce\n\n  env.get(name, default_value)\n\nVr\u00e1t\u00ed prom\u011bnnou procesu, jinak hodnotu z .env, jinak default_value.\nJm\u00e9no mus\u00ed m\u00edt 1..255 znak\u016f bez NUL a =. V\u00fdchoz\u00ed hodnota m\u016f\u017ee m\u00edt libovoln\u00fd typ.\n\n  env.has(name)\n\nVrac\u00ed True, je-li jm\u00e9no v prost\u0159ed\u00ed procesu nebo v na\u010dten\u00e9m .env.\nPr\u00e1zdn\u00e1 hodnota je st\u00e1le nastaven\u00e1 prom\u011bnn\u00e1.\n\n  env.require(name)\n\nJako get, ale p\u0159i chyb\u011bj\u00edc\u00edm jm\u00e9nu vyvol\u00e1 EnvironmentError.\n\n  env.load_dotenv(path=None)\n\nExplicitn\u011b na\u010dte dal\u0161\u00ed soubor nebo znovu v\u00fdchoz\u00ed .env. Vrac\u00ed True, pokud\nsoubor existoval a byl na\u010dten, jinak False. Relativn\u00ed explicitn\u00ed cesta je\nv\u016f\u010di pracovn\u00edmu adres\u00e1\u0159i. Hodnoty dopln\u00ed/p\u0159ep\u00ed\u0161e v modulu; exportovan\u00e9 prom\u011bnn\u00e9\nmaj\u00ed st\u00e1le p\u0159ednost. P\u0159i chyb\u011b z\u016fst\u00e1vaj\u00ed d\u0159\u00edve na\u010dten\u00e9 hodnoty zachovan\u00e9.\n\nP\u0159\u00edklad\n\nUlo\u017ete .env a program.lsl do stejn\u00e9ho adres\u00e1\u0159e:\n\n    load env\n    \n    api_key = env.require(\"LUX_AI_API\")\n    print env.has(\"LUX_AI_API\")\n\nSta\u010d\u00ed lsl program.lsl; nen\u00ed pot\u0159eba source .env v shellu.\nV \u010dist\u00e9m re\u017eimu lsl config je modul env nad\u00e1le zak\u00e1z\u00e1n.\n\nChyby\n\n\u2022 EnvironmentError \u2014 neplatn\u00e9 jm\u00e9no, chyb\u011bj\u00edc\u00ed povinn\u00e1 prom\u011bnn\u00e1 nebo neplatn\u00fd .env.\n\u2022 FileError \u2014 soubor existuje, ale nelze jej p\u0159e\u010d\u00edst.\n\nSouvisej\u00edc\u00ed str\u00e1nky\n\n\u2022 lsl man os \u2014 spou\u0161t\u011bn\u00ed program\u016f\n\u2022 lsl man config \u2014 deklarativn\u00ed konfigurace\n\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta-linux-x86_64/bin/lsl",
+        "man",
+        "--plain",
+        "12-compiler-internals"
+      ],
+      "cwd": "/home/antonin/LSL-Release-0.9.0/build/archive-proof",
+      "seconds": 0.2280836809950415,
+      "returncode": 0,
+      "stdout": "12. Intern\u00ed architektura compileru\n\nAktu\u00e1ln\u00ed compiler 0.9.0 BETA \u2014 LuxIR\n\nLSL 0.9.0 BETA pou\u017e\u00edv\u00e1 odd\u011blen\u00fd frontend LSL a backend LuxIR, odvozen\u00fd\nz QBE 1.3 a p\u0159epsan\u00fd do LSL. Zdroje backendu maj\u00ed vlastn\u00ed projekt\nLuxAI/LuxIR (https://git.lux-ai.cz/LuxAI/LuxIR). Referen\u010dn\u00ed implementace\nQBE v C se p\u0159i b\u011b\u017en\u00e9m p\u0159ekladu ani self-host sestaven\u00ed nespou\u0161t\u00ed.\n\nToto vyd\u00e1n\u00ed podporuje Linux x86_64. Dal\u0161\u00ed c\u00edle samotn\u00e9ho backendu\nneznamenaj\u00ed hotovou podporu cel\u00e9ho jazyka, runtime, CLI a instalace na dal\u0161\u00edch\narchitektur\u00e1ch nebo OS. Windows, ARM a dal\u0161\u00ed platformy nejsou ov\u011b\u0159en\u00fdm\nrozsahem t\u00e9to BETA.\n\n  P\u0159ekladov\u00e1 pipeline\n\n    zdroj LSL + standardn\u00ed knihovna\n      \u2192 lexer / parser / rekurzivn\u00ed linker\n      \u2192 s\u00e9mantick\u00e1 a typov\u00e1 anal\u00fdza / validace\n      \u2192 qbe_emit: textov\u00fd LuxIR\n      \u2192 nativn\u00ed backend LuxIR v LSL: SSA, optimalizace, v\u00fdb\u011br instrukc\u00ed, registry\n      \u2192 assembler pro GNU as\n      \u2192 objektov\u00fd soubor + kanonick\u00fd runtime.o\n      \u2192 GNU ld: statick\u00fd PIE ELF pro Linux x86_64\n\nSoubor nebo projekt                             \u2502 Odpov\u011bdnost                                     \ncompiler/pure/lslc_qbe.lsl                      \u2502 Produk\u010dn\u00ed vstup compileru; ve\u0159ejn\u00e9 zdroje jsou v\u00fdchoz\u00ed bezpe\u010dn\u00fd re\u017eim\ncompiler/pure/frontend.lsl                      \u2502 Spole\u010dn\u00e1 p\u0159\u00edprava zdroj\u016f, anal\u00fdz a validace     \ncompiler/pure/lexer.lsl, parser.lsl, linker.lsl \u2502 Tokeny, AST, importy a zdrojov\u00e9 pozice          \ncompiler/pure/semantic.lsl, validation.lsl      \u2502 Typy, anal\u00fdzy a kontroly jazyka                 \ncompiler/pure/qbe_emit.lsl                      \u2502 P\u0159evod analyzovan\u00e9ho programu do LuxIR          \ncompiler/pure/qbe_toolchain.lsl                 \u2502 Vyvol\u00e1n\u00ed backendu, assembleru a linkeru, \u00faklid priv\u00e1tn\u00edch mezisoubor\u016f\nSamostatn\u00fd projekt LuxIR                        \u2502 Optimalizace SSA, v\u00fdb\u011br instrukc\u00ed, p\u0159id\u011blen\u00ed registr\u016f a emise assembleru\ncompiler/qbe/runtime.o                          \u2502 Kanonick\u00fd runtime objekt p\u0159ipojen\u00fd k v\u00fdsledn\u00e9mu programu\ncompiler/pure/cli.lsl                           \u2502 Ve\u0159ejn\u00e9 CLI lsl                                 \n\nP\u016fvodn\u00ed p\u0159\u00edm\u00fd backend a lslc_direct.lsl z\u016fst\u00e1vaj\u00ed historickou implementac\u00ed;\njejich instruk\u010dn\u00ed encoder a ELF writer nejsou v\u00fdchoz\u00ed produk\u010dn\u00ed cestou\n0.9.0 BETA. N\u00e1zev qbe_* v n\u011bkter\u00fdch zdrojov\u00fdch souborech ozna\u010duje p\u016fvod\nintegrace, zat\u00edmco samostatn\u00fd backend a jeho form\u00e1t se jmenuj\u00ed LuxIR.\n\n  Po\u017eadavky a vyhled\u00e1n\u00ed prost\u0159edk\u016f\n\nP\u0159eklad pot\u0159ebuje GNU binutils: as a ld. Frontend i backend jsou\nnativn\u00ed programy napsan\u00e9 v LSL, ale strojov\u00fd assembler a linker jsou extern\u00ed\nsyst\u00e9mov\u00e9 n\u00e1stroje. B\u011bh vytvo\u0159en\u00e9ho programu tyto p\u0159ekladov\u00e9 n\u00e1stroje ani\nC/Python runtime nepot\u0159ebuje. Voliteln\u00e9 slu\u017eby nebo knihovny mohou m\u00edt vlastn\u00ed\nprovozn\u00ed z\u00e1vislosti, nap\u0159\u00edklad HTTP transport nebo CUDA worker.\n\nInstalace obsahuje bin/lslc, sousedn\u00ed bin/luxir, zdrojov\u00e9 prost\u0159edky\nv lib/lsl/compiler/pure a lib/lsl/compiler/qbe/runtime.o. Backend lze\nexplicitn\u011b vybrat absolutn\u00ed cestou v LSL_BACKEND; ne\u00fapln\u00e1 instalace nem\u00e1\nautomaticky spou\u0161t\u011bt stejnojmenn\u00fd n\u00e1stroj z pracovn\u00edho adres\u00e1\u0159e.\n\n  Sestaven\u00ed a self-host\n\nV \u010dist\u00e9m checkoutu LuxAI/LSL (https://git.lux-ai.cz/LuxAI/LSL) nejprve\np\u0159ipravte z\u00e1vislosti p\u0159ipnut\u00e9 v release.json. V\u00fdvojov\u00e1 p\u0159\u00edprava a reporty\npou\u017e\u00edvaj\u00ed nav\u00edc Git a Python 3; jde o podp\u016frn\u00e9 n\u00e1stroje, nikoliv backend\np\u0159ekladu LSL.\n\n    python3 tools/release/prepare_sources.py\n    python3 tools/release/build_release.py\n    python3 tools/release/verify_release.py --luxir-source build/dependencies/LuxIR/lsl/luxir.lsl\n\nbuild_release.py pou\u017eije p\u0159ibalen\u00fd nativn\u00ed compiler a LuxIR jako bootstrap,\nsestav\u00ed dal\u0161\u00ed generace obou n\u00e1stroj\u016f a porovn\u00e1 jejich bajty. Fixed point mus\u00ed\nplatit zvl\u00e1\u0161\u0165 pro frontend i backend; \u00fasp\u011b\u0161n\u00e9 sestaven\u00ed pouze jedn\u00e9 generace\nnen\u00ed d\u016fkazem self-host fixed pointu. Release ov\u011b\u0159en\u00ed d\u00e1le pou\u017e\u00edv\u00e1 p\u016fvodn\u00ed\njazykov\u00fd corpus, konfiguraci, instalaci, reinstalaci a rollback. Konkr\u00e9tn\u00ed\nv\u00fdsledky a hashe pat\u0159\u00ed do report\u016f dan\u00e9ho vyd\u00e1n\u00ed; samotn\u00fd tento n\u00e1vod netvrd\u00ed,\n\u017ee dosud nespou\u0161t\u011bn\u00e9 release kontroly pro\u0161ly.\n\nV\u00fdsledn\u00fd obraz je statick\u00fd PIE (ET_DYN) bez dynamick\u00e9ho interpreteru,\nbez RWX segment\u016f a s nespustiteln\u00fdm z\u00e1sobn\u00edkem. Po\u010det segment\u016f se li\u0161\u00ed od\nhistorick\u00e9ho p\u0159\u00edm\u00e9ho backendu; po\u017eadavek jedin\u00e9ho RX PT_LOAD ani z\u00e1kaz\nPT_DYNAMIC z textu n\u00ed\u017ee nejsou kontraktem nov\u00e9 cesty.\n\n  V\u00fdkon a rozsah BETA\n\nKontrolovan\u00e9 srovn\u00e1n\u00ed s 0.8.9 (https://git.lux-ai.cz/LuxAI/LSL/src/branch/main/tools/qbe/LUXIR_BENCH\nMARK_20261011.md)\nnam\u011b\u0159ilo rychlej\u0161\u00ed b\u011bh v\u0161ech osmi porovn\u00e1van\u00fdch program\u016f. P\u0159eklad stejn\u00e9ho\nspole\u010dn\u00e9ho zdroje p\u016fvodn\u00edho compileru trval 11,399 s oproti 8,062 s,\ntedy o 41,4 % d\u00e9le. Je to m\u011b\u0159en\u00ed konkr\u00e9tn\u00edho vstupu na jednom stroji,\nnikoliv obecn\u00e1 z\u00e1ruka v\u00fdkonu nebo srovn\u00e1n\u00ed r\u016fzn\u00fdch self-host zdroj\u016f.\nDal\u0161\u00ed zrychlen\u00ed p\u0159ekladu a otev\u0159en\u00e9 provozn\u00ed probl\u00e9my jsou pl\u00e1novan\u00e9 pro\n0.9.1. BETA nenahrazuje automaticky stabiln\u00ed podepsan\u00fd kan\u00e1l 0.8.9.\n\nHistorick\u00fd p\u0159\u00edm\u00fd backend 0.8.9 a star\u0161\u00ed\n\n\u2502 N\u00e1sleduj\u00edc\u00ed p\u016fvodn\u00ed v\u00fdklad je zachovan\u00fd pro studium p\u0159\u00edm\u00e9ho backendu.\n\u2502 Jeho vstup lslc_direct.lsl, z\u00e1kaz extern\u00edch as/ld, popis optimalizac\u00ed\n\u2502 i pevn\u00fd form\u00e1t segment\u016f nejsou aktu\u00e1ln\u00edm n\u00e1vodem pro 0.9.0 BETA.\n\u2502 Pro sou\u010dasn\u00e9 sestaven\u00ed plat\u00ed odd\u00edl LuxIR v\u00fd\u0161e.\n\nTato kapitola popisuje, jak LSL compiler funguje uvnit\u0159 \u2014 od zdrojov\u00e9ho\nk\u00f3du v .lsl souboru a\u017e po spustiteln\u00fd ELF. Je ur\u010dena pro ty, kte\u0159\u00ed\ncht\u011bj\u00ed rozum\u011bt implementaci, p\u0159isp\u00edvat do compileru nebo roz\u0161i\u0159ovat\njazyk o nov\u00e9 vlastnosti.\n\nPro\u010d rozum\u011bt compileru\n\nI kdy\u017e p\u00ed\u0161ete \"jen\" LSL programy, znalost toho, co compiler d\u011bl\u00e1, v\u00e1m\npom\u016f\u017ee ps\u00e1t v\u00fdkonn\u011bj\u0161\u00ed k\u00f3d a l\u00e9pe rozum\u011bt chybov\u00fdm hl\u00e1\u0161k\u00e1m. Pokud chcete\np\u0159idat novou jazykovou vlastnost, tato kapitola v\u00e1s provede cel\u00fdm\nprocesem.\n\nFilozofie a nem\u011bnn\u00e9 po\u017eadavky\n\nProduk\u010dn\u00ed toolchain je pure LSL \u2014 cel\u00fd compiler je naps\u00e1n v LSL a\np\u0159ekl\u00e1d\u00e1 se s\u00e1m sebou. V compileru a jeho build/test toolchainu nesm\u00ed b\u00fdt\nC/C++, Python, shell launcher, extern\u00ed assembler ani linker. Voliteln\u00fd CUDA\nworker je odd\u011blen\u00e1 foreign-process hranice mimo self-host \u0159et\u011bzec.\n\nKa\u017ed\u00e1 zm\u011bna mus\u00ed zachovat:\n\n1. Funk\u010dn\u00ed 2\u20133 stage self-host \u2014 compiler mus\u00ed b\u00fdt schopen p\u0159elo\u017eit\n   s\u00e1m sebe.\n2. Bitov\u011b shodn\u00fd fixed point \u2014 stage 2 a stage 3 mus\u00ed b\u00fdt identick\u00e9\n   bit po bitu.\n3. Deterministick\u00e9 po\u0159ad\u00ed \u2014 k\u00f3du, dat, symbol\u016f a diagnostiky.\n4. Jeden RX PT_LOAD \u2014 \u017e\u00e1dn\u00fd INTERP, DYNAMIC ani RWX segment.\n5. Ve\u0159ejn\u00fd tagged Any ABI \u2014 raw Int/live pointer collision bezpe\u010dnost.\n6. P\u016fvodn\u00ed source path, \u0159\u00e1dek a sloupec \u2014 v diagnostice.\n7. Safe/unsafe provenance uzl\u016f \u2014 built-in trust core se nesm\u00ed zam\u011bnit za\n   u\u017eivatelsk\u00fd modul stejn\u00e9ho jm\u00e9na.\n\nMapa zdrojov\u00fdch soubor\u016f\n\nProduk\u010dn\u00ed k\u00f3d compileru je v compiler/pure/:\n\nSoubor                    \u2502 Odpov\u011bdnost                                     \nlexer.lsl                 \u2502 UTF-8 tokenizace, generov\u00e1n\u00ed source spans       \nparser.lsl                \u2502 Sestaven\u00ed AST, syntaktick\u00e1 diagnostika          \nlinker.lsl                \u2502 Rekurzivn\u00ed moduly, namespace lowering           \ncodegen.lsl               \u2502 Typov\u00fd tok, optimalizace, native lowering       \nx86_64.lsl                \u2502 Auditovateln\u00fd instruk\u010dn\u00ed encoder                \nassembler.lsl             \u2502 Labely, rel32 fixups, byte stream               \nnative_runtime.lsl        \u2502 Skal\u00e1rn\u00ed runtime, clock_gettime a nanosleep emise\nheap_runtime.lsl          \u2502 Allok\u00e1tor, registr, GC, kolekce, SSE2 FloatArray kernely\nthread_runtime.lsl        \u2502 Futex mutexy, clone spawn/join, stop-the-world handler pro gc()\nio_runtime.lsl            \u2502 Soubory, argv/env, text/bin I/O, TTY/EOF stav   \nprocess_runtime.lsl       \u2502 fork/execve/wait4/capture/status/streaming      \nnative_plugin_runtime.lsl \u2502 Omezen\u00fd ET_DYN loader ABI v1                    \nelf_image.lsl             \u2502 Fin\u00e1ln\u00ed ELF64 image                             \ndynamic_stdlib.lsl        \u2502 LSL helper funkce p\u0159ipojen\u00e9 ke ka\u017ed\u00e9mu programu \nlslc_direct.lsl           \u2502 Produk\u010dn\u00ed compiler entrypoint                   \npackage.lsl               \u2502 Bezpe\u010dn\u00e1 instalace per-user zdrojov\u00fdch knihoven \n\nVstupn\u00ed bod compileru je compiler/pure/lslc_direct.lsl. CLI wrapper\n(compiler/pure/cli.lsl) spou\u0161t\u00ed compiler a p\u0159id\u00e1v\u00e1 argument handling.\n\nP\u0159ekladov\u00e1 pipeline\n\nlslc_direct.lsl provede tuto sekvenci:\n\n  1. Na\u010dten\u00ed a parsov\u00e1n\u00ed dynamic_stdlib.lsl\n\nStandardn\u00ed LSL helper funkce jsou p\u0159ipojeny ke ka\u017ed\u00e9mu programu.\ndynamic_stdlib.lsl se parsuje jako prvn\u00ed.\n\n  2. Parsov\u00e1n\u00ed root source\n\nZdrojov\u00fd k\u00f3d se rozd\u011bl\u00ed na tokeny (lexer.lsl) a ty se slo\u017e\u00ed do AST\n(parser.lsl).\n\nLexer (lexik\u00e1ln\u00ed analyz\u00e1tor):\n\u2022 Zpracov\u00e1v\u00e1 UTF-8 vstup.\n\u2022 Rozpozn\u00e1v\u00e1: kl\u00ed\u010dov\u00e1 slova, identifik\u00e1tory, liter\u00e1ly, oper\u00e1tory,\n  odd\u011blova\u010de.\n\u2022 Ke ka\u017ed\u00e9mu tokenu p\u0159ipoj\u00ed source span: path, line, column,\n  end_column.\n\u2022 Ignoruje koment\u00e1\u0159e (od # do konce \u0159\u00e1dku) a whitespace.\n\nParser (syntaktick\u00fd analyz\u00e1tor):\n\u2022 Sestavuje AST z token\u016f.\n\u2022 AST uzly jsou Dictionary/List hodnoty s polem kind (typ uzlu),\n  source spanem a fields konkr\u00e9tn\u00edho uzlu.\n\u2022 Prov\u00e1d\u00ed syntaktickou diagnostiku (ParseError).\n\n  3. Rekurzivn\u00ed linkov\u00e1n\u00ed modul\u016f\n\nlinker.lsl rekurzivn\u011b zpracuje v\u0161echny load direktivy:\n\n\u2022 Vyhled\u00e1 soubor podle modulov\u00fdch pravidel.\n\u2022 Parsuje ho.\n\u2022 Rekurzivn\u011b zpracuje jeho load direktivy.\n\u2022 Detekuje cyklick\u00e9 importy (compile-time chyba).\n\u2022 P\u0159id\u00e1 deterministick\u00e9 namespace prefixy.\n\nCache je kl\u00ed\u010dovan\u00e1 vy\u0159e\u0161enou cestou souboru, nikoli pouze textem v load.\nRelativn\u00ed helper.lsl v r\u016fzn\u00fdch adres\u00e1\u0159\u00edch jsou proto dv\u011b r\u016fzn\u00e9 jednotky.\nPrefix vych\u00e1z\u00ed z deterministick\u00e9ho po\u0159ad\u00ed grafu a obsahuje intern\u00ed odd\u011blova\u010d,\nkter\u00fd nelze zapsat jako zdrojov\u00fd identifik\u00e1tor; dotted n\u00e1zvy a podtr\u017e\u00edtka se\ntak nemohou sl\u00edt do stejn\u00e9ho symbolu.\n\nLinker zachov\u00e1v\u00e1 path a line/column/end_column pro p\u0159esnou\ndiagnostiku.\n\nV bezpe\u010dn\u00e9m CLI re\u017eimu nav\u00edc ozna\u010d\u00ed built-in moduly jako trusted, projde\nv\u00fdrazy cel\u00e9ho u\u017eivatelsk\u00e9ho importn\u00edho grafu a odm\u00edtne priv\u00e1tn\u00ed __lsl_*,\nnative a thread operace mimo unsafe:. Sandbox re\u017eim odm\u00edt\u00e1 i samotn\u00fd unsafe\nblok. P\u0159\u00edm\u00fd self-host lslc tento policy pass nepou\u017e\u00edv\u00e1, proto\u017ee je sou\u010d\u00e1st\u00ed\nexplicitn\u00edho trust core.\n\nProvenance intern\u00edho ABI je samostatn\u00e9 pole AST. Produk\u010dn\u00ed self-host vstupy\nlslc_direct.lsl a cli.lsl maj\u00ed na prvn\u00edm \u0159\u00e1dku\n# lsl: internal-abi; direct driver podle n\u011bj vol\u00ed intern\u00ed linker/codegen\nre\u017eim. B\u011b\u017en\u00fd zdroj i jeho importy dostanou internal_abi = False bez ohledu na\nn\u00e1zev nebo um\u00edst\u011bn\u00ed adres\u00e1\u0159e. Samotn\u00e1 cesta tedy nikdy nepovy\u0161uje u\u017eivatelsk\u00fd\nk\u00f3d do raw ABI.\n\n  4. Sestaven\u00ed class/function tables\n\n\u2022 Sestav\u00ed tabulku t\u0159\u00edd (class definitions).\n\u2022 Sestav\u00ed tabulku funkc\u00ed (function definitions).\n\u2022 Provede fixed-point inference n\u00e1vratov\u00fdch typ\u016f.\n\u2022 Projde v\u0161echny call sites a ov\u011b\u0159\u00ed signatury.\n\n  5. Konzervativn\u00ed typov\u00e1 inference\n\ncodegen.lsl prov\u00e1d\u00ed konzervativn\u00ed inference parametr\u016f p\u0159\u00edm\u00fdch\nneunikaj\u00edc\u00edch funkc\u00ed:\n\n\u2022 Sleduje, zda je funkce pou\u017eita jako first-class callback.\n\u2022 Pokud neunik\u00e1, analyzuje stabiln\u00ed typy argument\u016f z call sites.\n\u2022 Stabiln\u00ed typy umo\u017e\u0148uj\u00ed specializaci (neboxovan\u00fd fast path).\n\n  6. Optimalizace a x86_64 emission\n\nConstant/control-flow optimalizace:\n\n\u2022 Rekurzivn\u00ed Int constant folding (s Int64 wrap s\u00e9mantikou).\n\u2022 Constant if/while pruning (zachov\u00e1n\u00ed efekt\u016f dynamick\u00fdch podm\u00ednek).\n\u2022 Ukon\u010den\u00ed emission za termin\u00e1torem (return, break, continue, Error()).\n\u2022 Immediate +, -, *, compare a p\u0159\u00edm\u00fd flag branch.\n\u2022 Power-of-two a magic-number signed floor division.\n\u2022 Deduplikace immutable String templates.\n\nBezpe\u010dnostn\u00ed pravidla (nikdy neporu\u0161it):\n\n\u2022 Nezdvojovat ani nep\u0159ehazovat v\u00fdraz, kter\u00fd m\u016f\u017ee volat funkci, alokovat,\n  prov\u00e9st I/O nebo vyvolat chybu.\n\u2022 x * 0 sm\u00ed odstranit n\u00e1soben\u00ed, ale x se mus\u00ed st\u00e1le vyhodnotit.\n\u2022 // a % mus\u00ed zachovat floor s\u00e9mantiku pro z\u00e1porn\u00e9 hodnoty.\n\u2022 Float folding nepou\u017e\u00edvat (IEEE-754 komplikace).\n\u2022 Raw Int m\u016f\u017ee m\u00edt stejn\u00e9 bity jako \u017eiv\u00fd heap pointer \u2014 na Any hranici\n  se scalar tag nesm\u00ed odvodit jen z adresn\u00edho rozsahu.\n\nx86_64 emission:\n\nx86_64.lsl produkuje auditovateln\u00e9 instrukce s korektn\u00edmi sign-extensions\na kompaktn\u00edmi encodings.\n\n  7. Label/fixup materializace\n\nassembler.lsl \u0159e\u0161\u00ed:\n\n\u2022 Labely (skoky vp\u0159ed i vzad).\n\u2022 Rel32 call/jump fixups.\n\u2022 Data reference fixups (RIP-relative String adresy).\n\n  8. P\u0159ipojen\u00ed literal dat\n\nDeduplikovan\u00e9 String liter\u00e1ly se p\u0159ipoj\u00ed za k\u00f3d jako read-only data.\n\n  9. Vytvo\u0159en\u00ed ELF image\n\nelf_image.lsl vytvo\u0159\u00ed fin\u00e1ln\u00ed statick\u00fd PIE ELF64:\n\n\u2022 Typ ET_DYN a nulovou virtu\u00e1ln\u00ed b\u00e1zi pro kernelov\u00fd ASLR load bias.\n\u2022 Jeden RX PT_LOAD segment (read + execute), kter\u00fd pokr\u00fdv\u00e1 cel\u00fd image.\n\u2022 Explicitn\u00ed RW PT_GNU_STACK, tedy neprovediteln\u00fd stack.\n\u2022 \u017d\u00e1dn\u00fd PT_INTERP, PT_DYNAMIC, PT_TLS, section table ani relocace.\n\u2022 Relativn\u00ed entry point.\n\nV\u00fdstup se zap\u00ed\u0161e p\u0159es writebytes.\n\nNative ABI a registry\n\n  Volac\u00ed konvence\n\nVol\u00e1n\u00ed je SysV-like (Linux x86\\_64):\n\n\u2022 Argumenty: rdi, rsi, rdx, rcx, r8, r9, dal\u0161\u00ed na stacku.\n\u2022 N\u00e1vratov\u00e1 hodnota: rax.\n\n  Rezervovan\u00e9 registry\n\nRegistr \u2502 V\u00fdznam                                          \nrbx     \u2502 Allok\u00e1tor/GC/process state                      \nr12     \u2502 Main/global frame (ukazatel na glob\u00e1ln\u00ed prom\u011bnn\u00e9)\nr13     \u2502 Pending error String                            \nr14     \u2502 Pending error flag (0 = OK, \u2260 0 = error)        \nr15     \u2502 P\u016fvodn\u00ed procesov\u00fd stack (pro GC root scanning)  \n\n  Boxovan\u00fd vs neboxovan\u00fd ABI\n\n\u2022 Ve\u0159ejn\u00e9 dynamick\u00e9 hranice (callbacky, Any) boxuj\u00ed Int/Bool/None/Function.\n\u2022 Ve\u0159ejn\u00e1 indexace, z\u00e1pis, maz\u00e1n\u00ed, iterace a metody nejd\u0159\u00edv ov\u011b\u0159\u00ed runtime typ\n  receiveru, indexu i hodnoty; typed arrays se p\u0159ev\u00e1d\u011bj\u00ed mezi raw slotem a\n  tagovanou hodnotou jen v t\u011bchto kontrolovan\u00fdch dispatcherech.\n\u2022 Ve\u0159ejn\u00e9 dynamick\u00e9 +, *, //, %, sum, min a max vracej\u00ed v\u017edy\n  tagovan\u00fd v\u00fdsledek. Raw Int se nesm\u00ed klasifikovat podle shody s heap adresou.\n\u2022 Staticky zn\u00e1m\u00e1 lok\u00e1ln\u00ed aritmetika a trusted self-host cesta mohou\n  dr\u017eet raw skal\u00e1ry (Int64 p\u0159\u00edmo v registru, bez heap alokace).\n\u2022 P\u0159\u00edm\u00e9 vol\u00e1n\u00ed z intern\u00edho compiler n\u00e1stroje do linked stdlib/user funkce\n  p\u0159ep\u00edn\u00e1 argumentovou hranici zp\u011bt na ve\u0159ejn\u00e9 tagov\u00e1n\u00ed a jej\u00ed t\u011blo se emituje\n  s public kontrolami. Jinak by raw 0 mohl b\u00fdt v dynamick\u00e9m parametru\n  zam\u011bn\u011bn za None.\n\u2022 Rozhodnut\u00ed je zalo\u017eeno na internal_abi provenance deklarace v AST, nikoli\n  na substringu source path. Ka\u017ed\u00fd nov\u00fd AST lowering mus\u00ed tuto zna\u010dku zachovat.\n\u2022 runtime_writebytes_raw a ostatn\u00ed raw vstupy jsou vyhrazen\u00e9 self-host\n  toolchainu; b\u011b\u017en\u00fd program pou\u017e\u00edv\u00e1 kontrolovan\u00e9 ve\u0159ejn\u00e9 entrypointy.\n\nGarbage collector\n\nGC je konzervativn\u00ed mark-sweep s:\n\n\u2022 Stack roots: skenov\u00e1n\u00ed z\u00e1sobn\u00edku od r15 po aktu\u00e1ln\u00ed rsp.\n\u2022 Global roots: skenov\u00e1n\u00ed glob\u00e1ln\u00edho frame (r12).\n\u2022 Free-list: recyklace uvoln\u011bn\u00fdch blok\u016f pro rychl\u00e9 malloc.\n\u2022 Mark f\u00e1ze: projde v\u0161echny dosa\u017eiteln\u00e9 objekty.\n\u2022 Sweep f\u00e1ze: uvoln\u00ed nedosa\u017eiteln\u00e9 bloky do free-listu.\n\nHeap typy:\n\u2022 type_code: ka\u017ed\u00fd heap objekt m\u00e1 v hlavi\u010dce typov\u00fd k\u00f3d (String=1,\n  List=2, Dictionary=3, Bool=4, None=5, Float=6, Tuple=7, RealArray=8, ...).\n\u2022 GC traversal: ka\u017ed\u00fd typ m\u00e1 definovan\u00e1 pravidla pro hled\u00e1n\u00ed pointer\u016f\n  (pro mark f\u00e1zi).\n\u2022 Ownership: GC rozhoduje, kdy objekt uvolnit.\n\nSelf-host a fixed point\n\n  T\u0159\u00edstup\u0148ov\u00fd build\n\n    ulimit -v 1572864\n    \n    # Stage 1 \u2014 p\u0159elo\u017e\u00ed p\u0159edchoz\u00ed compiler\n    ./compiler/pure/lslc-direct compiler/pure/lslc_direct.lsl /tmp/lslc-s1\n    \n    # Stage 2 \u2014 p\u0159elo\u017e\u00ed nov\u00fd compiler s\u00e1m sebe\n    /tmp/lslc-s1 compiler/pure/lslc_direct.lsl /tmp/lslc-s2\n    \n    # Stage 3 \u2014 ov\u011b\u0159en\u00ed fixed pointu\n    /tmp/lslc-s2 compiler/pure/lslc_direct.lsl /tmp/lslc-s3\n    \n    # Stage 2 a 3 mus\u00ed b\u00fdt bitov\u011b shodn\u00e9\n    cmp /tmp/lslc-s2 /tmp/lslc-s3\n    sha256sum /tmp/lslc-s1 /tmp/lslc-s2 /tmp/lslc-s3\n\nStage 1 se m\u016f\u017ee li\u0161it od stage 2 (emitoval ji p\u0159edchoz\u00ed compiler).\nStage 2 a 3 mus\u00ed b\u00fdt identick\u00e9 \u2014 to je definice self-host fixed-pointu.\n\n  Regenerace release n\u00e1stroj\u016f\n\nA\u017e po ov\u011b\u0159en\u00ed fixed pointu se generuj\u00ed v\u0161echny tracked ELF:\n\n    # Compiler\n    /tmp/lslc-s3 compiler/pure/lslc_direct.lsl compiler/pure/lslc-direct\n    cp compiler/pure/lslc-direct compiler/lslc\n    \n    # CLI wrapper\n    /tmp/lslc-s3 compiler/pure/cli.lsl compiler/pure/lsl-cli\n    cp compiler/pure/lsl-cli lsl\n    \n    # Installer\n    /tmp/lslc-s3 compiler/pure/install.lsl compiler/pure/lsl-install\n    \n    # Config evaluator\n    /tmp/lslc-s3 stdlib/configure.lsl compiler/pure/lsl-configure\n    \n    # Test runner\n    /tmp/lslc-s3 tests/test_runner.lsl tests/lsl-test\n\nJak p\u0159idat jazykovou vlastnost\n\nPostup pro p\u0159id\u00e1n\u00ed nov\u00e9 jazykov\u00e9 vlastnosti:\n\n  1. Token (pokud pot\u0159eba)\n\nP\u0159idejte nov\u00fd token do lexer.lsl pouze pokud st\u00e1vaj\u00edc\u00ed tokeny nesta\u010d\u00ed.\nToken mus\u00ed n\u00e9st p\u0159esn\u00e9 path, line, column.\n\n  2. Parser\n\nParser mus\u00ed pro novou syntaxi vytvo\u0159it stabiln\u00ed AST uzel s:\n\u2022 kind \u2014 jednozna\u010dn\u00fd identifik\u00e1tor uzlu.\n\u2022 Source span.\n\u2022 Fields specifick\u00e9 pro dan\u00fd uzel.\n\n  3. Linker\n\nLinker mus\u00ed rekurzivn\u011b p\u0159epsat nov\u00e1 name-bearing pole (pokud uzel\nobsahuje odkazy na jm\u00e9na z jin\u00fdch modul\u016f).\n\n  4. Typov\u00e1 inference\n\nRoz\u0161i\u0159te type inference v codegen.lsl. Nikdy ti\u0161e neozna\u010dujte dynamickou\nhodnotu jako scalar.\n\n  5. Lowering\n\nP\u0159idejte lowering (p\u0159eklad do ni\u017e\u0161\u00edch konstrukc\u00ed) s runtime error cestou,\nne CPU trapem.\n\n  6. Testy\n\nP\u0159idejte:\n\u2022 Pozitivn\u00ed test \u2014 vlastnost funguje pro spr\u00e1vn\u00fd vstup.\n\u2022 Edge test \u2014 hrani\u010dn\u00ed p\u0159\u00edpady (pr\u00e1zdn\u00e9, minim\u00e1ln\u00ed, maxim\u00e1ln\u00ed).\n\u2022 Negative test \u2014 vlastnost spr\u00e1vn\u011b hl\u00e1s\u00ed chyby pro nespr\u00e1vn\u00fd vstup.\n\n  7. Dokumentace\n\nAktualizujte docs/language.md a u\u017eivatelsk\u00fd pr\u016fvodce.\n\n  8. Fixed point\n\nSpus\u0165te t\u0159\u00edstup\u0148ov\u00fd build a ov\u011b\u0159te, \u017ee fixed point z\u016fstal zachov\u00e1n.\n\n  Nov\u00fd builtin\n\nNov\u00fd builtin nav\u00edc pot\u0159ebuje:\n\n\u2022 Diagnostiku nespr\u00e1vn\u00e9ho po\u010dtu argument\u016f.\n\u2022 Statick\u00fd n\u00e1vratov\u00fd typ.\n\u2022 Codegen v\u011btev (emise vol\u00e1n\u00ed).\n\u2022 Runtime implementaci.\n\u2022 Test dynamick\u00e9ho Any vstupu.\n\n  Nov\u00fd heap typ\n\nNov\u00fd heap typ (nap\u0159. nov\u00e1 kolekce) nav\u00edc pot\u0159ebuje:\n\n\u2022 type_code \u2014 unik\u00e1tn\u00ed k\u00f3d v hlavi\u010dce.\n\u2022 Registry z\u00e1pis \u2014 jak se typ zapisuje do glob\u00e1ln\u00edho registru.\n\u2022 GC traversal pravidla \u2014 jak GC proch\u00e1z\u00ed pointery uvnit\u0159 objektu.\n\u2022 Ownership pravidla.\n\u2022 Stringovou reprezentaci (pro print/String()).\n\u2022 Equality (pro ==).\n\u2022 Podporu v type().\n\u2022 Kolek\u010dn\u00ed boxing.\n\u2022 Runtime ABI dokumentaci.\n\nTestov\u00e1n\u00ed\n\n  Testovac\u00ed runner\n\n    ./tests/lsl-test              # pln\u00fd suite\n    ./tests/lsl-test fast         # pozitivn\u00ed conformance, bez auditn\u00edch krok\u016f\n    ./tests/lsl-test fixed-point  # pouze bitov\u00e1 reprodukce compileru\n\n  Struktura test\u016f\n\n\u2022 tests/test_runner.lsl \u2014 pure-LSL test runner.\n\u2022 Pozitivn\u00ed corpus \u2014 testy, kter\u00e9 mus\u00ed proj\u00edt.\n\u2022 Negative corpus \u2014 testy, kter\u00e9 mus\u00ed selhat s konkr\u00e9tn\u00ed chybou.\n\u2022 Ka\u017ed\u00fd deterministick\u00fd program m\u00e1 odpov\u00eddaj\u00edc\u00ed .out soubor.\n\n  Kompletn\u00ed audit\n\nPo ka\u017ed\u00e9 zm\u011bn\u011b:\n\n    # 1. Konfigurace\n    ./lsl config examples/config/system.lsl > /tmp/config.json\n    cmp tests/config_expected.json /tmp/config.json\n    \n    # 2. Instalace\n    ./compiler/pure/lsl-install /tmp/lsl-prefix-new\n    /tmp/lsl-prefix-new/bin/lslc compiler/pure/lslc_direct.lsl /tmp/installed-fixed\n    cmp compiler/pure/lslc-direct /tmp/installed-fixed\n    \n    # 3. ELF audit\n    readelf -W -l compiler/pure/lslc-direct\n    # Ov\u011b\u0159: ET_DYN, jeden nulov\u00fd LOAD R E, GNU_STACK RW, \u017e\u00e1dn\u00fd INTERP/DYNAMIC/RWE\n\nRuntime syscalls\n\nRuntime pou\u017e\u00edv\u00e1 p\u0159\u00edmo Linux syscalls (x86\\_64: p\u0159es syscall instrukci):\n\n\u2022 I/O/s\u00ed\u0165: read, write, open, openat2, close, lseek, access,\n  socket, bind, listen, accept4, setsockopt\n\u2022 Pam\u011b\u0165: brk, mmap, munmap\n\u2022 Procesy: fork, execve, wait4, pipe, dup2, exit\n\u2022 Souborov\u00fd syst\u00e9m: readlink, mkdir, unlink, rename (p\u0159es mv)\n\u2022 \u010cas: clock_gettime, nanosleep\n\u2022 TTY: ioctl(TCGETS) pro detekci termin\u00e1lu\n\n\u017d\u00e1dn\u00e9 vol\u00e1n\u00ed libc \u2014 runtime je pln\u011b sob\u011bsta\u010dn\u00fd.\n\nHistorick\u00fd __lsl_syscall p\u0159ij\u00edm\u00e1 \u010d\u00edslo a \u010dty\u0159i argumenty. HTTP/openat2 a\ndal\u0161\u00ed Linux ABI pou\u017e\u00edvaj\u00ed __lsl_syscall6(nr, a, b, c, d, e, f): codegen\nvyhodnot\u00ed sedm v\u00fdraz\u016f zprava doleva, SysV registry p\u0159emapuje na Linux\nrdi,rsi,rdx,r10,r8,r9 a \u0161est\u00fd syscall argument vezme ze stacku. Samostatn\u00e1\nmmap/munmap regrese hl\u00edd\u00e1 skute\u010dn\u00e9 po\u0159ad\u00ed registr\u016f, nesta\u010d\u00ed jen fixed point.\n\nBezpe\u010dnostn\u00ed model\n\nB\u011b\u017en\u00fd programovac\u00ed re\u017eim nen\u00ed sandbox. LSL program m\u00e1 pln\u00e1 pr\u00e1va\naktu\u00e1ln\u00edho procesu. lsl sandbox je nov\u00e1 vn\u011bj\u0161\u00ed hranice: bezpe\u010dn\u011b p\u0159elo\u017e\u00ed\nzdroj bez unsafe blok\u016f a spust\u00ed jej p\u0159es bubblewrap namespaces, pr\u00e1zdn\u00fd root,\nexplicitn\u00ed bind capabilities, systemd cgroup, prlimit a timeout.\n\nOdd\u011blen\u00fd lsl config re\u017eim staticky odm\u00edt\u00e1 ambientn\u00ed I/O, s\u00ed\u0165,\nenvironment a process capabilities \u2014 je to \u010dist\u00fd evaluator pro\nreprodukovatelnou konfiguraci.\n\nPriv\u00e1tn\u00ed builtiny za\u010d\u00ednaj\u00edc\u00ed __lsl_ zp\u0159\u00edstup\u0148uj\u00ed stdlib p\u0159\u00edm\u00e9 syscalls,\nadresy a raw memory operace. V\u00fdchoz\u00ed CLI je povol\u00ed jen v auditn\u00edm unsafe:\nbloku; unchecked IntArray vy\u017eaduje cel\u00fd p\u0159eklad --unsafe. native.call\nchr\u00e1n\u00ed integritu rodi\u010de kr\u00e1tkodob\u00fdm strict-seccomp child procesem, ale fork\nsnapshot nen\u00ed hranic\u00ed d\u016fv\u011brnosti. Ned\u016fv\u011bryhodn\u00fd k\u00f3d proto pat\u0159\u00ed do extern\u00edho\nexec workeru bez secrets a do lsl sandbox nebo siln\u011bj\u0161\u00ed VM hranice;\npodrobnosti jsou v bezpe\u010dnostn\u00edm modelu.\n\nKam d\u00e1l\n\n\u2022 Kompletn\u00ed reference \u2014 funkce, typy, metody a moduly.\n\u2022 V\u00fdkon a optimalizace \u2014 m\u011b\u0159en\u00ed, profily a optimaliza\u010dn\u00ed techniky.\n\u2022 P\u0159ehled pr\u016fvodc\u016f \u2014 v\u0161echny kapitoly na jednom m\u00edst\u011b.\n\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta-linux-x86_64/bin/lslc",
+        "compiler/pure/lslc_qbe.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/installed-fixed-point"
+      ],
+      "cwd": "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta-linux-x86_64/lib/lsl",
+      "seconds": 6.4310403050039895,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/lsl-0.9.0-beta-linux-x86_64/bin/lsl-install",
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/relocated-install"
+      ],
+      "cwd": "/home/antonin/LSL-Release-0.9.0/build/archive-proof",
+      "seconds": 0.08038949099136516,
+      "returncode": 0,
+      "stdout": "progress 0\nprogress 0\nprogress 10\nprogress 10\nprogress 20\nprogress 20\nprogress 30\nprogress 30\nprogress 40\nprogress 40\nprogress 50\nprogress 50\nprogress 60\nprogress 60\nprogress 70\nprogress 80\nprogress 80\nprogress 90\nprogress 90\nprogress 100\ninstalled LSL 0.9.0 BETA into /home/antonin/LSL-Release-0.9.0/build/archive-proof/relocated-install\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/relocated-install/bin/lsl",
+        "version"
+      ],
+      "cwd": "/home/antonin/LSL-Release-0.9.0/build/archive-proof",
+      "seconds": 0.010720837992266752,
+      "returncode": 0,
+      "stdout": "0.9.0\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/relocated-install/bin/lsl",
+        "compile",
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/smoke.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/installed-smoke"
+      ],
+      "cwd": "/home/antonin/LSL-Release-0.9.0/build/archive-proof",
+      "seconds": 0.39082041299843695,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/archive-proof/installed-smoke"
+      ],
+      "cwd": "/home/antonin/LSL-Release-0.9.0/build/archive-proof",
+      "seconds": 0.0006519610033137724,
+      "returncode": 0,
+      "stdout": "42\n",
+      "stderr": ""
+    }
+  ],
+  "relocated_frontend_fixed_point": true,
+  "offline_source_build": true
+}

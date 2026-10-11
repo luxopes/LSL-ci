@@ -68,6 +68,8 @@ end
 
 escaped = [dynamic_chr, dynamic_ord, dynamic_arg, dynamic_rang, dynamic_exists, dynamic_read, dynamic_write, dynamic_writebytes, dynamic_run, dynamic_join_thread, dynamic_exit, dynamic_list, dynamic_tuple, dynamic_real_array, dynamic_dictionary]
 
+# A missing argument is None. The old arg:String inference incorrectly
+# reported String here without inspecting the missing runtime value.
 print dynamic_chr(65), dynamic_ord("A"), type(dynamic_arg(999)), dynamic_rang(4)
 print dynamic_exists("/definitely/missing/lsl-boundary-file")
 integers = IntArray()

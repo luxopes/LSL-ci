@@ -1,0 +1,88 @@
+{
+  "scope": "REJECTED experiment; generic AST dependency scanning is not present in the committed compiler.",
+  "source_base": "0339509",
+  "candidate_source_sha256": "98e5cfcd186c53c0ca6f33fbcf4982d9c3e4c08e1517d5e15f05655e1d42888a",
+  "candidate_patch_sha256": "42f2db65790455b0ec67621034e6b3d9c796d9661e1e215449c0d49063a7cc73",
+  "reason": "Exact typed/SSA and emitted-image equivalence passed, but isolated full translation became 8.08% slower. Keep the observed-read implementation only.",
+  "performance": {
+    "correctness_only": false,
+    "exclusive_cpu": true,
+    "source": "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+    "source_sha256": "ca5306deaf8612930f7648df9f5540faba69de2c78a9fa604b29fdded1452418",
+    "before_sha256": "d26a3b71df3b643aed58264e3eb8bb03360c468da41d351117f151142cc94f32",
+    "after_sha256": "aa7bddc8420a940d10b88adfa1bbb073ec8fdc4b6c19c8d5c4d702623ac590b7",
+    "samples": [
+      {
+        "command": [
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+          "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+          "/home/antonin/LSL-QBE-return-cache/build/qbe-return-cache/common-perf-before-0",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+        ],
+        "seconds": 12.402072664001025,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": "",
+        "compiler": "before",
+        "iteration": 0,
+        "output_sha256": "dfd9503d3f654d85a421d6d2776e37d101b3ad76c12d16d464221d69062d9361"
+      },
+      {
+        "command": [
+          "/home/antonin/LSL-QBE-return-cache/build/qbe-return-cache/compiler-candidate",
+          "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+          "/home/antonin/LSL-QBE-return-cache/build/qbe-return-cache/common-perf-after-0",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+        ],
+        "seconds": 13.38033547699888,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": "",
+        "compiler": "after",
+        "iteration": 0,
+        "output_sha256": "dfd9503d3f654d85a421d6d2776e37d101b3ad76c12d16d464221d69062d9361"
+      },
+      {
+        "command": [
+          "/home/antonin/LSL-QBE-return-cache/build/qbe-return-cache/compiler-candidate",
+          "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+          "/home/antonin/LSL-QBE-return-cache/build/qbe-return-cache/common-perf-after-1",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+        ],
+        "seconds": 13.37254669899994,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": "",
+        "compiler": "after",
+        "iteration": 1,
+        "output_sha256": "dfd9503d3f654d85a421d6d2776e37d101b3ad76c12d16d464221d69062d9361"
+      },
+      {
+        "command": [
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+          "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+          "/home/antonin/LSL-QBE-return-cache/build/qbe-return-cache/common-perf-before-1",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+        ],
+        "seconds": 12.351616543994169,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": "",
+        "compiler": "before",
+        "iteration": 1,
+        "output_sha256": "dfd9503d3f654d85a421d6d2776e37d101b3ad76c12d16d464221d69062d9361"
+      }
+    ],
+    "medians": {
+      "before": 12.376844603997597,
+      "after": 13.37644108799941
+    },
+    "all_images_equal": true,
+    "ratio": 1.0807634349452002
+  },
+  "integrated": false
+}

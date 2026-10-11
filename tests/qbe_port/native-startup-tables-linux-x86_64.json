@@ -1,0 +1,177 @@
+{
+  "complete": true,
+  "compiler_sha256": "7356d6c6294dcfb9b4ccf3140939122e48cba589f0f143344a417b814f1e091d",
+  "backend_sha256": "7e3d6233d2e8242a32909c5bcdb8468ce19164c376fe4689aef092476f4f6c18",
+  "old_compiler_sha256": "f235b42d4998474c1bfee7eb02f17625bbc824f647f9ba33bdef8c20b0ff8696",
+  "runtime_sha256": "6780bb856d07a9017e40a90931487b0905c58dbe30b1ee08bc1f8f1d3e0d691b",
+  "emitter_sha256": "ad68a99be7171ad270e68c5f2ec1a4ebb23633e01c76d3cb5fd4f1df4cfdbd46",
+  "cases": [
+    {
+      "source": "tests/table_growth_conformance.lsl",
+      "source_sha256": "e67b8010c5520d3199b1c68316fb5c5ff6e9eb37fb3d894f7fdab7c19d572dfd",
+      "expected_stdout": "True True 40 12\n39 l\n",
+      "candidate": {
+        "build": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-startup-tables/compiler",
+            "tests/table_growth_conformance.lsl",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-startup-tables/table_growth_conformance-candidate",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "returncode": 0,
+          "seconds": 0.6372060900030192,
+          "stdout": "",
+          "stderr": ""
+        },
+        "binary_sha256": "83330a5d37f52caa7bb06e8c9e156062be36f142604ab99c598a19d066d6f627",
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-startup-tables/table_growth_conformance-candidate"
+          ],
+          "returncode": 0,
+          "seconds": 0.000609690003329888,
+          "stdout": "True True 40 12\n39 l\n",
+          "stderr": ""
+        },
+        "pass": true
+      },
+      "entry_bootstrap_calls": 1,
+      "bootstrap_before_literals": true,
+      "v089": {
+        "build": {
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "tests/table_growth_conformance.lsl",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-startup-tables/table_growth_conformance-v089"
+          ],
+          "returncode": 0,
+          "seconds": 0.5420924840000225,
+          "stdout": "",
+          "stderr": ""
+        },
+        "binary_sha256": "e96c56b771ee621d6b177bf803025641c85643c8045068a3aab8534353f17b90",
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-startup-tables/table_growth_conformance-v089"
+          ],
+          "returncode": 0,
+          "seconds": 0.0007004150029388256,
+          "stdout": "True True 40 12\n39 l\n",
+          "stderr": ""
+        },
+        "pass": true
+      }
+    },
+    {
+      "source": "tests/qbe/startup_tables.lsl",
+      "source_sha256": "f660c473a4bdfe4b276046941e18e1ff764606f14d6e7e500fca470c0baa6d22",
+      "expected_stdout": "True True\n39 l startup literal survives\n",
+      "candidate": {
+        "build": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-startup-tables/compiler",
+            "tests/qbe/startup_tables.lsl",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-startup-tables/qbe-startup_tables-candidate",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "returncode": 0,
+          "seconds": 0.6464358250013902,
+          "stdout": "",
+          "stderr": ""
+        },
+        "binary_sha256": "5b9637fb7752928054ddf81824aa6245ba496be117ae363223d923a2aa072cbf",
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-startup-tables/qbe-startup_tables-candidate"
+          ],
+          "returncode": 0,
+          "seconds": 0.0006980519974604249,
+          "stdout": "True True\n39 l startup literal survives\n",
+          "stderr": ""
+        },
+        "pass": true
+      },
+      "entry_bootstrap_calls": 1,
+      "bootstrap_before_literals": true,
+      "v089": {
+        "build": {
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "tests/qbe/startup_tables.lsl",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-startup-tables/qbe-startup_tables-v089"
+          ],
+          "returncode": 0,
+          "seconds": 0.5380941030016402,
+          "stdout": "",
+          "stderr": ""
+        },
+        "binary_sha256": "893b2440ae9d5db5df5aef299116a72fbf1d72be3a828c9f25e3c077fe6dfa0f",
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-startup-tables/qbe-startup_tables-v089"
+          ],
+          "returncode": 0,
+          "seconds": 0.0006692050010315143,
+          "stdout": "True True\n39 l startup literal survives\n",
+          "stderr": ""
+        },
+        "pass": true
+      }
+    },
+    {
+      "source": "tests/automatic_gc_conformance.lsl",
+      "source_sha256": "1b30392b69f47679d4799a81f10d2a1b8affa4603aa8e0e7855d939464db5006",
+      "expected_stdout": "automatic GC roots, cycles, deep graphs, callbacks, exceptions and memory bound passed\n",
+      "candidate": {
+        "build": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-startup-tables/compiler",
+            "tests/automatic_gc_conformance.lsl",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-startup-tables/automatic_gc_conformance-candidate",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "returncode": 0,
+          "seconds": 1.0884987999961595,
+          "stdout": "",
+          "stderr": ""
+        },
+        "binary_sha256": "8e1fb362009e4e42860e797e205f86019101ec6a5bcac68b0f5b5fa6e2a9e5b7",
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-startup-tables/automatic_gc_conformance-candidate"
+          ],
+          "returncode": 0,
+          "seconds": 0.13737237200257368,
+          "stdout": "automatic GC roots, cycles, deep graphs, callbacks, exceptions and memory bound passed\n",
+          "stderr": ""
+        },
+        "pass": true
+      },
+      "v089": {
+        "build": {
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "tests/automatic_gc_conformance.lsl",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-startup-tables/automatic_gc_conformance-v089"
+          ],
+          "returncode": 0,
+          "seconds": 0.6266321069997502,
+          "stdout": "",
+          "stderr": ""
+        },
+        "binary_sha256": "97142330bdcd0e609d278d72f1d316d7cb1a74a52bac15bbb31da1be266a77be",
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-startup-tables/automatic_gc_conformance-v089"
+          ],
+          "returncode": 0,
+          "seconds": 0.5614123550039949,
+          "stdout": "automatic GC roots, cycles, deep graphs, callbacks, exceptions and memory bound passed\n",
+          "stderr": ""
+        },
+        "pass": true
+      }
+    }
+  ],
+  "all_pass": true
+}

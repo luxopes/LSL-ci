@@ -1313,15 +1313,18 @@ function __lsl_format_float(value):
     elif bits > 9218868437227405312 or (bits < 0 and bits > -4503599627370496):
         return "nan"
     end
-    negative = value < 0.0 or (value == 0.0 and bits < 0)
-    if negative:
-        value = -value
-    end
-    if value == 0.0:
+    # Determine signed zero from IEEE bits: the public Any equality helper
+    # intentionally compares Float payloads, so -0.0 need not equal +0.0.
+    # Scaling an undetected -0.0 below would never reach 1.0.
+    negative = bits < 0
+    if (bits & 9223372036854775807) == 0:
         if negative:
             return "-0.0"
         end
         return "0.0"
+    end
+    if negative:
+        value = -value
     end
     integer_value = Int(value)
     if integer_value >= 0 and __lsl_float_from_int(integer_value) == value:
@@ -1981,20 +1984,22 @@ function __lsl_str_repeat(text, count):
     if byte_count > 0 and count > 67108864 // byte_count:
         Error(ValueError: "repeated String exceeds 64 MiB")
     end
-    total = byte_count * count
-    result = __lsl_byte_zeros(total)
-    target = 0
-    repetition = 0
-    while repetition < count:
-        source = 0
-        while source < byte_count:
-            result[target] = __lsl_text_byte(checked_text, source)
-            source += 1
-            target += 1
+    # Concatenate powers of two using native byte copies. A per-byte LSL
+    # loop boxes every offset and store on the public ABI. Keep the same
+    # allocation/result identity and 64 MiB limit, including count == 1.
+    result = ""
+    piece = checked_text
+    remaining = count
+    while remaining > 0:
+        if (remaining & 1) != 0:
+            result += piece
         end
-        repetition += 1
+        remaining = remaining >> 1
+        if remaining > 0:
+            piece += piece
+        end
     end
-    return __lsl_text_from_bytes(result, 0, total)
+    return result
 end
 
 function __lsl_equal_seen(left, right, seen_left, seen_right, depth):

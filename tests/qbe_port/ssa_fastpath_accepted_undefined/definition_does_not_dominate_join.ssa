@@ -1,0 +1,15 @@
+# The sole definition is in one arm, while the join use is reachable from the
+# other arm. The definition does not dominate the use, so the dominance guard
+# must retain the original fallback. Upstream QBE accepts this as undef on
+# the path that bypasses the definition.
+export function w $one_arm(w %condition) {
+@start
+	jnz %condition, @defined, @bypass
+@defined
+	%value =w copy 5
+	jmp @join
+@bypass
+	jmp @join
+@join
+	ret %value
+}

@@ -1,0 +1,24 @@
+{
+  "version": "0.9.0",
+  "status": "BETA",
+  "tag": "v0.9.0-beta.1",
+  "platforms": [
+    "linux-x86_64"
+  ],
+  "backend": {
+    "name": "LuxIR",
+    "repository": "https://git.lux-ai.cz/LuxAI/LuxIR.git",
+    "commit": "7480a0fe0a70ec9525cbae7363cf9da457194fce",
+    "directory": "build/dependencies/LuxIR"
+  },
+  "manual": {
+    "repository": "https://git.lux-ai.cz/LuxAI/LSL-Web.git",
+    "commit": "1dec19e655bfeb0148d3090ee90b66ab1bd66622",
+    "path": "public",
+    "directory": "build/dependencies/LSL-Web"
+  },
+  "integration_source": {
+    "repository": "https://git.lux-ai.cz/LuxAI/LSL-Frontend-Backend-Test.git",
+    "commit": "404608255c41f2856089a4f634a27fe25dd85916"
+  }
+}

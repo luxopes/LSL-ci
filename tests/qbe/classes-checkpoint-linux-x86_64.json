@@ -1,0 +1,1101 @@
+{
+  "scope": "Targeted class lowering checkpoint; full integrated regression/selfhost audit pending",
+  "base_revision": "07a9e45f7199ad9c0cda7078cd6bea3093642299",
+  "production_revision": "31ce29a331cc81e18d1667f98fe0e94f4eed1485",
+  "candidate_targeted_checks_passed": true,
+  "candidate_pass_count": 10,
+  "old_comparative_pass_count": 9,
+  "old_oracle_failures": [
+    "tests/qbe/class_default_call_flow.lsl"
+  ],
+  "full_language_conformance": false,
+  "full_validation_complete": false,
+  "runtime_changed": false,
+  "semantic_change": "Class-only specialization gate includes skipped default-bearing method bodies; existing general function gate is untouched.",
+  "old_failure_note": "class_default_call_flow has a literal independent oracle 4/3.0/zz/xx. Installed 0.8.9 returns large address-derived integers. It remains a failed control, not a PASS. The initial report complete=false reflects that old-control failure, not a candidate failure; its bytes are preserved.",
+  "compatibility_scope": "Existing class/instance Dictionary representation and native right-to-left class-call arguments. Static Bool/None/numeric-address field boxing needs additional probes; the old native class-body path omitted boxing whereas the new path uses ordinary public Any boxing.",
+  "raw_evidence": {
+    "baseline_manifest": {
+      "path": "build/qbe-classes/baseline-manifest.json",
+      "sha256": "6c2a8fb008110780754eeed310d29689980a50146ae3ad38e06e64ad47509c50",
+      "data": {
+        "frontend-before": {
+          "source": "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+          "snapshot": "/home/antonin/LSL-QBE-classes/build/qbe-classes/frontend-before",
+          "sha256": "489d46b56766d85071b23017c7bf31313fc5881efaf81223a5b17cf3e8b852ad"
+        },
+        "backend-before": {
+          "source": "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+          "snapshot": "/home/antonin/LSL-QBE-classes/build/qbe-classes/backend-before",
+          "sha256": "7e3d6233d2e8242a32909c5bcdb8468ce19164c376fe4689aef092476f4f6c18"
+        },
+        "runtime.o": {
+          "source": "/home/antonin/LSL-QBE/build/qbe/runtime.o",
+          "snapshot": "/home/antonin/LSL-QBE-classes/build/qbe/runtime.o",
+          "sha256": "13eda5f780821651241e385be3688255b21efcc1bb4e69da5582b4cd889e3cdf"
+        },
+        "old": {
+          "source": "/home/antonin/.local/bin/lslc",
+          "sha256": "f235b42d4998474c1bfee7eb02f17625bbc824f647f9ba33bdef8c20b0ff8696"
+        }
+      }
+    },
+    "baseline_audit": {
+      "path": "build/qbe-classes/baseline-audit.json",
+      "sha256": "d2be44177012436fa986ae449e95ca17e07c3f617b72052fe3b4e5daa0448125",
+      "data": {
+        "base_revision": "07a9e45f7199ad9c0cda7078cd6bea3093642299",
+        "scope": "Unchanged maintained class tests versus installed 0.8.9 before class lowering changes",
+        "manifest": {
+          "frontend-before": {
+            "source": "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "snapshot": "/home/antonin/LSL-QBE-classes/build/qbe-classes/frontend-before",
+            "sha256": "489d46b56766d85071b23017c7bf31313fc5881efaf81223a5b17cf3e8b852ad"
+          },
+          "backend-before": {
+            "source": "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3",
+            "snapshot": "/home/antonin/LSL-QBE-classes/build/qbe-classes/backend-before",
+            "sha256": "7e3d6233d2e8242a32909c5bcdb8468ce19164c376fe4689aef092476f4f6c18"
+          },
+          "runtime.o": {
+            "source": "/home/antonin/LSL-QBE/build/qbe/runtime.o",
+            "snapshot": "/home/antonin/LSL-QBE-classes/build/qbe/runtime.o",
+            "sha256": "13eda5f780821651241e385be3688255b21efcc1bb4e69da5582b4cd889e3cdf"
+          },
+          "old": {
+            "source": "/home/antonin/.local/bin/lslc",
+            "sha256": "f235b42d4998474c1bfee7eb02f17625bbc824f647f9ba33bdef8c20b0ff8696"
+          }
+        },
+        "cases": [
+          {
+            "source": "tests/class_method_return_conformance.lsl",
+            "source_sha256": "0ddccbcb10e6ea05d9b1435f3234c2ed9bda27d21bf6882687fadc8cecac6fb3",
+            "positive": true,
+            "runs": [
+              {
+                "kind": "v089",
+                "build": {
+                  "command": [
+                    "/home/antonin/.local/bin/lslc",
+                    "/home/antonin/LSL-QBE-classes/tests/class_method_return_conformance.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/class_method_return_conformance-v089"
+                  ],
+                  "seconds": 0.6641566649996093,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "",
+                  "stderr": ""
+                },
+                "binary_sha256": "dc8ae128a6a65cbdc777db12789e1a343b3bd162262da15ea9a9591349457df7",
+                "execution": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/class_method_return_conformance-v089"
+                  ],
+                  "seconds": 0.0019868790041073225,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "42\n",
+                  "stderr": ""
+                },
+                "matches_expected": true,
+                "expected": "42\n"
+              },
+              {
+                "kind": "before",
+                "build": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/frontend-before",
+                    "/home/antonin/LSL-QBE-classes/tests/class_method_return_conformance.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/class_method_return_conformance-before",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/backend-before"
+                  ],
+                  "seconds": 0.5722457339943503,
+                  "returncode": 1,
+                  "timed_out": false,
+                  "stdout": "",
+                  "stderr": "LSL runtime error: CompileError: QBE statement: class\n"
+                },
+                "matches_expected": false,
+                "expected": "42\n"
+              }
+            ]
+          },
+          {
+            "source": "tests/wide_class_abi_conformance.lsl",
+            "source_sha256": "ff2713e99e00cf01b73ae77446e7a350f7cd46af0b9f97d114aea7de6d55c373",
+            "positive": true,
+            "runs": [
+              {
+                "kind": "v089",
+                "build": {
+                  "command": [
+                    "/home/antonin/.local/bin/lslc",
+                    "/home/antonin/LSL-QBE-classes/tests/wide_class_abi_conformance.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/wide_class_abi_conformance-v089"
+                  ],
+                  "seconds": 0.6466051539973705,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "",
+                  "stderr": ""
+                },
+                "binary_sha256": "9a25fdb1f75df90b7c54a0bc22df794a248ddaf14c436a801845b6053b39d40b",
+                "execution": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/wide_class_abi_conformance-v089"
+                  ],
+                  "seconds": 0.002184912998927757,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "36 64\n",
+                  "stderr": ""
+                },
+                "matches_expected": true,
+                "expected": "36 64\n"
+              },
+              {
+                "kind": "before",
+                "build": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/frontend-before",
+                    "/home/antonin/LSL-QBE-classes/tests/wide_class_abi_conformance.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/wide_class_abi_conformance-before",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/backend-before"
+                  ],
+                  "seconds": 0.5662211820017546,
+                  "returncode": 1,
+                  "timed_out": false,
+                  "stdout": "",
+                  "stderr": "LSL runtime error: CompileError: QBE statement: class\n"
+                },
+                "matches_expected": false,
+                "expected": "36 64\n"
+              }
+            ]
+          },
+          {
+            "source": "tests/inheritance_conformance.lsl",
+            "source_sha256": "713d4842e7218da24f9f3093360f49e0ef7b0497c1bd3bd310e12a356f96921c",
+            "positive": true,
+            "runs": [
+              {
+                "kind": "v089",
+                "build": {
+                  "command": [
+                    "/home/antonin/.local/bin/lslc",
+                    "/home/antonin/LSL-QBE-classes/tests/inheritance_conformance.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/inheritance_conformance-v089"
+                  ],
+                  "seconds": 0.568421522002609,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "",
+                  "stderr": ""
+                },
+                "binary_sha256": "25be744a4f67c9494cae10e0d8540792c9f4eaf6af893044133d074a0944aa71",
+                "execution": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/inheritance_conformance-v089"
+                  ],
+                  "seconds": 0.0018350999962422065,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "parent:21:child\n42\nparent:41:child:grandchild\n82\nimported:7:child\n",
+                  "stderr": ""
+                },
+                "matches_expected": true,
+                "expected": "parent:21:child\n42\nparent:41:child:grandchild\n82\nimported:7:child\n"
+              },
+              {
+                "kind": "before",
+                "build": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/frontend-before",
+                    "/home/antonin/LSL-QBE-classes/tests/inheritance_conformance.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/inheritance_conformance-before",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/backend-before"
+                  ],
+                  "seconds": 0.5359208509980817,
+                  "returncode": 1,
+                  "timed_out": false,
+                  "stdout": "",
+                  "stderr": "LSL runtime error: CompileError: QBE statement: class\n"
+                },
+                "matches_expected": false,
+                "expected": "parent:21:child\n42\nparent:41:child:grandchild\n82\nimported:7:child\n"
+              }
+            ]
+          },
+          {
+            "source": "tests/class_module_smoke.lsl",
+            "source_sha256": "c26e56b06935ddb35ed8c853b05168d318c33ac7ab18449d177699d10303327a",
+            "positive": true,
+            "runs": [
+              {
+                "kind": "v089",
+                "build": {
+                  "command": [
+                    "/home/antonin/.local/bin/lslc",
+                    "/home/antonin/LSL-QBE-classes/tests/class_module_smoke.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/class_module_smoke-v089"
+                  ],
+                  "seconds": 0.5569129489958868,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "",
+                  "stderr": ""
+                },
+                "binary_sha256": "6a3bb29d8d41f43ebf96edaf37e099cde2408357757605b94983acbc08a0772f",
+                "execution": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/class_module_smoke-v089"
+                  ],
+                  "seconds": 0.002030078998359386,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "module-ok 12 module-ok 15\n12 Class Instance\n",
+                  "stderr": ""
+                },
+                "matches_expected": true
+              },
+              {
+                "kind": "before",
+                "build": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/frontend-before",
+                    "/home/antonin/LSL-QBE-classes/tests/class_module_smoke.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/class_module_smoke-before",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/backend-before"
+                  ],
+                  "seconds": 0.49186904399539344,
+                  "returncode": 1,
+                  "timed_out": false,
+                  "stdout": "",
+                  "stderr": "LSL runtime error: CompileError: QBE statement: class\n"
+                },
+                "matches_expected": false
+              }
+            ]
+          },
+          {
+            "source": "tests/origin_function_conformance.lsl",
+            "source_sha256": "e63ed58f6e9db0eea26f5071ccf2c7be4f71a514f934f9b4447608b40efe0bf4",
+            "positive": true,
+            "runs": [
+              {
+                "kind": "v089",
+                "build": {
+                  "command": [
+                    "/home/antonin/.local/bin/lslc",
+                    "/home/antonin/LSL-QBE-classes/tests/origin_function_conformance.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/origin_function_conformance-v089"
+                  ],
+                  "seconds": 0.5504959560057614,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "",
+                  "stderr": ""
+                },
+                "binary_sha256": "ba709e353e6f14404331abacdc9d11faf209d664569e9fd76f7f469a159e726e",
+                "execution": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/origin_function_conformance-v089"
+                  ],
+                  "seconds": 0.002507190001779236,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "42\n",
+                  "stderr": ""
+                },
+                "matches_expected": true,
+                "expected": "42\n"
+              },
+              {
+                "kind": "before",
+                "build": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/frontend-before",
+                    "/home/antonin/LSL-QBE-classes/tests/origin_function_conformance.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/origin_function_conformance-before",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/backend-before"
+                  ],
+                  "seconds": 0.5668207410053583,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "",
+                  "stderr": ""
+                },
+                "binary_sha256": "932c6c66bc4f0ba1506b922e530c937f2d13557bcf5478c29225baaa1595c7a6",
+                "execution": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/origin_function_conformance-before"
+                  ],
+                  "seconds": 0.0018299219955224544,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "42\n",
+                  "stderr": ""
+                },
+                "matches_expected": true,
+                "expected": "42\n"
+              }
+            ]
+          },
+          {
+            "source": "tests/private_class_negative.lsl",
+            "source_sha256": "ac12fc217ff2985052b6733c4874e7839d6a41834dd024452a4e94cf2a0755af",
+            "positive": false,
+            "runs": [
+              {
+                "kind": "v089",
+                "build": {
+                  "command": [
+                    "/home/antonin/.local/bin/lslc",
+                    "/home/antonin/LSL-QBE-classes/tests/private_class_negative.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/private_class_negative-v089"
+                  ],
+                  "seconds": 0.6469415690007736,
+                  "returncode": 1,
+                  "timed_out": false,
+                  "stdout": "error[E2001]: unknown native function: @lsl_module_0@Hidden\n --> /home/antonin/LSL-QBE-classes/tests/private_class_negative.lsl:3:10\n  |\n3 | hidden = sample.Hidden()\n  |          ^~~~~~~~~~~~~~~\n help: declare the function or assign a Function value before calling it\n",
+                  "stderr": ""
+                },
+                "matches_expected": true
+              },
+              {
+                "kind": "before",
+                "build": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/frontend-before",
+                    "/home/antonin/LSL-QBE-classes/tests/private_class_negative.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/private_class_negative-before",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/backend-before"
+                  ],
+                  "seconds": 0.5855877449939726,
+                  "returncode": 1,
+                  "timed_out": false,
+                  "stdout": "error[E2001]: unknown native function: @lsl_module_0@Hidden\n --> /home/antonin/LSL-QBE-classes/tests/private_class_negative.lsl:3:10\n  |\n3 | hidden = sample.Hidden()\n  |          ^~~~~~~~~~~~~~~\n help: declare the function or assign a Function value before calling it\n",
+                  "stderr": ""
+                },
+                "matches_expected": true
+              }
+            ]
+          },
+          {
+            "source": "tests/inheritance_cycle_negative.lsl",
+            "source_sha256": "1cc63f51c5ab8fca0dd0b3eae18309e687bec3dfc14da411ac69d36649aa57b0",
+            "positive": false,
+            "runs": [
+              {
+                "kind": "v089",
+                "build": {
+                  "command": [
+                    "/home/antonin/.local/bin/lslc",
+                    "/home/antonin/LSL-QBE-classes/tests/inheritance_cycle_negative.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/inheritance_cycle_negative-v089"
+                  ],
+                  "seconds": 0.2014102239991189,
+                  "returncode": 1,
+                  "timed_out": false,
+                  "stdout": "error[E2001]: inheritance cycle involving class First\n --> /home/antonin/LSL-QBE-classes/tests/inheritance_cycle_negative.lsl:1:1\n  |\n1 | class First(Second):\n  | ^\n help: make the class hierarchy acyclic\n",
+                  "stderr": ""
+                },
+                "matches_expected": true
+              },
+              {
+                "kind": "before",
+                "build": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/frontend-before",
+                    "/home/antonin/LSL-QBE-classes/tests/inheritance_cycle_negative.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/inheritance_cycle_negative-before",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/backend-before"
+                  ],
+                  "seconds": 0.1932090500049526,
+                  "returncode": 1,
+                  "timed_out": false,
+                  "stdout": "error[E2001]: inheritance cycle involving class First\n --> /home/antonin/LSL-QBE-classes/tests/inheritance_cycle_negative.lsl:1:1\n  |\n1 | class First(Second):\n  | ^\n help: make the class hierarchy acyclic\n",
+                  "stderr": ""
+                },
+                "matches_expected": true
+              }
+            ]
+          },
+          {
+            "source": "tests/origin_without_parent_negative.lsl",
+            "source_sha256": "4ec6a81fcdb5da8f2e19a635aef0ef3b791f75ee6aca785fbcc5470fb69594de",
+            "positive": false,
+            "runs": [
+              {
+                "kind": "v089",
+                "build": {
+                  "command": [
+                    "/home/antonin/.local/bin/lslc",
+                    "/home/antonin/LSL-QBE-classes/tests/origin_without_parent_negative.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/origin_without_parent_negative-v089"
+                  ],
+                  "seconds": 0.630406383999798,
+                  "returncode": 1,
+                  "timed_out": false,
+                  "stdout": "error[E2001]: class Root has no parent\n --> /home/antonin/LSL-QBE-classes/tests/origin_without_parent_negative.lsl:3:14\n  |\n3 |         call origin.init()\n  |              ^~~~~~~~~~~~~\n help: remove origin or inherit from a parent class\n",
+                  "stderr": ""
+                },
+                "matches_expected": true
+              },
+              {
+                "kind": "before",
+                "build": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/frontend-before",
+                    "/home/antonin/LSL-QBE-classes/tests/origin_without_parent_negative.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/origin_without_parent_negative-before",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/backend-before"
+                  ],
+                  "seconds": 0.5519308110015118,
+                  "returncode": 1,
+                  "timed_out": false,
+                  "stdout": "error[E2001]: class Root has no parent\n --> /home/antonin/LSL-QBE-classes/tests/origin_without_parent_negative.lsl:3:14\n  |\n3 |         call origin.init()\n  |              ^~~~~~~~~~~~~\n help: remove origin or inherit from a parent class\n",
+                  "stderr": ""
+                },
+                "matches_expected": true
+              }
+            ]
+          }
+        ],
+        "old_controls_pass": true,
+        "complete": true,
+        "driver_sha256": "00d7660c3f12e750069cdbb1326eed65371888c4690fd6bef261a8c91bc3fe9e"
+      }
+    },
+    "candidate_build": {
+      "path": "build/qbe-classes/candidate-build.json",
+      "sha256": "5db9dd38a9c5c4c5bae6924637a0a4a25dbc4475154a31525a17f3231cb76427",
+      "data": {
+        "command": [
+          "/home/antonin/LSL-QBE-classes/build/qbe-classes/frontend-before",
+          "compiler/pure/lslc_qbe.lsl",
+          "/home/antonin/LSL-QBE-classes/build/qbe-classes/frontend-candidate",
+          "/home/antonin/LSL-QBE-classes/build/qbe-classes/backend-before"
+        ],
+        "seconds": 7.259156015999906,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": "",
+        "source_sha256": {
+          "compiler/pure/qbe_emit.lsl": "b6377eedf4b853879d4318487fc9aaeac71967ffadd4670148897cb98a4fa3d3",
+          "compiler/pure/semantic.lsl": "b1ed7d70bac8766d1275e0327f77a878b1d2bfe603522d978c3615bd65391977"
+        },
+        "binary_sha256": "4db8971d84129c866cb392a356ccf70188e811ec4c1bb872327530926838bb9a"
+      }
+    },
+    "initial_class_checks": {
+      "path": "build/qbe-classes/initial-checks/verification.json",
+      "sha256": "8a938b62f99956fa1ec2ea45b718f7c75a09e41e7ae0898341d20503718c6800",
+      "data": {
+        "scope": "Class declarations, constructor/method/origin ABI and recoverable errors",
+        "compilers": {
+          "v089": {
+            "path": "/home/antonin/.local/bin/lslc",
+            "sha256": "f235b42d4998474c1bfee7eb02f17625bbc824f647f9ba33bdef8c20b0ff8696"
+          },
+          "candidate": {
+            "path": "/home/antonin/LSL-QBE-classes/build/qbe-classes/frontend-candidate",
+            "sha256": "4db8971d84129c866cb392a356ccf70188e811ec4c1bb872327530926838bb9a"
+          }
+        },
+        "backend_sha256": "7e3d6233d2e8242a32909c5bcdb8468ce19164c376fe4689aef092476f4f6c18",
+        "runtime_sha256": "13eda5f780821651241e385be3688255b21efcc1bb4e69da5582b4cd889e3cdf",
+        "emitter_sha256": "b6377eedf4b853879d4318487fc9aaeac71967ffadd4670148897cb98a4fa3d3",
+        "semantic_sha256": "b1ed7d70bac8766d1275e0327f77a878b1d2bfe603522d978c3615bd65391977",
+        "memory_limit_gib": 4,
+        "timeout_seconds": 30,
+        "cases": [
+          {
+            "source": "tests/class_method_return_conformance.lsl",
+            "source_sha256": "0ddccbcb10e6ea05d9b1435f3234c2ed9bda27d21bf6882687fadc8cecac6fb3",
+            "positive": true,
+            "runs": {
+              "v089": {
+                "build": {
+                  "command": [
+                    "/home/antonin/.local/bin/lslc",
+                    "/home/antonin/LSL-QBE-classes/tests/class_method_return_conformance.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/class_method_return_conformance-v089"
+                  ],
+                  "seconds": 0.6543328930056305,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "",
+                  "stderr": ""
+                },
+                "binary_sha256": "dc8ae128a6a65cbdc777db12789e1a343b3bd162262da15ea9a9591349457df7",
+                "execution": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/class_method_return_conformance-v089"
+                  ],
+                  "seconds": 0.0024663109943503514,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "42\n",
+                  "stderr": ""
+                },
+                "passed": true
+              },
+              "candidate": {
+                "build": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/frontend-candidate",
+                    "/home/antonin/LSL-QBE-classes/tests/class_method_return_conformance.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/class_method_return_conformance-candidate",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/backend-before"
+                  ],
+                  "seconds": 0.7758315219980432,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "",
+                  "stderr": ""
+                },
+                "binary_sha256": "924980771ed3ef24d396fdfd1a0342e3e1bb3c7304e601ce521f930d3dc6fbb9",
+                "execution": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/class_method_return_conformance-candidate"
+                  ],
+                  "seconds": 0.0025711269991006702,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "42\n",
+                  "stderr": ""
+                },
+                "passed": true
+              }
+            },
+            "expected": "42\n",
+            "passed": true
+          },
+          {
+            "source": "tests/wide_class_abi_conformance.lsl",
+            "source_sha256": "ff2713e99e00cf01b73ae77446e7a350f7cd46af0b9f97d114aea7de6d55c373",
+            "positive": true,
+            "runs": {
+              "v089": {
+                "build": {
+                  "command": [
+                    "/home/antonin/.local/bin/lslc",
+                    "/home/antonin/LSL-QBE-classes/tests/wide_class_abi_conformance.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/wide_class_abi_conformance-v089"
+                  ],
+                  "seconds": 0.6544370430056006,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "",
+                  "stderr": ""
+                },
+                "binary_sha256": "9a25fdb1f75df90b7c54a0bc22df794a248ddaf14c436a801845b6053b39d40b",
+                "execution": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/wide_class_abi_conformance-v089"
+                  ],
+                  "seconds": 0.0021860579945496283,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "36 64\n",
+                  "stderr": ""
+                },
+                "passed": true
+              },
+              "candidate": {
+                "build": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/frontend-candidate",
+                    "/home/antonin/LSL-QBE-classes/tests/wide_class_abi_conformance.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/wide_class_abi_conformance-candidate",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/backend-before"
+                  ],
+                  "seconds": 0.7993565950018819,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "",
+                  "stderr": ""
+                },
+                "binary_sha256": "9440fbbfdea552cf34298bc10b57ff8d128fbfccd5f5fca902979fffc8eab17e",
+                "execution": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/wide_class_abi_conformance-candidate"
+                  ],
+                  "seconds": 0.0035450870054773986,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "36 64\n",
+                  "stderr": ""
+                },
+                "passed": true
+              }
+            },
+            "expected": "36 64\n",
+            "passed": true
+          },
+          {
+            "source": "tests/inheritance_conformance.lsl",
+            "source_sha256": "713d4842e7218da24f9f3093360f49e0ef7b0497c1bd3bd310e12a356f96921c",
+            "positive": true,
+            "runs": {
+              "v089": {
+                "build": {
+                  "command": [
+                    "/home/antonin/.local/bin/lslc",
+                    "/home/antonin/LSL-QBE-classes/tests/inheritance_conformance.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/inheritance_conformance-v089"
+                  ],
+                  "seconds": 0.5687331160006579,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "",
+                  "stderr": ""
+                },
+                "binary_sha256": "25be744a4f67c9494cae10e0d8540792c9f4eaf6af893044133d074a0944aa71",
+                "execution": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/inheritance_conformance-v089"
+                  ],
+                  "seconds": 0.002147055995010305,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "parent:21:child\n42\nparent:41:child:grandchild\n82\nimported:7:child\n",
+                  "stderr": ""
+                },
+                "passed": true
+              },
+              "candidate": {
+                "build": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/frontend-candidate",
+                    "/home/antonin/LSL-QBE-classes/tests/inheritance_conformance.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/inheritance_conformance-candidate",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/backend-before"
+                  ],
+                  "seconds": 0.7619287760026054,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "",
+                  "stderr": ""
+                },
+                "binary_sha256": "082f02033e07ecfb9af793bd6ec72909f9ce2b6742618c1864e11a1affb26dd9",
+                "execution": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/inheritance_conformance-candidate"
+                  ],
+                  "seconds": 0.0035348879973753355,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "parent:21:child\n42\nparent:41:child:grandchild\n82\nimported:7:child\n",
+                  "stderr": ""
+                },
+                "passed": true
+              }
+            },
+            "expected": "parent:21:child\n42\nparent:41:child:grandchild\n82\nimported:7:child\n",
+            "passed": true
+          },
+          {
+            "source": "tests/class_module_smoke.lsl",
+            "source_sha256": "c26e56b06935ddb35ed8c853b05168d318c33ac7ab18449d177699d10303327a",
+            "positive": true,
+            "runs": {
+              "v089": {
+                "build": {
+                  "command": [
+                    "/home/antonin/.local/bin/lslc",
+                    "/home/antonin/LSL-QBE-classes/tests/class_module_smoke.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/class_module_smoke-v089"
+                  ],
+                  "seconds": 0.5635812949985848,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "",
+                  "stderr": ""
+                },
+                "binary_sha256": "6a3bb29d8d41f43ebf96edaf37e099cde2408357757605b94983acbc08a0772f",
+                "execution": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/class_module_smoke-v089"
+                  ],
+                  "seconds": 0.0028259980026632547,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "module-ok 12 module-ok 15\n12 Class Instance\n",
+                  "stderr": ""
+                },
+                "passed": true
+              },
+              "candidate": {
+                "build": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/frontend-candidate",
+                    "/home/antonin/LSL-QBE-classes/tests/class_module_smoke.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/class_module_smoke-candidate",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/backend-before"
+                  ],
+                  "seconds": 0.7258816489993478,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "",
+                  "stderr": ""
+                },
+                "binary_sha256": "88026da56ae77ece467a0a697872012ded5b40abb46ef0c11533a762dd410aa2",
+                "execution": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/class_module_smoke-candidate"
+                  ],
+                  "seconds": 0.0032616050011711195,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "module-ok 12 module-ok 15\n12 Class Instance\n",
+                  "stderr": ""
+                },
+                "passed": true
+              }
+            },
+            "expected": "module-ok 12 module-ok 15\n12 Class Instance\n",
+            "passed": true
+          },
+          {
+            "source": "tests/origin_function_conformance.lsl",
+            "source_sha256": "e63ed58f6e9db0eea26f5071ccf2c7be4f71a514f934f9b4447608b40efe0bf4",
+            "positive": true,
+            "runs": {
+              "v089": {
+                "build": {
+                  "command": [
+                    "/home/antonin/.local/bin/lslc",
+                    "/home/antonin/LSL-QBE-classes/tests/origin_function_conformance.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/origin_function_conformance-v089"
+                  ],
+                  "seconds": 0.5638821859974996,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "",
+                  "stderr": ""
+                },
+                "binary_sha256": "ba709e353e6f14404331abacdc9d11faf209d664569e9fd76f7f469a159e726e",
+                "execution": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/origin_function_conformance-v089"
+                  ],
+                  "seconds": 0.00394041800609557,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "42\n",
+                  "stderr": ""
+                },
+                "passed": true
+              },
+              "candidate": {
+                "build": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/frontend-candidate",
+                    "/home/antonin/LSL-QBE-classes/tests/origin_function_conformance.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/origin_function_conformance-candidate",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/backend-before"
+                  ],
+                  "seconds": 0.5603374310012441,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "",
+                  "stderr": ""
+                },
+                "binary_sha256": "932c6c66bc4f0ba1506b922e530c937f2d13557bcf5478c29225baaa1595c7a6",
+                "execution": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/origin_function_conformance-candidate"
+                  ],
+                  "seconds": 0.0022224269996513613,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "42\n",
+                  "stderr": ""
+                },
+                "passed": true
+              }
+            },
+            "expected": "42\n",
+            "passed": true
+          },
+          {
+            "source": "tests/qbe/classes.lsl",
+            "source_sha256": "780156742ccf548a0a937c2aa319b737ecd2c1505e789e088760bb1e0d555ad3",
+            "positive": true,
+            "runs": {
+              "v089": {
+                "build": {
+                  "command": [
+                    "/home/antonin/.local/bin/lslc",
+                    "/home/antonin/LSL-QBE-classes/tests/qbe/classes.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/qbe-classes-v089"
+                  ],
+                  "seconds": 0.6091820750007173,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "",
+                  "stderr": ""
+                },
+                "binary_sha256": "b46047f32c24bbe31842e92bfd6e9a712ced2b5d6898a33f65fba45d4243db43",
+                "execution": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/qbe-classes-v089"
+                  ],
+                  "seconds": 0.0028004199994029477,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "second,first\npair 31 34 14\n13 26\n100 120\n2\n33\n361\n[1, 2, 3, 4, 5, 6, 7, 8] Instance Class\nconstructor arity caught\nconstructor keyword caught\nmethod arity caught\nmissing method caught\nempty keyword caught\nconstructor error caught\n",
+                  "stderr": ""
+                },
+                "passed": true
+              },
+              "candidate": {
+                "build": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/frontend-candidate",
+                    "/home/antonin/LSL-QBE-classes/tests/qbe/classes.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/qbe-classes-candidate",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/backend-before"
+                  ],
+                  "seconds": 0.7840475660050288,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "",
+                  "stderr": ""
+                },
+                "binary_sha256": "08ca80cfef1c23a6d01b09fa3249f9725fee45a5a996f52bc9c935212ab3f126",
+                "execution": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/qbe-classes-candidate"
+                  ],
+                  "seconds": 0.005604569996648934,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "second,first\npair 31 34 14\n13 26\n100 120\n2\n33\n361\n[1, 2, 3, 4, 5, 6, 7, 8] Instance Class\nconstructor arity caught\nconstructor keyword caught\nmethod arity caught\nmissing method caught\nempty keyword caught\nconstructor error caught\n",
+                  "stderr": ""
+                },
+                "passed": true
+              }
+            },
+            "expected": "second,first\npair 31 34 14\n13 26\n100 120\n2\n33\n361\n[1, 2, 3, 4, 5, 6, 7, 8] Instance Class\nconstructor arity caught\nconstructor keyword caught\nmethod arity caught\nmissing method caught\nempty keyword caught\nconstructor error caught\n",
+            "passed": true
+          },
+          {
+            "source": "tests/qbe/class_default_call_flow.lsl",
+            "source_sha256": "902f52a46a272e47d8fca04e57e852cc69b9975bf1eacf2895014786a79fec4c",
+            "positive": true,
+            "runs": {
+              "v089": {
+                "build": {
+                  "command": [
+                    "/home/antonin/.local/bin/lslc",
+                    "/home/antonin/LSL-QBE-classes/tests/qbe/class_default_call_flow.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/qbe-class_default_call_flow-v089"
+                  ],
+                  "seconds": 0.6398026710012346,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "",
+                  "stderr": ""
+                },
+                "binary_sha256": "1df9b0f5cb6fcd3e9faef0781104627eff2f8b8ceb0f324f3566b1187981b8d9",
+                "execution": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/qbe-class_default_call_flow-v089"
+                  ],
+                  "seconds": 0.002269035998324398,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "4\n187651195457888\n187651195458800\n187651195459728\n",
+                  "stderr": ""
+                },
+                "passed": false
+              },
+              "candidate": {
+                "build": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/frontend-candidate",
+                    "/home/antonin/LSL-QBE-classes/tests/qbe/class_default_call_flow.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/qbe-class_default_call_flow-candidate",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/backend-before"
+                  ],
+                  "seconds": 0.7271464840014232,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "",
+                  "stderr": ""
+                },
+                "binary_sha256": "dc3ade78d6d76b65def0355da0c64737368c65fb8552e45720a4bb19d8c5521f",
+                "execution": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/qbe-class_default_call_flow-candidate"
+                  ],
+                  "seconds": 0.002746603000559844,
+                  "returncode": 0,
+                  "timed_out": false,
+                  "stdout": "4\n3.0\nzz\nxx\n",
+                  "stderr": ""
+                },
+                "passed": true
+              }
+            },
+            "expected": "4\n3.0\nzz\nxx\n",
+            "passed": false
+          },
+          {
+            "source": "tests/private_class_negative.lsl",
+            "source_sha256": "ac12fc217ff2985052b6733c4874e7839d6a41834dd024452a4e94cf2a0755af",
+            "positive": false,
+            "runs": {
+              "v089": {
+                "build": {
+                  "command": [
+                    "/home/antonin/.local/bin/lslc",
+                    "/home/antonin/LSL-QBE-classes/tests/private_class_negative.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/private_class_negative-v089"
+                  ],
+                  "seconds": 0.6677422330030822,
+                  "returncode": 1,
+                  "timed_out": false,
+                  "stdout": "error[E2001]: unknown native function: @lsl_module_0@Hidden\n --> /home/antonin/LSL-QBE-classes/tests/private_class_negative.lsl:3:10\n  |\n3 | hidden = sample.Hidden()\n  |          ^~~~~~~~~~~~~~~\n help: declare the function or assign a Function value before calling it\n",
+                  "stderr": ""
+                },
+                "passed": true
+              },
+              "candidate": {
+                "build": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/frontend-candidate",
+                    "/home/antonin/LSL-QBE-classes/tests/private_class_negative.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/private_class_negative-candidate",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/backend-before"
+                  ],
+                  "seconds": 0.5706467470008647,
+                  "returncode": 1,
+                  "timed_out": false,
+                  "stdout": "error[E2001]: unknown native function: @lsl_module_0@Hidden\n --> /home/antonin/LSL-QBE-classes/tests/private_class_negative.lsl:3:10\n  |\n3 | hidden = sample.Hidden()\n  |          ^~~~~~~~~~~~~~~\n help: declare the function or assign a Function value before calling it\n",
+                  "stderr": ""
+                },
+                "passed": true
+              }
+            },
+            "same_diagnostic": true,
+            "passed": true
+          },
+          {
+            "source": "tests/inheritance_cycle_negative.lsl",
+            "source_sha256": "1cc63f51c5ab8fca0dd0b3eae18309e687bec3dfc14da411ac69d36649aa57b0",
+            "positive": false,
+            "runs": {
+              "v089": {
+                "build": {
+                  "command": [
+                    "/home/antonin/.local/bin/lslc",
+                    "/home/antonin/LSL-QBE-classes/tests/inheritance_cycle_negative.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/inheritance_cycle_negative-v089"
+                  ],
+                  "seconds": 0.1914960170033737,
+                  "returncode": 1,
+                  "timed_out": false,
+                  "stdout": "error[E2001]: inheritance cycle involving class First\n --> /home/antonin/LSL-QBE-classes/tests/inheritance_cycle_negative.lsl:1:1\n  |\n1 | class First(Second):\n  | ^\n help: make the class hierarchy acyclic\n",
+                  "stderr": ""
+                },
+                "passed": true
+              },
+              "candidate": {
+                "build": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/frontend-candidate",
+                    "/home/antonin/LSL-QBE-classes/tests/inheritance_cycle_negative.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/inheritance_cycle_negative-candidate",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/backend-before"
+                  ],
+                  "seconds": 0.19456829599948833,
+                  "returncode": 1,
+                  "timed_out": false,
+                  "stdout": "error[E2001]: inheritance cycle involving class First\n --> /home/antonin/LSL-QBE-classes/tests/inheritance_cycle_negative.lsl:1:1\n  |\n1 | class First(Second):\n  | ^\n help: make the class hierarchy acyclic\n",
+                  "stderr": ""
+                },
+                "passed": true
+              }
+            },
+            "same_diagnostic": true,
+            "passed": true
+          },
+          {
+            "source": "tests/origin_without_parent_negative.lsl",
+            "source_sha256": "4ec6a81fcdb5da8f2e19a635aef0ef3b791f75ee6aca785fbcc5470fb69594de",
+            "positive": false,
+            "runs": {
+              "v089": {
+                "build": {
+                  "command": [
+                    "/home/antonin/.local/bin/lslc",
+                    "/home/antonin/LSL-QBE-classes/tests/origin_without_parent_negative.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/origin_without_parent_negative-v089"
+                  ],
+                  "seconds": 0.6466967599990312,
+                  "returncode": 1,
+                  "timed_out": false,
+                  "stdout": "error[E2001]: class Root has no parent\n --> /home/antonin/LSL-QBE-classes/tests/origin_without_parent_negative.lsl:3:14\n  |\n3 |         call origin.init()\n  |              ^~~~~~~~~~~~~\n help: remove origin or inherit from a parent class\n",
+                  "stderr": ""
+                },
+                "passed": true
+              },
+              "candidate": {
+                "build": {
+                  "command": [
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/frontend-candidate",
+                    "/home/antonin/LSL-QBE-classes/tests/origin_without_parent_negative.lsl",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks/origin_without_parent_negative-candidate",
+                    "/home/antonin/LSL-QBE-classes/build/qbe-classes/backend-before"
+                  ],
+                  "seconds": 0.5578240289978567,
+                  "returncode": 1,
+                  "timed_out": false,
+                  "stdout": "error[E2001]: class Root has no parent\n --> /home/antonin/LSL-QBE-classes/tests/origin_without_parent_negative.lsl:3:14\n  |\n3 |         call origin.init()\n  |              ^~~~~~~~~~~~~\n help: remove origin or inherit from a parent class\n",
+                  "stderr": ""
+                },
+                "passed": true
+              }
+            },
+            "same_diagnostic": true,
+            "passed": true
+          }
+        ],
+        "complete": false,
+        "binaries_unchanged": true
+      }
+    },
+    "class_check_command": {
+      "path": "build/qbe-classes/initial-checks-command.json",
+      "sha256": "d93243f1a845b4d60eb0e3b88bd83013a12e1ca5f3e3d72fc630725ca85fec0f",
+      "data": {
+        "command": [
+          "python3",
+          "tools/qbe/verify_classes.py",
+          "--compiler",
+          "/home/antonin/LSL-QBE-classes/build/qbe-classes/frontend-candidate",
+          "--backend",
+          "/home/antonin/LSL-QBE-classes/build/qbe-classes/backend-before",
+          "--build-directory",
+          "/home/antonin/LSL-QBE-classes/build/qbe-classes/initial-checks"
+        ],
+        "seconds": 12.399119393994624,
+        "returncode": 1,
+        "timed_out": false,
+        "stdout": "class_method_return_conformance v089 PASS\nclass_method_return_conformance candidate PASS\nwide_class_abi_conformance v089 PASS\nwide_class_abi_conformance candidate PASS\ninheritance_conformance v089 PASS\ninheritance_conformance candidate PASS\nclass_module_smoke v089 PASS\nclass_module_smoke candidate PASS\norigin_function_conformance v089 PASS\norigin_function_conformance candidate PASS\nqbe/classes v089 PASS\nqbe/classes candidate PASS\nqbe/class_default_call_flow v089 FAIL\nqbe/class_default_call_flow candidate PASS\nprivate_class_negative v089 PASS\nprivate_class_negative candidate PASS\ninheritance_cycle_negative v089 PASS\ninheritance_cycle_negative candidate PASS\norigin_without_parent_negative v089 PASS\norigin_without_parent_negative candidate PASS\n",
+        "stderr": ""
+      }
+    }
+  },
+  "audit_driver": {
+    "path": "build/qbe-classes/audit.py",
+    "sha256": "00d7660c3f12e750069cdbb1326eed65371888c4690fd6bef261a8c91bc3fe9e",
+    "source": "from pathlib import Path\nimport hashlib, json, os, resource, signal, subprocess, time\n\nr = Path.cwd()\nb = r / 'build/qbe-classes'\ndef sha(path): return hashlib.sha256(path.read_bytes()).hexdigest()\ndef execute(command, timeout=30):\n    def limit(): resource.setrlimit(resource.RLIMIT_AS, (4*1024**3, 4*1024**3))\n    start = time.monotonic()\n    p = subprocess.Popen([str(x) for x in command], cwd=r, stdout=subprocess.PIPE,\n                         stderr=subprocess.PIPE, start_new_session=True, preexec_fn=limit)\n    timed_out = False\n    try: out, err = p.communicate(timeout=timeout)\n    except subprocess.TimeoutExpired:\n        timed_out = True\n        os.killpg(p.pid, signal.SIGKILL)\n        out, err = p.communicate()\n    return {'command': [str(x) for x in command], 'seconds': time.monotonic()-start,\n            'returncode': p.returncode, 'timed_out': timed_out,\n            'stdout': out.decode(errors='replace'), 'stderr': err.decode(errors='replace')}\n\nif __name__ == '__main__':\n    cases = [('class_method_return_conformance', True), ('wide_class_abi_conformance', True),\n             ('inheritance_conformance', True), ('class_module_smoke', True),\n             ('origin_function_conformance', True), ('private_class_negative', False),\n             ('inheritance_cycle_negative', False), ('origin_without_parent_negative', False)]\n    report = {'base_revision': '07a9e45f7199ad9c0cda7078cd6bea3093642299',\n              'scope': 'Unchanged maintained class tests versus installed 0.8.9 before class lowering changes',\n              'manifest': json.loads((b/'baseline-manifest.json').read_text()), 'cases': []}\n    for name, positive in cases:\n        source = r/'tests'/(name+'.lsl')\n        row = {'source': str(source.relative_to(r)), 'source_sha256': sha(source),\n               'positive': positive, 'runs': []}\n        report['cases'].append(row)\n        for kind, compiler in [('v089', Path('/home/antonin/.local/bin/lslc')), ('before', b/'frontend-before')]:\n            output = b/(name+'-'+kind)\n            command = [compiler, source, output] + ([b/'backend-before'] if kind=='before' else [])\n            build = execute(command)\n            result = {'kind': kind, 'build': build}\n            row['runs'].append(result)\n            if build['returncode'] == 0:\n                result['binary_sha256'] = sha(output)\n                result['execution'] = execute([output])\n            if positive:\n                expected_file = source.with_suffix('.out')\n                expected = expected_file.read_text() if expected_file.exists() else None\n                result['matches_expected'] = build['returncode'] == 0 and result['execution']['returncode'] == 0\n                if expected is not None:\n                    result['expected'] = expected\n                    result['matches_expected'] &= result.get('execution',{}).get('stdout') == expected\n            else:\n                result['matches_expected'] = build['returncode'] != 0 and not build['timed_out']\n            print(name, kind, 'PASS' if result['matches_expected'] else 'FAIL', flush=True)\n            (b/'baseline-audit.json').write_text(json.dumps(report, indent=2)+'\\n')\n    report['old_controls_pass'] = all(c['runs'][0]['matches_expected'] for c in report['cases'])\n    report['complete'] = True\n    report['driver_sha256'] = sha(Path(__file__))\n    (b/'baseline-audit.json').write_text(json.dumps(report, indent=2)+'\\n')\n"
+  }
+}

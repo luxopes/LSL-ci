@@ -1,0 +1,100 @@
+{
+  "scope": "Global initialization/deletion and initialized zero/None, native candidate vs installed 0.8.9",
+  "compiler_sha256": "61fe03a34de29630dcf0e8e45b84bad9df2659f56ef599f66e858a63053d8177",
+  "emitter_sha256": "482efa1f53ede9d43d48b6803319358d0f0f7f3ebf65d3cef26b1a6c11b5ac95",
+  "source_sha256": "9595d96e4cdb7495ba1472efafcb44e0d2b39e0af6232a6b44611b8332cb8aaa",
+  "checks": [
+    {
+      "mode": "public",
+      "commands": [
+        {
+          "command": [
+            "build/qbe-repair/compiler-global-guards",
+            "--unsafe",
+            "build/qbe-repair/global-initialization-public.lsl",
+            "build/qbe-repair/global-initialization",
+            "build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "build/qbe-repair/global-initialization"
+          ],
+          "returncode": 0,
+          "stdout": "True\n2\nTrue\nTrue\n5\nTrue\n0\nTrue\n42\nTrue\nNone\nTrue\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "build/qbe-repair/global-initialization-public.lsl",
+            "build/qbe-repair/global-initialization-baseline"
+          ],
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "build/qbe-repair/global-initialization-baseline"
+          ],
+          "returncode": 0,
+          "stdout": "True\n2\nTrue\nTrue\n5\nTrue\n0\nTrue\n42\nTrue\nNone\nTrue\n",
+          "stderr": ""
+        }
+      ],
+      "pass": true
+    },
+    {
+      "mode": "internal",
+      "commands": [
+        {
+          "command": [
+            "build/qbe-repair/compiler-global-guards",
+            "--unsafe",
+            "build/qbe-repair/global-initialization-internal.lsl",
+            "build/qbe-repair/global-initialization",
+            "build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "build/qbe-repair/global-initialization"
+          ],
+          "returncode": 0,
+          "stdout": "True\n2\nTrue\nTrue\n5\nTrue\n0\nTrue\n42\nTrue\nNone\nTrue\n",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "build/qbe-repair/global-initialization-internal.lsl",
+            "build/qbe-repair/global-initialization-baseline"
+          ],
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "build/qbe-repair/global-initialization-baseline"
+          ],
+          "returncode": 0,
+          "stdout": "True\n2\nTrue\nTrue\n5\nTrue\n0\nTrue\n42\nTrue\nNone\nTrue\n",
+          "stderr": ""
+        }
+      ],
+      "pass": true
+    }
+  ],
+  "all_pass": true,
+  "backend_sha256": "44c141c6ee0d0887c80111320fa2db80fe485f385cbf0a70dbfeee400754b26d",
+  "runtime_sha256": "6780bb856d07a9017e40a90931487b0905c58dbe30b1ee08bc1f8f1d3e0d691b",
+  "baseline_sha256": "f235b42d4998474c1bfee7eb02f17625bbc824f647f9ba33bdef8c20b0ff8696"
+}

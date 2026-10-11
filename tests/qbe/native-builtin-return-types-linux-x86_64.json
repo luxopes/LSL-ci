@@ -1,0 +1,899 @@
+{
+  "compiler_sha256": "4bd4f2d75baf32db05d8ba63f9bc8162525a84e078463a55aed6bf749de0cc96",
+  "backend_sha256": "ed0aed8ddc2c06fa42b03684a3d0153b5fbeb8f5d88dace22079fe2a575db071",
+  "baseline_sha256": "f235b42d4998474c1bfee7eb02f17625bbc824f647f9ba33bdef8c20b0ff8696",
+  "fixture_sha256": "019fde36201cc200faf69e29f23bc289ce634bb882e3bb37335a83029d22373a",
+  "checks": [
+    {
+      "abi": "public",
+      "compiler": "baseline",
+      "build": {
+        "command": [
+          "/home/antonin/.local/bin/lslc",
+          "/home/antonin/LSL-QBE-string-order/build/qbe-string-order/return-types/public.lsl",
+          "/home/antonin/LSL-QBE-string-order/build/qbe-string-order/return-types/baseline-public"
+        ],
+        "seconds": 0.560969179001404,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "execution": {
+        "command": [
+          "/home/antonin/LSL-QBE-string-order/build/qbe-string-order/return-types/baseline-public"
+        ],
+        "seconds": 0.00204483799461741,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "1 0\nInt Int\n1 0 Int Int\n1 0\nInt Int\n-22\nInt\n",
+        "stderr": ""
+      },
+      "matches_oracle": true,
+      "pass": true
+    },
+    {
+      "abi": "public",
+      "compiler": "native",
+      "build": {
+        "command": [
+          "/home/antonin/LSL-QBE-string-order/build/qbe-string-order/builtin-fixed",
+          "--unsafe",
+          "/home/antonin/LSL-QBE-string-order/build/qbe-string-order/return-types/public.lsl",
+          "/home/antonin/LSL-QBE-string-order/build/qbe-string-order/return-types/native-public",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+        ],
+        "seconds": 0.475521658998332,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "execution": {
+        "command": [
+          "/home/antonin/LSL-QBE-string-order/build/qbe-string-order/return-types/native-public"
+        ],
+        "seconds": 0.0020441610031411983,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "1 0\nInt Int\n1 0 Int Int\n1 0\nInt Int\n-22\nInt\n",
+        "stderr": ""
+      },
+      "matches_oracle": true,
+      "pass": true
+    },
+    {
+      "abi": "public",
+      "compiler": "before",
+      "build": {
+        "command": [
+          "/home/antonin/LSL-QBE-string-order/build/qbe-string-order/native-final",
+          "--unsafe",
+          "/home/antonin/LSL-QBE-string-order/build/qbe-string-order/return-types/public.lsl",
+          "/home/antonin/LSL-QBE-string-order/build/qbe-string-order/return-types/before-public",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+        ],
+        "seconds": 0.637825760000851,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "execution": {
+        "command": [
+          "/home/antonin/LSL-QBE-string-order/build/qbe-string-order/return-types/before-public"
+        ],
+        "seconds": 0.0068364049948286265,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "True False\nBool Bool\n1 0 Int Int\n1 0\nInt Int\n-22\nByteArray\n",
+        "stderr": ""
+      },
+      "matches_oracle": false,
+      "pass": true
+    },
+    {
+      "abi": "internal",
+      "compiler": "baseline",
+      "build": {
+        "command": [
+          "/home/antonin/.local/bin/lslc",
+          "/home/antonin/LSL-QBE-string-order/build/qbe-string-order/return-types/internal.lsl",
+          "/home/antonin/LSL-QBE-string-order/build/qbe-string-order/return-types/baseline-internal"
+        ],
+        "seconds": 0.5455418199999258,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "execution": {
+        "command": [
+          "/home/antonin/LSL-QBE-string-order/build/qbe-string-order/return-types/baseline-internal"
+        ],
+        "seconds": 0.0019364050021977164,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "1 0\nInt Int\n1 0 Int Int\n1 0\nInt Int\n-22\nInt\n",
+        "stderr": ""
+      },
+      "matches_oracle": true,
+      "pass": true
+    },
+    {
+      "abi": "internal",
+      "compiler": "native",
+      "build": {
+        "command": [
+          "/home/antonin/LSL-QBE-string-order/build/qbe-string-order/builtin-fixed",
+          "--unsafe",
+          "/home/antonin/LSL-QBE-string-order/build/qbe-string-order/return-types/internal.lsl",
+          "/home/antonin/LSL-QBE-string-order/build/qbe-string-order/return-types/native-internal",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+        ],
+        "seconds": 0.48719009300111793,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "execution": {
+        "command": [
+          "/home/antonin/LSL-QBE-string-order/build/qbe-string-order/return-types/native-internal"
+        ],
+        "seconds": 0.00203047800459899,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "1 0\nInt Int\n1 0 Int Int\n1 0\nInt Int\n-22\nInt\n",
+        "stderr": ""
+      },
+      "matches_oracle": true,
+      "pass": true
+    },
+    {
+      "abi": "internal",
+      "compiler": "before",
+      "build": {
+        "command": [
+          "/home/antonin/LSL-QBE-string-order/build/qbe-string-order/native-final",
+          "--unsafe",
+          "/home/antonin/LSL-QBE-string-order/build/qbe-string-order/return-types/internal.lsl",
+          "/home/antonin/LSL-QBE-string-order/build/qbe-string-order/return-types/before-internal",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+        ],
+        "seconds": 0.6017473720057751,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "execution": {
+        "command": [
+          "/home/antonin/LSL-QBE-string-order/build/qbe-string-order/return-types/before-internal"
+        ],
+        "seconds": 0.002705687002162449,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "True False\nBool Bool\n1 0 Int Int\n1 0\nInt Int\n-22\nByteArray\n",
+        "stderr": ""
+      },
+      "matches_oracle": false,
+      "pass": true
+    }
+  ],
+  "all_pass": true,
+  "source_base": "820a247 + HTTP transport fix + maintained descriptor fault injection lowering",
+  "fixes": {
+    "__lsl_raw_equal": "Bool -> Int; matches BUILTIN_RETURN_TYPES and legacy raw 0/1 scalar contract.",
+    "__lsl_fd_snapshot": "ByteArray -> Int; matches semantic special-case and io runtime address/negative errno contract."
+  },
+  "static_audit": {
+    "native_entries": 99,
+    "legacy_dispatch_names": 175,
+    "literal_builtin_arities": 161,
+    "uncovered_legacy_names": [],
+    "uncovered_arity_names": [],
+    "notes": [
+      "Name coverage is a static audit, not a proof of all runtime semantics.",
+      "__lsl_ffloordiv and __lsl_fmod lower through dynamic_stdlib definitions. Generated QBE call/fcall primitives are handled by prefixes.",
+      "clock is intercepted by the clock_text branch before NATIVE, preserving semantic String return.",
+      "__lsl_fd_snapshot has a semantic special case outside the immutable return map.",
+      "Unused extra __lsl_unbox_float entry says Float but runtime_unbox_dynamic_float yields raw IEEE bits; absent legacy dispatch, arity catalog, and stdlib/test uses. Reported as an out-of-scope private primitive caveat; unchanged."
+    ],
+    "return_descriptors": [
+      {
+        "name": "__lsl_box_bool",
+        "runtime": "box_bool",
+        "native_type": "Any",
+        "semantic_map_type": null,
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_box_int",
+        "runtime": "box_int",
+        "native_type": "Any",
+        "semantic_map_type": null,
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_box_none",
+        "runtime": "box_none",
+        "native_type": "Any",
+        "semantic_map_type": null,
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_byte_copy",
+        "runtime": "byte_copy",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_byte_zeros",
+        "runtime": "byte_array_zeros",
+        "native_type": "ByteArray",
+        "semantic_map_type": "ByteArray",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_capture",
+        "runtime": "capture",
+        "native_type": "String",
+        "semantic_map_type": "String",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_capture_clean",
+        "runtime": "capture_clean",
+        "native_type": "String",
+        "semantic_map_type": "String",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_checked_index",
+        "runtime": "checked_index",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_data_address",
+        "runtime": "data_address",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_fd_close",
+        "runtime": "fd_close",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_fd_connect",
+        "runtime": "fd_connect",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_fd_ioctl",
+        "runtime": "fd_ioctl",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_fd_mmap",
+        "runtime": "fd_mmap",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_fd_open",
+        "runtime": "fd_open",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_fd_read",
+        "runtime": "fd_read",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_fd_seek",
+        "runtime": "fd_seek",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_fd_snapshot",
+        "runtime": "fd_snapshot",
+        "native_type": "Int",
+        "semantic_map_type": null,
+        "semantic_special_case": "Int"
+      },
+      {
+        "name": "__lsl_fd_socket",
+        "runtime": "fd_socket",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_fd_write",
+        "runtime": "fd_write",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_float_accumulate",
+        "runtime": "float_accumulate",
+        "native_type": "Float",
+        "semantic_map_type": null,
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_float_candidate_bits",
+        "runtime": "float_candidate_bits",
+        "native_type": "Int",
+        "semantic_map_type": null,
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_float_from_bits",
+        "runtime": "float_new",
+        "native_type": "Float",
+        "semantic_map_type": "Float",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_float_from_int",
+        "runtime": "float_from_int",
+        "native_type": "Float",
+        "semantic_map_type": null,
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_float_to_int",
+        "runtime": "float_to_int",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_floatarray_bytes",
+        "runtime": "float_array_bytes",
+        "native_type": "String",
+        "semantic_map_type": "String",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_floatarray_from_bytes",
+        "runtime": "float_array_from_bytes",
+        "native_type": "FloatArray",
+        "semantic_map_type": "FloatArray",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_getenv",
+        "runtime": "getenv",
+        "native_type": "Any",
+        "semantic_map_type": null,
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_intern_table_mask",
+        "runtime": "intern_table_mask",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_is_heap",
+        "runtime": "is_heap_object",
+        "native_type": "Bool",
+        "semantic_map_type": null,
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_isatty",
+        "runtime": "isatty",
+        "native_type": "Bool",
+        "semantic_map_type": "Bool",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_mem_pack",
+        "runtime": "mem_pack",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_mem_unpack",
+        "runtime": "mem_unpack",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_mkdir_private",
+        "runtime": "mkdir_private",
+        "native_type": "Int",
+        "semantic_map_type": null,
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_monotonic",
+        "runtime": "clock",
+        "native_type": "Float",
+        "semantic_map_type": "Float",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_new_set",
+        "runtime": "list_new",
+        "native_type": "Set",
+        "semantic_map_type": "Set",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_object_table_mask",
+        "runtime": "object_table_mask",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_parse_literal_int",
+        "runtime": "parse_literal_int",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_pop_last",
+        "runtime": "list_pop_last",
+        "native_type": "Any",
+        "semantic_map_type": null,
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_raster_copy",
+        "runtime": "raster_copy",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_raster_fill",
+        "runtime": "raster_fill",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_raster_pack",
+        "runtime": "raster_pack",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_raw_equal",
+        "runtime": "equal_any",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_run",
+        "runtime": "run",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_run_clean",
+        "runtime": "run_clean",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_set_append",
+        "runtime": "list_append",
+        "native_type": "None",
+        "semantic_map_type": "None",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_set_store",
+        "runtime": "list_set",
+        "native_type": "None",
+        "semantic_map_type": "None",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_sleep",
+        "runtime": "sleep",
+        "native_type": "None",
+        "semantic_map_type": "None",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_stdin_eof",
+        "runtime": "stdin_eof",
+        "native_type": "Bool",
+        "semantic_map_type": "Bool",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_string_chars",
+        "runtime": "string_chars",
+        "native_type": "List",
+        "semantic_map_type": null,
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_syscall",
+        "runtime": "syscall",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_syscall6",
+        "runtime": "syscall6",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_test_fd_fault",
+        "runtime": "test_fd_fault",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_test_small_tables",
+        "runtime": "test_small_tables",
+        "native_type": "None",
+        "semantic_map_type": null,
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_text_byte",
+        "runtime": "text_byte",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_text_byte_length",
+        "runtime": "text_byte_length",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_text_byte_offset",
+        "runtime": "string_byte_offset",
+        "native_type": "Int",
+        "semantic_map_type": null,
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_text_digits",
+        "runtime": "text_digits",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_text_from_bytes",
+        "runtime": "text_from_bytes",
+        "native_type": "String",
+        "semantic_map_type": "String",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_text_piece",
+        "runtime": "text_piece",
+        "native_type": "String",
+        "semantic_map_type": "String",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_text_scan_digits",
+        "runtime": "text_scan_digits",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_text_split_byte",
+        "runtime": "text_split_byte",
+        "native_type": "List",
+        "semantic_map_type": "List",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_type_code",
+        "runtime": "type_code",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_unbox_bool",
+        "runtime": "unbox_dynamic_bool",
+        "native_type": "Bool",
+        "semantic_map_type": null,
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_unbox_float",
+        "runtime": "unbox_dynamic_float",
+        "native_type": "Float",
+        "semantic_map_type": null,
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_unbox_function",
+        "runtime": "unbox_dynamic_function",
+        "native_type": "Function",
+        "semantic_map_type": null,
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_unbox_int",
+        "runtime": "unbox_dynamic_int",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "__lsl_wall_time",
+        "runtime": "wall_time",
+        "native_type": "Float",
+        "semantic_map_type": "Float",
+        "semantic_special_case": null
+      },
+      {
+        "name": "appendfile",
+        "runtime": "appendfile",
+        "native_type": "None",
+        "semantic_map_type": null,
+        "semantic_special_case": null
+      },
+      {
+        "name": "capture",
+        "runtime": "capture",
+        "native_type": "String",
+        "semantic_map_type": "String",
+        "semantic_special_case": null
+      },
+      {
+        "name": "capture_status",
+        "runtime": "capture_status",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "capture_stderr",
+        "runtime": "capture_stderr",
+        "native_type": "String",
+        "semantic_map_type": "String",
+        "semantic_special_case": null
+      },
+      {
+        "name": "chr",
+        "runtime": "chr",
+        "native_type": "String",
+        "semantic_map_type": "String",
+        "semantic_special_case": null
+      },
+      {
+        "name": "clock",
+        "runtime": "clock",
+        "native_type": "Float",
+        "semantic_map_type": "String",
+        "semantic_special_case": null
+      },
+      {
+        "name": "cpu_count",
+        "runtime": "cpu_count",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "executable_path",
+        "runtime": "executable_path",
+        "native_type": "String",
+        "semantic_map_type": "String",
+        "semantic_special_case": null
+      },
+      {
+        "name": "exists",
+        "runtime": "exists",
+        "native_type": "Bool",
+        "semantic_map_type": "Bool",
+        "semantic_special_case": null
+      },
+      {
+        "name": "float_dot",
+        "runtime": "float_array_dot",
+        "native_type": "Float",
+        "semantic_map_type": "Float",
+        "semantic_special_case": null
+      },
+      {
+        "name": "float_fill",
+        "runtime": "float_array_fill",
+        "native_type": "None",
+        "semantic_map_type": null,
+        "semantic_special_case": null
+      },
+      {
+        "name": "float_sum",
+        "runtime": "float_array_sum",
+        "native_type": "Float",
+        "semantic_map_type": "Float",
+        "semantic_special_case": null
+      },
+      {
+        "name": "gc",
+        "runtime": "gc",
+        "native_type": "Int",
+        "semantic_map_type": null,
+        "semantic_special_case": null
+      },
+      {
+        "name": "input",
+        "runtime": "input",
+        "native_type": "String",
+        "semantic_map_type": "String",
+        "semantic_special_case": null
+      },
+      {
+        "name": "mkdir",
+        "runtime": "mkdir",
+        "native_type": "Int",
+        "semantic_map_type": null,
+        "semantic_special_case": null
+      },
+      {
+        "name": "monotonic",
+        "runtime": "clock",
+        "native_type": "Float",
+        "semantic_map_type": "Float",
+        "semantic_special_case": null
+      },
+      {
+        "name": "native_call",
+        "runtime": "native_call",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "native_close",
+        "runtime": "native_close",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "native_function",
+        "runtime": "native_function",
+        "native_type": "NativeFunction",
+        "semantic_map_type": null,
+        "semantic_special_case": null
+      },
+      {
+        "name": "native_name_equal",
+        "runtime": "native_name_equal",
+        "native_type": "Bool",
+        "semantic_map_type": "Bool",
+        "semantic_special_case": null
+      },
+      {
+        "name": "native_open",
+        "runtime": "native_open",
+        "native_type": "NativeLibrary",
+        "semantic_map_type": null,
+        "semantic_special_case": null
+      },
+      {
+        "name": "native_size",
+        "runtime": "native_size",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "native_u64",
+        "runtime": "native_u64",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "ord",
+        "runtime": "ord",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "readbytes",
+        "runtime": "readbytes",
+        "native_type": "ByteArray",
+        "semantic_map_type": "ByteArray",
+        "semantic_special_case": null
+      },
+      {
+        "name": "readfile",
+        "runtime": "readfile",
+        "native_type": "String",
+        "semantic_map_type": "String",
+        "semantic_special_case": null
+      },
+      {
+        "name": "rmdir",
+        "runtime": "rmdir",
+        "native_type": "Int",
+        "semantic_map_type": null,
+        "semantic_special_case": null
+      },
+      {
+        "name": "run",
+        "runtime": "run",
+        "native_type": "Int",
+        "semantic_map_type": "Int",
+        "semantic_special_case": null
+      },
+      {
+        "name": "unlink",
+        "runtime": "unlink",
+        "native_type": "Int",
+        "semantic_map_type": null,
+        "semantic_special_case": null
+      },
+      {
+        "name": "wall_time",
+        "runtime": "wall_time",
+        "native_type": "Float",
+        "semantic_map_type": null,
+        "semantic_special_case": null
+      },
+      {
+        "name": "writebytes",
+        "runtime": "writebytes",
+        "native_type": "None",
+        "semantic_map_type": null,
+        "semantic_special_case": null
+      },
+      {
+        "name": "writefile",
+        "runtime": "writefile",
+        "native_type": "None",
+        "semantic_map_type": null,
+        "semantic_special_case": null
+      }
+    ]
+  }
+}

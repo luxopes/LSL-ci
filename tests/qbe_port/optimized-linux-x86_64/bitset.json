@@ -1,0 +1,8 @@
+{
+  "cases": 636,
+  "complete": true,
+  "returncode": 0,
+  "stdout": "PASS bitset iteration\n",
+  "stderr": "",
+  "generated_source_sha256": "e86d33614ee622a1a4044ded158bd077127991b83114d5dd51332d6b17fbe84c"
+}

@@ -2,7 +2,7 @@
 
 LSL 0.6.6 je výkonnostní patch zaměřený na `for` a `rang` smyčky. Syntaxe,
 veřejné API i runtime ABI zůstávají kompatibilní s 0.6.5, takže dál platí
-[manuál 0.6.5](developer_guides/releases/0.6.5/README.md).
+[manuál 0.6.5](https://git.lux-ai.cz/LuxAI/LSL-Web/src/branch/main/public/releases/0.6.5/README.md).
 
 Compiler nově zahrnuje skryté přístupy k čítači, indexu a explicitnímu kroku
 do analýzy registrových lokálů. Složené přiřazení, například `total += value`,

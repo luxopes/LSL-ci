@@ -1,0 +1,13 @@
+10 10 -14 -14 4 -4
+4 4 -2 -2 -2 2
+-9223372036854775805 -9223372036854775805 0 0 9223372036854775805 -9223372036854775805
+-9223372036854775806 -9223372036854775806 2 2 9223372036854775804 -9223372036854775804
+5.5 5.5 -5.0 -5.0 -0.5 0.5
+abcd ababab ababab
+[1, 2, 3]
+True True False False
+[True, False] Bool Bool
+TypeError: numeric operands required
+TypeError: numeric operands required
+TypeError: numeric operands required
+8 7

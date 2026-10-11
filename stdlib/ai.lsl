@@ -1,4 +1,5 @@
-# AI 1.1.0: chat a průběžné SSE; samostatný balíček: lsl install aikit.
+# AI 1.1.0: chat, nástroje a průběžné SSE; samostatný balíček: lsl install aikit.
+load _ai_platform as platform
 # Použití balíčku v LSL 0.8.9: load aikit as ai; dokumentace: https://lsl.lux-ai.cz/#ai
 
 load http
@@ -442,7 +443,7 @@ end
 # vlastní dekodéry a zásobníky vnořených volání jsou oddělené podle vlákna.
 function _thread():
     unsafe:
-        return String(__lsl_syscall(186, 0, 0, 0, 0))
+        return String(platform.thread_id())
     end
 end
 

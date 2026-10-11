@@ -1,0 +1,7 @@
+{
+  "observed_before_final_selfhost": "One immediate 16 MiB linked-source limit error while using the preceding 8f9225a frontend to bootstrap the GC result fix; exact reproduction and five diagnostic probes did not repeat the error.",
+  "root_cause": "Not established; no fix claimed.",
+  "probe_warning": "Five probes were deliberately terminated after 1 second. They are not successful complete compilations.",
+  "later_evidence": "Current a34f4f6 sources complete two full self-host generations and 91/91 maintained language/output fixtures. One complete all-relative CLI self-compilation also succeeds and exactly matches the frontend fixed point (relative-cli-selfcompile.json).",
+  "scope": "Linux x86_64 host. These passing runs cannot prove absence of an intermittent failure."
+}

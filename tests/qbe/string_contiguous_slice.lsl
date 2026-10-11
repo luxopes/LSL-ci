@@ -1,0 +1,12 @@
+text = "aéЖ🙂z"
+print ">" + text[:] + "<"
+print ">" + text[1:4] + "<"
+print ">" + text[-4:-1] + "<"
+print ">" + text[-99:99] + "<"
+print ">" + text[4:1] + "<"
+print ">" + text[99:] + "<"
+print ">" + text[:0] + "<"
+print ">" + text[False:True] + "<"
+print ">" + text[2:] + "<"
+print ">" + text[:-2] + "<"
+print text[::1] == text[:]

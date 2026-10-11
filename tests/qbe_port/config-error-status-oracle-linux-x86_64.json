@@ -1,0 +1,46 @@
+{
+  "scope": "config type-error intentionally exits1; stdout exact and source provenance retained",
+  "commands": [
+    {
+      "name": "old configure type-error wrapper",
+      "command": [
+        "/home/antonin/.local/bin/lsl-configure",
+        "tests/config/type_error.lsl",
+        "tests/config/.type-error-control-183963.lsl"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "name": "old compile type-error wrapper",
+      "command": [
+        "/home/antonin/.local/bin/lslc",
+        "tests/config/.type-error-control-183963.lsl",
+        "build/qbe-audit/final/old-config-type-error"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "name": "old0.8.9 type-error evaluator",
+      "command": [
+        "build/qbe-audit/final/old-config-type-error"
+      ],
+      "returncode": 1,
+      "stdout": "Invalid option type service.port Int String declared in tests/config/type_error.lsl\n",
+      "stderr": ""
+    },
+    {
+      "name": "native type-error evaluator",
+      "command": [
+        "/tmp/lsl-test-183074/config-type-error-test"
+      ],
+      "returncode": 1,
+      "stdout": "Invalid option type service.port Int String declared in tests/config/type_error.lsl\n",
+      "stderr": ""
+    }
+  ],
+  "all_pass": true
+}

@@ -3,22 +3,11 @@
 
 load parser
 load diagnostics
+load target
+load host
 
 function dirname(path):
-    slash = -1
-    index = 0
-    while index < len(path):
-        if path[index] == "/":
-            slash = index
-        end
-        index += 1
-    end
-    if slash < 0:
-        return "."
-    elif slash == 0:
-        return "/"
-    end
-    return path[0:slash]
+    return host.dirname(path)
 end
 
 function module_alias(name):
@@ -35,83 +24,16 @@ function module_prefix(index):
 end
 
 function builtin_module(name):
-    builtins = "|_random_hash|ai|bigint|config|configure|cuda|env|fd|http|httpserver|json|lconf|lux|luxos|math|native|os|plugin|process|random|requests|sandbox|system|tensor|time|tui|unixsock|"
-    return "|" + String(name) + "|" in builtins
+    builtins = "|_platform|_platform_linux_x86_64|_random_hash|ai|bigint|config|configure|cuda|env|fd|http|httpserver|json|lconf|lux|luxos|math|native|os|plugin|process|random|requests|sandbox|system|tensor|time|tui|unixsock|"
+    return "|" + String(name) + "|" in builtins or target.builtin_provider(name)
 end
 
 function module_path_with_home(name, owner_path, home):
-    relative_name = name.replace(".", "/") + ".lsl"
-    standard_path = "stdlib/" + relative_name
-    executable = executable_path()
-    binary_directory = dirname(executable)
-    # Installed/repository resources adjacent to the compiler are trusted ahead
-    # of the source directory, so local json.lsl/config.lsl files cannot shadow
-    # security-critical built-in modules.
-    root_candidate = binary_directory + "/" + standard_path
-    if exists(root_candidate):
-        return root_candidate
-    end
-    root_candidate = dirname(dirname(dirname(executable))) + "/" + standard_path
-    if exists(root_candidate):
-        return root_candidate
-    end
-    prefix = dirname(binary_directory)
-    prefix_bin = prefix + "/bin"
-    if prefix == "/":
-        prefix_bin = "/bin"
-    end
-    installed_layout = binary_directory == prefix_bin
-    installed_path = prefix + "/lib/lsl/" + standard_path
-    if installed_layout:
-        if exists(installed_path) or builtin_module(name):
-            # A missing built-in fails at its trusted prefix path. Local/user
-            # modules remain available for names outside the built-in set.
-            return installed_path
-        end
-    end
-    local_path = dirname(owner_path) + "/" + relative_name
-    if exists(local_path):
-        return local_path
-    end
-    # Compiler-focused tests live under tests/, while implementation modules stay
-    # exclusively in compiler/pure/. Prefer a path rooted beside the compiler.
-    test_owner = owner_path.startswith("tests/") or owner_path.find("/tests/") >= 0
-    compiler_path = dirname(dirname(dirname(executable))) + "/compiler/pure/" + relative_name
-    if test_owner and exists(compiler_path):
-        return compiler_path
-    end
-    compiler_path = "compiler/pure/" + relative_name
-    if test_owner and exists(compiler_path):
-        return compiler_path
-    end
-    # Development compiler copied outside the tree: cwd is an explicit fallback,
-    # never a precedence path for installed binaries.
-    if not installed_layout:
-        for extension_root in [binary_directory + "/extensions/", dirname(dirname(dirname(executable))) + "/extensions/", "extensions/"]:
-            if exists(extension_root + relative_name):
-                return extension_root + relative_name
-            end
-        end
-    end
-    if exists(standard_path):
-        return standard_path
-    end
-    # Registry libraries are user-owned and never shadow built-in modules.
-    if home != None and home != "":
-        user_path = home + "/.local/lib/lsl/stdlib/" + relative_name
-        if exists(user_path):
-            return user_path
-        end
-    end
-    # Preserve the deterministic missing-file diagnostic path.
-    if installed_layout:
-        return installed_path
-    end
-    return standard_path
+    return host.module_path(name, owner_path, home, builtin_module(name))
 end
 
 function module_path(name, owner_path):
-    return module_path_with_home(name, owner_path, __lsl_getenv("HOME"))
+    return module_path_with_home(name, owner_path, host.home())
 end
 
 function private_class(statement):
@@ -160,6 +82,10 @@ function function_names(program):
 end
 
 function scoped_names(names, parameters, body):
+    # An empty import/name map cannot contain a shadowed binding.
+    if len(names) == 0:
+        return {}
+    end
     result = Dictionary(names)
     for parameter in parameters:
         if parameter in result:
@@ -603,6 +529,11 @@ end
 # of the module to its prefixed form, so a shared alias can pick the module
 # that defines a member.
 function collect_module(name, owner_path, cache, output, source_budget, internal_graph, owner_source, import_statement):
+    # Platforma knihoven patří cíli překladu; bootstrap fasáda není host detekce.
+    providers = source_budget[1]
+    if name in providers:
+        name = providers[name]
+    end
     path = module_path(name, owner_path)
     if path in cache:
         return cache[path]
@@ -620,16 +551,21 @@ function collect_module(name, owner_path, cache, output, source_budget, internal
         call import_failure(name, path, owner_path, owner_source, import_statement, False)
     end
     source_bytes = __lsl_text_byte_length(source)
-    if source_bytes > 16777216 - source_budget[0]:
+    # Byte counts have a fixed scalar representation across the internal ABI.
+    # Keep platform-provider metadata in the surrounding heterogeneous pair.
+    counter = IntArray(source_budget[0])
+    if source_bytes > 16777216 - counter[0]:
         Error(CompileError: "linked source exceeds the 16 MiB compiler limit: " + path)
     end
-    source_budget[0] += source_bytes
+    counter[0] += source_bytes
     program = parser.parse(path, source)
     call annotate_statements(program, path)
     call mark_trusted(program, builtin_module(name))
     internal_module = False
     if internal_graph:
-        internal_module = path.startswith("compiler/pure/") or path.find("/compiler/pure/") >= 0
+        # Samostatné projekty (např. backend LuxIR) se označí stejnou značkou
+        # jako vstupní zdroj; mimo důvěryhodný graf značka nic neznamená.
+        internal_module = path.startswith("compiler/pure/") or path.find("/compiler/pure/") >= 0 or String(source).startswith("# lsl: internal-abi" + chr(10))
     end
     call mark_internal_abi(program, internal_module)
     prefix = module_prefix(len(cache))
@@ -691,7 +627,11 @@ function namespace_prefix(entries, member):
     return entries[0][0]
 end
 
-function link_mode_options(path, source, safety_mode, internal_graph):
+function link_mode_options(path, source, safety_mode, internal_graph, platform_module=""):
+    if platform_module == "":
+        platform_module = target.resolve(host.target_name())["platform_module"]
+    end
+    providers = target.modules_for_platform(platform_module)
     checked_source = String(source)
     source_bytes = __lsl_text_byte_length(checked_source)
     if source_bytes > 16777216:
@@ -705,8 +645,11 @@ function link_mode_options(path, source, safety_mode, internal_graph):
     linked = []
     namespaces = {}
     imported_names = {}
-    source_budget = IntArray()
-    source_budget.append(source_bytes)
+    source_counter = IntArray()
+    source_counter.append(source_bytes)
+    source_budget = []
+    source_budget.append(source_counter)
+    source_budget.append(providers)
     for statement in program:
         if statement["kind"] == "load":
             dependency = statement["module"]

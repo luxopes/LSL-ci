@@ -1,0 +1,598 @@
+{
+  "complete": true,
+  "scope": "Tracked runtime leaf atomics and unchanged low-setup runtime controls; sequential old/new checks",
+  "source_sha256": {
+    "compiler/pure/qbe_emit.lsl": "3b1f3eb86f38717e4d7cad1b5aa779d7fd0655d4f443f41fb426f163c8f4232d",
+    "compiler/pure/thread_runtime_linux_x86_64.lsl": "48d50da62b8ab3b164c5426a7fd4143f16efdf786528a3869897600e5a9bb517"
+  },
+  "seed_frontend_sha256": "489d46b56766d85071b23017c7bf31313fc5881efaf81223a5b17cf3e8b852ad",
+  "backend_sha256": "7e3d6233d2e8242a32909c5bcdb8468ce19164c376fe4689aef092476f4f6c18",
+  "old_compiler_sha256": "f235b42d4998474c1bfee7eb02f17625bbc824f647f9ba33bdef8c20b0ff8696",
+  "seed_runtime_sha256": "f46a1c9d8e7f3eb7d87407954453c840c5c7761acab799993efe8de4e2c1a05d",
+  "steps": [
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "compiler/pure/qbe_runtime_dump.lsl",
+        "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/runtime-dump",
+        "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 8.35796558099537,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": "",
+      "timed_out": false
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/runtime-dump",
+        "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/runtime"
+      ],
+      "seconds": 0.02747276999434689,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": "",
+      "timed_out": false
+    },
+    {
+      "command": [
+        "python3",
+        "tools/qbe/runtime_object.py",
+        "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/runtime"
+      ],
+      "seconds": 0.07486090400198009,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": "",
+      "timed_out": false
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "compiler/pure/lslc_qbe.lsl",
+        "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/compiler",
+        "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 7.396408341002825,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": "",
+      "timed_out": false
+    }
+  ],
+  "cases": [
+    {
+      "source": "tests/qbe/atomic_native.lsl",
+      "source_sha256": "82e8e6eb894a1f683f513813378ac4c0d9566b2d700ba380887722424c1686ba",
+      "expected_stdout": "native atomic operations passed\n",
+      "candidate": {
+        "build": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/compiler",
+            "tests/qbe/atomic_native.lsl",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/qbe-atomic_native-candidate",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "seconds": 0.6717665200048941,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": "",
+          "timed_out": false
+        },
+        "binary_sha256": "824d82de2c09b99bcfb777e6ec7f3c608b113e3efc395e0a87e432eff88b0088",
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/qbe-atomic_native-candidate"
+          ],
+          "seconds": 0.001630853999813553,
+          "returncode": 0,
+          "stdout": "native atomic operations passed\n",
+          "stderr": "",
+          "timed_out": false
+        },
+        "pass": true
+      },
+      "v089": {
+        "build": {
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "tests/qbe/atomic_native.lsl",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/qbe-atomic_native-v089"
+          ],
+          "seconds": 0.5535631819948321,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": "",
+          "timed_out": false
+        },
+        "binary_sha256": "63f1642e283eedc6916ffacf870add860cc0949d54324c9f6b18e5d948dbd795",
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/qbe-atomic_native-v089"
+          ],
+          "seconds": 0.0013285979948705062,
+          "returncode": 0,
+          "stdout": "native atomic operations passed\n",
+          "stderr": "",
+          "timed_out": false
+        },
+        "pass": true
+      }
+    },
+    {
+      "source": "tests/atomic_conformance.lsl",
+      "source_sha256": "e61c9d1c45d44f2fcdd8a56430ff760400c75efe7e9471d3c7e52c5bca4ff88f",
+      "expected_stdout": "10 15\n15 100\n100 200\n200 200\n200\n",
+      "candidate": {
+        "build": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/compiler",
+            "tests/atomic_conformance.lsl",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/atomic_conformance-candidate",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "seconds": 0.5028581590013346,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": "",
+          "timed_out": false
+        },
+        "binary_sha256": "a9b743cc874724424dbf9f9a017e026e3ab77d1d7be5388783344fc5e14d4a7d",
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/atomic_conformance-candidate"
+          ],
+          "seconds": 0.0006729589949827641,
+          "returncode": 0,
+          "stdout": "10 15\n15 100\n100 200\n200 200\n200\n",
+          "stderr": "",
+          "timed_out": false
+        },
+        "pass": true
+      },
+      "v089": {
+        "build": {
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "tests/atomic_conformance.lsl",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/atomic_conformance-v089"
+          ],
+          "seconds": 0.5306507459972636,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": "",
+          "timed_out": false
+        },
+        "binary_sha256": "165ae1c75f2e3e740b27e8146d8395326f23d0eb1654151ebf231cf7ac6602ae",
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/atomic_conformance-v089"
+          ],
+          "seconds": 0.0006740759999956936,
+          "returncode": 0,
+          "stdout": "10 15\n15 100\n100 200\n200 200\n200\n",
+          "stderr": "",
+          "timed_out": false
+        },
+        "pass": true
+      }
+    },
+    {
+      "source": "tests/time_conformance.lsl",
+      "source_sha256": "468b92b95cd2bce67fcc889a2c2298fc00833ad5a70e24f0a6a1f4af4180385f",
+      "expected_stdout": "True True True\nTrue\nTrue\nValueError: sleep duration cannot be negative\nValueError: invalid sleep duration\n",
+      "candidate": {
+        "build": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/compiler",
+            "tests/time_conformance.lsl",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/time_conformance-candidate",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "seconds": 0.634358778996102,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": "",
+          "timed_out": false
+        },
+        "binary_sha256": "c688d307138d1f1b35a4f76c2a65891d293bcf461b046a7eff18548cc1f78407",
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/time_conformance-candidate"
+          ],
+          "seconds": 0.005135153005539905,
+          "returncode": 0,
+          "stdout": "True True True\nTrue\nTrue\nValueError: sleep duration cannot be negative\nValueError: invalid sleep duration\n",
+          "stderr": "",
+          "timed_out": false
+        },
+        "pass": true
+      },
+      "v089": {
+        "build": {
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "tests/time_conformance.lsl",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/time_conformance-v089"
+          ],
+          "seconds": 0.5443325659944094,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": "",
+          "timed_out": false
+        },
+        "binary_sha256": "8612fcfd2b45a84748a4d32b538cce7cae9f42b77f039800778c66b1d623bcd6",
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/time_conformance-v089"
+          ],
+          "seconds": 0.0030774039987591095,
+          "returncode": 0,
+          "stdout": "True True True\nTrue\nTrue\nValueError: sleep duration cannot be negative\nValueError: invalid sleep duration\n",
+          "stderr": "",
+          "timed_out": false
+        },
+        "pass": true
+      }
+    },
+    {
+      "source": "tests/gc_raw_buffer_conformance.lsl",
+      "source_sha256": "44ba48fa4b4283537089e326f7e121f3251b3d59284837566ac6395c9d32fa30",
+      "expected_stdout": "raw backing pointers are not traced or finalized as objects\n",
+      "candidate": {
+        "build": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/compiler",
+            "tests/gc_raw_buffer_conformance.lsl",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/gc_raw_buffer_conformance-candidate",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "seconds": 0.6373905849977746,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": "",
+          "timed_out": false
+        },
+        "binary_sha256": "2da54ac2af4db782fe5507cdd92a73153d40ade75aa55c179d89df0773d6264a",
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/gc_raw_buffer_conformance-candidate"
+          ],
+          "seconds": 0.002652652001415845,
+          "returncode": 0,
+          "stdout": "raw backing pointers are not traced or finalized as objects\n",
+          "stderr": "",
+          "timed_out": false
+        },
+        "pass": true
+      },
+      "v089": {
+        "build": {
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "tests/gc_raw_buffer_conformance.lsl",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/gc_raw_buffer_conformance-v089"
+          ],
+          "seconds": 0.5445610099995974,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": "",
+          "timed_out": false
+        },
+        "binary_sha256": "851484482f83a66856837a6ad34e42de7bf4e5301c6b71cd89794149c4c4cf17",
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/gc_raw_buffer_conformance-v089"
+          ],
+          "seconds": 0.002475203997164499,
+          "returncode": 0,
+          "stdout": "raw backing pointers are not traced or finalized as objects\n",
+          "stderr": "",
+          "timed_out": false
+        },
+        "pass": true
+      }
+    },
+    {
+      "source": "tests/gc_stress_conformance.lsl",
+      "source_sha256": "d3871d358cb923f872f433dd72c2084d4f5991ec43e0daf557c3e049be20eed5",
+      "expected_stdout": "10000 0 9999 True\nTrue\n3000 2999\nTrue\n10000 9999\n0 117 40 424242 5000\n",
+      "candidate": {
+        "build": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/compiler",
+            "tests/gc_stress_conformance.lsl",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/gc_stress_conformance-candidate",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "seconds": 0.6673436400014907,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": "",
+          "timed_out": false
+        },
+        "binary_sha256": "7312c74d248d36fb9bc32b59477e6fe898b63ddb1e495749883fd038445492fc",
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/gc_stress_conformance-candidate"
+          ],
+          "seconds": 0.03405147200101055,
+          "returncode": 0,
+          "stdout": "10000 0 9999 True\nTrue\n3000 2999\nTrue\n10000 9999\n0 117 40 424242 5000\n",
+          "stderr": "",
+          "timed_out": false
+        },
+        "pass": true
+      },
+      "v089": {
+        "build": {
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "tests/gc_stress_conformance.lsl",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/gc_stress_conformance-v089"
+          ],
+          "seconds": 0.554372295999201,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": "",
+          "timed_out": false
+        },
+        "binary_sha256": "dc2a547604c577f8189d6f11394fcfd909369a6efb4f155eb66da6ff63e922ee",
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/gc_stress_conformance-v089"
+          ],
+          "seconds": 0.0402639599997201,
+          "returncode": 0,
+          "stdout": "10000 0 9999 True\nTrue\n3000 2999\nTrue\n10000 9999\n0 117 40 424242 5000\n",
+          "stderr": "",
+          "timed_out": false
+        },
+        "pass": true
+      }
+    },
+    {
+      "source": "tests/automatic_gc_threads_conformance.lsl",
+      "source_sha256": "06b449d53370e94382427d90293698a8de7a46c586698c1a4cf32aae681edeea",
+      "expected_stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+      "candidate": {
+        "build": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/compiler",
+            "tests/automatic_gc_threads_conformance.lsl",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/automatic_gc_threads_conformance-candidate",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "seconds": 0.6676848519928171,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": "",
+          "timed_out": false
+        },
+        "binary_sha256": "c8de01cdbbe28054dc7b45446c752f19de5d117398062b8bd6a078fe7e6da685",
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/automatic_gc_threads_conformance-candidate"
+          ],
+          "seconds": 0.4772547889951966,
+          "returncode": 0,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "timed_out": false
+        },
+        "pass": true
+      },
+      "v089": {
+        "build": {
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "tests/automatic_gc_threads_conformance.lsl",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/automatic_gc_threads_conformance-v089"
+          ],
+          "seconds": 0.5542588059979607,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": "",
+          "timed_out": false
+        },
+        "binary_sha256": "1b3d7633051a0d19828af51b74f73272f8393fb11465bae6cdd12badb9b47ad1",
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/automatic_gc_threads_conformance-v089"
+          ],
+          "seconds": 0.5767846750022727,
+          "returncode": 0,
+          "stdout": "child done\nautomatic GC while joining and during worker process IO passed\n",
+          "stderr": "",
+          "timed_out": false
+        },
+        "pass": true
+      }
+    },
+    {
+      "source": "tests/thread_conformance.lsl",
+      "source_sha256": "12ead9e4a9791aaff3a2478143231fd7b8620418f883d767ce7407ddae9e601a",
+      "expected_stdout": "True Int\n0 0 0 0\n200000\n0 0\n200002\n",
+      "candidate": {
+        "build": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/compiler",
+            "tests/thread_conformance.lsl",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/thread_conformance-candidate",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "seconds": 0.5135517259986955,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": "",
+          "timed_out": false
+        },
+        "binary_sha256": "0248218f1788da964305f9ac43ca363f52db0089a2442d08566f0481ec4ef9cc",
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/thread_conformance-candidate"
+          ],
+          "seconds": 0.02563721100159455,
+          "returncode": 0,
+          "stdout": "True Int\n0 0 0 0\n200000\n0 0\n200002\n",
+          "stderr": "",
+          "timed_out": false
+        },
+        "pass": true
+      },
+      "v089": {
+        "build": {
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "tests/thread_conformance.lsl",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/thread_conformance-v089"
+          ],
+          "seconds": 0.6434442190002301,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": "",
+          "timed_out": false
+        },
+        "binary_sha256": "aa6b85e82476645b8aa265a9b59a281e12e50c25b21d59d149263ec26841e10c",
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/thread_conformance-v089"
+          ],
+          "seconds": 0.03802608499972848,
+          "returncode": 0,
+          "stdout": "True Int\n0 0 0 0\n200000\n0 0\n200002\n",
+          "stderr": "",
+          "timed_out": false
+        },
+        "pass": true
+      }
+    },
+    {
+      "source": "tests/thread_reuse_conformance.lsl",
+      "source_sha256": "bfa2978595936aab9b04035c0328d946abba9a81efd49e4f9209fcffd163044a",
+      "expected_stdout": "0\n0\n2\n126\n",
+      "candidate": {
+        "build": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/compiler",
+            "tests/thread_reuse_conformance.lsl",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/thread_reuse_conformance-candidate",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "seconds": 0.4951937759979046,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": "",
+          "timed_out": false
+        },
+        "binary_sha256": "c34e58b8513c8fd7679d4e23edd35703cf9980d9d74962bebd5273d7789b2008",
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/thread_reuse_conformance-candidate"
+          ],
+          "seconds": 0.00390144999983022,
+          "returncode": 0,
+          "stdout": "0\n0\n2\n126\n",
+          "stderr": "",
+          "timed_out": false
+        },
+        "pass": true
+      },
+      "v089": {
+        "build": {
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "tests/thread_reuse_conformance.lsl",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/thread_reuse_conformance-v089"
+          ],
+          "seconds": 0.5389657170017017,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": "",
+          "timed_out": false
+        },
+        "binary_sha256": "c08b77ee37b5a02cfe8aefbfcb4b905891bdb43dd590e36ce9b99afdd3d427ab",
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/thread_reuse_conformance-v089"
+          ],
+          "seconds": 0.011839268998301122,
+          "returncode": 0,
+          "stdout": "0\n0\n2\n126\n",
+          "stderr": "",
+          "timed_out": false
+        },
+        "pass": true
+      }
+    },
+    {
+      "source": "tests/security_runtime_conformance.lsl",
+      "source_sha256": "995c180dc06a2e85ac999860e0572552e8f196be7ec288dd9953915546394f19",
+      "expected_stdout": "1 65 True\nTrue True\nTrue True True 7\n-22 -22\n-22 -22\n-22 -22\n126\nTrue\nTrue\n0 0 False 0 -22\nTrue\nTrue True -22\n-22 -22 -22 -1\n0 -1 True\n0 0 0 0\n1 1.0\nTrue\n<Function> -1\nTrue True True\nTrue\n1 -22\n[[...]] {'self': {...}}\nababab -a-b-\n[1, 1, 2, 3, 4, 5]\nTrue False\n",
+      "candidate": {
+        "build": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/compiler",
+            "tests/security_runtime_conformance.lsl",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/security_runtime_conformance-candidate",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "seconds": 1.1860384200044791,
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "LSL runtime error: CompileError: QBE unknown variable: native_size\n",
+          "timed_out": false
+        },
+        "pass": false
+      },
+      "v089": {
+        "build": {
+          "command": [
+            "/home/antonin/.local/bin/lslc",
+            "tests/security_runtime_conformance.lsl",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/security_runtime_conformance-v089"
+          ],
+          "seconds": 0.805224443996849,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": "",
+          "timed_out": false
+        },
+        "binary_sha256": "e1e09df62db73aecd1a824936523c94aa82f54e6cde16a412a673213bfe8e923",
+        "execution": {
+          "command": [
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/security_runtime_conformance-v089",
+            "/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/fixtures"
+          ],
+          "seconds": 0.005285449005896226,
+          "returncode": 0,
+          "stdout": "1 65 True\nTrue True\nTrue True True 7\n-22 -22\n-22 -22\n-22 -22\n126\nTrue\nTrue\n0 0 False 0 -22\nTrue\nTrue True -22\n-22 -22 -22 -1\n0 -1 True\n0 0 0 0\n1 1.0\nTrue\n<Function> -1\nTrue True True\nTrue\n1 -22\n[[...]] {'self': {...}}\nababab -a-b-\n[1, 1, 2, 3, 4, 5]\nTrue False\n",
+          "stderr": "",
+          "timed_out": false
+        },
+        "pass": true
+      }
+    }
+  ],
+  "runtime_sha256": "6780bb856d07a9017e40a90931487b0905c58dbe30b1ee08bc1f8f1d3e0d691b",
+  "runtime_assembly_sha256": "56d9c4ff8d592ecbf6ce55e327d81309a248a2f56d3fb793fbaebc458e98cd4a",
+  "compiler_sha256": "5fe211f0cd98a953b056d09400e3999ae914f569a28a15ce8c4217f690bab531",
+  "all_pass": false,
+  "production_commit": "364653095f91cad7ce9b7a4d905347c526c99ac0",
+  "base_commit": "a6f54a5",
+  "integration_dependency": "External global-storage fix e22f8a26 cherry-picked as fb7b969; atomic production commit itself has no global-store or comprehension edits.",
+  "owned_pass": true,
+  "known_remaining": "security_runtime_conformance oldPASS/new compileFAIL QBE unknown variable native_size; coordinator owns native catalog continuation.",
+  "runtime_recipe": [
+    "FRONTEND compiler/pure/qbe_runtime_dump.lsl DUMP BACKEND",
+    "DUMP PREFIX",
+    "python3 tools/qbe/runtime_object.py PREFIX"
+  ],
+  "native_leaf_disassembly": {
+    "atomic_add": "\n/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/runtime.o:     file format elf64-x86-64\n\n\nDisassembly of section .text:\n\n00000000000080e9 <runtime_atomic_add>:\n    80e9:\t48 89 f0             \tmov    %rsi,%rax\n    80ec:\t4d 31 d2             \txor    %r10,%r10\n    80ef:\tf0 4a 0f c1 04 17    \tlock xadd %rax,(%rdi,%r10,1)\n    80f5:\tc3                   \tret\n",
+    "atomic_xchg": "\n/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/runtime.o:     file format elf64-x86-64\n\n\nDisassembly of section .text:\n\n00000000000080f6 <runtime_atomic_xchg>:\n    80f6:\t48 89 f0             \tmov    %rsi,%rax\n    80f9:\t4d 31 d2             \txor    %r10,%r10\n    80fc:\tf0 4a 87 04 17       \tlock xchg %rax,(%rdi,%r10,1)\n    8101:\tc3                   \tret\n",
+    "atomic_cas": "\n/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/runtime.o:     file format elf64-x86-64\n\n\nDisassembly of section .text:\n\n0000000000008102 <runtime_atomic_cas>:\n    8102:\t48 89 f0             \tmov    %rsi,%rax\n    8105:\t4d 31 d2             \txor    %r10,%r10\n    8108:\tf0 4a 0f b1 14 17    \tlock cmpxchg %rdx,(%rdi,%r10,1)\n    810e:\tc3                   \tret\n",
+    "atomic_pause": "\n/home/antonin/LSL-QBE-runtime-catalog/build/qbe-runtime-catalog/runtime.o:     file format elf64-x86-64\n\n\nDisassembly of section .text:\n\n000000000000810f <runtime_atomic_pause>:\n    810f:\tf3 90                \tpause\n    8111:\t48 31 c0             \txor    %rax,%rax\n    8114:\tc3                   \tret\n"
+  },
+  "runner_sha256": "485f0f482044eb1ccd91317265f7bc510b1b55162b693be8af5fa508ac3914a0"
+}

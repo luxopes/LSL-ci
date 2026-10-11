@@ -1,0 +1,955 @@
+{
+  "scope": "Per-lexical-scope recoverable validation lookup gating",
+  "seed_sha256": "d26a3b71df3b643aed58264e3eb8bb03360c468da41d351117f151142cc94f32",
+  "backend_sha256": "38ed1e11b3f76e4f3da8cfdeb5085cc65cff325a0992e49d4496c0bfe6d230c9",
+  "common_sha256": "ca5306deaf8612930f7648df9f5540faba69de2c78a9fa604b29fdded1452418",
+  "commands": [
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "--unsafe",
+        "/home/antonin/LSL-QBE-scoped-validation/compiler/pure/.scoped-validation-u6w8qq42.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/baseline-dump",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 7.093182822995004,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "compile baseline diagnostic emitter"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "--unsafe",
+        "/home/antonin/LSL-QBE-scoped-validation/compiler/pure/.scoped-validation-u6w8qq42.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/candidate-dump",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 7.149505344998033,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "compile candidate diagnostic emitter"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "--unsafe",
+        "compiler/pure/lslc_qbe.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/candidate",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 7.094367187004536,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "compile candidate frontend"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/baseline-dump",
+        "tests/compiler/scalar_smoke.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/0-public-baseline.ssa",
+        "public"
+      ],
+      "seconds": 0.4019717379997019,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA baseline public tests/compiler/scalar_smoke.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/candidate-dump",
+        "tests/compiler/scalar_smoke.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/0-public-candidate.ssa",
+        "public"
+      ],
+      "seconds": 0.39990162000322016,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA candidate public tests/compiler/scalar_smoke.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/baseline-dump",
+        "tests/compiler/scalar_smoke.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/0-internal-baseline.ssa",
+        "internal"
+      ],
+      "seconds": 0.4036450240018894,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA baseline internal tests/compiler/scalar_smoke.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/candidate-dump",
+        "tests/compiler/scalar_smoke.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/0-internal-candidate.ssa",
+        "internal"
+      ],
+      "seconds": 0.40329405500233406,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA candidate internal tests/compiler/scalar_smoke.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/baseline-dump",
+        "tests/safe_recovery_conformance.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/1-public-baseline.ssa",
+        "public"
+      ],
+      "seconds": 0.563861034999718,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA baseline public tests/safe_recovery_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/candidate-dump",
+        "tests/safe_recovery_conformance.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/1-public-candidate.ssa",
+        "public"
+      ],
+      "seconds": 0.5426334849980776,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA candidate public tests/safe_recovery_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/baseline-dump",
+        "tests/safe_recovery_conformance.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/1-internal-baseline.ssa",
+        "internal"
+      ],
+      "seconds": 0.5508527679994586,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA baseline internal tests/safe_recovery_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/candidate-dump",
+        "tests/safe_recovery_conformance.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/1-internal-candidate.ssa",
+        "internal"
+      ],
+      "seconds": 0.5345368589987629,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA candidate internal tests/safe_recovery_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/baseline-dump",
+        "tests/runtime_error_conformance.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/2-public-baseline.ssa",
+        "public"
+      ],
+      "seconds": 0.49593799500144087,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA baseline public tests/runtime_error_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/candidate-dump",
+        "tests/runtime_error_conformance.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/2-public-candidate.ssa",
+        "public"
+      ],
+      "seconds": 0.49637144499865826,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA candidate public tests/runtime_error_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/baseline-dump",
+        "tests/runtime_error_conformance.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/2-internal-baseline.ssa",
+        "internal"
+      ],
+      "seconds": 0.4912596680005663,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA baseline internal tests/runtime_error_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/candidate-dump",
+        "tests/runtime_error_conformance.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/2-internal-candidate.ssa",
+        "internal"
+      ],
+      "seconds": 0.48488117499800865,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA candidate internal tests/runtime_error_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/baseline-dump",
+        "tests/class_method_return_conformance.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/3-public-baseline.ssa",
+        "public"
+      ],
+      "seconds": 0.5654038579959888,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA baseline public tests/class_method_return_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/candidate-dump",
+        "tests/class_method_return_conformance.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/3-public-candidate.ssa",
+        "public"
+      ],
+      "seconds": 0.5718685379979433,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA candidate public tests/class_method_return_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/baseline-dump",
+        "tests/class_method_return_conformance.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/3-internal-baseline.ssa",
+        "internal"
+      ],
+      "seconds": 0.49882567200256744,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA baseline internal tests/class_method_return_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/candidate-dump",
+        "tests/class_method_return_conformance.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/3-internal-candidate.ssa",
+        "internal"
+      ],
+      "seconds": 0.4676060999991023,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA candidate internal tests/class_method_return_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/baseline-dump",
+        "tests/dynamic_method_boundary_conformance.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/4-public-baseline.ssa",
+        "public"
+      ],
+      "seconds": 0.6603763839957537,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA baseline public tests/dynamic_method_boundary_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/candidate-dump",
+        "tests/dynamic_method_boundary_conformance.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/4-public-candidate.ssa",
+        "public"
+      ],
+      "seconds": 0.6258712420021766,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA candidate public tests/dynamic_method_boundary_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/baseline-dump",
+        "tests/dynamic_method_boundary_conformance.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/4-internal-baseline.ssa",
+        "internal"
+      ],
+      "seconds": 0.5688158320044749,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA baseline internal tests/dynamic_method_boundary_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/candidate-dump",
+        "tests/dynamic_method_boundary_conformance.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/4-internal-candidate.ssa",
+        "internal"
+      ],
+      "seconds": 0.5712577629965381,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA candidate internal tests/dynamic_method_boundary_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/baseline-dump",
+        "tests/qbe/scoped_validation_errors.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/5-public-baseline.ssa",
+        "public"
+      ],
+      "seconds": 0.5541522810017341,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA baseline public tests/qbe/scoped_validation_errors.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/candidate-dump",
+        "tests/qbe/scoped_validation_errors.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/5-public-candidate.ssa",
+        "public"
+      ],
+      "seconds": 0.55205368600582,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA candidate public tests/qbe/scoped_validation_errors.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/baseline-dump",
+        "tests/qbe/scoped_validation_errors.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/5-internal-baseline.ssa",
+        "internal"
+      ],
+      "seconds": 0.4878562599988072,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA baseline internal tests/qbe/scoped_validation_errors.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/candidate-dump",
+        "tests/qbe/scoped_validation_errors.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/5-internal-candidate.ssa",
+        "internal"
+      ],
+      "seconds": 0.48311236200243,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA candidate internal tests/qbe/scoped_validation_errors.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/baseline-dump",
+        "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/6-public-baseline.ssa",
+        "public"
+      ],
+      "seconds": 9.35674391700013,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA baseline public /home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/candidate-dump",
+        "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/6-public-candidate.ssa",
+        "public"
+      ],
+      "seconds": 9.175929078999616,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA candidate public /home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/baseline-dump",
+        "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/6-internal-baseline.ssa",
+        "internal"
+      ],
+      "seconds": 8.574267236996093,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA baseline internal /home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/candidate-dump",
+        "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/6-internal-candidate.ssa",
+        "internal"
+      ],
+      "seconds": 8.529669868999918,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "SSA candidate internal /home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "--unsafe",
+        "tests/compiler/scalar_smoke.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/scalar_smoke-baseline",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 0.48384673300461145,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "production baseline tests/compiler/scalar_smoke.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/scalar_smoke-baseline"
+      ],
+      "seconds": 0.006419151002774015,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "answer 42\nbranch True\n3\n2\n1\ndone\n",
+      "stderr": "",
+      "name": "execute baseline tests/compiler/scalar_smoke.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "--unsafe",
+        "tests/safe_recovery_conformance.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/safe_recovery_conformance-baseline",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 0.7707481659963378,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "production baseline tests/safe_recovery_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/safe_recovery_conformance-baseline"
+      ],
+      "seconds": 0.012733404997561593,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "safe name/type/attribute errors, propagation and stack recovery passed\n",
+      "stderr": "",
+      "name": "execute baseline tests/safe_recovery_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "--unsafe",
+        "tests/runtime_error_conformance.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/runtime_error_conformance-baseline",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 0.645824763996643,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "production baseline tests/runtime_error_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/runtime_error_conformance-baseline"
+      ],
+      "seconds": 0.0038092099930508994,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "IndexError: index out of range at tests/runtime_error_conformance.lsl:3\nIndexError: index out of range at tests/runtime_error_conformance.lsl:8\nZeroDivisionError: integer division or modulo by zero at tests/runtime_error_conformance.lsl:13\nValueError: negative Int exponent at tests/runtime_error_conformance.lsl:18\n42\nKeyError: key not found\nIndexError: pop from empty List\nValueError: value is not in collection\nValueError: substring is not in String\n-1\n-3 2 -3 -2\n-9223372036854775808 0 -7 0\n",
+      "stderr": "",
+      "name": "execute baseline tests/runtime_error_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "--unsafe",
+        "tests/class_method_return_conformance.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/class_method_return_conformance-baseline",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 0.6943513259975589,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "production baseline tests/class_method_return_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/class_method_return_conformance-baseline"
+      ],
+      "seconds": 0.0029847059995518066,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "42\n",
+      "stderr": "",
+      "name": "execute baseline tests/class_method_return_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "--unsafe",
+        "tests/dynamic_method_boundary_conformance.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/dynamic_method_boundary_conformance-baseline",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 0.7969417539934511,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "production baseline tests/dynamic_method_boundary_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/dynamic_method_boundary_conformance-baseline"
+      ],
+      "seconds": 0.0037201570012257434,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "[1, 2, 3] 1 2\n1 3 [2]\n['a'] 9\n2 {'a': 1, 'b': 2}\n1 7 {'b': 2}\n{'b': 2} AHOJ\nTrue a-b\n[1, 2, 3]\n{'a': 1, 'b': 2}\n[1, 2, 3]\n[True, 1.5, 2, 3] ['a', 'z', '\u017e']\nIntArray([4]) FloatArray([1.5]) ByteArray([65])\n[4] [1.5] [65]\nIntArray([]) FloatArray([]) ByteArray([])\nTypeError: object does not support clear\nTypeError: keys requires a Dictionary\nValueError: ByteArray value is outside 0..255\nTypeError: expected a String\nTypeError: expected a String\nTypeError: method requires an indexable sequence\nTypeError: method requires a Dictionary receiver\nTypeError: sequence index must be Int\nTypeError: sequence index must be Int\nTypeError: sort values must have compatible types\n",
+      "stderr": "",
+      "name": "execute baseline tests/dynamic_method_boundary_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "--unsafe",
+        "tests/qbe/scoped_validation_errors.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/scoped_validation_errors-baseline",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 0.722560579997662,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "production baseline tests/qbe/scoped_validation_errors.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/scoped_validation_errors-baseline"
+      ],
+      "seconds": 0.0026157379979849793,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "7\nTrue\nTrue\nTrue\nFalse\nTrue\n",
+      "stderr": "",
+      "name": "execute baseline tests/qbe/scoped_validation_errors.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/candidate",
+        "--unsafe",
+        "tests/compiler/scalar_smoke.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/scalar_smoke-candidate",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 0.4844537129974924,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "production candidate tests/compiler/scalar_smoke.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/scalar_smoke-candidate"
+      ],
+      "seconds": 0.0025061069973162375,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "answer 42\nbranch True\n3\n2\n1\ndone\n",
+      "stderr": "",
+      "name": "execute candidate tests/compiler/scalar_smoke.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/candidate",
+        "--unsafe",
+        "tests/safe_recovery_conformance.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/safe_recovery_conformance-candidate",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 0.6950427669944474,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "production candidate tests/safe_recovery_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/safe_recovery_conformance-candidate"
+      ],
+      "seconds": 0.012041918002068996,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "safe name/type/attribute errors, propagation and stack recovery passed\n",
+      "stderr": "",
+      "name": "execute candidate tests/safe_recovery_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/candidate",
+        "--unsafe",
+        "tests/runtime_error_conformance.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/runtime_error_conformance-candidate",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 0.6434462249962962,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "production candidate tests/runtime_error_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/runtime_error_conformance-candidate"
+      ],
+      "seconds": 0.0026299909950466827,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "IndexError: index out of range at tests/runtime_error_conformance.lsl:3\nIndexError: index out of range at tests/runtime_error_conformance.lsl:8\nZeroDivisionError: integer division or modulo by zero at tests/runtime_error_conformance.lsl:13\nValueError: negative Int exponent at tests/runtime_error_conformance.lsl:18\n42\nKeyError: key not found\nIndexError: pop from empty List\nValueError: value is not in collection\nValueError: substring is not in String\n-1\n-3 2 -3 -2\n-9223372036854775808 0 -7 0\n",
+      "stderr": "",
+      "name": "execute candidate tests/runtime_error_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/candidate",
+        "--unsafe",
+        "tests/class_method_return_conformance.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/class_method_return_conformance-candidate",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 0.6956291429960402,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "production candidate tests/class_method_return_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/class_method_return_conformance-candidate"
+      ],
+      "seconds": 0.0033507150001241826,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "42\n",
+      "stderr": "",
+      "name": "execute candidate tests/class_method_return_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/candidate",
+        "--unsafe",
+        "tests/dynamic_method_boundary_conformance.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/dynamic_method_boundary_conformance-candidate",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 0.8016356740045012,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "production candidate tests/dynamic_method_boundary_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/dynamic_method_boundary_conformance-candidate"
+      ],
+      "seconds": 0.0033688379990053363,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "[1, 2, 3] 1 2\n1 3 [2]\n['a'] 9\n2 {'a': 1, 'b': 2}\n1 7 {'b': 2}\n{'b': 2} AHOJ\nTrue a-b\n[1, 2, 3]\n{'a': 1, 'b': 2}\n[1, 2, 3]\n[True, 1.5, 2, 3] ['a', 'z', '\u017e']\nIntArray([4]) FloatArray([1.5]) ByteArray([65])\n[4] [1.5] [65]\nIntArray([]) FloatArray([]) ByteArray([])\nTypeError: object does not support clear\nTypeError: keys requires a Dictionary\nValueError: ByteArray value is outside 0..255\nTypeError: expected a String\nTypeError: expected a String\nTypeError: method requires an indexable sequence\nTypeError: method requires a Dictionary receiver\nTypeError: sequence index must be Int\nTypeError: sequence index must be Int\nTypeError: sort values must have compatible types\n",
+      "stderr": "",
+      "name": "execute candidate tests/dynamic_method_boundary_conformance.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/candidate",
+        "--unsafe",
+        "tests/qbe/scoped_validation_errors.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/scoped_validation_errors-candidate",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 0.6952026349972584,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "production candidate tests/qbe/scoped_validation_errors.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/scoped_validation_errors-candidate"
+      ],
+      "seconds": 0.0029769669999950565,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "7\nTrue\nTrue\nTrue\nFalse\nTrue\n",
+      "stderr": "",
+      "name": "execute candidate tests/qbe/scoped_validation_errors.lsl"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "--unsafe",
+        "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/common-baseline-0",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 12.362251490994822,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "paired compile baseline 0"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/candidate",
+        "--unsafe",
+        "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/common-candidate-0",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 12.388301759005117,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "paired compile candidate 0"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/candidate",
+        "--unsafe",
+        "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/common-candidate-1",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 12.41452415400272,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "paired compile candidate 1"
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+        "--unsafe",
+        "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+        "/home/antonin/LSL-QBE-scoped-validation/build/qbe-scoped-validation/common-baseline-1",
+        "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+      ],
+      "seconds": 12.292616496997653,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "paired compile baseline 1"
+    }
+  ],
+  "ssa_checks": [
+    {
+      "source": "tests/compiler/scalar_smoke.lsl",
+      "mode": "public",
+      "baseline_sha256": "5b4c2e818d63a9b242df799c590654158e38066d987b4fb75d54646ccebd64fc",
+      "candidate_sha256": "5b4c2e818d63a9b242df799c590654158e38066d987b4fb75d54646ccebd64fc",
+      "identical": true
+    },
+    {
+      "source": "tests/compiler/scalar_smoke.lsl",
+      "mode": "internal",
+      "baseline_sha256": "316b79a50b9111c748cd704735f3ad48b11ca10372ef89895f841fe8509066f5",
+      "candidate_sha256": "316b79a50b9111c748cd704735f3ad48b11ca10372ef89895f841fe8509066f5",
+      "identical": true
+    },
+    {
+      "source": "tests/safe_recovery_conformance.lsl",
+      "mode": "public",
+      "baseline_sha256": "0e8000dd10693fdb5bd2c7632f65cdc406af583fcae2ebd130d272b7ca826e89",
+      "candidate_sha256": "0e8000dd10693fdb5bd2c7632f65cdc406af583fcae2ebd130d272b7ca826e89",
+      "identical": true
+    },
+    {
+      "source": "tests/safe_recovery_conformance.lsl",
+      "mode": "internal",
+      "baseline_sha256": "f22c02f54c30115647b10551f6ac6064bef5fe14545fa56fe2bfb6d5e381e90a",
+      "candidate_sha256": "f22c02f54c30115647b10551f6ac6064bef5fe14545fa56fe2bfb6d5e381e90a",
+      "identical": true
+    },
+    {
+      "source": "tests/runtime_error_conformance.lsl",
+      "mode": "public",
+      "baseline_sha256": "a4776eba31ce046be910dcaa28f9c1eed96152f148698584d9df7ee89cd99096",
+      "candidate_sha256": "a4776eba31ce046be910dcaa28f9c1eed96152f148698584d9df7ee89cd99096",
+      "identical": true
+    },
+    {
+      "source": "tests/runtime_error_conformance.lsl",
+      "mode": "internal",
+      "baseline_sha256": "fc2b0cfc1bf828749aa1575aa820f510e516892311cfa4c7883401de20b55a36",
+      "candidate_sha256": "fc2b0cfc1bf828749aa1575aa820f510e516892311cfa4c7883401de20b55a36",
+      "identical": true
+    },
+    {
+      "source": "tests/class_method_return_conformance.lsl",
+      "mode": "public",
+      "baseline_sha256": "aee64beaa1861a0d7f3d11fd96c59c48794199c567a2b82b66aa51fef2369a28",
+      "candidate_sha256": "aee64beaa1861a0d7f3d11fd96c59c48794199c567a2b82b66aa51fef2369a28",
+      "identical": true
+    },
+    {
+      "source": "tests/class_method_return_conformance.lsl",
+      "mode": "internal",
+      "baseline_sha256": "d420d2cead807f189659b1fd88b9a1fb061a5942ad9113de11b5bd4c0a279bf9",
+      "candidate_sha256": "d420d2cead807f189659b1fd88b9a1fb061a5942ad9113de11b5bd4c0a279bf9",
+      "identical": true
+    },
+    {
+      "source": "tests/dynamic_method_boundary_conformance.lsl",
+      "mode": "public",
+      "baseline_sha256": "7fe9869c80de9506e6db81365bb7a51545c83a282e5d2cad3083c7a4161dcc30",
+      "candidate_sha256": "7fe9869c80de9506e6db81365bb7a51545c83a282e5d2cad3083c7a4161dcc30",
+      "identical": true
+    },
+    {
+      "source": "tests/dynamic_method_boundary_conformance.lsl",
+      "mode": "internal",
+      "baseline_sha256": "bca39b8283702555f16aee33a7fb3b8146dc326cfd20e3fbcea041343aa6d703",
+      "candidate_sha256": "bca39b8283702555f16aee33a7fb3b8146dc326cfd20e3fbcea041343aa6d703",
+      "identical": true
+    },
+    {
+      "source": "tests/qbe/scoped_validation_errors.lsl",
+      "mode": "public",
+      "baseline_sha256": "056027a8b22692508ba64714d0cfc33c736e5958781749df406c123547ef480c",
+      "candidate_sha256": "056027a8b22692508ba64714d0cfc33c736e5958781749df406c123547ef480c",
+      "identical": true
+    },
+    {
+      "source": "tests/qbe/scoped_validation_errors.lsl",
+      "mode": "internal",
+      "baseline_sha256": "a25ca2dac30db55b7863fad648573cb4952b84249ee5bafcc4ddb9f9656290e5",
+      "candidate_sha256": "a25ca2dac30db55b7863fad648573cb4952b84249ee5bafcc4ddb9f9656290e5",
+      "identical": true
+    },
+    {
+      "source": "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+      "mode": "public",
+      "baseline_sha256": "6c48ae1b32f8eb64c63881aead2689ffc01aa434c4c63d1595adeaf596a58674",
+      "candidate_sha256": "6c48ae1b32f8eb64c63881aead2689ffc01aa434c4c63d1595adeaf596a58674",
+      "identical": true
+    },
+    {
+      "source": "/home/antonin/.local/lib/lsl/compiler/pure/lslc_direct.lsl",
+      "mode": "internal",
+      "baseline_sha256": "68cced2e856febfbf2dcaf25102ba2e73051d6cab1b51fdc1645658b2bd95fbd",
+      "candidate_sha256": "68cced2e856febfbf2dcaf25102ba2e73051d6cab1b51fdc1645658b2bd95fbd",
+      "identical": true
+    }
+  ],
+  "benchmarks": [
+    {
+      "pair": 0,
+      "variant": "baseline",
+      "seconds": 12.362251490994822,
+      "output_sha256": "dfd9503d3f654d85a421d6d2776e37d101b3ad76c12d16d464221d69062d9361"
+    },
+    {
+      "pair": 0,
+      "variant": "candidate",
+      "seconds": 12.388301759005117,
+      "output_sha256": "dfd9503d3f654d85a421d6d2776e37d101b3ad76c12d16d464221d69062d9361"
+    },
+    {
+      "pair": 1,
+      "variant": "candidate",
+      "seconds": 12.41452415400272,
+      "output_sha256": "dfd9503d3f654d85a421d6d2776e37d101b3ad76c12d16d464221d69062d9361"
+    },
+    {
+      "pair": 1,
+      "variant": "baseline",
+      "seconds": 12.292616496997653,
+      "output_sha256": "dfd9503d3f654d85a421d6d2776e37d101b3ad76c12d16d464221d69062d9361"
+    }
+  ],
+  "all_pass": true,
+  "baseline_median_seconds": 12.327433993996237,
+  "candidate_median_seconds": 12.401412956503918,
+  "speedup_fraction": -0.006001164763381459,
+  "source_sha256": "05a9509bddde9794cba69c0d745396774801f4c0e53db585a7f180a935099cdc",
+  "candidate_sha256": "2db0bde712a771e536ae872c9851415f9841f12bbdce8d3c1fbb916d880c6162",
+  "runtime_sha256": "23a85294bf1087cc1b812172e1c95c0ee4b5b8d05486b375c25242c143b85c14",
+  "decision": "rejected: no measurable paired full-compile improvement; production emitter remains unchanged",
+  "accepted_production_change": false,
+  "candidate_patch": "diff --git a/compiler/pure/qbe_emit.lsl b/compiler/pure/qbe_emit.lsl\nindex d908f18..d3aa8a2 100644\n--- a/compiler/pure/qbe_emit.lsl\n+++ b/compiler/pure/qbe_emit.lsl\n@@ -2381,6 +2381,9 @@ function call_expression(s,node):\n end\n function emit_function(shared,name,declaration,callback=False):\n     s = Dictionary(shared)\n+    # Validation keys use the lexical scope for main, functions and callbacks.\n+    # An error in an unused helper must not tax every expression in this scope.\n+    s[\"has_validation_errors\"] = name in shared[\"validation_error_scopes\"]\n     s[\"lines\"] = []\n     s[\"needs_gc_poll\"] = False\n     s[\"allocation_calls\"] = 0\n@@ -2550,7 +2553,15 @@ function generate(unit,path,entry_source=\"\"):\n     for scope in unit[\"function_scopes\"].values():\n         guarded_globals.update(scope[\"global_reads\"])\n     end\n-    shared = {\"unit\":unit,\"entry_source\":entry_source,\"ids\":ids,\"strings\":{},\"used\":{},\"queue\":[],\"effects\":{},\"native_helpers\":{},\"callbacks\":{},\"guarded_globals\":guarded_globals,\"has_validation_errors\":len(unit[\"validation_errors\"]) > 0}\n+    validation_error_scopes = {}\n+    for locations in unit[\"validation_errors\"].values():\n+        for key in locations:\n+            # source_key is scope:path:line:column; paths may contain colons,\n+            # whereas lexical scope names cannot. Main has the empty prefix.\n+            validation_error_scopes[key[0:key.find(\":\")]] = True\n+        end\n+    end\n+    shared = {\"unit\":unit,\"entry_source\":entry_source,\"ids\":ids,\"strings\":{},\"used\":{},\"queue\":[],\"effects\":{},\"native_helpers\":{},\"callbacks\":{},\"guarded_globals\":guarded_globals,\"validation_error_scopes\":validation_error_scopes}\n     bodies = [emit_function(shared,\"\",None)]\n     call writefile(path,\"\")\n     cursor = 0\n",
+  "reproducer_source": "#!/usr/bin/env python3\n\"\"\"Exact SSA/behavior proof and isolated paired compile benchmark for scope gating.\"\"\"\nimport argparse, hashlib, json, statistics, subprocess, tempfile\nfrom pathlib import Path\nfrom verify_public_int import run, digest\nROOT = Path(__file__).resolve().parents[2]\nparser=argparse.ArgumentParser()\nparser.add_argument('--seed', type=Path, required=True)\nparser.add_argument('--backend', type=Path, required=True)\nparser.add_argument('--common', type=Path, required=True)\nparser.add_argument('--build', type=Path, required=True)\nargs=parser.parse_args(); seed=args.seed.resolve(); backend=args.backend.resolve(); common=args.common.resolve(); b=args.build.resolve();b.mkdir(parents=True,exist_ok=True)\nreport={'scope':'Per-lexical-scope recoverable validation lookup gating','seed_sha256':digest(seed),'backend_sha256':digest(backend),'common_sha256':digest(common),'commands':[],'ssa_checks':[],'benchmarks':[],'all_pass':False}\nout=b/'verification.json'\ndef save():out.write_text(json.dumps(report,indent=2)+'\\n')\ndef check(name,cmd,timeout=120):\n row=run(cmd,timeout=timeout);row['name']=name;report['commands'].append(row);save();print(name,row['returncode'],round(row['seconds'],4),flush=True)\n assert row['returncode']==0 and not row['timed_out'],row\n return row\nemitter=ROOT/'compiler/pure/qbe_emit.lsl';candidate_source=emitter.read_bytes();baseline_source=subprocess.check_output(['git','show','0339509:compiler/pure/qbe_emit.lsl'],cwd=ROOT)\ndriver='''# lsl: internal-abi\nload frontend\nload qbe_emit\nload host\npath = arg(1)\nsource = readfile(path)\ninternal = source.startswith(\"# lsl: internal-abi\" + chr(10))\nif arg(3) == \"public\":\n    internal = False\nelif arg(3) == \"internal\":\n    internal = True\nend\nunit = frontend.prepare(path, source, readfile(host.resource_path(\"compiler/pure/dynamic_stdlib.lsl\")), 0, internal)\ncall qbe_emit.generate(unit, arg(2))\n'''\nwith tempfile.NamedTemporaryFile(mode='w',suffix='.lsl',prefix='.scoped-validation-',dir=ROOT/'compiler/pure',delete=False) as temp:\n temp.write(driver);driver_path=Path(temp.name)\ntry:\n emitter.write_bytes(baseline_source)\n check('compile baseline diagnostic emitter',[seed,'--unsafe',driver_path,b/'baseline-dump',backend])\nfinally:\n emitter.write_bytes(candidate_source)\ntry:\n check('compile candidate diagnostic emitter',[seed,'--unsafe',driver_path,b/'candidate-dump',backend])\n check('compile candidate frontend',[seed,'--unsafe','compiler/pure/lslc_qbe.lsl',b/'candidate',backend])\nfinally:\n driver_path.unlink(missing_ok=True)\nfixtures=['tests/compiler/scalar_smoke.lsl','tests/safe_recovery_conformance.lsl','tests/runtime_error_conformance.lsl','tests/class_method_return_conformance.lsl','tests/dynamic_method_boundary_conformance.lsl','tests/qbe/scoped_validation_errors.lsl']\nfor index,source in enumerate(fixtures+[str(common)]):\n for mode in ['public','internal']:\n  paths=[]\n  for name in ['baseline','candidate']:\n   output=b/(str(index)+'-'+mode+'-'+name+'.ssa')\n   check('SSA '+name+' '+mode+' '+source,[b/(name+'-dump'),source,output,mode])\n   paths.append(output)\n  row={'source':source,'mode':mode,'baseline_sha256':digest(paths[0]),'candidate_sha256':digest(paths[1]),'identical':paths[0].read_bytes()==paths[1].read_bytes()};report['ssa_checks'].append(row);save();assert row['identical'],row\nfor compiler_name,compiler in [('baseline',seed),('candidate',b/'candidate')]:\n for source in fixtures:\n  output=b/(Path(source).stem+'-'+compiler_name)\n  check('production '+compiler_name+' '+source,[compiler,'--unsafe',source,output,backend])\n  row=check('execute '+compiler_name+' '+source,[output])\n  expected=ROOT/source.replace('.lsl','.out')\n  if expected.exists():assert row['stdout']==expected.read_text(),row\nfor pair in range(3):\n for name,compiler in ([('baseline',seed),('candidate',b/'candidate')] if pair%2==0 else [('candidate',b/'candidate'),('baseline',seed)]):\n  output=b/('common-'+name+'-'+str(pair))\n  row=check('paired compile '+name+' '+str(pair),[compiler,'--unsafe',common,output,backend]);report['benchmarks'].append({'pair':pair,'variant':name,'seconds':row['seconds'],'output_sha256':digest(output)});save()\n assert report['benchmarks'][-1]['output_sha256']==report['benchmarks'][-2]['output_sha256']\n base=statistics.median([x['seconds'] for x in report['benchmarks'] if x['variant']=='baseline']);cand=statistics.median([x['seconds'] for x in report['benchmarks'] if x['variant']=='candidate'])\n if pair==1 and (base-cand)/base<=0.01:break\nreport['baseline_median_seconds']=base;report['candidate_median_seconds']=cand;report['speedup_fraction']=(base-cand)/base;report['source_sha256']=digest(emitter);report['candidate_sha256']=digest(b/'candidate');report['runtime_sha256']=digest(ROOT/'build/qbe/runtime.o');report['all_pass']=True;save();print(json.dumps({k:report[k] for k in ['all_pass','baseline_median_seconds','candidate_median_seconds','speedup_fraction']}),flush=True)\n",
+  "measurement_note": "Exclusive CPU window; two alternating baseline/candidate pairs. Third pair required only if initial improvement exceeds1%; candidate instead regressed0.60%."
+}

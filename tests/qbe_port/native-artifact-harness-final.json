@@ -1,0 +1,799 @@
+{
+  "complete": true,
+  "scope": "Correctness and exact production ELF correspondence only. Correctness tests ran concurrently with other agents; no timings here are benchmark results. Float/collection baseline is historical native QBE frontend, not LSL 0.8.9. Startup checks additionally use installed LSL 0.8.9.",
+  "checkout_commit": "f14115ba37f77883f09791d4553ca6292441700a",
+  "compiler_sources_sha256": {
+    "compiler/pure/_catalog_platform.lsl": "82988ff5d7f2adc752cbe3e86da10faebc873f4857d9442124e538193e536006",
+    "compiler/pure/_compiler_host_platform.lsl": "50235c7e0176d1a72af26e33296c94c3557e2640268b1729f8d2e361958b2e96",
+    "compiler/pure/_install_platform.lsl": "2a5e28db11799527374a35b1c2a8b80a6f34d14f209c1f0336db779afc1132d4",
+    "compiler/pure/_package_platform.lsl": "5390924c2c8eb95ebc34099e05d88d0b77ce27693fce9f32d0f064317dd00100",
+    "compiler/pure/_update_install_platform.lsl": "b23a59ce6d202f03f7e25fe683ce23b293d0dcc82e2312f823b295266b0a6b59",
+    "compiler/pure/_update_platform.lsl": "b35cd3dbd1de9e582410c1c0078d5016c34a03d5b24440003a21e775ff41b041",
+    "compiler/pure/abi_x86_64.lsl": "5e6123581d7dec0223b03ff00e2ba5fd6fe7973bb665852d8d0a44820c3b8a60",
+    "compiler/pure/assembler.lsl": "8d6c68b1d9f40d37904704741d2fe6b00872309661baaf4951cf5e65baf78f7c",
+    "compiler/pure/assembler_x86_64.lsl": "af22e43292f7866cbb9348840d6cb52e05e4b0df10cb61aaef32a826abbd52f4",
+    "compiler/pure/backend_x86_64.lsl": "70bf7ed1cb4c7b23c97bdc170f5233dae7158c4a38503d1a8f3c60a5fe44f718",
+    "compiler/pure/browser.lsl": "eeb9f0d0ea05efb5b473a5ff89ef95c08217f3ebc4a4095ab534ea013f23db2a",
+    "compiler/pure/bytes.lsl": "6d5b630011129af9a936b448432e0cd8631437d20c809995e6fa78197b18f1b8",
+    "compiler/pure/catalog.lsl": "1dd32f76028e005b28a518c99df572941a3952ea6a72711fa4fc9c07bb6f433b",
+    "compiler/pure/catalog_linux_x86_64.lsl": "016b9de8341ee410286a7d2e6d540bfafa9ae79cd2de4be27dc2866613f53f39",
+    "compiler/pure/cli.lsl": "a5e4b55f211aa5522e72ce777967fd14d2d696f8a07766113f40abd22dc25088",
+    "compiler/pure/codegen.lsl": "058d58fbb77bf78d5a52a863f6fd8447321a70e8a00257b7076ae7423258c3cd",
+    "compiler/pure/compiler_backend.lsl": "a14da865d5cdef0e5599335884c3a1c9dffa8c19ef5ab3bd0b9c6ffe9ecb75b7",
+    "compiler/pure/console.lsl": "05ec9f84138198f65065f4c8aa2c451ac90961996947e7fad3e755e830cf505d",
+    "compiler/pure/declarations.lsl": "8b4027b210bb46c5db34d3a70c857ee26b088a31cf340b2e09c886137d2e82ac",
+    "compiler/pure/diagnostics.lsl": "e5b5d66ab05ae3e87b9c84103f8a69d6857416fabcebb17d7ca5a959af64ec74",
+    "compiler/pure/dynamic_stdlib.lsl": "6b78f1022da7021a48246f35d1224a501d2964ab59faae735922595f54e5797e",
+    "compiler/pure/editor.lsl": "381eb9980899eb6964cc72f07608e39b419c7f832a7b7f45f5977be3bca218d0",
+    "compiler/pure/elf_image.lsl": "2a05401fc3ff99dbd7364f9b26f42e114747e079dbcb22525f8acf91ac5f828e",
+    "compiler/pure/flow.lsl": "87adb7765087299b64a41997d1919ee362b679b6264388356d32576e25c28323",
+    "compiler/pure/frontend.lsl": "e708a35f8a44ba8002f05165ec864ae9aaa7b2d924d0cf67b282862c78c9be85",
+    "compiler/pure/heap_runtime.lsl": "3b4679d6104c1a0bc8fdfb2bb0165288c97482a30a51c9cf5edee1af38ba20e6",
+    "compiler/pure/heap_runtime_linux_x86_64.lsl": "f6b7ddc4e3c546ab592e2a1e39e53e4c1c695fe83cca1ff15fc251e928c30073",
+    "compiler/pure/highlight.lsl": "7bb02d0eb31f1435896ea2f447ace7c89b4bc286b5da1642c6f03e1e2c1ce87d",
+    "compiler/pure/host.lsl": "3b458a8d437aa50d2cebb7d613339c08df7816386babc2245c529ce1bb15cbf6",
+    "compiler/pure/host_linux_x86_64.lsl": "95fbed18a04238710eca734c09e73d7fa5b7f3f41d784f34f1a2401e2083745e",
+    "compiler/pure/image_elf64_linux.lsl": "44bf898add0a37fd9279459c5f7ff140dcd66c7abb87f557c47e5a854da6d739",
+    "compiler/pure/image_writer.lsl": "58cebb23435a57c9d3d723646bd444ac7c48f46c3bb2097374d94361eaeff492",
+    "compiler/pure/install.lsl": "e57e496e0d960293194bbdba5dcecf1210ffc131bd94c0b5a027cf33f72bea18",
+    "compiler/pure/install_linux_x86_64.lsl": "acd36f168730cc3904c34c827a700d3210a3e9722a8119d55cc004c250402d6d",
+    "compiler/pure/io_runtime.lsl": "3d5302d06c75e9fad5c628b739bdc3d06cfe0e803b2a129c863b997f6e4a7995",
+    "compiler/pure/io_runtime_linux_x86_64.lsl": "67518f93b0253792ed0f0ee1a8c8e34f8df9873b979e32f88308297166ca3a19",
+    "compiler/pure/lexer.lsl": "dcc607a576efd5b1a370737dc3c1075c8f815aed853c80097045e02e7147c101",
+    "compiler/pure/linker.lsl": "5e141b496debeb7b87abfecbabf912bdf20e8bc4d2b1bcece204f62d8d49f9b2",
+    "compiler/pure/lslc_direct.lsl": "c025015017dcca7300b893529d3de7bf97f9a89d58a1e6e6d924a8030269ce58",
+    "compiler/pure/lslc_qbe.lsl": "085e51564613f2468546cf45f054fdf74863d1032a873b2b71c491dab8b0540d",
+    "compiler/pure/manual.lsl": "565e91fc2003e4eadfa264991771dc9289a0ffd8a2f3621aa2fee32b58369dc0",
+    "compiler/pure/native_plugin_runtime.lsl": "c48e8995ddb131ac5d2808530cc1aa9d0e3ba618c44bf9a411f425c70b9fba7d",
+    "compiler/pure/native_plugin_runtime_linux_x86_64.lsl": "f1d07341cb011cb23df05caee61ccb3a5fc763c62b61d4b927c1dffaacf64241",
+    "compiler/pure/native_runtime.lsl": "97b15d1f9b2cbe3ecb8ac67a42affabe876dc8f2b9439150088232cfcc3bf461",
+    "compiler/pure/native_runtime_linux_x86_64.lsl": "89021b33402d8a8f2b746ddbaa85282df0a9f391a073ae813b558f0a392fe710",
+    "compiler/pure/object_code.lsl": "28c665c4799f59166c42c8673d9bf203a18a3bba95bec233571516037f1562f5",
+    "compiler/pure/package.lsl": "b344a5cc14db24b526c8c0dd256949541147e9462244207ac1319a2f026aa472",
+    "compiler/pure/package_linux_x86_64.lsl": "7bdb0f73c59a1de70cbd689d1c4560c3cb2ea37987550299e5462a96e4bf0a5b",
+    "compiler/pure/parser.lsl": "a5eb49774210c7c101014f344f91a58a9730a09e9028cce8ed190738ce3783bf",
+    "compiler/pure/pipeline.lsl": "84d20482156131be58360f56f0d47883b4d5a3797a59087473c240d85f8c9320",
+    "compiler/pure/process_runtime.lsl": "feb20eed99030a41b6bcf73c6ed925fea11b648272606ea42527954d064bb43d",
+    "compiler/pure/process_runtime_linux_x86_64.lsl": "c0f80dbaf0a72740ab6e69d802a12e889fffe7cf08e095672253081df5cf98a4",
+    "compiler/pure/qbe_emit.lsl": "32c63dd7e0c57c6b9db48614e30b9f3b5e4948b60c30ff1cffcb365b737ca2bb",
+    "compiler/pure/qbe_emit_diagnostic.lsl": "3dd7297e557fec1ddd58cadbfba7a75e22f7dd20bb8aef5e01b2b824d81c66d9",
+    "compiler/pure/qbe_runtime_dump.lsl": "1ed4e00498b6396680fb24138df48923cf4ae80c1c882b317834f0deb50e0bff",
+    "compiler/pure/qbe_toolchain.lsl": "786a5df6eace5885b342ef8ba85288352a28f7046548a1ddb9f4f1702b39b315",
+    "compiler/pure/relocations_x86_64.lsl": "53c7cbb52f6724dd4fab3337219acbb5c3c6e2042e8147d51e03b9f0d8373d42",
+    "compiler/pure/runtime.lsl": "6f54df34a08b9b8ce4b855e7bea82d3fe81b6a9f9750216c458641838634d860",
+    "compiler/pure/runtime_abi_linux_x86_64.lsl": "4cd8a2e91d2fa19a1fafbcd6ad87f57e79beefa66778fa5ebed90b5b7ede3a2f",
+    "compiler/pure/runtime_linux_x86_64.lsl": "2f4e16fec47238f243b88727c95ddcf056041a73edf42fba128846104274310e",
+    "compiler/pure/semantic.lsl": "90bc7c816f7e6312fabc410168492a3ae7110b252f8c8da483a00170f8edfd8d",
+    "compiler/pure/target.lsl": "2d913fa28cd778d02d0d4bebd18986cd5d68864cf2640a63db262ccb2977d9cf",
+    "compiler/pure/thread_runtime.lsl": "cf94f0a37f4e031a06ee52d4a759e368cda64583bcb6ff8f484650debb29adfd",
+    "compiler/pure/thread_runtime_linux_x86_64.lsl": "48d50da62b8ab3b164c5426a7fd4143f16efdf786528a3869897600e5a9bb517",
+    "compiler/pure/update.lsl": "fef774fac49493190b44c0d9444589005f8ff1194051662af67117c0afdda363",
+    "compiler/pure/update_install.lsl": "d8ccac15b846cd4b0d4e023f1a4804f9e265e781324d3e08c01cad110891058a",
+    "compiler/pure/update_install_linux_x86_64.lsl": "80ce50d927bffe1edc9f3abc226b25519399be2327a0576b469794b0d5fb39d6",
+    "compiler/pure/update_linux_x86_64.lsl": "07bf87e077446c6d76b2b7a5f6531f74705d605d0d84e73b4b0aefa0c8596e50",
+    "compiler/pure/validation.lsl": "82d3f45c9655cd169c878153900f58d17c32f6eab95fbafb562024cc694fd5e1",
+    "compiler/pure/value_abi.lsl": "6e61c4f92bb308cc95c37e5c5faad57303dd6cb2852518ff581753bdca5bac74",
+    "compiler/pure/x86_64.lsl": "060978b936d1f758565841725c648c506bf52cc1af2e6f2fc6879ed912461ce5"
+  },
+  "production_byte_equality_cases": [
+    "tests/table_growth_conformance.lsl",
+    "tests/qbe/startup_tables.lsl",
+    "float_loop",
+    "list_access",
+    "dictionary_access",
+    "string_split_join",
+    "allocation_gc"
+  ],
+  "production_byte_equality_count": 7,
+  "production_binary_sha256_after": {
+    "build/qbe-port-tools/native-selfhost/frontend-stage3": "efbcb2bbe51587b9728616cef23c0553acde66cceedc17aded04ae4c4602a7a9",
+    "build/qbe-port-tools/native-selfhost/qbe-stage3": "44c141c6ee0d0887c80111320fa2db80fe485f385cbf0a70dbfeee400754b26d",
+    "build/qbe/runtime.o": "6780bb856d07a9017e40a90931487b0905c58dbe30b1ee08bc1f8f1d3e0d691b"
+  },
+  "reports": {
+    "startup": {
+      "complete": true,
+      "compiler_sha256": "efbcb2bbe51587b9728616cef23c0553acde66cceedc17aded04ae4c4602a7a9",
+      "backend_sha256": "44c141c6ee0d0887c80111320fa2db80fe485f385cbf0a70dbfeee400754b26d",
+      "old_compiler_sha256": "f235b42d4998474c1bfee7eb02f17625bbc824f647f9ba33bdef8c20b0ff8696",
+      "runtime_sha256": "6780bb856d07a9017e40a90931487b0905c58dbe30b1ee08bc1f8f1d3e0d691b",
+      "emitter_sha256": "32c63dd7e0c57c6b9db48614e30b9f3b5e4948b60c30ff1cffcb365b737ca2bb",
+      "cases": [
+        {
+          "source": "tests/table_growth_conformance.lsl",
+          "source_sha256": "e67b8010c5520d3199b1c68316fb5c5ff6e9eb37fb3d894f7fdab7c19d572dfd",
+          "expected_stdout": "True True 40 12\n39 l\n",
+          "candidate": {
+            "build": {
+              "command": [
+                "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+                "--unsafe",
+                "tests/table_growth_conformance.lsl",
+                "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit/table_growth_conformance-candidate",
+                "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+              ],
+              "returncode": 0,
+              "seconds": 0.8682236840031692,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "4057df894ce50e190e31ed7376a9f6e5eb83d6a21f1c787112fb5d3f8ccf5f93",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit/table_growth_conformance-candidate"
+              ],
+              "returncode": 0,
+              "seconds": 0.0008250289974967018,
+              "stdout": "True True 40 12\n39 l\n",
+              "stderr": ""
+            },
+            "pass": true
+          },
+          "diagnostic_artifacts": {
+            "compiler_sha256": "efbcb2bbe51587b9728616cef23c0553acde66cceedc17aded04ae4c4602a7a9",
+            "backend_sha256": "44c141c6ee0d0887c80111320fa2db80fe485f385cbf0a70dbfeee400754b26d",
+            "production_elf_sha256": "4057df894ce50e190e31ed7376a9f6e5eb83d6a21f1c787112fb5d3f8ccf5f93",
+            "origin": "explicit diagnostic re-emission",
+            "diagnostic_emitter_sha256": "51009c7b2f4f6f453497072b0841632ad1c0fef28e64578569646625a4f8805f",
+            "runtime_sha256": "6780bb856d07a9017e40a90931487b0905c58dbe30b1ee08bc1f8f1d3e0d691b",
+            "reconstructed_elf_sha256": "4057df894ce50e190e31ed7376a9f6e5eb83d6a21f1c787112fb5d3f8ccf5f93",
+            "matches_production_elf": true,
+            "ssa_sha256": "7da8609890493464cb483fac9746e73d4f68935001820594cfc73fa5bdd8dabd",
+            "assembly_sha256": "e7461220292003b7c17d8616efc1e5ac7cf465cb2581373dc36475cfb61ecb2c"
+          },
+          "entry_bootstrap_calls": 1,
+          "bootstrap_before_literals": true,
+          "v089": {
+            "build": {
+              "command": [
+                "/home/antonin/.local/bin/lslc",
+                "tests/table_growth_conformance.lsl",
+                "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit/table_growth_conformance-v089"
+              ],
+              "returncode": 0,
+              "seconds": 0.5608243520036922,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "e96c56b771ee621d6b177bf803025641c85643c8045068a3aab8534353f17b90",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit/table_growth_conformance-v089"
+              ],
+              "returncode": 0,
+              "seconds": 0.0007506729962187819,
+              "stdout": "True True 40 12\n39 l\n",
+              "stderr": ""
+            },
+            "pass": true
+          }
+        },
+        {
+          "source": "tests/qbe/startup_tables.lsl",
+          "source_sha256": "f660c473a4bdfe4b276046941e18e1ff764606f14d6e7e500fca470c0baa6d22",
+          "expected_stdout": "True True\n39 l startup literal survives\n",
+          "candidate": {
+            "build": {
+              "command": [
+                "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+                "--unsafe",
+                "tests/qbe/startup_tables.lsl",
+                "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit/qbe-startup_tables-candidate",
+                "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+              ],
+              "returncode": 0,
+              "seconds": 0.6336243319965433,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "a6e239f63b660cb570e5a39dc09b9f052c85df86466893b257ec41f69d82fc86",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit/qbe-startup_tables-candidate"
+              ],
+              "returncode": 0,
+              "seconds": 0.0027739719953387976,
+              "stdout": "True True\n39 l startup literal survives\n",
+              "stderr": ""
+            },
+            "pass": true
+          },
+          "diagnostic_artifacts": {
+            "compiler_sha256": "efbcb2bbe51587b9728616cef23c0553acde66cceedc17aded04ae4c4602a7a9",
+            "backend_sha256": "44c141c6ee0d0887c80111320fa2db80fe485f385cbf0a70dbfeee400754b26d",
+            "production_elf_sha256": "a6e239f63b660cb570e5a39dc09b9f052c85df86466893b257ec41f69d82fc86",
+            "origin": "explicit diagnostic re-emission",
+            "diagnostic_emitter_sha256": "51009c7b2f4f6f453497072b0841632ad1c0fef28e64578569646625a4f8805f",
+            "runtime_sha256": "6780bb856d07a9017e40a90931487b0905c58dbe30b1ee08bc1f8f1d3e0d691b",
+            "reconstructed_elf_sha256": "a6e239f63b660cb570e5a39dc09b9f052c85df86466893b257ec41f69d82fc86",
+            "matches_production_elf": true,
+            "ssa_sha256": "2c79118cde0fe28a5b2d10dcef13bf5f292ebc516f3821ec32353497488a2c04",
+            "assembly_sha256": "fd81891467e1610f0b634925671c9fa3db16e7fc0cdf9118d05b7161f4c1e59c"
+          },
+          "entry_bootstrap_calls": 1,
+          "bootstrap_before_literals": true,
+          "v089": {
+            "build": {
+              "command": [
+                "/home/antonin/.local/bin/lslc",
+                "tests/qbe/startup_tables.lsl",
+                "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit/qbe-startup_tables-v089"
+              ],
+              "returncode": 0,
+              "seconds": 0.5914832290000049,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "893b2440ae9d5db5df5aef299116a72fbf1d72be3a828c9f25e3c077fe6dfa0f",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit/qbe-startup_tables-v089"
+              ],
+              "returncode": 0,
+              "seconds": 0.0007061540018185042,
+              "stdout": "True True\n39 l startup literal survives\n",
+              "stderr": ""
+            },
+            "pass": true
+          }
+        },
+        {
+          "source": "tests/automatic_gc_conformance.lsl",
+          "source_sha256": "1b30392b69f47679d4799a81f10d2a1b8affa4603aa8e0e7855d939464db5006",
+          "expected_stdout": "automatic GC roots, cycles, deep graphs, callbacks, exceptions and memory bound passed\n",
+          "candidate": {
+            "build": {
+              "command": [
+                "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+                "--unsafe",
+                "tests/automatic_gc_conformance.lsl",
+                "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit/automatic_gc_conformance-candidate",
+                "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+              ],
+              "returncode": 0,
+              "seconds": 1.1457959079998545,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "aed797d8bdbc31412cf69147d5fa894f7413c05bd23e8d3897491a891d271b9d",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit/automatic_gc_conformance-candidate"
+              ],
+              "returncode": 0,
+              "seconds": 0.1495092020049924,
+              "stdout": "automatic GC roots, cycles, deep graphs, callbacks, exceptions and memory bound passed\n",
+              "stderr": ""
+            },
+            "pass": true
+          },
+          "v089": {
+            "build": {
+              "command": [
+                "/home/antonin/.local/bin/lslc",
+                "tests/automatic_gc_conformance.lsl",
+                "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit/automatic_gc_conformance-v089"
+              ],
+              "returncode": 0,
+              "seconds": 0.6598642789977021,
+              "stdout": "",
+              "stderr": ""
+            },
+            "binary_sha256": "97142330bdcd0e609d278d72f1d316d7cb1a74a52bac15bbb31da1be266a77be",
+            "execution": {
+              "command": [
+                "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit/automatic_gc_conformance-v089"
+              ],
+              "returncode": 0,
+              "seconds": 0.5777089199982584,
+              "stdout": "automatic GC roots, cycles, deep graphs, callbacks, exceptions and memory bound passed\n",
+              "stderr": ""
+            },
+            "pass": true
+          }
+        }
+      ],
+      "all_pass": true
+    },
+    "float": {
+      "complete": true,
+      "scope": "diagnostic call counts, not timings",
+      "runtime_sha256": "6780bb856d07a9017e40a90931487b0905c58dbe30b1ee08bc1f8f1d3e0d691b",
+      "runtime_assembly_sha256": "56d9c4ff8d592ecbf6ce55e327d81309a248a2f56d3fb793fbaebc458e98cd4a",
+      "backend_sha256": "44c141c6ee0d0887c80111320fa2db80fe485f385cbf0a70dbfeee400754b26d",
+      "builds": [
+        {
+          "command": [
+            "/usr/bin/cc",
+            "-c",
+            "/home/antonin/LSL-QBE/build/qbe-finish/runtime-final/runtime.s",
+            "-o",
+            "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit/runtime-uninstrumented.o"
+          ],
+          "seconds": 0.018207832996267825,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "/usr/bin/cc",
+            "-c",
+            "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit/runtime-counted.s",
+            "-o",
+            "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit/runtime-counted.o"
+          ],
+          "seconds": 0.018894847002229653,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-finish/seed-frontend-stage3",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/float_loop.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit/float-baseline",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "seconds": 0.7223504689973197,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "/usr/bin/cc",
+            "-nostdlib",
+            "-no-pie",
+            "-Wl,--build-id=none",
+            "-o",
+            "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit/float-baseline.counted",
+            "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit/float-baseline.counted.s",
+            "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit/runtime-counted.o"
+          ],
+          "seconds": 0.029176219999499153,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/frontend-stage3",
+            "--unsafe",
+            "/home/antonin/LSL-QBE/tests/benchmarks/v089/float_loop.lsl",
+            "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit/float-candidate",
+            "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+          ],
+          "seconds": 0.6876481590006733,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "",
+          "stderr": ""
+        },
+        {
+          "command": [
+            "/usr/bin/cc",
+            "-nostdlib",
+            "-no-pie",
+            "-Wl,--build-id=none",
+            "-o",
+            "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit/float-candidate.counted",
+            "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit/float-candidate.counted.s",
+            "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit/runtime-counted.o"
+          ],
+          "seconds": 0.03805385300074704,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "",
+          "stderr": ""
+        }
+      ],
+      "checks": [
+        {
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit/float-baseline.counted",
+            "100"
+          ],
+          "seconds": 0.0023803619988029823,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "51202\n",
+          "stderr": "runtime_float_new 0000000000000066\nruntime_alloc 00000000000000b3\nruntime_add_any 0000000000000000\nruntime_mul_any 0000000000000000\nruntime_box_dynamic_int 0000000000000000\nruntime_coerce_float 0000000000000000\nruntime_float_from_int 0000000000000000\nruntime_gc 0000000000000000\nrt_runtime_maybe_gc 00000000000000b2\n",
+          "kind": "baseline",
+          "iterations": 100,
+          "counters": {
+            "runtime_float_new": 102,
+            "runtime_alloc": 179,
+            "runtime_add_any": 0,
+            "runtime_mul_any": 0,
+            "runtime_box_dynamic_int": 0,
+            "runtime_coerce_float": 0,
+            "runtime_float_from_int": 0,
+            "runtime_gc": 0,
+            "rt_runtime_maybe_gc": 178
+          },
+          "expected": "51202\n",
+          "matches": true
+        },
+        {
+          "command": [
+            "/home/antonin/LSL-QBE/build/qbe-repair/artifact-audit/float-candidate.counted",
+            "100"
+          ],
+          "seconds": 0.002962564001791179,
+          "returncode": 0,
+          "timed_out": false,
+          "stdout": "51202\n",
+          "stderr": "runtime_float_new 0000000000000066\nruntime_alloc 00000000000000b4\nruntime_add_any 0000000000000000\nruntime_mul_any 0000000000000000\nruntime_box_dynamic_int 0000000000000000\nruntime_coerce_float 0000000000000000\nruntime_float_from_int 0000000000000000\nruntime_gc 0000000000000000\nrt_runtime_maybe_gc 00000000000000b3\n",
+          "kind": "candidate",
+          "iterations": 100,
+          "counters": {
+            "runtime_float_new": 102,
+            "runtime_alloc": 180,
+            "runtime_add_any": 0,
+            "runtime_mul_any": 0,
+            "runtime_box_dynamic_int": 0,
+            "runtime_coerce_float": 0,
+            "runtime_float_from_int": 0,
+            "runtime_gc": 0,
+            "rt_runtime_maybe_gc": 179
+          },
+          "expected": "51202\n",
+          "matches": true
+        }
+      ],
+      "uninstrumented_runtime_sha256": "6780bb856d07a9017e40a90931487b0905c58dbe30b1ee08bc1f8f1d3e0d691b",
+      "fixture_sha256": "1d6f26fc7a06ba8160964a5937dce1a10f5147ff18850e2c3151d856a1e90ca3",
+      "baseline_sha256": "489d46b56766d85071b23017c7bf31313fc5881efaf81223a5b17cf3e8b852ad",
+      "program_artifacts": {
+        "baseline": {
+          "compiler_sha256": "489d46b56766d85071b23017c7bf31313fc5881efaf81223a5b17cf3e8b852ad",
+          "backend_sha256": "44c141c6ee0d0887c80111320fa2db80fe485f385cbf0a70dbfeee400754b26d",
+          "production_elf_sha256": "24ea3d7865d8b5de47f1021c68722faddfb19840b4ed072e9fefe6fc2477eb63",
+          "origin": "compiler-emitted alongside the production ELF",
+          "ssa_sha256": "55e9cbd42e235b150c647314968a95c06304465645774f4269fcfc8f3043d6b0",
+          "assembly_sha256": "aede3e3715a98f9cf2eb5b96226abfeeb5bd19c27108cf690c4c5772fb6ecfa7"
+        },
+        "candidate": {
+          "compiler_sha256": "efbcb2bbe51587b9728616cef23c0553acde66cceedc17aded04ae4c4602a7a9",
+          "backend_sha256": "44c141c6ee0d0887c80111320fa2db80fe485f385cbf0a70dbfeee400754b26d",
+          "production_elf_sha256": "f7a3925d6beb78098d30d9291e028fa4103a2dfa0032120d7063583c0de67df3",
+          "origin": "explicit diagnostic re-emission",
+          "diagnostic_emitter_sha256": "51009c7b2f4f6f453497072b0841632ad1c0fef28e64578569646625a4f8805f",
+          "runtime_sha256": "6780bb856d07a9017e40a90931487b0905c58dbe30b1ee08bc1f8f1d3e0d691b",
+          "reconstructed_elf_sha256": "f7a3925d6beb78098d30d9291e028fa4103a2dfa0032120d7063583c0de67df3",
+          "matches_production_elf": true,
+          "ssa_sha256": "87df8ab382f0016ad37cdabdf1985550469cd95bfcc6391d31ccd0949cd367fe",
+          "assembly_sha256": "59a001bca75802ec216c0cf7bde6a6eef6c386bf3f8cbdfa2bd2f2f0ca03accf"
+        }
+      },
+      "candidate_sha256": "efbcb2bbe51587b9728616cef23c0553acde66cceedc17aded04ae4c4602a7a9",
+      "runtime_unchanged": true
+    },
+    "collections": {
+      "complete": true,
+      "scope": "diagnostic call counts; instrumented timings excluded",
+      "iterations": 100,
+      "cases": [
+        {
+          "name": "list_access",
+          "expected_stdout": "5050\n",
+          "samples": [
+            {
+              "kind": "baseline",
+              "compiler_sha256": "489d46b56766d85071b23017c7bf31313fc5881efaf81223a5b17cf3e8b852ad",
+              "source_sha256": "68e62198d813b8f65a2bd4108e987e31f736a4f31bd8f6493806c6b0a9b119f1",
+              "assembly_sha256": "f2e0ec79116f1cfc55a2911780d879a7f33c9538a8d17c2b351d58d8fd1422a4",
+              "diagnostic_artifacts": {
+                "compiler_sha256": "489d46b56766d85071b23017c7bf31313fc5881efaf81223a5b17cf3e8b852ad",
+                "backend_sha256": "44c141c6ee0d0887c80111320fa2db80fe485f385cbf0a70dbfeee400754b26d",
+                "production_elf_sha256": "6290a7ff6d6764eeee55410c4919e44db3fabd89a3b0d50949e2482375e48d4f",
+                "origin": "compiler-emitted alongside the production ELF",
+                "ssa_sha256": "2b069bcc4a9bb6c224ec60591c67c6f0a8b9c4d7a757691b1338be824ad6c2d6",
+                "assembly_sha256": "f2e0ec79116f1cfc55a2911780d879a7f33c9538a8d17c2b351d58d8fd1422a4"
+              },
+              "counts": {
+                "runtime_alloc": 1948,
+                "runtime_box_dynamic_int": 0,
+                "runtime_dynamic_get": 0,
+                "runtime_dynamic_set": 100,
+                "runtime_list_append": 1024,
+                "runtime_dict_get": 0,
+                "runtime_dict_set": 0,
+                "runtime_add_any": 4,
+                "runtime_sub_any": 0,
+                "runtime_mul_any": 0,
+                "runtime_gc": 0,
+                "runtime_type_code": 1039,
+                "runtime_unbox_dynamic_int": 845,
+                "runtime_string_concat": 4,
+                "runtime_text_split_byte": 0,
+                "rt_runtime_maybe_gc": 1839
+              },
+              "stdout": "5050\n"
+            },
+            {
+              "kind": "candidate",
+              "compiler_sha256": "efbcb2bbe51587b9728616cef23c0553acde66cceedc17aded04ae4c4602a7a9",
+              "source_sha256": "68e62198d813b8f65a2bd4108e987e31f736a4f31bd8f6493806c6b0a9b119f1",
+              "assembly_sha256": "008fdb396d25596c5a22cdef6482e2cc30ec7a7e8eebc6aff4c8d2ec6d3cde75",
+              "diagnostic_artifacts": {
+                "compiler_sha256": "efbcb2bbe51587b9728616cef23c0553acde66cceedc17aded04ae4c4602a7a9",
+                "backend_sha256": "44c141c6ee0d0887c80111320fa2db80fe485f385cbf0a70dbfeee400754b26d",
+                "production_elf_sha256": "89035e08f677c236183a434c950fefafcccb68701d9fd1ba1c0d46aa8dabffe7",
+                "origin": "explicit diagnostic re-emission",
+                "diagnostic_emitter_sha256": "51009c7b2f4f6f453497072b0841632ad1c0fef28e64578569646625a4f8805f",
+                "runtime_sha256": "6780bb856d07a9017e40a90931487b0905c58dbe30b1ee08bc1f8f1d3e0d691b",
+                "reconstructed_elf_sha256": "89035e08f677c236183a434c950fefafcccb68701d9fd1ba1c0d46aa8dabffe7",
+                "matches_production_elf": true,
+                "ssa_sha256": "8a4321d40b3a456cff043ec36304d5303d17bdb749b4964b02fae2e2d0a79c12",
+                "assembly_sha256": "008fdb396d25596c5a22cdef6482e2cc30ec7a7e8eebc6aff4c8d2ec6d3cde75"
+              },
+              "counts": {
+                "runtime_alloc": 1351,
+                "runtime_box_dynamic_int": 0,
+                "runtime_dynamic_get": 0,
+                "runtime_dynamic_set": 0,
+                "runtime_list_append": 1024,
+                "runtime_dict_get": 0,
+                "runtime_dict_set": 0,
+                "runtime_add_any": 4,
+                "runtime_sub_any": 0,
+                "runtime_mul_any": 0,
+                "runtime_gc": 0,
+                "runtime_type_code": 339,
+                "runtime_unbox_dynamic_int": 45,
+                "runtime_string_concat": 4,
+                "runtime_text_split_byte": 0,
+                "rt_runtime_maybe_gc": 1242
+              },
+              "stdout": "5050\n"
+            }
+          ]
+        },
+        {
+          "name": "dictionary_access",
+          "expected_stdout": "5050\n",
+          "samples": [
+            {
+              "kind": "baseline",
+              "compiler_sha256": "489d46b56766d85071b23017c7bf31313fc5881efaf81223a5b17cf3e8b852ad",
+              "source_sha256": "0b05906fe8fb9d18b4f8ff8fbd58aceb33f6369c376635bd1b0d77b1cce1b307",
+              "assembly_sha256": "55d53fafa6b4fc7b97ad888c3eb4bfffb72867bd4d2b65389e0625794a24d5fd",
+              "diagnostic_artifacts": {
+                "compiler_sha256": "489d46b56766d85071b23017c7bf31313fc5881efaf81223a5b17cf3e8b852ad",
+                "backend_sha256": "44c141c6ee0d0887c80111320fa2db80fe485f385cbf0a70dbfeee400754b26d",
+                "production_elf_sha256": "94c01ae7c1346d87dbf368f21d9861b1df67ade21db5e87dccc4d3481df59060",
+                "origin": "compiler-emitted alongside the production ELF",
+                "ssa_sha256": "a0dd75994c00209ecd02b3c46ffb71bfa673bbe30c803784990de0ada2fa2386",
+                "assembly_sha256": "55d53fafa6b4fc7b97ad888c3eb4bfffb72867bd4d2b65389e0625794a24d5fd"
+              },
+              "counts": {
+                "runtime_alloc": 1210,
+                "runtime_box_dynamic_int": 0,
+                "runtime_dynamic_get": 0,
+                "runtime_dynamic_set": 0,
+                "runtime_list_append": 128,
+                "runtime_dict_get": 200,
+                "runtime_dict_set": 228,
+                "runtime_add_any": 4,
+                "runtime_sub_any": 0,
+                "runtime_mul_any": 0,
+                "runtime_gc": 0,
+                "runtime_type_code": 839,
+                "runtime_unbox_dynamic_int": 1073,
+                "runtime_string_concat": 132,
+                "runtime_text_split_byte": 0,
+                "rt_runtime_maybe_gc": 944
+              },
+              "stdout": "5050\n"
+            },
+            {
+              "kind": "candidate",
+              "compiler_sha256": "efbcb2bbe51587b9728616cef23c0553acde66cceedc17aded04ae4c4602a7a9",
+              "source_sha256": "0b05906fe8fb9d18b4f8ff8fbd58aceb33f6369c376635bd1b0d77b1cce1b307",
+              "assembly_sha256": "acc2c482ad7ed88a17fe651f0ae35e72c9f1636908d0857b7b154b4eaf63b96b",
+              "diagnostic_artifacts": {
+                "compiler_sha256": "efbcb2bbe51587b9728616cef23c0553acde66cceedc17aded04ae4c4602a7a9",
+                "backend_sha256": "44c141c6ee0d0887c80111320fa2db80fe485f385cbf0a70dbfeee400754b26d",
+                "production_elf_sha256": "3790fc9a5d1f4334a929525ba8ada8436e633dbbc195a5846c86fcc5e904a5a5",
+                "origin": "explicit diagnostic re-emission",
+                "diagnostic_emitter_sha256": "51009c7b2f4f6f453497072b0841632ad1c0fef28e64578569646625a4f8805f",
+                "runtime_sha256": "6780bb856d07a9017e40a90931487b0905c58dbe30b1ee08bc1f8f1d3e0d691b",
+                "reconstructed_elf_sha256": "3790fc9a5d1f4334a929525ba8ada8436e633dbbc195a5846c86fcc5e904a5a5",
+                "matches_production_elf": true,
+                "ssa_sha256": "88d9625e34948703de2e652ee099633ed355f27f29155eb3ef1fc73e445bf2bb",
+                "assembly_sha256": "acc2c482ad7ed88a17fe651f0ae35e72c9f1636908d0857b7b154b4eaf63b96b"
+              },
+              "counts": {
+                "runtime_alloc": 713,
+                "runtime_box_dynamic_int": 0,
+                "runtime_dynamic_get": 0,
+                "runtime_dynamic_set": 0,
+                "runtime_list_append": 128,
+                "runtime_dict_get": 200,
+                "runtime_dict_set": 228,
+                "runtime_add_any": 4,
+                "runtime_sub_any": 0,
+                "runtime_mul_any": 0,
+                "runtime_gc": 0,
+                "runtime_type_code": 567,
+                "runtime_unbox_dynamic_int": 273,
+                "runtime_string_concat": 132,
+                "runtime_text_split_byte": 0,
+                "rt_runtime_maybe_gc": 347
+              },
+              "stdout": "5050\n"
+            }
+          ]
+        },
+        {
+          "name": "string_split_join",
+          "expected_stdout": "7100\n",
+          "samples": [
+            {
+              "kind": "baseline",
+              "compiler_sha256": "489d46b56766d85071b23017c7bf31313fc5881efaf81223a5b17cf3e8b852ad",
+              "source_sha256": "45a2619dc0cf723c31c83396cb7ee781294d7cae5fc38ce03eba09f25ebdba77",
+              "assembly_sha256": "6c451e4b9e7f1d020e1c6ded01638bbe5c36567b80f52a7f1f0ee005dbcc314c",
+              "diagnostic_artifacts": {
+                "compiler_sha256": "489d46b56766d85071b23017c7bf31313fc5881efaf81223a5b17cf3e8b852ad",
+                "backend_sha256": "44c141c6ee0d0887c80111320fa2db80fe485f385cbf0a70dbfeee400754b26d",
+                "production_elf_sha256": "ba7571b12e964813aad275c052a6ac1ddbe8303bd192fc9d62d7a7ddcbd75dbb",
+                "origin": "compiler-emitted alongside the production ELF",
+                "ssa_sha256": "1a4aae931d65e981d34343e766a1a64ca054076347c371e60eb67d10273a20b4",
+                "assembly_sha256": "6c451e4b9e7f1d020e1c6ded01638bbe5c36567b80f52a7f1f0ee005dbcc314c"
+              },
+              "counts": {
+                "runtime_alloc": 6183,
+                "runtime_box_dynamic_int": 0,
+                "runtime_dynamic_get": 1000,
+                "runtime_dynamic_set": 0,
+                "runtime_list_append": 3100,
+                "runtime_dict_get": 0,
+                "runtime_dict_set": 0,
+                "runtime_add_any": 1800,
+                "runtime_sub_any": 0,
+                "runtime_mul_any": 0,
+                "runtime_gc": 0,
+                "runtime_type_code": 3502,
+                "runtime_unbox_dynamic_int": 2002,
+                "runtime_string_concat": 2100,
+                "runtime_text_split_byte": 100,
+                "rt_runtime_maybe_gc": 5384
+              },
+              "stdout": "7100\n"
+            },
+            {
+              "kind": "candidate",
+              "compiler_sha256": "efbcb2bbe51587b9728616cef23c0553acde66cceedc17aded04ae4c4602a7a9",
+              "source_sha256": "45a2619dc0cf723c31c83396cb7ee781294d7cae5fc38ce03eba09f25ebdba77",
+              "assembly_sha256": "45c392976377b9e2aa254d42c029f2bac6753265fc7d6a46a341a98bcc6231eb",
+              "diagnostic_artifacts": {
+                "compiler_sha256": "efbcb2bbe51587b9728616cef23c0553acde66cceedc17aded04ae4c4602a7a9",
+                "backend_sha256": "44c141c6ee0d0887c80111320fa2db80fe485f385cbf0a70dbfeee400754b26d",
+                "production_elf_sha256": "e7af0f876182dc4030271b6348921812f5f846caf570759dc2ca910f1d65d1f8",
+                "origin": "explicit diagnostic re-emission",
+                "diagnostic_emitter_sha256": "51009c7b2f4f6f453497072b0841632ad1c0fef28e64578569646625a4f8805f",
+                "runtime_sha256": "6780bb856d07a9017e40a90931487b0905c58dbe30b1ee08bc1f8f1d3e0d691b",
+                "reconstructed_elf_sha256": "e7af0f876182dc4030271b6348921812f5f846caf570759dc2ca910f1d65d1f8",
+                "matches_production_elf": true,
+                "ssa_sha256": "8dcf74366ecd038894dc563c8c08059239ff758af81207c15dfa720dd674088b",
+                "assembly_sha256": "45c392976377b9e2aa254d42c029f2bac6753265fc7d6a46a341a98bcc6231eb"
+              },
+              "counts": {
+                "runtime_alloc": 2985,
+                "runtime_box_dynamic_int": 0,
+                "runtime_dynamic_get": 0,
+                "runtime_dynamic_set": 0,
+                "runtime_list_append": 1000,
+                "runtime_dict_get": 0,
+                "runtime_dict_set": 0,
+                "runtime_add_any": 0,
+                "runtime_sub_any": 0,
+                "runtime_mul_any": 0,
+                "runtime_gc": 0,
+                "runtime_type_code": 1402,
+                "runtime_unbox_dynamic_int": 2002,
+                "runtime_string_concat": 300,
+                "runtime_text_split_byte": 100,
+                "rt_runtime_maybe_gc": 986
+              },
+              "stdout": "7100\n"
+            }
+          ]
+        },
+        {
+          "name": "allocation_gc",
+          "expected_stdout": "100\n",
+          "samples": [
+            {
+              "kind": "baseline",
+              "compiler_sha256": "489d46b56766d85071b23017c7bf31313fc5881efaf81223a5b17cf3e8b852ad",
+              "source_sha256": "e9af16681b4e8d2cf4cbcd6b58adb5127634cc7631db2dc9ba593afae038a79b",
+              "assembly_sha256": "eef7f9a5bcbdf47eaf890e2e24da7eb0f7f9caf2f278d41af4694a5628a4552c",
+              "diagnostic_artifacts": {
+                "compiler_sha256": "489d46b56766d85071b23017c7bf31313fc5881efaf81223a5b17cf3e8b852ad",
+                "backend_sha256": "44c141c6ee0d0887c80111320fa2db80fe485f385cbf0a70dbfeee400754b26d",
+                "production_elf_sha256": "c13a7291893153866bf68e70f815f2174c33aa05eac94cd433fc490fa93ecc03",
+                "origin": "compiler-emitted alongside the production ELF",
+                "ssa_sha256": "892d7afaac0e1a967ce5a6ab8767aa5c4ba061b0d58f3506a96a37025476974a",
+                "assembly_sha256": "eef7f9a5bcbdf47eaf890e2e24da7eb0f7f9caf2f278d41af4694a5628a4552c"
+              },
+              "counts": {
+                "runtime_alloc": 1216,
+                "runtime_box_dynamic_int": 100,
+                "runtime_dynamic_get": 100,
+                "runtime_dynamic_set": 0,
+                "runtime_list_append": 300,
+                "runtime_dict_get": 200,
+                "runtime_dict_set": 200,
+                "runtime_add_any": 3,
+                "runtime_sub_any": 100,
+                "runtime_mul_any": 0,
+                "runtime_gc": 0,
+                "runtime_type_code": 631,
+                "runtime_unbox_dynamic_int": 636,
+                "runtime_string_concat": 3,
+                "runtime_text_split_byte": 0,
+                "rt_runtime_maybe_gc": 509
+              },
+              "stdout": "100\n"
+            },
+            {
+              "kind": "candidate",
+              "compiler_sha256": "efbcb2bbe51587b9728616cef23c0553acde66cceedc17aded04ae4c4602a7a9",
+              "source_sha256": "e9af16681b4e8d2cf4cbcd6b58adb5127634cc7631db2dc9ba593afae038a79b",
+              "assembly_sha256": "22f92efb5fcca7063e0fdc5248c22b1e2516aec0856dfd37b6c8fe065c0f5a07",
+              "diagnostic_artifacts": {
+                "compiler_sha256": "efbcb2bbe51587b9728616cef23c0553acde66cceedc17aded04ae4c4602a7a9",
+                "backend_sha256": "44c141c6ee0d0887c80111320fa2db80fe485f385cbf0a70dbfeee400754b26d",
+                "production_elf_sha256": "caff775fb3137be3619465fdc9f60abb478570dccc20b92cdbc987b2bf0ef4e4",
+                "origin": "explicit diagnostic re-emission",
+                "diagnostic_emitter_sha256": "51009c7b2f4f6f453497072b0841632ad1c0fef28e64578569646625a4f8805f",
+                "runtime_sha256": "6780bb856d07a9017e40a90931487b0905c58dbe30b1ee08bc1f8f1d3e0d691b",
+                "reconstructed_elf_sha256": "caff775fb3137be3619465fdc9f60abb478570dccc20b92cdbc987b2bf0ef4e4",
+                "matches_production_elf": true,
+                "ssa_sha256": "a0371f22d1d1a57cb281991fea552941c8c0ecf90d25dd6bb06f9821e66b4331",
+                "assembly_sha256": "22f92efb5fcca7063e0fdc5248c22b1e2516aec0856dfd37b6c8fe065c0f5a07"
+              },
+              "counts": {
+                "runtime_alloc": 917,
+                "runtime_box_dynamic_int": 0,
+                "runtime_dynamic_get": 0,
+                "runtime_dynamic_set": 0,
+                "runtime_list_append": 0,
+                "runtime_dict_get": 200,
+                "runtime_dict_set": 200,
+                "runtime_add_any": 3,
+                "runtime_sub_any": 0,
+                "runtime_mul_any": 0,
+                "runtime_gc": 0,
+                "runtime_type_code": 531,
+                "runtime_unbox_dynamic_int": 36,
+                "runtime_string_concat": 3,
+                "runtime_text_split_byte": 0,
+                "rt_runtime_maybe_gc": 210
+              },
+              "stdout": "100\n"
+            }
+          ]
+        }
+      ],
+      "runtime": {
+        "baseline": {
+          "object_sha256": "6780bb856d07a9017e40a90931487b0905c58dbe30b1ee08bc1f8f1d3e0d691b",
+          "assembly_sha256": "56d9c4ff8d592ecbf6ce55e327d81309a248a2f56d3fb793fbaebc458e98cd4a"
+        },
+        "candidate": {
+          "object_sha256": "6780bb856d07a9017e40a90931487b0905c58dbe30b1ee08bc1f8f1d3e0d691b",
+          "assembly_sha256": "56d9c4ff8d592ecbf6ce55e327d81309a248a2f56d3fb793fbaebc458e98cd4a"
+        }
+      }
+    }
+  }
+}

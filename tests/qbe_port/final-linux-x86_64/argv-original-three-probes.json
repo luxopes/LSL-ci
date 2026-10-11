@@ -1,0 +1,41 @@
+[
+  {
+    "command": [
+      "build/qbe-port-tools/native-selfhost/frontend-stage3",
+      "compiler/pure/lslc_qbe.lsl",
+      "build/qbe-finish/compiler-gc-final",
+      "build/qbe-port-tools/native-selfhost/qbe-stage3"
+    ],
+    "returncode": -9,
+    "reached_1second": true,
+    "seconds": 1.009676847999799,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "build/qbe-port-tools/native-selfhost/frontend-stage3",
+      "compiler/pure/lslc_qbe.lsl",
+      "build/qbe-finish/compiler-gc-final",
+      "build/qbe-port-tools/native-selfhost/qbe-stage3"
+    ],
+    "returncode": -9,
+    "reached_1second": true,
+    "seconds": 1.0111763429958955,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "build/qbe-port-tools/native-selfhost/frontend-stage3",
+      "compiler/pure/lslc_qbe.lsl",
+      "build/qbe-finish/compiler-gc-final",
+      "build/qbe-port-tools/native-selfhost/qbe-stage3"
+    ],
+    "returncode": -9,
+    "reached_1second": true,
+    "seconds": 1.0093589579992113,
+    "stdout": "",
+    "stderr": ""
+  }
+]

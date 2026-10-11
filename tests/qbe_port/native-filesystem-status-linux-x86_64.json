@@ -1,0 +1,68 @@
+{
+  "scope": "mkdir, private mkdir, unlink and rmdir expose integer syscall statuses across public Any boundaries",
+  "all_pass": true,
+  "expected_stdout": "Int 0 True\n-17\nInt 0 True\n-17\nInt 0 True\n-2\nInt 0 True\n-2\n0\n",
+  "baseline_note": "Installed0.8.9 matches all numeric syscall statuses and public identity comparisons. Its type(raw zero status) reports None; candidate correctly reports Int. Only this known zero-type defect is normalized in baseline comparison.",
+  "checks": [
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-release-audit/compiler/pure/lslc-qbe",
+        "--unsafe",
+        "compiler/pure/lslc_qbe.lsl",
+        "/home/antonin/LSL-QBE-release-audit/build/qbe-audit/filesystem-status/lslc"
+      ],
+      "seconds": 6.948611427003925,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/.local/bin/lslc",
+        "tests/qbe_port/native_filesystem_status.lsl",
+        "/home/antonin/LSL-QBE-release-audit/build/qbe-audit/filesystem-status/old"
+      ],
+      "seconds": 0.5713265309968847,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-release-audit/build/qbe-audit/filesystem-status/lslc",
+        "--unsafe",
+        "tests/qbe_port/native_filesystem_status.lsl",
+        "/home/antonin/LSL-QBE-release-audit/build/qbe-audit/filesystem-status/new"
+      ],
+      "seconds": 0.6469129199977033,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-release-audit/build/qbe-audit/filesystem-status/old",
+        "/home/antonin/LSL-QBE-release-audit/build/qbe-audit/filesystem-status"
+      ],
+      "seconds": 0.002197312001953833,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "None 0 True\n-17\nNone 0 True\n-17\nNone 0 True\n-2\nNone 0 True\n-2\n0\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-QBE-release-audit/build/qbe-audit/filesystem-status/new",
+        "/home/antonin/LSL-QBE-release-audit/build/qbe-audit/filesystem-status"
+      ],
+      "seconds": 0.0022910499974386767,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "Int 0 True\n-17\nInt 0 True\n-17\nInt 0 True\n-2\nInt 0 True\n-2\n0\n",
+      "stderr": ""
+    }
+  ]
+}

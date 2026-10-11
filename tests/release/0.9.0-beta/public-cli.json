@@ -1,0 +1,409 @@
+{
+  "complete": true,
+  "compiler_sha256": "96f89d00192d57965fd56ff828ad277b9155acb894fc6182296eb6d95f734645",
+  "cli_sha256": "aab9c3a37ab0e32281a8c5db00f1d7dced42b49598e71aae0248655827c2aa08",
+  "checks": [
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/compiler/pure/lslc-qbe",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/safe.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/program"
+      ],
+      "seconds": 0.3956092680018628,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "compiler default native backend",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/program"
+      ],
+      "seconds": 0.0019059449987253174,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "native public 42\n",
+      "stderr": "",
+      "name": "compiler output",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/compiler/pure/lslc-qbe",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/private.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/program"
+      ],
+      "seconds": 0.15251315700879786,
+      "returncode": 1,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "LSL runtime error: CompileError: unsafe operation outside an unsafe block at /home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/private.lsl:1: __lsl_syscall\n",
+      "name": "compiler default rejects private intrinsic",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/compiler/pure/lslc-qbe",
+        "--safe",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/private.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/program"
+      ],
+      "seconds": 0.15595370800292585,
+      "returncode": 1,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "LSL runtime error: CompileError: unsafe operation outside an unsafe block at /home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/private.lsl:1: __lsl_syscall\n",
+      "name": "compiler explicit safe rejects private intrinsic",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/compiler/pure/lslc-qbe",
+        "--unsafe",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/private.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/program"
+      ],
+      "seconds": 0.3712237090076087,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "compiler explicit unsafe",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/program"
+      ],
+      "seconds": 0.0022345779871102422,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "True\n",
+      "stderr": "",
+      "name": "compiler unsafe output",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/compiler/pure/lslc-qbe",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/lexical.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/program"
+      ],
+      "seconds": 0.36621815999387763,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "compiler safe lexical unsafe block",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/program"
+      ],
+      "seconds": 0.002104211991536431,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "True\n",
+      "stderr": "",
+      "name": "compiler lexical output",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/compiler/pure/lslc-qbe",
+        "--sandbox",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/lexical.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/program"
+      ],
+      "seconds": 0.1527065280097304,
+      "returncode": 1,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "LSL runtime error: CompileError: unsafe block is forbidden in sandbox compilation at /home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/lexical.lsl:1\n",
+      "name": "compiler sandbox rejects unsafe block",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/compiler/pure/lslc-qbe",
+        "--sandbox",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/safe.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/program"
+      ],
+      "seconds": 0.3725253349984996,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "compiler sandbox safe source",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/program"
+      ],
+      "seconds": 0.0019242300040787086,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "native public 42\n",
+      "stderr": "",
+      "name": "compiler sandbox output",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/compiler/pure/lslc-qbe",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/internal.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/program"
+      ],
+      "seconds": 0.38752319499326404,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "compiler internal ABI compatibility",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/program"
+      ],
+      "seconds": 0.010087234011734836,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "True\n",
+      "stderr": "",
+      "name": "compiler internal ABI output",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/compiler/pure/lslc-qbe",
+        "--safe",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/internal.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/program"
+      ],
+      "seconds": 0.013750587997492403,
+      "returncode": 1,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "LSL runtime error: CompileError: internal ABI requires compiler trust mode\n",
+      "name": "compiler explicit safe overrides internal ABI",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/compiler/pure/lslc-qbe",
+        "--missing",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/safe.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/program"
+      ],
+      "seconds": 0.017228254000656307,
+      "returncode": 2,
+      "timed_out": false,
+      "stdout": "unknown compiler option: --missing\n",
+      "stderr": "",
+      "name": "compiler rejects unknown option",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/compiler/pure/lslc-qbe",
+        "--target"
+      ],
+      "seconds": 0.013297507000970654,
+      "returncode": 2,
+      "timed_out": false,
+      "stdout": "usage: lslc [--safe | --unsafe | --sandbox] [--target NAME] SOURCE OUTPUT [LSL-QBE]\n",
+      "stderr": "",
+      "name": "compiler missing target value",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/compiler/pure/lslc-qbe",
+        "--target",
+        "windows-x86_64",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/safe.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/program"
+      ],
+      "seconds": 0.00853618499240838,
+      "returncode": 1,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "LSL runtime error: CompileError: compilation target is not implemented: windows-x86_64 (runtime, image writer and platform providers)\n",
+      "name": "compiler unavailable target",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/compiler/pure/lsl-cli",
+        "compile",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/safe.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/program"
+      ],
+      "seconds": 0.3956388710066676,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "public CLI compile",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/program"
+      ],
+      "seconds": 0.0018379590037511662,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "native public 42\n",
+      "stderr": "",
+      "name": "public CLI compiled output",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/compiler/pure/lsl-cli",
+        "compile",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/private.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/program"
+      ],
+      "seconds": 0.1524396809982136,
+      "returncode": 1,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "error: CompileError: unsafe operation outside an unsafe block at /home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/private.lsl:1: __lsl_syscall\n",
+      "name": "public CLI safe compile",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/compiler/pure/lsl-cli",
+        "compile",
+        "--unsafe",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/private.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/program"
+      ],
+      "seconds": 0.3716754420020152,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "public CLI explicit unsafe",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/program"
+      ],
+      "seconds": 0.002015156002016738,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "True\n",
+      "stderr": "",
+      "name": "public CLI unsafe output",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/compiler/pure/lsl-cli",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/safe.lsl"
+      ],
+      "seconds": 0.38573443501081783,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "native public 42\n",
+      "stderr": "",
+      "name": "public CLI source run",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/compiler/pure/lsl-cli",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/private.lsl"
+      ],
+      "seconds": 0.15884042099060025,
+      "returncode": 1,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "error: CompileError: unsafe operation outside an unsafe block at /home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/private.lsl:1: __lsl_syscall\n",
+      "name": "public CLI source run remains safe",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/compiler/pure/lsl-cli",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/internal.lsl"
+      ],
+      "seconds": 0.16074513900093734,
+      "returncode": 1,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "error: CompileError: unsafe operation outside an unsafe block at /home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/internal.lsl:2: __lsl_syscall\n",
+      "name": "public CLI internal pragma grants no trust",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/compiler/pure/lsl-cli",
+        "compile",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/entry.lsl",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/program"
+      ],
+      "seconds": 0.5114633509947453,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "name": "public CLI compiled entry identity",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/program",
+        "probe"
+      ],
+      "seconds": 0.002081416008877568,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "\nprobe\n",
+      "stderr": "",
+      "name": "compiled entry source is empty",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/compiler/pure/lsl-cli",
+        "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/entry.lsl",
+        "probe"
+      ],
+      "seconds": 0.5204546669992851,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "/home/antonin/LSL-Release-0.9.0/build/release-preflight/public-cli/entry.lsl\nprobe\n",
+      "stderr": "",
+      "name": "source run entry identity and arguments",
+      "matches": true
+    },
+    {
+      "command": [
+        "/home/antonin/LSL-Release-0.9.0/compiler/pure/lsl-cli",
+        "config",
+        "/home/antonin/LSL-Release-0.9.0/tests/config/defaults.lsl"
+      ],
+      "seconds": 0.7534025460045086,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "{\"service\":{\"enable\":true,\"port\":9000},\"labels\":[\"default\"]}\n",
+      "stderr": "",
+      "name": "public CLI config evaluator",
+      "matches": true
+    }
+  ],
+  "all_pass": true,
+  "binaries_unchanged": true
+}

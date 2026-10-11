@@ -1,0 +1,170 @@
+{
+  "compiler_sha256": "9012da6ac668a4b22fa0825876037f3b90f351610b33f0d00328ec1b21085604",
+  "backend_sha256": "4712c5462be659300054b6e96ccab1cdf7f2195971180d9623e0e7c21e8e7807",
+  "checks": [
+    {
+      "mode": "public",
+      "source_sha256": "f795e325e8f014b7ed238b00f90fd5a087fdf96c3592258d26a063eb2a23d031",
+      "build": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/lslc",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/identity-final/arg-public.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/identity-final/arg-public",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+        ],
+        "seconds": 0.6317919460052508,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "execution": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/identity-final/arg-public",
+          "present"
+        ],
+        "seconds": 0.002279439999256283,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "True False None\nNone\nTrue False True False\nNone False\nTrue False None\nTrue False None\nTrue True String\n",
+        "stderr": ""
+      },
+      "pass": true
+    },
+    {
+      "mode": "internal",
+      "source_sha256": "57aedc35ad0773179dcd64f8c09d3ba635d338e615a2ce74a14a3d231f62d2ec",
+      "build": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/lslc",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/identity-final/arg-internal.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/identity-final/arg-internal",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+        ],
+        "seconds": 0.6119112110027345,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "execution": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/identity-final/arg-internal",
+          "present"
+        ],
+        "seconds": 0.003340825998748187,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "True False None\nNone\nTrue False True False\nNone False\nTrue False None\nTrue False None\nTrue True String\n",
+        "stderr": ""
+      },
+      "pass": true
+    },
+    {
+      "mode": "public",
+      "source_sha256": "93bcf0f66fddfa7442fa4ce940c1a251f97593988a886ecbd876e6da09f9e30b",
+      "baseline_build": {
+        "command": [
+          "/home/antonin/.local/bin/lslc",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/identity-final/identity-public.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/identity-final/identity-public.baseline"
+        ],
+        "seconds": 0.6073516969991033,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "build": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/lslc",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/identity-final/identity-public.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/identity-final/identity-public",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+        ],
+        "seconds": 0.7633547609948437,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "baseline_execution": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/identity-final/identity-public.baseline"
+        ],
+        "seconds": 0.002131191999069415,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "True False\nTrue False True True\nFalse True\nTrue True True True\nTrue True False False\nTrue False True False\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nTrue False True False\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nTrue False True False\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nTrue False True False\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nTrue False True False\nTrue False True False\nTrue False True False\nFalse True False True\nFalse True False True\nTrue False True False\nTrue False True False\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nTrue False True False\nFalse True True False True\nFalse True\n",
+        "stderr": ""
+      },
+      "execution": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/identity-final/identity-public"
+        ],
+        "seconds": 0.0019011110052815638,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "True False\nTrue False True True\nFalse True\nTrue True True True\nTrue True False False\nTrue False True False\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nTrue False True False\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nTrue False True False\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nTrue False True False\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nTrue False True False\nTrue False True False\nTrue False True False\nFalse True False True\nFalse True False True\nTrue False True False\nTrue False True False\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nTrue False True False\nFalse True True False True\nFalse True\n",
+        "stderr": ""
+      },
+      "pass": true
+    },
+    {
+      "mode": "internal",
+      "source_sha256": "f1ce23433efc531bb455d5b714b835c3cf49d386221c02a099d9918a66307559",
+      "baseline_build": {
+        "command": [
+          "/home/antonin/.local/bin/lslc",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/identity-final/identity-internal.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/identity-final/identity-internal.baseline"
+        ],
+        "seconds": 0.5940457739998237,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "build": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/lslc",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/identity-final/identity-internal.lsl",
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/identity-final/identity-internal",
+          "/home/antonin/LSL-QBE/build/qbe-port-tools/native-selfhost/qbe-stage3"
+        ],
+        "seconds": 0.7183357340036309,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "",
+        "stderr": ""
+      },
+      "baseline_execution": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/identity-final/identity-internal.baseline"
+        ],
+        "seconds": 0.0021913559976383112,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "True False\nTrue False True True\nFalse True\nTrue True True True\nTrue True True True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nTrue False True False\nTrue False True False\nFalse True False True\nFalse True False True\nTrue False True False\nTrue False True False\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nTrue False True False\nFalse True True False True\nFalse True\n",
+        "stderr": ""
+      },
+      "execution": {
+        "command": [
+          "/home/antonin/LSL-QBE-cli-finish/build/qbe-nullable-arg/identity-final/identity-internal"
+        ],
+        "seconds": 0.002829428995028138,
+        "returncode": 0,
+        "timed_out": false,
+        "stdout": "True False\nTrue False True True\nFalse True\nTrue True True True\nTrue True True True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nFalse True False True\nTrue False True False\nTrue False True False\nTrue False True False\nFalse True False True\nFalse True False True\nTrue False True False\nTrue False True False\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nFalse True False True\nTrue False True False\nFalse True True False True\nFalse True\n",
+        "stderr": ""
+      },
+      "pass": true
+    }
+  ],
+  "all_pass": true,
+  "baseline_sha256": "f235b42d4998474c1bfee7eb02f17625bbc824f647f9ba33bdef8c20b0ff8696",
+  "scope": "Public and internal nullable arg identity plus scalar identity/equality and collection identity/deep equality, compared with installed LSL 0.8.9.",
+  "public_scalar_pairs": 25,
+  "float_pairs": 16,
+  "legacy_internal_raw_scalar_semantics_preserved": true
+}

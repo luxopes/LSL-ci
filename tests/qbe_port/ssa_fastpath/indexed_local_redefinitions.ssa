@@ -1,0 +1,23 @@
+# Multiple local redefinitions interleave with uses of two temporaries.
+# Neither is live out; renaming must retain instruction and temporary order.
+export function w $indexed_local(w %input) {
+@start
+	jmp @work
+@work
+	%value =w add %input, 1
+	%other =w add %input, 2
+	%sum =w add %value, %other
+	%value =w add %sum, 3
+	%other =w add %value, 4
+	%value =w add %other, %sum
+	%answer =w add %value, %other
+	jmp @empty
+@empty
+	jmp @exit
+@exit
+	ret %answer
+}
+# >>> driver
+# extern int indexed_local(int);
+# int main(void) { return indexed_local(2) == 35 ? 0 : 1; }
+# <<<

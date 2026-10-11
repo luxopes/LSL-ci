@@ -27,7 +27,7 @@ lsl install --tui
 Od 0.8.0 je k dispozici offline inventář (`list`, `check`), vyhledávání
 v katalogu (`search`) a interaktivní TUI s filtrem, označením a potvrzením
 instalací. Přehled rozlišuje bundled a uživatelské moduly. Podrobnosti a
-návratové stavy: [CLI a balíčky](developer_guides/17-cli-and-packages.md).
+návratové stavy: [CLI a balíčky](https://git.lux-ai.cz/LuxAI/LSL-Web/src/branch/main/public/17-cli-and-packages.md).
 
 Výchozí endpoint je:
 
