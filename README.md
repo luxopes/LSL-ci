@@ -36,6 +36,7 @@ Web a manuály mají samostatný projekt
 [lsl.lux-ai.cz](https://lsl.lux-ai.cz/).
 Starší manuály jsou v [historii vydání](https://lsl.lux-ai.cz/releases/):
 
+- [LSL 0.9.0 BETA](https://git.lux-ai.cz/LuxAI/LSL/releases/tag/v0.9.0-beta.1) — nový nativní backend LuxIR v LSL, oddělený frontend a ověřený self-host; Linux x86_64;
 - LSL 0.8.9 — `.env`, `requests` a manuály knihoven;
 - LSL 0.8.8 — bufferovaný stdin/stdout, rezerva haldy, nativní `split` a `Int`, oprava typů proměnných a diagnostika comprehension;
 - LSL 0.8.7 — `rang` jako hodnota a `List.find`;
