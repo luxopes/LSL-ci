@@ -3437,6 +3437,19 @@ end
 # from the ASLR-randomized initial process stack so remote inputs cannot
 # precompute a collision set and turn Dictionary/JSON insertion into quadratic
 # work.
+# Rutiny, které runtime pro LuxIR cestu dodává z compiler/runtime/*.lir
+# (qbe_runtime_dump je zapíše přes provided_by_luxir); jejich x86 verze se
+# pak negenerují. Přímý x86 backend seznam nechává prázdný.
+LIR_PROVIDED = {}
+
+function provided_by_luxir(name):
+    LIR_PROVIDED[name] = True
+end
+
+function x86_needed(name):
+    return name not in LIR_PROVIDED
+end
+
 function emit_dict_hash(output):
     call assembler.label(output, "runtime_string_hash")
     call assembler.emit(output, x86_64.load_memory(1, 7, 8))
@@ -4422,12 +4435,22 @@ function emit_all(output):
     call emit_dict_probe(output)
     call emit_dict_index_insert(output)
     call emit_dict_reindex(output)
-    call emit_dict_new(output)
-    call emit_dict_get(output)
-    call emit_dict_keys(output)
-    call emit_dict_delete(output)
-    call emit_dict_grow(output)
-    call emit_dict_set(output)
+    if x86_needed("runtime_dict_new"):
+        call emit_dict_new(output)
+    end
+    if x86_needed("runtime_dict_get"):
+        call emit_dict_get(output)
+    end
+    if x86_needed("runtime_dict_keys"):
+        call emit_dict_keys(output)
+    end
+    if x86_needed("runtime_dict_delete"):
+        call emit_dict_delete(output)
+    end
+    if x86_needed("runtime_dict_set"):
+        call emit_dict_grow(output)
+        call emit_dict_set(output)
+    end
 end
 
 # Přesný převod w · 10^q (w bez znaménka, nejvýš 19 číslic) na bity binary64,

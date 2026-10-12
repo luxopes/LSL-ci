@@ -17,13 +17,14 @@ names={n for ns in labels.values() for n in ns}
 # (rdi, rsi, rdx, rcx, r8, r9) a vrací jen rax; interní pomocné funkce modulu
 # exportuje pod jiným jménem (lsl_runtime_X).
 root=pathlib.Path(__file__).resolve().parents[2]
-lir_modules=sorted((root/'compiler/runtime').glob('*.lir'))
+manifest=root/'compiler/runtime/MODULES'
+lir_modules=[root/'compiler/runtime'/line.strip() for line in manifest.read_text().splitlines() if line.strip()] if manifest.exists() else []
 lir_names=set()
 for module in lir_modules:
     for match in re.finditer(r'^export function rt_(runtime_\w+)\(',module.read_text(),re.M):
         lir_names.add(match[1])
-overridden=lir_names&names
-missing=set(fixups.values())-names
+overridden=lir_names&(names|set(fixups.values()))
+missing=set(fixups.values())-names-overridden
 if missing:raise SystemExit('unresolved runtime dependencies: '+repr(missing))
 # Runtime začíná na hranici 64 B: zarovnání horkých rutin pak nezávisí
 # na velikosti programu, který se linkuje před něj.

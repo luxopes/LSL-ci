@@ -3,6 +3,18 @@
 load runtime_linux_x86_64 as runtime
 load assembler_x86_64 as assembler
 load x86_64
+load heap_runtime_linux_x86_64 as heap_runtime
+# Rutiny z modulů compiler/runtime/*.lir (seznam MODULES) se v x86 negenerují;
+# tools/qbe/runtime_object.py je přeloží LuxIR a přilinkuje.
+for module_name in readfile("compiler/runtime/MODULES").split(chr(10)):
+    if module_name != "":
+        for line in readfile("compiler/runtime/" + module_name).split(chr(10)):
+            if line.startswith("export function rt_runtime_"):
+                call heap_runtime.provided_by_luxir(line[len("export function rt_"):line.find("(")])
+            end
+        end
+    end
+end
 output = assembler.builder()
 call runtime.emit_all(output)
 call runtime.emit_lazy(output,True,True)
