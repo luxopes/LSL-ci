@@ -9,20 +9,6 @@ for line in prefix.with_suffix('.labels').read_text().splitlines():
 for line in prefix.with_suffix('.fixups').read_text().splitlines():
  pos,name=line.split(' ',1);fixups[int(pos)]=name
 names={n for ns in labels.values() for n in ns}
-# Rutiny přepsané do LuxIR (compiler/runtime/*.lir): modul exportuje SysV
-# funkci rt_runtime_X, interní x86 volání runtime_X jdou přes adaptér
-# lsl_lir_runtime_X a původní x86 kód zůstává jen jako mrtvý kód, dokud se
-# neodstraní z emitorů.
-# Nahradit lze jen x86 rutiny, které berou argumenty v registrech podle SysV
-# (rdi, rsi, rdx, rcx, r8, r9) a vrací jen rax; interní pomocné funkce modulu
-# exportuje pod jiným jménem (lsl_runtime_X).
-root=pathlib.Path(__file__).resolve().parents[2]
-lir_modules=sorted((root/'compiler/runtime').glob('*.lir'))
-lir_names=set()
-for module in lir_modules:
-    for match in re.finditer(r'^export function rt_(runtime_\w+)\(',module.read_text(),re.M):
-        lir_names.add(match[1])
-overridden=lir_names&names
 missing=set(fixups.values())-names
 if missing:raise SystemExit('unresolved runtime dependencies: '+repr(missing))
 # Runtime začíná na hranici 64 B: zarovnání horkých rutin pak nezávisí
@@ -34,10 +20,7 @@ for boundary in positions:
  if boundary<pos:continue
  for i in range(pos,boundary,32):out.append('.byte '+','.join(str(b) for b in code[i:min(i+32,boundary)]))
  for name in labels.get(boundary,[]):out += ['.globl '+name,name+':']
- if boundary in fixups:
-  target=fixups[boundary]
-  if target in overridden:target='lsl_lir_'+target
-  out.append('.long '+target+' - . - 4');pos=boundary+4
+ if boundary in fixups:out.append('.long '+fixups[boundary]+' - . - 4');pos=boundary+4
  else:pos=boundary
 # SysV bridge: QBE may allocate RBX; old runtime uses it as its state base.
 # Check the allocation budget in the bridge before saving RBX or making a
@@ -49,7 +32,7 @@ def abi_offset(name):
     if not match:raise SystemExit('missing runtime ABI offset: '+name)
     return int(match[1])
 for name in sorted(names):
-    if not name.startswith('runtime_') or name in overridden:
+    if not name.startswith('runtime_'):
         continue
     # Můstky volané z každé iterace zarovnané jako běžné funkce (16 B).
     out += ['.p2align 4','.globl rt_'+name,'rt_'+name+':']
@@ -68,13 +51,6 @@ for name in sorted(names):
     if name == 'runtime_syscall6':
         out += ['add $16,%rsp']
     out += ['pop %rbx','ret']
-# Adaptér pro x86 volající: uloží všechny caller-saved registry kromě rax
-# (x86 rutiny si v nich drží hodnoty přes volání) a zarovná zásobník na 16 B.
-for name in sorted(overridden):
-    out += ['.p2align 4','lsl_lir_'+name+':','push %rbp','mov %rsp,%rbp',
-            'push %rcx','push %rdx','push %rsi','push %rdi','push %r8','push %r9','push %r10','push %r11',
-            'and $-16,%rsp','call rt_'+name,'lea -64(%rbp),%rsp',
-            'pop %r11','pop %r10','pop %r9','pop %r8','pop %rdi','pop %rsi','pop %rdx','pop %rcx','pop %rbp','ret']
 out += ['.globl _start','_start:','jmp qbe_runtime_start']
 # qbe_runtime_start ends after initialization, then falls through here.
 # Labels/wrappers above follow the runtime bytes; append a jump at byte end.
@@ -96,19 +72,4 @@ out += ['.globl qbe_error_flag','qbe_error_flag:','mov %fs:8,%rax','ret',
 '.globl qbe_exit','qbe_exit:','push %rdi','call rt_runtime_stdout_flush','pop %rdi','mov $60,%rax','syscall',
 '.bss','.align 8','.globl lsl_state','lsl_state:','.zero 8','.section .note.GNU-stack,"",@progbits']
 prefix.with_suffix('.s').write_text('\n'.join(out)+'\n')
-if not lir_modules:
-    subprocess.run(['cc','-c',str(prefix.with_suffix('.s')),'-o',str(prefix.with_suffix('.o'))],check=True)
-else:
-    # x86 část a moduly z LuxIR spojené do jednoho relokovatelného objektu.
-    import os
-    backend=os.environ.get('LSL_BACKEND') or str(root/'compiler/pure/luxir')
-    core=prefix.with_name(prefix.name+'-x86.o')
-    subprocess.run(['cc','-c',str(prefix.with_suffix('.s')),'-o',str(core)],check=True)
-    objects=[str(core)]
-    for module in lir_modules:
-        assembly=prefix.with_name(prefix.name+'-'+module.stem+'.s')
-        obj=prefix.with_name(prefix.name+'-'+module.stem+'.o')
-        subprocess.run([backend,'-t','amd64_sysv','-o',str(assembly),str(module)],check=True)
-        subprocess.run(['cc','-c',str(assembly),'-o',str(obj)],check=True)
-        objects.append(str(obj))
-    subprocess.run(['ld','-r','-o',str(prefix.with_suffix('.o'))]+objects,check=True)
+subprocess.run(['cc','-c',str(prefix.with_suffix('.s')),'-o',str(prefix.with_suffix('.o'))],check=True)
