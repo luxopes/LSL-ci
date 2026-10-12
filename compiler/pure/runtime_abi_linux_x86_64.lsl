@@ -10,6 +10,11 @@ TLS_STACK_TOP = 16
 TLS_WORKER_STATE = 24
 MAIN_TLS = 160
 STATE_BYTES = 1344
+# Bitmapa začátků objektů: ukazatel a kapacita v bajtech ve stavu; počáteční
+# velikost (4 MiB pokryje 256 MiB haldy), roste spolu s brk haldou.
+OBJECT_BITMAP = 1328
+OBJECT_BITMAP_CAPACITY = 1336
+OBJECT_BITMAP_INITIAL = 4194304
 GLOBAL_ROOT_BEGIN = 16
 GLOBAL_ROOT_END = 24
 GC_ALLOCATED_BYTES = 144

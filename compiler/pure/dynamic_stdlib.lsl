@@ -855,12 +855,8 @@ function __lsl_dynamic_contains(target, value):
     elif target_type == 1:
         return __lsl_find(target, __lsl_require_string_value(value)) >= 0
     elif target_type == 3:
-        for key in target.keys():
-            if key == value:
-                return True
-            end
-        end
-        return False
+        # Hashovaný index slovníku (runtime contains), ne průchod všemi klíči.
+        return value in target
     elif target_type == 2 or target_type == 7 or target_type == 8 or target_type == 13 or target_type == 14 or target_type == 15:
         return __lsl_sequence_contains(target, value)
     end

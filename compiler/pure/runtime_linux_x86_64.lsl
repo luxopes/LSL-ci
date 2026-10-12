@@ -64,6 +64,23 @@ function emit_entry(output, globals_bytes, registry_bytes, registry_mask):
     call assembler.emit(output, x86_64.store_memory(3, 48, 9))
     call assembler.emit(output, x86_64.mov_imm64(10, 65535))
     call assembler.emit(output, x86_64.store_memory(3, 56, 10))
+    # Bitmapa začátků objektů (state+1328, kapacita +1336): 1 bit na 8 bajtů
+    # od začátku stavu, MAP_NORESERVE (fyzicky jen použité stránky). Nahrazuje
+    # hashovanou tabulku objektů při rozlišování hodnot Any
+    # (runtime_is_heap_object); roste v runtime_object_bitmap_ensure.
+    call assembler.emit(output, x86_64.mov_imm64(0, platform.SYS_MMAP))
+    call assembler.emit(output, x86_64.xor_reg_reg(7, 7))
+    call assembler.emit(output, x86_64.mov_imm64(6, abi_x86_64.OBJECT_BITMAP_INITIAL))
+    call assembler.emit(output, x86_64.mov_imm64(2, 3))
+    call assembler.emit(output, x86_64.mov_imm64(10, platform.MAP_PRIVATE + platform.MAP_ANONYMOUS + 16384))
+    call assembler.emit(output, x86_64.mov_imm64(8, -1))
+    call assembler.emit(output, x86_64.xor_reg_reg(9, 9))
+    call assembler.emit(output, x86_64.syscall())
+    call assembler.emit(output, x86_64.cmp_reg_imm8(0, 0))
+    call assembler.relative(output, [15, 140], "runtime_fatal_allocation")
+    call assembler.emit(output, x86_64.store_memory(3, abi_x86_64.OBJECT_BITMAP, 0))
+    call assembler.emit(output, x86_64.mov_imm64(0, abi_x86_64.OBJECT_BITMAP_INITIAL))
+    call assembler.emit(output, x86_64.store_memory(3, abi_x86_64.OBJECT_BITMAP_CAPACITY, 0))
     # Main-thread identity for gc() and envp lookup: the initial stack top.
     call assembler.emit(output, x86_64.store_memory(3, 120, 15))
     call assembler.emit(output, x86_64.store_memory_imm32(3, abi_x86_64.GC_BUDGET, 4194304))

@@ -1,0 +1,11 @@
+['a', 'b'] ['a=b'] ['a=b']
+['', 'x', ''] ['=x='] ['=x=']
+[''] [''] ['']
+['noeq'] ['noeq'] ['noeq']
+['č', 'ř', 'ž'] ['č=ř=ž'] ['č=ř=ž']
+['a', '', 'b'] ['a==b'] ['a==b']
+['a', 'b']
+['1 2', '3 4', ''] ['1', '2']
+chyba: AttributeError: type Int has no method split at tests/split_literal_conformance.lsl:12:11
+chyba: AttributeError: type List has no method split at tests/split_literal_conformance.lsl:18:11
+['a', 'b'] ['a', ''] ['a', 'b']

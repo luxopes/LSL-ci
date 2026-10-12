@@ -90,3 +90,4 @@ load language_091_conformance
 load audit_092_conformance
 load rang_constant_step_conformance
 load call_statement_conformance
+load split_literal_conformance

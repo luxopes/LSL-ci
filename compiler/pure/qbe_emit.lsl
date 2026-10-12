@@ -1843,6 +1843,31 @@ function atomic_call(s,node,name):
     return rt(s,name,[address]+operands,"Int",False)
 end
 
+# text.split("x") s jednobajtovým literálem: String rovnou nativně, jiný typ
+# přes __lsl_split (stejné chyby jako dosud).
+function split_byte(s,values,byte):
+    receiver = values[0]
+    if receiver[1] == "String":
+        return rt(s,"text_split_byte",[receiver[0],String(byte)],"List")
+    end
+    result = temp(s,"copy(0)")
+    code = rt(s,"type_code",[receiver[0]],"Int",False)[0]
+    is_string = temp(s,"eq("+typed(code,"Int64")+", 1)","w")
+    fast = label(s)
+    slow = label(s)
+    done = label(s)
+    call jump_if(s,is_string,fast,slow)
+    call mark(s,fast)
+    pieces = rt(s,"text_split_byte",[receiver[0],String(byte)],"List")
+    call define(s,result,"copy("+pieces[0]+")")
+    call jump(s,done)
+    call mark(s,slow)
+    pieces = function_call(s,"__lsl_split",values)
+    call define(s,result,"copy("+pieces[0]+")")
+    call jump(s,done)
+    call mark(s,done)
+    return [result,"List"]
+end
 function call_expression(s,node):
     target = node["target"]
     name = target.get("name","")
@@ -1938,6 +1963,12 @@ function call_expression(s,node):
             elif name == "split" and len(values) == 1:
                 # split() bez argumentu: mezera se doplní už při překladu.
                 values.append(string(s," "))
+            end
+            if name == "split" and len(node["arguments"]) == 1:
+                separator = node["arguments"][0]
+                if separator["kind"] == "literal" and separator["literal_kind"] == "string" and len(separator["value"]) == 1 and ord(separator["value"]) < 128:
+                    return split_byte(s,values,ord(separator["value"]))
+                end
             end
             helper = METHODS[name]
             if name == "copy":
