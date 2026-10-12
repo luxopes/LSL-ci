@@ -202,7 +202,7 @@ function infer_expression_type(syntax, types, function_returns):
         if syntax["literal_kind"] == "string":
             return "String"
         elif syntax["literal_kind"] == "number":
-            if syntax["value"].find(".") >= 0 or syntax["value"].find("e") >= 0 or syntax["value"].find("E") >= 0:
+            if "." in syntax["value"] or "e" in syntax["value"] or "E" in syntax["value"]:
                 return "Float"
             end
             return "Int"
@@ -393,17 +393,38 @@ end
 # without revisiting x. Emission then boxes the division result but stores
 # it into x's raw slot. Repeat until no variable type changes; widening only
 # moves towards Any, so the loop converges quickly.
+# Záznam kola collect_types_stable: jméno -> [existovalo, původní typ] pro
+# každý klíč, do kterého kolo zapsalo. Mimo kolo None (ostatní volající
+# collect_types nic nezaznamenávají).
+TYPE_TRACE = None
+
+function set_type(types, name, value):
+    if TYPE_TRACE != None and name not in TYPE_TRACE:
+        if name in types:
+            TYPE_TRACE[name] = [True, types[name]]
+        else:
+            TYPE_TRACE[name] = [False, None]
+        end
+    end
+    types[name] = value
+end
+
 function collect_types_stable(statements, types, function_returns):
+    # Změnu kola pozná podle zapsaných klíčů (collect_types klíče nemaže);
+    # dřív se celý slovník, včetně všech globálů, v každém kole kopíroval.
+    global TYPE_TRACE
+    saved = TYPE_TRACE
     for round in rang(16):
-        before = Dictionary(types)
+        trace = {}
+        TYPE_TRACE = trace
         call collect_types(statements, types, function_returns)
-        changed = len(before) != len(types)
-        if not changed:
-            for name in types.keys():
-                if name not in before or before[name] != types[name]:
-                    changed = True
-                    break
-                end
+        TYPE_TRACE = saved
+        changed = False
+        for name in trace.keys():
+            entry = trace[name]
+            if not entry[0] or entry[1] != types[name]:
+                changed = True
+                break
             end
         end
         if not changed:
@@ -417,7 +438,7 @@ function collect_types(statements, types, function_returns):
     for statement in statements:
         kind = statement["kind"]
         if kind == "class":
-            types[statement["name"]] = "Class:" + statement["name"]
+            call set_type(types, statement["name"], "Class:" + statement["name"])
         elif kind == "assign":
             if statement["target"]["kind"] == "name":
                 name = statement["target"]["name"]
@@ -429,11 +450,11 @@ function collect_types(statements, types, function_returns):
                     assigned_type = infer_expression_type(combined, types, function_returns)
                 end
                 if "declared_type" in statement and statement["declared_type"] != "Any":
-                    types[name] = statement["declared_type"]
+                    call set_type(types, name, statement["declared_type"])
                 elif name in types and types[name] != assigned_type:
-                    types[name] = "Any"
+                    call set_type(types, name, "Any")
                 else:
-                    types[name] = assigned_type
+                    call set_type(types, name, assigned_type)
                 end
             end
         elif kind == "for":
@@ -450,10 +471,10 @@ function collect_types(statements, types, function_returns):
             # Hidden loop controls are ordinary locals in current codegen.
             # Give their unboxed integer values types so the register-local
             # allocator can keep hot counters and explicit steps off-stack.
-            types[statement["index_name"]] = "Int"
+            call set_type(types, statement["index_name"], "Int")
             if for_is_range:
                 binding_type = "Int"
-                types[statement["iterator_name"]] = "Int"
+                call set_type(types, statement["iterator_name"], "Int")
             elif iterable_type == "String":
                 binding_type = "String"
             elif iterable_type == "IntArray":
@@ -469,9 +490,9 @@ function collect_types(statements, types, function_returns):
             end
             binding = statement["name"]
             if binding in types and types[binding] != binding_type:
-                types[binding] = "Any"
+                call set_type(types, binding, "Any")
             else:
-                types[binding] = binding_type
+                call set_type(types, binding, binding_type)
             end
             call collect_types(statement["body"], types, function_returns)
         elif kind == "if":
@@ -638,7 +659,7 @@ function constant_int_expression(syntax):
             return [False, 0]
         end
         text = syntax["value"]
-        if text.find(".") >= 0 or text.find("e") >= 0 or text.find("E") >= 0:
+        if "." in text or "e" in text or "E" in text:
             return [False, 0]
         end
         return [True, integer_literal(syntax)]
@@ -1411,15 +1432,17 @@ end
 # Všechny řetězce v AST těla (jména, cíle, atributy, literály): konzervativní
 # nadmnožina globálních jmen, která může inference funkce přečíst.
 function syntax_strings(node, found):
-    if type(node) == "Dictionary":
+    # Kód typu místo type(): obecný průchod celým AST je v překladu horký.
+    code = __lsl_type_code(node)
+    if code == 3:
         for key in node.keys():
             call syntax_strings(node[key], found)
         end
-    elif type(node) == "List":
+    elif code == 2:
         for item in node:
             call syntax_strings(item, found)
         end
-    elif type(node) == "String":
+    elif code == 1:
         found[node] = True
     end
 end
@@ -1633,6 +1656,25 @@ function module_prefix_of(name):
     return ""
 end
 
+# Globály podle prefixu modulu (bez prefixu), spočítané jednou pro jednotku;
+# globály se po vytvoření jednotky nemění. Dřív se pro každou funkci znovu
+# procházely všechny globály celého programu (O(funkce × globály)).
+function module_globals(unit, prefix):
+    if "module_globals" not in unit:
+        groups = {}
+        for variable in unit["variables"].keys():
+            text = String(variable)
+            group = module_prefix_of(text)
+            if group not in groups:
+                groups[group] = {}
+            end
+            groups[group][text[len(group):len(text)]] = True
+        end
+        unit["module_globals"] = groups
+    end
+    return unit["module_globals"].get(prefix, {})
+end
+
 function check_global_shadowing(unit, declaration):
     skipped = {}
     for parameter in declaration["parameters"]:
@@ -1643,12 +1685,7 @@ function check_global_shadowing(unit, declaration):
     if prefix == "" and declaration.get("path", unit["path"]) != unit["path"]:
         return
     end
-    globals = {}
-    for variable in unit["variables"].keys():
-        if module_prefix_of(variable) == prefix:
-            globals[String(variable)[len(prefix):len(String(variable))]] = True
-        end
-    end
+    globals = module_globals(unit, prefix)
     for declared in declaration.get("globals", []):
         skipped[String(declared)[len(prefix):len(String(declared))]] = True
     end

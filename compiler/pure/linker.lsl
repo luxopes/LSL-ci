@@ -534,7 +534,9 @@ function mentions_system(value):
 end
 
 function import_system(program, path, source, cache, output, budget, internal, own, imports, namespaces):
-    if "system" not in own and "system" not in imports and "system" not in namespaces and mentions_system(program):
+    # Jméno system může v AST být jen tehdy, když je v textu modulu; levná
+    # kontrola textu ušetří obecný průchod celým stromem u většiny modulů.
+    if "system" not in own and "system" not in imports and "system" not in namespaces and "system" in source and mentions_system(program):
         entry = collect_module("os", path, cache, output, budget, internal, source, {"line": 1, "column": 1, "module_column": 1})
         imports["system"] = entry[0] + "run"
     end

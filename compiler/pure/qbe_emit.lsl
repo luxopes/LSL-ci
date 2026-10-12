@@ -1147,9 +1147,13 @@ function class_validation_error(s,node,rules):
     if not s["has_validation_errors"]:
         return False
     end
-    context = class_context(s)
+    # Kontext (nový slovník) jen pro pravidla, která v jednotce mají chybu.
+    errors = s["unit"]["validation_errors"]
     for rule in rules:
-        error = validation.error_for(context,node,rule)
+        if rule not in errors:
+            continue
+        end
+        error = validation.error_for(class_context(s),node,rule)
         if error != None:
             location = display_path(node.get("path",s["unit"]["path"]))+":"+String(node.get("line",1))+":"+String(node.get("column",1))
             call raise_error(s,error[0]+": "+error[1]+" at "+location)
@@ -1164,6 +1168,10 @@ end
 function expression_validation_error(s,node):
     # Reuse frontend decisions at the same evaluation sites as the native
     # emitter. Do not scan descendants: an unchosen and/or arm must stay inert.
+    # Bez chyb validace se seznamy pravidel ani nealokují.
+    if not s["has_validation_errors"]:
+        return False
+    end
     kind = node["kind"]
     if kind == "name":
         return class_validation_error(s,node,["unknown_variable"])

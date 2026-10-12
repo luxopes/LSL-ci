@@ -1609,28 +1609,14 @@ function __lsl_int_any(value):
 end
 
 function __lsl_int_to_string(number):
+    # Typovaný Int převádí rutina runtime (dřív se číslo skládalo po číslicích
+    # přes chr a spojování řetězců, dvě alokace na číslici). Nula zvlášť:
+    # v interním ABI je surová 0 i None a Int() ji odmítne.
     if number == 0:
         return "0"
     end
-    if number == -9223372036854775808:
-        return "-9223372036854775808"
-    end
-    negative = False
-    remaining = number
-    if remaining < 0:
-        negative = True
-        remaining = -remaining
-    end
-    digits = ""
-    while remaining > 0:
-        digit = remaining % 10
-        digits = chr(48 + digit) + digits
-        remaining = remaining // 10
-    end
-    if negative:
-        return "-" + digits
-    end
-    return digits
+    value = Int(number)
+    return String(value)
 end
 
 function __lsl_bit_operand(value):
@@ -1797,6 +1783,17 @@ function __lsl_render_seen(value, quote, active, depth):
 end
 
 function __lsl_render(value, quote):
+    # Skaláry a String bez seznamu aktivních kolekcí (ten je potřeba jen pro
+    # cykly v kolekcích); String() se volá velmi často.
+    if not __lsl_is_heap(value):
+        return __lsl_int_to_string(value)
+    end
+    code = __lsl_type_code(value)
+    if code == 1 and not quote:
+        return value
+    elif code == 9:
+        return __lsl_int_to_string(__lsl_unbox_int(value))
+    end
     return __lsl_render_seen(value, quote, [], 0)
 end
 
