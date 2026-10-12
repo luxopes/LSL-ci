@@ -28,7 +28,7 @@ function factor_sum(table, upto):
         zbytek = k
         factors = []
         while zbytek > 1:
-            require(zbytek >= 2 and zbytek <= upto, "raw slot received a boxed value")
+            call require(zbytek >= 2 and zbytek <= upto, "raw slot received a boxed value")
             p = table[zbytek]
             factors.append(p)
             while zbytek % p == 0:
@@ -47,7 +47,7 @@ for k in rang(2, limit + 1):
     zbytek = k
     factors = []
     while zbytek > 1:
-        require(zbytek >= 2 and zbytek <= limit, "raw slot received a boxed value at module scope")
+        call require(zbytek >= 2 and zbytek <= limit, "raw slot received a boxed value at module scope")
         p = smallest[zbytek]
         factors.append(p)
         while zbytek % p == 0:
@@ -58,6 +58,6 @@ for k in rang(2, limit + 1):
         total += p
     end
 end
-require(total == 866, "sum of distinct prime factors 2..60 at module scope")
-require(factor_sum(smallest, limit) == 866, "sum of distinct prime factors 2..60 in a function")
+call require(total == 866, "sum of distinct prime factors 2..60 at module scope")
+call require(factor_sum(smallest, limit) == 866, "sum of distinct prime factors 2..60 in a function")
 print "type widening conformance passed"

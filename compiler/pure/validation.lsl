@@ -1827,6 +1827,37 @@ function expression(state, syntax):
     end
 end
 
+# Volání funkce (vlastní i knihovní) jako samostatný příkaz vyžaduje `call`;
+# metody objektů a vestavěné příkazy (Error, del, exit, check, writefile …)
+# `call` nepotřebují. Syntetické příkazy bez klíče "discard" a interní kód
+# překladače se nekontrolují.
+function require_call_prefix(state, statement):
+    if statement.get("discard", True) or state["current_internal_function"] or state["internal_abi"]:
+        return None
+    end
+    syntax = statement["expression"]
+    if syntax["kind"] != "call" or syntax["target"]["kind"] != "name":
+        return None
+    end
+    name = syntax["target"]["name"]
+    if name.startswith("__lsl_") or name not in state["functions"]:
+        return None
+    end
+    # Název, jak je napsaný ve zdroji (u knihovny včetně modulu: json.decode).
+    shown = name.split("@")[-1]
+    details = semantic.context(state["path"], state["lines"], syntax)
+    source_line = String(details["source"])
+    start = syntax["column"] - 1
+    if start >= 0 and start < len(source_line):
+        written = source_line[start:len(source_line)]
+        bracket = written.find("(")
+        if bracket > 0:
+            shown = written[0:bracket].strip()
+        end
+    end
+    call semantic.unsupported(state["path"], state["lines"], syntax, "function call result is discarded without call: " + shown + "(...)", "write call " + shown + "(...) to call a function for its effect, or assign the result")
+end
+
 function statements(state, body, break_label, continue_label, return_label):
     for statement in body:
         kind = statement["kind"]
@@ -1974,6 +2005,7 @@ function statements(state, body, break_label, continue_label, return_label):
                 index += 1
             end
         elif kind == "expression":
+            call require_call_prefix(state, statement)
             call expression(state, statement["expression"])
         elif kind == "if":
             selected = semantic.constant_if_body(statement)

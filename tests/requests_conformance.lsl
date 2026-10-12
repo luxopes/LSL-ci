@@ -113,7 +113,7 @@ print caught
 
 caught = ""
 try:
-    requests.get(base + "/json", {"Bad Header": "x"}, 30)
+    call requests.get(base + "/json", {"Bad Header": "x"}, 30)
 else:
     caught = last_error()
 end
