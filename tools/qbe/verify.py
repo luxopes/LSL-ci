@@ -47,6 +47,8 @@ def main():
     parser.add_argument("--backend", type=pathlib.Path,
                         help="backend for every compile; historical default build/qbe/qbe is C QBE, so pass the native LSL backend explicitly for native verification")
     parser.add_argument("--build-directory", type=pathlib.Path, default=BUILD)
+    parser.add_argument("--runtime", type=pathlib.Path, default=None,
+                        help="runtime object; default build/qbe/runtime.o, else the release compiler/qbe/runtime.o")
     parser.add_argument("--tests-only", action="store_true",
                         help="run language regressions with an already verified compiler")
     args = parser.parse_args()
@@ -115,7 +117,8 @@ def main():
     report["maxrss_kib"] = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
     report["source_sha256"] = {str(p.relative_to(ROOT)): digest(p) for p in
                               sorted((ROOT / "compiler/pure").glob("*.lsl"))}
-    report["runtime_sha256"] = digest(BUILD / "runtime.o")
+    runtime = args.runtime or (BUILD / "runtime.o" if (BUILD / "runtime.o").exists() else ROOT / "compiler/qbe/runtime.o")
+    report["runtime_sha256"] = digest(runtime)
     report["qbe_sha256"] = digest(backend)
     (build / "verification.json").write_text(json.dumps(report, indent=2) + "\n")
     if args.tests_only:

@@ -46,7 +46,8 @@ function _timestamp(seconds):
         Error(TypeError: "time value must be Int or Float, got " + type(seconds))
     end
     value = Float(seconds)
-    if value != value or value > 253402300799.0 or value < -62135596800.0:
+    # Rozsah UTC [0001-01-01T00:00:00, 10000-01-01T00:00:00), horní mez výlučná.
+    if value != value or value >= 253402300800.0 or value < -62135596800.0:
         Error(ValueError: "time value is outside years 1..9999")
     end
     return seconds
@@ -108,6 +109,10 @@ function utc(seconds=None):
     end
     if month <= 2:
         year += 1
+    end
+    if year > 9999:
+        # Zaokrouhlení mikrosekund přeneslo poslední zlomek roku 9999 dál.
+        Error(ValueError: "time value is outside years 1..9999")
     end
     yearday = days + 719162 - _days_before_year(year) + 1
     return {"year": year, "month": month, "day": day, "hour": rest // 3600, "minute": rest % 3600 // 60, "second": rest % 60, "microsecond": microsecond, "weekday": (days + 3) % 7, "yearday": yearday}
@@ -299,6 +304,10 @@ function parse_iso8601(text):
     end
     days += day - 1
     whole = days * 86400 + hour * 3600 + minute * 60 + second - offset
+    # Stejný rozsah UTC jako time.iso8601/utc: posun zóny nesmí vést mimo něj.
+    if whole < -62135596800 or whole >= 253402300800:
+        Error(ValueError: "time value is outside years 1..9999")
+    end
     if fraction == 0.0:
         return Float(whole)
     end

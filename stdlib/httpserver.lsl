@@ -187,17 +187,51 @@ function error_request(status, reason, message):
     return {"ok": False, "status": status, "reason": reason, "message": message}
 end
 
-function valid_header_name(name):
-    if len(name) == 0 or len(name) > 64:
+# token podle RFC 9110 §5.6.2: 1*tchar.
+TOKEN_SYMBOLS = "!#$%&'*+-.^_`|~"
+
+function valid_token(text, limit):
+    if len(text) == 0 or len(text) > limit:
         return False
     end
-    for character in name:
+    for character in text:
         code = ord(character)
-        if not ((code >= 48 and code <= 57) or (code >= 65 and code <= 90) or (code >= 97 and code <= 122) or character == "-"):
+        if not ((code >= 48 and code <= 57) or (code >= 65 and code <= 90) or (code >= 97 and code <= 122) or TOKEN_SYMBOLS.find(character) >= 0):
             return False
         end
     end
     return True
+end
+
+function valid_header_name(name):
+    return valid_token(name, 64)
+end
+
+# request-target bez mezer a řídicích znaků (RFC 9112 §3.2): jen VCHAR.
+function valid_target(target):
+    for character in target:
+        code = ord(character)
+        if code <= 32 or code >= 127:
+            return False
+        end
+    end
+    return True
+end
+
+# field-value bez CR, LF a NUL (RFC 9110 §5.5); TAB a mezera jsou povolené.
+function valid_field_value(value):
+    for character in value:
+        code = ord(character)
+        if code == 13 or code == 10 or code == 0 or (code < 32 and code != 9) or code == 127:
+            return False
+        end
+    end
+    return True
+end
+
+# Odpovědi 1xx, 204 a 304 nesmějí mít tělo (RFC 9110 §6.4.1, §15.3.5, §15.4.5).
+function status_without_body(status):
+    return (status >= 100 and status < 200) or status == 204 or status == 304
 end
 
 function decimal_header(value):
@@ -378,7 +412,11 @@ function read_request(client, allow_body):
     method = String(request_line[0])
     target = String(request_line[1])
     version = String(request_line[2])
-    if version != "HTTP/1.1" and version != "HTTP/1.0":
+    if not valid_token(method, 32):
+        return error_request(400, "Bad Request", "request method is invalid")
+    elif not valid_target(target):
+        return error_request(400, "Bad Request", "request target contains an invalid character")
+    elif version != "HTTP/1.1" and version != "HTTP/1.0":
         return error_request(505, "HTTP Version Not Supported", "only HTTP/1.0 and HTTP/1.1 are supported")
     elif __lsl_text_byte_length(target) > MAX_TARGET_BYTES:
         return error_request(414, "URI Too Long", "request target exceeds 2048 bytes")
@@ -401,7 +439,11 @@ function read_request(client, allow_body):
             return error_request(400, "Bad Request", "header name is invalid")
         end
         name = name.lower()
-        value = line[separator + 1:len(line)].strip()
+        raw_value = line[separator + 1:len(line)]
+        value = raw_value.strip()
+        if not valid_field_value(raw_value):
+            return error_request(400, "Bad Request", "header value contains CR, LF or a control character")
+        end
         if name in headers:
             # RFC 9110 §5.3: opakované řádky se slučují čárkou (Cookie
             # středníkem). Hlavičky rámující tělo nebo cíl se kvůli request
@@ -529,6 +571,36 @@ end
 function status_reason(status):
     if status == 200:
         return "OK"
+    elif status == 201:
+        return "Created"
+    elif status == 202:
+        return "Accepted"
+    elif status == 204:
+        return "No Content"
+    elif status == 301:
+        return "Moved Permanently"
+    elif status == 302:
+        return "Found"
+    elif status == 303:
+        return "See Other"
+    elif status == 304:
+        return "Not Modified"
+    elif status == 307:
+        return "Temporary Redirect"
+    elif status == 308:
+        return "Permanent Redirect"
+    elif status == 401:
+        return "Unauthorized"
+    elif status == 409:
+        return "Conflict"
+    elif status == 422:
+        return "Unprocessable Content"
+    elif status == 429:
+        return "Too Many Requests"
+    elif status == 502:
+        return "Bad Gateway"
+    elif status == 503:
+        return "Service Unavailable"
     elif status == 400:
         return "Bad Request"
     elif status == 403:
@@ -564,15 +636,18 @@ function send_response(client, status, reason, body, body_type, head_only):
     if not valid_content_type(mime):
         mime = "application/octet-stream"
     end
+    no_body = status_without_body(Int(status))
     header = "HTTP/1.1 " + String(status) + " " + String(reason) + chr(13) + chr(10)
-    header += "Content-Length: " + String(len(payload)) + chr(13) + chr(10)
-    header += "Content-Type: " + mime + chr(13) + chr(10)
+    if not no_body:
+        header += "Content-Length: " + String(len(payload)) + chr(13) + chr(10)
+        header += "Content-Type: " + mime + chr(13) + chr(10)
+    end
     header += "Connection: close" + chr(13) + chr(10)
     header += "X-Content-Type-Options: nosniff" + chr(13) + chr(10)
     header += "Referrer-Policy: no-referrer" + chr(13) + chr(10) + chr(13) + chr(10)
     header_bytes = text_bytes(header)
     result = socket_write(client, header_bytes)
-    if result >= 0 and not Bool(head_only) and len(payload) > 0:
+    if result >= 0 and not no_body and not Bool(head_only) and len(payload) > 0:
         result = socket_write(client, payload)
     end
     return result
@@ -667,6 +742,10 @@ function sse_event(stream, data, event=None):
 end
 
 function serve_stream(client, request, response):
+    if status_without_body(Int(response["status"])):
+        # Status bez těla: jen hlavičky, stream funkce se nevolá.
+        return send_response(client, response["status"], response["reason"], "", response["content_type"], True)
+    end
     chunked = request["version"] == "HTTP/1.1"
     if send_stream_head(client, response["status"], response["reason"], response["content_type"], chunked) < 0:
         return -1
@@ -752,6 +831,126 @@ function normalize_app_response(value):
     return {"status": status, "reason": reason, "body": body, "content_type": mime}
 end
 
+# Obslouží jedno přijaté spojení a zavře ho.
+function serve_client(client, root_handle, handler):
+    request = read_request(client, handler != None)
+    if not request["ok"]:
+        call send_error(client, request)
+    else:
+        if handler == None:
+            response = static_response(root_handle, request)
+        else:
+            # Application failures are request-local. Always close the
+            # client and keep the bounded listener usable for later work.
+            try:
+                response = normalize_app_response(handler(request))
+            else:
+                response = {"status": 500, "reason": "Internal Server Error", "body": "500 Internal Server Error" + chr(10), "content_type": "text/plain; charset=utf-8"}
+            end
+        end
+        head_only = request["method"] == "HEAD"
+        if "stream" in response:
+            call serve_stream(client, request, response)
+        else:
+            call send_response(client, response["status"], response["reason"], response["body"], response["content_type"], head_only)
+        end
+    end
+    call fd.close(client)
+end
+
+# Worker pool: vlákna přijímají spojení ze sdíleného listeneru, takže pomalý
+# nebo streamovaný požadavek neblokuje ostatní. Stav pool je v modulu (vlákno
+# nemá parametry); běží nejvýš jeden pool najednou.
+POOL_HANDLER = [None]
+POOL_STATE = IntArray()
+for pool_slot in rang(6):
+    POOL_STATE.append(0)
+end
+# POOL_STATE: 0 listener, 1 limit, 2 vydané lístky, 3 obsloužené, 4 hotová
+# vlákna, 5 stop/zámek pool (1 = běží)
+
+function pool_worker():
+    listener = POOL_STATE[0]
+    handler = POOL_HANDLER[0]
+    loop:
+        if atomic_add(POOL_STATE, 5, 0) == 2:
+            break
+        end
+        limit = POOL_STATE[1]
+        if limit > 0:
+            ticket = atomic_add(POOL_STATE, 2, 1)
+            if ticket >= limit:
+                break
+            end
+        end
+        client = -11
+        while client == -11 or client == -4:
+            # Accept s časovým limitem kontroluje zastavení pool.
+            if atomic_add(POOL_STATE, 5, 0) == 2:
+                break
+            end
+            client = accept_client(listener)
+        end
+        if client < 0:
+            break
+        end
+        call serve_client(client, -1, handler)
+        call atomic_add(POOL_STATE, 3, 1)
+    end
+    call atomic_add(POOL_STATE, 4, 1)
+    return None
+end
+
+function serve_workers(handler, address, port, workers, maximum_requests):
+    if type(handler) != "Function":
+        Error(TypeError: "HTTP handler must be a Function")
+    elif type(workers) != "Int" or workers < 1 or workers > 64:
+        Error(ValueError: "worker count must be an Int between 1 and 64")
+    elif maximum_requests < 0:
+        Error(ServerError: "maximum request count cannot be negative")
+    end
+    listener = listen_ipv4(address, port, 128)
+    print "LSL HTTP server listening on http://" + String(address) + ":" + String(port) + "/ with " + String(workers) + " workers"
+    return serve_listener_workers(listener, handler, workers, maximum_requests)
+end
+
+function serve_listener_workers(listener, handler, workers, maximum_requests):
+    if atomic_cas(POOL_STATE, 5, 0, 1) != 0:
+        Error(ServerError: "another HTTP worker pool is already running")
+    end
+    call set_socket_timeout(listener, SO_RCVTIMEO, 1)
+    POOL_HANDLER[0] = handler
+    POOL_STATE[0] = listener
+    POOL_STATE[1] = maximum_requests
+    POOL_STATE[2] = 0
+    POOL_STATE[3] = 0
+    POOL_STATE[4] = 0
+    threads = []
+    for index in rang(workers):
+        tid = thread_spawn(pool_worker)
+        if tid < 0:
+            call atomic_xchg(POOL_STATE, 5, 2)
+            break
+        end
+        threads.append(tid)
+    end
+    # Hlavní vlákno uklízí paměť (gc() ve vláknech nic nedělá).
+    while atomic_add(POOL_STATE, 4, 0) < len(threads):
+        call time.sleep(0.05)
+        call gc()
+    end
+    for tid in threads:
+        call thread_join(tid)
+    end
+    served = POOL_STATE[3]
+    call fd.close(listener)
+    call atomic_xchg(POOL_STATE, 5, 0)
+    if len(threads) < workers:
+        Error(ServerError: "cannot start HTTP worker threads")
+    end
+    return served
+end
+
 function serve_listener(listener, root_handle, handler, maximum_requests, announce):
     served = 0
     limit = maximum_requests
@@ -772,29 +971,7 @@ function serve_listener(listener, root_handle, handler, maximum_requests, announ
             end
             Error(ServerError: "accept failed (" + String(client) + ")")
         end
-        request = read_request(client, handler != None)
-        if not request["ok"]:
-            call send_error(client, request)
-        else:
-            if handler == None:
-                response = static_response(root_handle, request)
-            else:
-                # Application failures are request-local. Always close the
-                # client and keep the bounded listener usable for later work.
-                try:
-                    response = normalize_app_response(handler(request))
-                else:
-                    response = {"status": 500, "reason": "Internal Server Error", "body": "500 Internal Server Error" + chr(10), "content_type": "text/plain; charset=utf-8"}
-                end
-            end
-            head_only = request["method"] == "HEAD"
-            if "stream" in response:
-                call serve_stream(client, request, response)
-            else:
-                call send_response(client, response["status"], response["reason"], response["body"], response["content_type"], head_only)
-            end
-        end
-        call fd.close(client)
+        call serve_client(client, root_handle, handler)
         served += 1
         # Reclaim per-request garbage. The allocator's automatic heuristic
         # does not keep up with a long-running request loop, which exhausted

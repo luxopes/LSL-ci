@@ -2550,7 +2550,12 @@ function emit_uncaught_report(output):
         end
         call assembler.relative(output, x86_64.lea_rip_prefix(7), key_label)
         call assembler.emit(output, x86_64.mov_imm64(1, len(bytes.utf8(help[1]))))
-        call assembler.relative(output, [232], "ue_equal")
+        if help[0] == "text":
+            # Text chyby může pokračovat upřesněním (", got String").
+            call assembler.relative(output, [232], "ue_prefix")
+        else:
+            call assembler.relative(output, [232], "ue_equal")
+        end
         call assembler.emit(output, x86_64.test_reg_reg(0, 0))
         next_help = ue_label("help_next")
         call assembler.relative(output, [15, 132], next_help)
@@ -2631,6 +2636,12 @@ function emit_uncaught_report(output):
     call assembler.emit(output, x86_64.mov_imm64(0, -1))
     call assembler.label(output, "ue_number_return")
     call assembler.emit(output, x86_64.ret())
+    # rax = 1, když [rsi, rsi+rdx) začíná bajty [rdi, rdi+rcx).
+    call assembler.label(output, "ue_prefix")
+    call assembler.emit(output, x86_64.xor_reg_reg(0, 0))
+    call assembler.emit(output, x86_64.cmp_reg_reg(2, 1))
+    call assembler.relative(output, [15, 140], "ue_equal_return")
+    call assembler.emit(output, x86_64.move_reg_reg(2, 1))
     # rax = 1, když bajty [rsi, rsi+rdx) jsou rovny [rdi, rdi+rcx).
     call assembler.label(output, "ue_equal")
     call assembler.emit(output, x86_64.xor_reg_reg(0, 0))

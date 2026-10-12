@@ -18,4 +18,4 @@ TypeError: object has no length
 TypeError: object has no length
 TypeError: right operand of in is not a collection
 TypeError: method requires an indexable sequence
-TypeError: sequence index must be Int
+TypeError: sequence index must be Int, got String

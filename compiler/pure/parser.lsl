@@ -314,11 +314,29 @@ function unpack_statements(token, targets, holder, message_prefix):
     guard["branches"] = [[compare_node(token, "!=", actual, number_literal(token, len(targets))), [failure]]]
     guard["otherwise"] = []
     statements.append(guard)
+    # Index nebo atribut v cíli může měnit právě rozbalovanou kolekci
+    # (a[1], a[0] = a): všechny prvky se nejdřív přečtou do dočasných jmen.
+    simple = True
+    for target in targets:
+        if target["kind"] != "name":
+            simple = False
+        end
+    end
+    values = []
     for index in rang(len(targets)):
         item = node("index", token)
         item["target"] = synthetic_name(token, holder)
         item["index"] = number_literal(token, index)
-        statements.append(synthetic_assign(token, copy_node(targets[index]), item))
+        if simple:
+            values.append(item)
+        else:
+            captured = holder + "@" + String(index)
+            statements.append(synthetic_assign(token, synthetic_name(token, captured), item))
+            values.append(synthetic_name(token, captured))
+        end
+    end
+    for index in rang(len(targets)):
+        statements.append(synthetic_assign(token, copy_node(targets[index]), values[index]))
     end
     return statements
 end

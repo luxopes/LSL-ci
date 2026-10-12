@@ -42,6 +42,46 @@ function source_tokens(source, path):
             while index < len(characters) and characters[index] != chr(10):
                 index += 1
             end
+        elif character == "/" and index + 1 < len(characters) and characters[index + 1] == "*":
+            # Blokový komentář /* ... */ je mezera; konce řádků zůstávají.
+            comment_line = line
+            index += 2
+            closed = False
+            while index < len(characters):
+                if characters[index] == "*" and index + 1 < len(characters) and characters[index + 1] == "/":
+                    index += 2
+                    closed = True
+                    break
+                elif characters[index] == chr(10):
+                    tokens.append(["newline", "", line])
+                    line += 1
+                end
+                index += 1
+            end
+            if not closed:
+                print "Unterminated configuration block comment in", path, "at", comment_line
+                exit(1)
+            end
+        elif character == "r" and index + 1 < len(characters) and (characters[index + 1] == "\"" or characters[index + 1] == "'") and (index == 0 or not identifier_part(characters[index - 1])):
+            # Raw String: bez escape sekvencí, zpětné lomítko je obyčejný znak.
+            quote = characters[index + 1]
+            token_line = line
+            index += 2
+            value_chars = []
+            while index < len(characters) and characters[index] != quote:
+                if characters[index] == chr(10):
+                    print "Configuration string crosses a line in", path, "at", token_line
+                    exit(1)
+                end
+                value_chars.append(characters[index])
+                index += 1
+            end
+            if index >= len(characters):
+                print "Unterminated configuration string in", path, "at", token_line
+                exit(1)
+            end
+            index += 1
+            tokens.append(["string", "".join(value_chars), token_line])
         elif character == "l" and index + 1 < len(characters) and (characters[index + 1] == "\"" or characters[index + 1] == "'"):
             # Lux strings evaluate the expressions between braces at runtime.
             # Treating them as opaque text would let an impure call bypass the
@@ -54,7 +94,8 @@ function source_tokens(source, path):
             index += 1
             value_chars = []
             escaped = False
-            while index < len(characters) and characters[index] != quote:
+            closed = False
+            while index < len(characters):
                 character = characters[index]
                 if character == chr(10):
                     print "Configuration string crosses a line in", path, "at", token_line
@@ -65,12 +106,15 @@ function source_tokens(source, path):
                     escaped = False
                 elif character == chr(92):
                     escaped = True
+                elif character == quote:
+                    closed = True
+                    break
                 else:
                     value_chars.append(character)
                 end
                 index += 1
             end
-            if index >= len(characters) or escaped:
+            if not closed:
                 print "Unterminated configuration string in", path, "at", token_line
                 exit(1)
             end
@@ -193,8 +237,14 @@ function validate_pure(tokens, path):
         "clock": True, "executable_path": True, "arg": True,
         "arg_count": True, "exit": True, "thread_spawn": True,
         "thread_join": True, "atomic_add": True, "atomic_xchg": True,
-        "atomic_cas": True, "print": True, "printl": True, "help": True
+        "atomic_cas": True, "atomic_pause": True, "print": True,
+        "printl": True, "printr": True, "help": True, "monotonic": True,
+        "cpu_count": True, "gc": True, "last_error": True, "lock": True,
+        "unsafe": True
     }
+    # Kategorie: výstup (print*, help), vstup a soubory, procesy, nativní
+    # knihovny, čas a hostitel (clock, monotonic, cpu_count, arg*), vlákna
+    # a atomiky, stav běhu (gc, last_error, exit). Konfigurace smí jen počítat.
     index = 0
     while index < len(tokens):
         token = tokens[index]
@@ -292,8 +342,27 @@ function string_literal(value):
     return result + "\""
 end
 
+# Export modulu: přiřazení name = ... na začátku řádku (z tokenů, takže
+# tabulátor ani komentář s textem name = nic nezmění).
 function has_export(source, name):
-    return source.find(name + " =") >= 0 or source.find(name + "=") >= 0
+    tokens = source_tokens(source, "export check")
+    index = 0
+    at_line_start = True
+    while index < len(tokens):
+        token = tokens[index]
+        if token[0] == "newline":
+            at_line_start = True
+        else:
+            if at_line_start and token[0] == "identifier" and token[1] == name and index + 1 < len(tokens) and tokens[index + 1][0] == "symbol" and tokens[index + 1][1] == "=":
+                if index + 2 >= len(tokens) or tokens[index + 2][1] != "=":
+                    return True
+                end
+            end
+            at_line_start = False
+        end
+        index += 1
+    end
+    return False
 end
 
 function snapshot_name(index):
@@ -372,11 +441,16 @@ wrapper += "    if __lsl_type_code(right) == 3 and \"__omit\" in right:\n       
 wrapper += "    left_priority = priority(left)\n    right_priority = priority(right)\n"
 wrapper += "    if left_priority != right_priority:\n        if right_priority > left_priority:\n            return right\n        end\n        return left\n    end\n"
 wrapper += "    left_value = unwrap(left)\n    right_value = unwrap(right)\n"
+wrapper += "    merged_value = merge_values(left_value, right_value, right, active)\n"
+wrapper += "    if left_priority != 500 and (priority_wrapped(left) or priority_wrapped(right)):\n        return {\"__priority\": left_priority, \"value\": merged_value}\n    end\n"
+wrapper += "    return merged_value\nend\n"
+wrapper += "\nfunction priority_wrapped(value):\n    return __lsl_type_code(value) == 3 and \"__priority\" in value\nend\n"
+wrapper += "\nfunction merge_values(left_value, right_value, right, active):\n"
 wrapper += "    if __lsl_type_code(left_value) == 3 and __lsl_type_code(right_value) == 3:\n"
 wrapper += "        if merge_pair_active(active, left_value, right_value):\n            Error(ConfigCycleError: \"configuration merge cycle\")\n        end\n        if len(active) >= 64:\n            Error(ConfigDepthError: \"configuration merge exceeds depth 64\")\n        end\n        active.append([left_value, right_value])\n"
 wrapper += "        dictionary_result = {}\n        for key in left_value:\n            dictionary_result[key] = left_value[key]\n        end\n        for key in right_value:\n            if key in dictionary_result:\n                dictionary_result[key] = deep_merge(dictionary_result[key], right_value[key], active)\n            else:\n                dictionary_result[key] = right_value[key]\n            end\n        end\n        call __lsl_pop(active)\n        return dictionary_result\n    end\n"
 wrapper += "    if __lsl_type_code(left_value) == 2 and __lsl_type_code(right_value) == 2:\n        list_result = left_value[0:len(left_value)]\n        list_result.extend(right_value)\n        return list_result\n    end\n"
-wrapper += "    return right\nend\n"
+wrapper += "    return right_value\nend\n"
 wrapper += "\nfunction identity_active(active, value):\n"
 wrapper += "    for item in active:\n        if __lsl_raw_equal(item, value):\n            return True\n        end\n    end\n    return False\nend\n"
 wrapper += "\nfunction materialize(value, active):\n"
@@ -388,12 +462,12 @@ wrapper += "    active.append(value)\n"
 wrapper += "    if value_type == 3 and \"__priority\" in value:\n        resolved = materialize(value[\"value\"], active)\n        call __lsl_pop(active)\n        return resolved\n    end\n"
 wrapper += "    if value_type == 3 and \"__lazy\" in value:\n        thunk = value[\"__lazy\"]\n        resolved = materialize(thunk(), active)\n        call __lsl_pop(active)\n        return resolved\n    end\n"
 wrapper += "    if value_type == 3:\n        dictionary_result = {}\n        for key in value:\n            if not (__lsl_type_code(value[key]) == 3 and \"__omit\" in value[key]):\n                materialized = materialize(value[key], active)\n                dictionary_result[key] = materialized\n            end\n        end\n        call __lsl_pop(active)\n        return dictionary_result\n    end\n"
-wrapper += "    list_result = []\n    for item in value:\n        materialized = materialize(item, active)\n        list_result.append(materialized)\n    end\n    call __lsl_pop(active)\n    return list_result\nend\n"
-wrapper += "\nfunction get_path(root, path, missing):\n"
-wrapper += "    parts = path.split(\".\")\n    value = root\n    for part in parts:\n        if __lsl_type_code(value) != 3 or part not in value:\n            return missing\n        end\n        value = value[part]\n    end\n    return value\nend\n"
+wrapper += "    list_result = []\n    for item in value:\n        if not (__lsl_type_code(item) == 3 and \"__omit\" in item):\n            materialized = materialize(item, active)\n            list_result.append(materialized)\n        end\n    end\n    call __lsl_pop(active)\n    return list_result\nend\n"
+wrapper += "\nfunction get_path(root, path):\n"
+wrapper += "    parts = path.split(\".\")\n    value = root\n    for part in parts:\n        if __lsl_type_code(value) != 3 or part not in value:\n            return [False, None]\n        end\n        value = value[part]\n    end\n    return [True, value]\nend\n"
 wrapper += "\nfunction set_path(root, path, value):\n"
 wrapper += "    parts = path.split(\".\")\n    target = root\n    index = 0\n    while index < len(parts) - 1:\n        part = parts[index]\n        if part not in target or __lsl_type_code(target[part]) != 3:\n            target[part] = {}\n        end\n        target = target[part]\n        index += 1\n    end\n    target[parts[len(parts) - 1]] = value\nend\n"
-wrapper += "\nfunction dynamic_type(value):\n    code = __lsl_type_code(value)\n    if code == 0 or code == 9:\n        return \"Int\"\n    elif code == 1:\n        return \"String\"\n    elif code == 2:\n        return \"List\"\n    elif code == 3:\n        return \"Dictionary\"\n    elif code == 4:\n        return \"Bool\"\n    elif code == 5:\n        return \"None\"\n    end\n    return \"Any\"\nend\n"
+wrapper += "\nfunction dynamic_type(value):\n    code = __lsl_type_code(value)\n    if code == 0 or code == 9:\n        return \"Int\"\n    elif code == 1:\n        return \"String\"\n    elif code == 2:\n        return \"List\"\n    elif code == 3:\n        return \"Dictionary\"\n    elif code == 4:\n        return \"Bool\"\n    elif code == 5:\n        return \"None\"\n    elif code == 6:\n        return \"Float\"\n    end\n    return \"Any\"\nend\n"
 wrapper += "\nfunction type_matches(value, expected):\n"
 wrapper += "    variants = expected.split(\"|\")\n    for variant in variants:\n        if variant.strip() == \"Any\" or variant.strip() == dynamic_type(value):\n            return True\n        end\n    end\n    return False\nend\n"
 wrapper += "\nmerged = {}\nall_options = {}\nall_assertions = []\n"
@@ -415,8 +489,8 @@ while graph_index < len(order):
     end
     graph_index += 1
 end
-wrapper += "clean = materialize(merged, [])\nmissing = {\"__missing\": True}\n"
-wrapper += "for option_name in all_options:\n    descriptor = all_options[option_name]\n    option_value = get_path(clean, option_name, missing)\n    if option_value == missing:\n        if descriptor[\"required\"]:\n            print \"Missing required option\", option_name, \"declared in\", descriptor[\"source\"]\n            exit(1)\n        end\n        option_value = materialize(descriptor[\"default\"], [])\n        call set_path(clean, option_name, option_value)\n    end\n    if not type_matches(option_value, descriptor[\"type\"]):\n        print \"Invalid option type\", option_name, descriptor[\"type\"], dynamic_type(option_value), \"declared in\", descriptor[\"source\"]\n        exit(1)\n    end\nend\n"
+wrapper += "clean = materialize(merged, [])\n"
+wrapper += "for option_name in all_options:\n    descriptor = all_options[option_name]\n    if not descriptor[\"required\"] and not type_matches(materialize(descriptor[\"default\"], []), descriptor[\"type\"]):\n        print \"Invalid default for option\", option_name, descriptor[\"type\"], dynamic_type(descriptor[\"default\"]), \"declared in\", descriptor[\"source\"]\n        exit(1)\n    end\n    found = get_path(clean, option_name)\n    option_value = found[1]\n    if not found[0]:\n        if descriptor[\"required\"]:\n            print \"Missing required option\", option_name, \"declared in\", descriptor[\"source\"]\n            exit(1)\n        end\n        option_value = materialize(descriptor[\"default\"], [])\n        call set_path(clean, option_name, option_value)\n    end\n    if not type_matches(option_value, descriptor[\"type\"]):\n        print \"Invalid option type\", option_name, descriptor[\"type\"], dynamic_type(option_value), \"declared in\", descriptor[\"source\"]\n        exit(1)\n    end\nend\n"
 wrapper += "for assertion in all_assertions:\n    if not assertion[0]:\n        print \"Configuration assertion failed:\", assertion[1]\n        exit(1)\n    end\nend\n"
 wrapper += "print json.encode(clean)\n"
 if output_path == "-":

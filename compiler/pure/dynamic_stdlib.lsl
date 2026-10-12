@@ -166,15 +166,75 @@ function __lsl_title(text):
     return "".join(result)
 end
 
+# Hledání po bajtech UTF-8: index znaku by se pokaždé počítal od začátku
+# Stringu (kvadratická složitost). Shoda bajtů platného UTF-8 je shodou znaků.
+function __lsl_byte_search(text, needle, start_byte):
+    text_bytes = __lsl_text_byte_length(text)
+    needle_bytes = __lsl_text_byte_length(needle)
+    if needle_bytes == 0:
+        if start_byte <= text_bytes:
+            return start_byte
+        end
+        return -1
+    end
+    first = __lsl_text_byte(needle, 0)
+    position = start_byte
+    limit = text_bytes - needle_bytes
+    while position <= limit:
+        if __lsl_text_byte(text, position) == first:
+            offset = 1
+            while offset < needle_bytes and __lsl_text_byte(text, position + offset) == __lsl_text_byte(needle, offset):
+                offset += 1
+            end
+            if offset == needle_bytes:
+                return position
+            end
+        end
+        position += 1
+    end
+    return -1
+end
+
+# Počet znaků v bajtech [start_byte, stop_byte): bajty mimo 10xxxxxx.
+function __lsl_byte_char_count(text, start_byte, stop_byte):
+    count = 0
+    position = start_byte
+    while position < stop_byte:
+        if (__lsl_text_byte(text, position) & 192) != 128:
+            count += 1
+        end
+        position += 1
+    end
+    return count
+end
+
+# Bajtový offset znaku char_index (nejvýš délka Stringu v bajtech).
+function __lsl_char_byte_offset(text, char_index):
+    text_bytes = __lsl_text_byte_length(text)
+    position = 0
+    seen = 0
+    while position < text_bytes:
+        if (__lsl_text_byte(text, position) & 192) != 128:
+            if seen == char_index:
+                return position
+            end
+            seen += 1
+        end
+        position += 1
+    end
+    return text_bytes
+end
+
 function __lsl_startswith(text, prefix):
     text = __lsl_require_string(text)
     prefix = __lsl_require_string_value(prefix)
-    if len(prefix) > len(text):
+    prefix_bytes = __lsl_text_byte_length(prefix)
+    if prefix_bytes > __lsl_text_byte_length(text):
         return False
     end
     index = 0
-    while index < len(prefix):
-        if text[index] != prefix[index]:
+    while index < prefix_bytes:
+        if __lsl_text_byte(text, index) != __lsl_text_byte(prefix, index):
             return False
         end
         index += 1
@@ -185,13 +245,14 @@ end
 function __lsl_endswith(text, suffix):
     text = __lsl_require_string(text)
     suffix = __lsl_require_string_value(suffix)
-    if len(suffix) > len(text):
+    suffix_bytes = __lsl_text_byte_length(suffix)
+    offset = __lsl_text_byte_length(text) - suffix_bytes
+    if offset < 0:
         return False
     end
-    offset = len(text) - len(suffix)
     index = 0
-    while index < len(suffix):
-        if text[offset + index] != suffix[index]:
+    while index < suffix_bytes:
+        if __lsl_text_byte(text, offset + index) != __lsl_text_byte(suffix, index):
             return False
         end
         index += 1
@@ -222,30 +283,11 @@ end
 function __lsl_find(text, needle):
     text = __lsl_require_string(text)
     needle = __lsl_require_string_value(needle)
-    if len(needle) == 0:
-        return 0
+    found = __lsl_byte_search(text, needle, 0)
+    if found < 0:
+        return -1
     end
-    limit = len(text) - len(needle)
-    if len(needle) > 0 and len(text) > 100000000 // len(needle):
-        Error(ValueError: "substring search exceeds the safe work limit")
-    end
-    start = 0
-    while start <= limit:
-        matches = True
-        index = 0
-        while index < len(needle):
-            if text[start + index] != needle[index]:
-                matches = False
-                break
-            end
-            index += 1
-        end
-        if matches:
-            return start
-        end
-        start += 1
-    end
-    return -1
+    return __lsl_byte_char_count(text, 0, found)
 end
 
 # Embedded topic help: available in standalone ELF programs, without files/network.
@@ -351,7 +393,7 @@ function __lsl_help_text(topic):
     if topic == "":
         names = topics.keys()
         call names.sort()
-        return "Lux Simple Lang (LSL) 0.9.1" + chr(10) + "Use help(\"TOPIC\") for details; lsl man opens the full offline manual." + chr(10) + "topics: " + " ".join(names)
+        return "Lux Simple Lang (LSL) 0.9.2" + chr(10) + "Use help(\"TOPIC\") for details; lsl man opens the full offline manual." + chr(10) + "topics: " + " ".join(names)
     end
     about = __lsl_library_about(topic)
     if topic not in topics:
@@ -468,7 +510,7 @@ function __lsl_about_text(name):
         Error(TypeError: "about name must be a String")
     end
     if name == "":
-        return "Lux Simple Lang (LSL) 0.9.1" + chr(10) + "A small self-hosted programming language: the compiler writes static Linux x86_64 ELF binaries directly and the runtime uses plain syscalls, with no libc, assembler or linker. Programs read like scripts, run as native code, and can use declarative configuration, AI clients, GUI packages and optional CUDA tensors." + chr(10) + "Website and manual: https://lsl.lux-ai.cz/  (offline: lsl man)" + chr(10) + "License: MIT"
+        return "Lux Simple Lang (LSL) 0.9.2" + chr(10) + "A small self-hosted programming language: the compiler writes static Linux x86_64 ELF binaries directly and the runtime uses plain syscalls, with no libc, assembler or linker. Programs read like scripts, run as native code, and can use declarative configuration, AI clients, GUI packages and optional CUDA tensors." + chr(10) + "Website and manual: https://lsl.lux-ai.cz/  (offline: lsl man)" + chr(10) + "License: MIT"
     end
     about = __lsl_library_about(name)
     if about == "":
@@ -1114,28 +1156,63 @@ function __lsl_float_accumulate(value, digit):
     return value * 10.0 + __lsl_float_from_int(__lsl_typed_int(digit))
 end
 
+function __lsl_float_power_of_ten(count):
+    result = 1
+    for step in rang(count):
+        result *= 10
+    end
+    return result
+end
+
+
+function __lsl_float_round_exact(digits, count, exponent, lower_bits):
+    # Polovina = (2m + 1) · 2^(e - 1); porovná se s digits · 10^exponent
+    # (číslice jako hodnoty 0-9 v ByteArray). Nativní porovnání bez alokace.
+    biased = (lower_bits >> 52) & 2047
+    mantissa = lower_bits & 4503599627370495
+    binary_exponent = -1074
+    if biased > 0:
+        mantissa += 4503599627370496
+        binary_exponent = biased - 1075
+    end
+    order = __lsl_decimal_digits_compare(digits, count, exponent, 2 * mantissa + 1, binary_exponent - 1)
+    if order < 0 or (order == 0 and mantissa % 2 == 1):
+        return lower_bits + 1
+    end
+    return lower_bits
+end
+
 function __lsl_parse_float(text):
-    if len(text) > 4096:
+    # Bajtové čtení: platné znaky jsou jen ASCII, vícebajtový znak selže jako
+    # neplatný a průchod zůstává lineární i u dlouhých zápisů.
+    byte_length = __lsl_text_byte_length(String(text))
+    if byte_length > 4096 and len(text) > 4096:
         Error(ValueError: "Float String exceeds 4096 characters")
     end
-    normalized = __lsl_lower(text)
-    if normalized == "nan" or normalized == "+nan" or normalized == "-nan":
-        return 0.0 / 0.0
-    elif normalized == "inf" or normalized == "+inf" or normalized == "infinity" or normalized == "+infinity":
-        return 1.0 / 0.0
-    elif normalized == "-inf" or normalized == "-infinity":
-        return -1.0 / 0.0
+    if byte_length <= 9:
+        normalized = __lsl_lower(text)
+        if normalized == "nan" or normalized == "+nan" or normalized == "-nan":
+            return 0.0 / 0.0
+        elif normalized == "inf" or normalized == "+inf" or normalized == "infinity" or normalized == "+infinity":
+            return 1.0 / 0.0
+        elif normalized == "-inf" or normalized == "-infinity":
+            return -1.0 / 0.0
+        end
     end
-    sign = 1.0
+    # Prvních 19 platných číslic do w (bez znaménka), zbytek posouvá exponent;
+    # přesný převod w · 10^q zajistí nativní runtime_decimal_bits.
+    negative = False
     index = 0
-    if len(text) > 0 and text[0] == "-":
-        sign = -1.0
+    if byte_length > 0 and __lsl_text_byte(text, 0) == 45:
+        negative = True
         index = 1
-    elif len(text) > 0 and text[0] == "+":
+    elif byte_length > 0 and __lsl_text_byte(text, 0) == 43:
         index = 1
     end
-    value = __lsl_float_from_int(0)
-    fraction_scale = __lsl_float_from_int(1)
+    significand = 0
+    kept = 0
+    truncated = False
+    decimal_exponent = 0
     after_dot = False
     exponent = 0
     exponent_negative = False
@@ -1143,15 +1220,12 @@ function __lsl_parse_float(text):
     exponent_sign_allowed = False
     digits = 0
     exponent_digits = 0
-    while index < len(text):
-        character = text[index]
-        code = ord(character)
+    while index < byte_length:
+        code = __lsl_text_byte(text, index)
         if code >= 48 and code <= 57:
             digit = code - 48
             if in_exponent:
-                # Values beyond this point already underflow/overflow every
-                # finite Float. Saturating avoids Int wrap and an unbounded
-                # exponent-scaling loop on hostile decimal input.
+                # Saturace: větší exponenty vždy přetečou nebo podtečou.
                 if exponent < 10000:
                     exponent = exponent * 10 + digit
                     if exponent > 10000:
@@ -1161,19 +1235,35 @@ function __lsl_parse_float(text):
                 exponent_digits += 1
                 exponent_sign_allowed = False
             else:
-                value = __lsl_float_accumulate(value, digit)
                 digits += 1
-                if after_dot:
-                    fraction_scale = __lsl_float_accumulate(fraction_scale, 0)
+                if kept == 0 and digit == 0:
+                    if after_dot:
+                        decimal_exponent -= 1
+                    end
+                else:
+                    if kept < 19:
+                        significand = significand * 10 + digit
+                        kept += 1
+                        if after_dot:
+                            decimal_exponent -= 1
+                        end
+                    else:
+                        if digit != 0:
+                            truncated = True
+                        end
+                        if not after_dot:
+                            decimal_exponent += 1
+                        end
+                    end
                 end
             end
-        elif character == "." and not after_dot and not in_exponent:
+        elif code == 46 and not after_dot and not in_exponent:
             after_dot = True
-        elif (character == "e" or character == "E") and not in_exponent and digits > 0:
+        elif (code == 101 or code == 69) and not in_exponent and digits > 0:
             in_exponent = True
             exponent_sign_allowed = True
-        elif in_exponent and exponent_sign_allowed and (character == "-" or character == "+"):
-            if character == "-":
+        elif in_exponent and exponent_sign_allowed and (code == 45 or code == 43):
+            if code == 45:
                 exponent_negative = True
             end
             exponent_sign_allowed = False
@@ -1185,30 +1275,59 @@ function __lsl_parse_float(text):
     if digits == 0 or (in_exponent and exponent_digits == 0):
         Error(ValueError: "invalid Float String")
     end
-    value /= fraction_scale
-    # Scale by exact powers of ten (10^22 is the largest exact double)
-    # in one multiply or divide per chunk. Per-digit scaling would round
-    # on every step and break the formatter round-trip search, which
-    # needs this conversion to be monotonic in the decimal digits.
-    while exponent > 0:
-        step = exponent
-        if step > 22:
-            step = 22
-        end
-        scale = __lsl_float_from_int(1)
-        counter = 0
-        while counter < step:
-            scale = __lsl_float_accumulate(scale, 0)
-            counter += 1
-        end
-        if exponent_negative:
-            value /= scale
-        else:
-            value *= scale
-        end
-        exponent -= step
+    if exponent_negative:
+        decimal_exponent -= exponent
+    else:
+        decimal_exponent += exponent
     end
-    return value * sign
+    if decimal_exponent > 100000:
+        decimal_exponent = 100000
+    elif decimal_exponent < -100000:
+        decimal_exponent = -100000
+    end
+    bits = __lsl_float_from_decimal(significand, decimal_exponent)
+    if truncated:
+        upper = __lsl_float_from_decimal(significand + 1, decimal_exponent)
+        if upper != bits:
+            # Vstup leží mezi dvěma doubly: rozhodnou všechny platné číslice.
+            # Více než 800 číslic nezmění zaokrouhlení: zbytek nahradí lepivá 1.
+            collected = __lsl_byte_zeros(801)
+            count = 0
+            dropped = False
+            started = False
+            for position in rang(byte_length):
+                code = __lsl_text_byte(text, position)
+                if code == 101 or code == 69:
+                    break
+                end
+                if code >= 48 and code <= 57:
+                    if code != 48:
+                        started = True
+                    end
+                    if started:
+                        if count < 800:
+                            collected[count] = code - 48
+                            count += 1
+                        elif code != 48:
+                            dropped = True
+                        end
+                    end
+                end
+            end
+            exact_exponent = decimal_exponent + kept - count
+            if dropped:
+                collected[count] = 1
+                count += 1
+                exact_exponent -= 1
+            end
+            bits = __lsl_float_round_exact(collected, count, exact_exponent, bits)
+        end
+    end
+    value = __lsl_float_from_bits(bits)
+    if negative:
+        return -value
+    end
+    return value
 end
 
 function __lsl_float_any(value):
@@ -1326,150 +1445,126 @@ function __lsl_format_float(value):
         end
         return "0.0"
     end
+    # Typovaný Float: smyčky níže počítají nativně, bez boxování mezivýsledků.
+    Float(number) = value
     if negative:
-        value = -value
+        number = -number
     end
-    integer_value = Int(value)
-    if integer_value >= 0 and __lsl_float_from_int(integer_value) == value:
+    Int(integer_value) = Int(number)
+    if integer_value >= 0 and __lsl_float_from_int(integer_value) == number:
         integer_text = __lsl_int_to_string(integer_value) + ".0"
         if negative:
             return "-" + integer_text
         end
         return integer_text
     end
-    target_bits = __lsl_float_bits(value)
-
-    exponent = 0
-    significand = 0
-    round_digit = 0
-    if integer_value >= 0 and value >= 1.0:
-        integer_digits = len(__lsl_int_to_string(integer_value))
-        exponent = integer_digits - 1
-        significand = integer_value
-        fraction = value - __lsl_float_from_int(integer_value)
-        generated = integer_digits
-        while generated < 17:
-            fraction *= 10.0
-            digit = Int(fraction)
-            if digit < 0:
-                digit = 0
-            elif digit > 9:
-                digit = 9
-            end
-            significand = significand * 10 + digit
-            fraction -= __lsl_float_from_int(digit)
-            generated += 1
-        end
-        round_digit = Int(fraction * 10.0)
-    else:
-        scaled = value
-        while scaled >= 10.0:
-            scaled /= 10.0
-            exponent += 1
-        end
-        while scaled < 1.0:
-            scaled *= 10.0
-            exponent -= 1
-        end
-        for index in rang(17):
-            digit = Int(scaled)
-            if digit < 0:
-                digit = 0
-            elif digit > 9:
-                digit = 9
-            end
-            significand = significand * 10 + digit
-            scaled = (scaled - __lsl_float_from_int(digit)) * 10.0
-        end
-        round_digit = Int(scaled)
+    Int(target_bits) = __lsl_float_bits(number)
+    # Mantisa m a binární exponent e: number = m · 2^e (přesně).
+    Int(mantissa) = target_bits & 4503599627370495
+    Int(binary_exponent) = -1074
+    if (target_bits >> 52) > 0:
+        mantissa += 4503599627370496
+        binary_exponent = (target_bits >> 52) - 1075
     end
-    if round_digit >= 5:
-        significand += 1
+    # Řád: 10^exponent <= number < 10^(exponent + 1), odhad z binárního
+    # exponentu (log10(2) ~ 0.30103) a přesné porovnání (bez zaokrouhlení).
+    Int(exponent) = ((binary_exponent + 52) * 30103) // 100000
+    while __lsl_decimal_compare(1, exponent, mantissa, binary_exponent) < 0:
+        exponent -= 1
     end
-    if significand >= 100000000000000000:
-        significand = significand // 10
+    while __lsl_decimal_compare(1, exponent + 1, mantissa, binary_exponent) >= 0:
         exponent += 1
     end
-
-    # Repeated decimal scaling above can drift by a few ulps. Correct the final
-    # 17-digit integer against the original IEEE bits before shortening it.
-    # When one significand step jumps across the target the exact decimal is
-    # unreachable through the parser; the closer bracketing side then wins
-    # instead of failing the whole format.
-    attempts = 0
-    parsed_bits = __lsl_float_candidate_bits(significand, 17, exponent)
-    while parsed_bits != target_bits and attempts < 300:
-        previous_significand = significand
-        previous_exponent = exponent
-        previous_bits = parsed_bits
-        if parsed_bits < target_bits:
-            significand += 1
-        else:
+    # Odhad 17 číslic jedním (dvěma) násobením přesnou mocninou deseti, pak
+    # nejbližší 17místný zápis přesným porovnáním s polovinami sousedů; takový
+    # zápis se vždy převede zpět na stejný double.
+    Int(power) = 16 - exponent
+    Float(scaled) = number
+    if power > 300:
+        scaled *= __lsl_float_from_bits(__lsl_float_from_decimal(1, power - 300))
+        power = 300
+    end
+    scaled *= __lsl_float_from_bits(__lsl_float_from_decimal(1, power))
+    Int(significand) = Int(scaled)
+    if significand < 10000000000000000:
+        significand = 10000000000000000
+    elif significand > 99999999999999999:
+        significand = 99999999999999999
+    end
+    Int(steps) = 0
+    Int(moved) = 0
+    while steps < 64 and significand < 100000000000000000 and __lsl_float_nearer_upper(significand, 17, exponent, target_bits):
+        significand += 1
+        steps += 1
+        moved = 1
+    end
+    if significand == 100000000000000000:
+        significand = 10000000000000000
+        exponent += 1
+    elif moved == 0:
+        while steps < 64 and significand > 10000000000000000 and not __lsl_float_nearer_upper(significand - 1, 17, exponent, target_bits):
             significand -= 1
-        end
-        if significand >= 100000000000000000:
-            significand = significand // 10
-            exponent += 1
-        elif significand < 10000000000000000:
-            significand = significand * 10 + 9
-            exponent -= 1
-        end
-        parsed_bits = __lsl_float_candidate_bits(significand, 17, exponent)
-        attempts += 1
-        if parsed_bits != target_bits:
-            if previous_bits < target_bits and parsed_bits > target_bits:
-                low_bits = previous_bits
-                low_significand = previous_significand
-                low_exponent = previous_exponent
-                high_bits = parsed_bits
-                high_significand = significand
-                high_exponent = exponent
-            elif previous_bits > target_bits and parsed_bits < target_bits:
-                low_bits = parsed_bits
-                low_significand = significand
-                low_exponent = exponent
-                high_bits = previous_bits
-                high_significand = previous_significand
-                high_exponent = previous_exponent
-            else:
-                continue
-            end
-            if target_bits - low_bits <= high_bits - target_bits:
-                significand = low_significand
-                exponent = low_exponent
-            else:
-                significand = high_significand
-                exponent = high_exponent
-            end
-            break
+            steps += 1
         end
     end
 
-    digit_count = 17
+    # Nejkratší délka: zaokrouhlený kandidát, pak sousedé (skutečná hodnota
+    # může ležet i pod násobkem deseti, proto i base - 1); hodnota rovná
+    # 10^n znamená přenos přes řád (10^(n-1) s exponentem o 1 výš).
+    Int(digit_count) = 17
     shortening = True
+    Int(limit) = 10000000000000000
     while digit_count > 1 and shortening:
-        next_count = digit_count - 1
-        matched = False
-        rounded = (significand + 5) // 10
-        if __lsl_decimal_digits_match(rounded, next_count):
-            if __lsl_float_candidate_bits(rounded, next_count, exponent) == target_bits:
-                significand = rounded
-                digit_count = next_count
-                matched = True
+        Int(next_count) = digit_count - 1
+        Int(lowest) = limit // 10
+        Int(base) = significand // 10
+        Int(rounded) = (significand + 5) // 10
+        Int(found) = -1
+        if rounded == limit:
+            if __lsl_float_candidate_bits(lowest, next_count, exponent + 1) == target_bits:
+                found = rounded
             end
+        elif __lsl_float_candidate_bits(rounded, next_count, exponent) == target_bits:
+            found = rounded
         end
-        if not matched:
-            lower = significand // 10
-            if __lsl_decimal_digits_match(lower, next_count):
-                if __lsl_float_candidate_bits(lower, next_count, exponent) == target_bits:
-                    significand = lower
-                    digit_count = next_count
-                    matched = True
+        if found < 0:
+            Int(other) = base
+            if rounded == base:
+                other = base + 1
+            end
+            if other == limit:
+                if __lsl_float_candidate_bits(lowest, next_count, exponent + 1) == target_bits:
+                    found = other
                 end
+            elif other >= lowest and __lsl_float_candidate_bits(other, next_count, exponent) == target_bits:
+                found = other
             end
         end
-        if not matched:
+        if found < 0 and base - 1 >= lowest and __lsl_float_candidate_bits(base - 1, next_count, exponent) == target_bits:
+            found = base - 1
+        end
+        if found < 0:
             shortening = False
+        else:
+            significand = found
+            digit_count = next_count
+            if found == limit:
+                significand = lowest
+                exponent += 1
+            end
+            limit = lowest
+        end
+    end
+    # Kratší výsledek: nejbližší z platných sousedů (při shodě sudý).
+    if digit_count < 17:
+        limit = __lsl_float_power_of_ten(digit_count)
+        if significand - 1 >= limit // 10 and __lsl_float_candidate_bits(significand - 1, digit_count, exponent) == target_bits and not __lsl_float_nearer_upper(significand - 1, digit_count, exponent, target_bits):
+            significand -= 1
+        elif significand + 1 < limit and __lsl_float_candidate_bits(significand + 1, digit_count, exponent) == target_bits and __lsl_float_nearer_upper(significand, digit_count, exponent, target_bits):
+            significand += 1
+        elif significand + 1 == limit and __lsl_float_candidate_bits(limit // 10, digit_count, exponent + 1) == target_bits and __lsl_float_nearer_upper(significand, digit_count, exponent, target_bits):
+            significand = limit // 10
+            exponent += 1
         end
     end
     return __lsl_render_float_digits(significand, digit_count, exponent, negative)
@@ -2545,79 +2640,62 @@ function __lsl_replace(text, old_value, new_value):
         end
         return "".join(pieces)
     end
-    if len(checked_text) > 100000000 // old_length:
-        Error(ValueError: "String replace exceeds the safe work limit")
-    end
-    index = 0
-    while index < len(checked_text):
-        matches = False
-        if index + old_length <= len(checked_text):
-            matches = True
-            offset = 0
-            while offset < old_length:
-                if checked_text[index + offset] != checked_old[offset]:
-                    matches = False
-                    break
-                end
-                offset += 1
-            end
-        end
-        if matches:
-            piece = checked_new
-            index += old_length
-        else:
-            piece = checked_text[index]
-            index += 1
-        end
-        output_bytes += __lsl_text_byte_length(String(piece))
+    old_bytes = __lsl_text_byte_length(checked_old)
+    new_bytes = __lsl_text_byte_length(checked_new)
+    text_bytes = __lsl_text_byte_length(checked_text)
+    position = 0
+    found = __lsl_byte_search(checked_text, checked_old, 0)
+    while found >= 0:
+        output_bytes += found - position + new_bytes
         if output_bytes > 67108864:
             Error(ValueError: "replaced String exceeds 64 MiB")
         end
-        pieces.append(piece)
+        pieces.append(__lsl_text_piece(checked_text, position, found - position))
+        pieces.append(checked_new)
+        position = found + old_bytes
+        found = __lsl_byte_search(checked_text, checked_old, position)
     end
+    if output_bytes + text_bytes - position > 67108864:
+        Error(ValueError: "replaced String exceeds 64 MiB")
+    end
+    pieces.append(__lsl_text_piece(checked_text, position, text_bytes - position))
     return "".join(pieces)
 end
 
 function __lsl_count(text, needle):
     text = __lsl_require_string(text)
     needle = __lsl_require_string_value(needle)
+    needle_bytes = __lsl_text_byte_length(needle)
+    if needle_bytes == 0:
+        return len(text) + 1
+    end
     count = 0
-    offset = 0
-    while offset <= len(text) - len(needle):
-        found = __lsl_find_offset(text, needle, offset)
-        if found < 0:
-            break
-        end
+    position = __lsl_byte_search(text, needle, 0)
+    while position >= 0:
         count += 1
-        step = len(needle)
-        if step < 1:
-            step = 1
-        end
-        offset = found + step
+        position = __lsl_byte_search(text, needle, position + needle_bytes)
     end
     return count
 end
 
 function __lsl_find_offset(text, needle, offset):
-    if len(needle) > 0 and len(text) - min(max(offset, 0), len(text)) > 100000000 // len(needle):
-        Error(ValueError: "substring search exceeds the safe work limit")
-    end
-    limit = len(text) - len(needle)
+    text = __lsl_require_string(text)
+    needle = __lsl_require_string_value(needle)
     start = offset
-    while start <= limit:
-        matches = True
-        index = 0
-        while index < len(needle):
-            if text[start + index] != needle[index]:
-                matches = False
-                break
-            end
-            index += 1
+    if start < 0:
+        # Záporný začátek se počítá od konce (jako v Pythonu).
+        start += len(text)
+        if start < 0:
+            start = 0
         end
-        if matches:
-            return start
-        end
-        start += 1
     end
-    return -1
+    if start > len(text):
+        return -1
+    end
+    start_byte = __lsl_char_byte_offset(text, start)
+    found = __lsl_byte_search(text, needle, start_byte)
+    if found < 0:
+        return -1
+    end
+    return start + __lsl_byte_char_count(text, start_byte, found)
 end

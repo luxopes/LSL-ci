@@ -82,14 +82,21 @@ function _parts(value):
     if value_type == "Int" or value_type == "String" or value_type == "Bool":
         return _validated_parts(String(value))
     elif value_type == "Dictionary" or value_type == "Instance":
-        sign = Int(value["sign"])
+        raw_sign = value["sign"]
+        if type(raw_sign) != "Int":
+            Error(ValueError: "invalid BigInt sign")
+        end
+        sign = Int(raw_sign)
         digits = _validated_digits(String(value["digits"]))
         if sign < -1 or sign > 1:
             Error(ValueError: "invalid BigInt sign")
         end
         digits = _strip_leading_zeros(digits)
+        # Kánonický stav: nula má znaménko 0, nenulové číslo ±1.
         if digits == "0":
             sign = 0
+        elif sign == 0:
+            Error(ValueError: "invalid BigInt state: sign 0 with non-zero digits")
         end
         return [sign, digits]
     end

@@ -19,6 +19,6 @@ TypeError: expected a String
 TypeError: expected a String
 TypeError: method requires an indexable sequence
 TypeError: method requires a Dictionary receiver
-TypeError: sequence index must be Int
-TypeError: sequence index must be Int
+TypeError: sequence index must be Int, got String
+TypeError: sequence index must be Int, got String
 TypeError: sort values must have compatible types

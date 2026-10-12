@@ -140,6 +140,67 @@ function stream_server_worker():
     return None
 end
 
+# 0.9.2: tchar v názvu hlavičky, CR v hodnotě, request-line a statusy bez těla.
+function protocol_handler(request):
+    if request["target"] == "/204":
+        return {"status": 204, "body": "BADBODY"}
+    elif request["target"] == "/304":
+        return {"status": 304, "body": "BADBODY"}
+    end
+    return {"body": "dot=" + request["headers"].get("x.test", "-") + chr(10)}
+end
+
+function protocol_server_worker():
+    call httpserver.serve_listener(listener_box[0], -1, protocol_handler, 7, False)
+    return None
+end
+
+pool_active = IntArray()
+pool_active.append(0)
+pool_active.append(0)
+
+function pool_handler(request):
+    now = atomic_add(pool_active, 0, 1) + 1
+    peak = pool_active[1]
+    while now > peak:
+        call atomic_cas(pool_active, 1, peak, now)
+        peak = pool_active[1]
+    end
+    call time.sleep(0.2)
+    call atomic_add(pool_active, 0, -1)
+    return {"body": "pool " + request["target"] + chr(10)}
+end
+
+pool_served = IntArray()
+pool_served.append(-1)
+
+function pool_server_worker():
+    pool_served[0] = httpserver.serve_listener_workers(listener_box[0], pool_handler, 4, 4)
+    return None
+end
+
+pool_results = ["", "", "", ""]
+
+function pool_client_0():
+    pool_results[0] = exchange("GET /a HTTP/1.1" + chr(13) + chr(10) + "Host: localhost" + chr(13) + chr(10) + chr(13) + chr(10))
+    return None
+end
+
+function pool_client_1():
+    pool_results[1] = exchange("GET /b HTTP/1.1" + chr(13) + chr(10) + "Host: localhost" + chr(13) + chr(10) + chr(13) + chr(10))
+    return None
+end
+
+function pool_client_2():
+    pool_results[2] = exchange("GET /c HTTP/1.1" + chr(13) + chr(10) + "Host: localhost" + chr(13) + chr(10) + chr(13) + chr(10))
+    return None
+end
+
+function pool_client_3():
+    pool_results[3] = exchange("GET /d HTTP/1.1" + chr(13) + chr(10) + "Host: localhost" + chr(13) + chr(10) + chr(13) + chr(10))
+    return None
+end
+
 function roundtrip_server_worker():
     call httpserver.serve_listener(listener_box[0], -1, roundtrip_handler, 3, False)
     return None
@@ -506,6 +567,38 @@ call require(head_stream_response.endswith(separator + separator) and "data:" no
 invalid_stream_response = exchange("GET /invalid HTTP/1.1" + separator + "Host: localhost" + separator + separator)
 call require(invalid_stream_response.startswith("HTTP/1.1 500 Internal Server Error"), "non-Function stream was accepted")
 call require(thread_join(stream_worker) == 0, "HTTP stream server worker did not exit cleanly")
+
+protocol_listener = httpserver.listen_ipv4("127.0.0.1", 0, 16)
+listener_box[0] = protocol_listener
+port_box[0] = httpserver.local_port(protocol_listener)
+protocol_worker = thread_spawn(protocol_server_worker)
+dot_response = exchange("GET / HTTP/1.1" + separator + "Host: localhost" + separator + "X.Test: ok" + separator + separator)
+call require(dot_response.startswith("HTTP/1.1 200 OK") and dot_response.endswith("dot=ok" + chr(10)), "tchar header name was rejected: " + dot_response)
+for invalid_request in ["GET / HTTP/1.1" + separator + "Host: localhost" + separator + "X-Test: one" + chr(13) + "two" + separator + separator, "GET / HTTP/1.1" + separator + "Host: localhost" + separator + "X-Test: one" + chr(13) + separator + separator, "G" + chr(9) + "ET / HTTP/1.1" + separator + "Host: localhost" + separator + separator, "GET /one" + chr(13) + "two HTTP/1.1" + separator + "Host: localhost" + separator + separator]:
+    invalid_response = exchange(invalid_request)
+    call require(invalid_response.startswith("HTTP/1.1 400 Bad Request"), "invalid request reached the handler: " + invalid_response)
+end
+for empty_status in ["204", "304"]:
+    empty_response = exchange("GET /" + empty_status + " HTTP/1.1" + separator + "Host: localhost" + separator + separator)
+    call require(empty_response.startswith("HTTP/1.1 " + empty_status + " ") and empty_response.endswith(separator + separator) and "BADBODY" not in empty_response and "Content-Length" not in empty_response, "status " + empty_status + " sent a body: " + empty_response)
+end
+call require(thread_join(protocol_worker) == 0, "HTTP protocol server worker did not exit cleanly")
+
+pool_listener = httpserver.listen_ipv4("127.0.0.1", 0, 16)
+listener_box[0] = pool_listener
+port_box[0] = httpserver.local_port(pool_listener)
+pool_worker = thread_spawn(pool_server_worker)
+pool_started = time.monotonic()
+pool_clients = [thread_spawn(pool_client_0), thread_spawn(pool_client_1), thread_spawn(pool_client_2), thread_spawn(pool_client_3)]
+for pool_client in pool_clients:
+    call thread_join(pool_client)
+end
+pool_elapsed = time.monotonic() - pool_started
+call require(thread_join(pool_worker) == 0 and pool_served[0] == 4, "HTTP worker pool did not serve exactly four requests")
+for pool_index in rang(4):
+    call require(pool_results[pool_index].startswith("HTTP/1.1 200 OK") and pool_results[pool_index].endswith("pool /" + "abcd"[pool_index] + chr(10)), "HTTP worker pool response differs")
+end
+call require(pool_active[1] >= 2, "HTTP worker pool did not handle requests concurrently")
 
 call unlink(escape_path)
 call unlink(fifo_path)

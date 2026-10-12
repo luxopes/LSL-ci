@@ -1,0 +1,5 @@
+capture ProcessError: capture setup failed
+run status 126
+capture_input ProcessError: capture setup failed
+capture_stream ProcessError: capture setup failed
+descriptors unchanged True

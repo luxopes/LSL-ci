@@ -87,3 +87,5 @@ load rang_value_conformance
 load type_widening_conformance
 load stdio_buffer_conformance
 load language_091_conformance
+load audit_092_conformance
+load rang_constant_step_conformance

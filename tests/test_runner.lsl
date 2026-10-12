@@ -297,6 +297,9 @@ end
 gc_bigheap_test = test_path("gc-bigheap-test")
 call require_success(run_compiler(["tests/gc_bigheap_threads_conformance.lsl", gc_bigheap_test]), "compile gc bigheap threads conformance")
 call require_output(gc_bigheap_test, [], "tests/gc_bigheap_threads_conformance.out", "gc bigheap threads output differs")
+fork_fault_test = test_path("process-fork-fault-test")
+call require_success(run_compiler(["tests/process_fork_fault_conformance.lsl", fork_fault_test]), "compile fork fault injection")
+call require_output(fork_fault_test, [], "tests/process_fork_fault_conformance.out", "fork failure handling differs")
 gc_stream_test = test_path("gc-stream-worker-test")
 call require_success(run_compiler(["tests/gc_stream_worker_conformance.lsl", gc_stream_test]), "compile gc stream worker conformance")
 call require_output(gc_stream_test, [], "tests/gc_stream_worker_conformance.out", "gc() during worker capture_stream corrupted the stream")
@@ -330,7 +333,7 @@ end
 call require_success(run_compiler(["compiler/pure/cli.lsl", cli_test]), "compile stdin CLI")
 call require_hardened_elf(cli_test)
 help_output = capture(cli_test, ["--help"])
-expected_help = "Lux Simple Lang (LSL) 0.9.1" + chr(10)
+expected_help = "Lux Simple Lang (LSL) 0.9.2" + chr(10)
 expected_help += chr(10)
 expected_help += "Usage:" + chr(10)
 expected_help += "  lsl [SOURCE [ARG...]]" + chr(10)
@@ -384,11 +387,11 @@ if capture_status() != 0 or tui_keys_output != "buffered terminal keys passed" +
     Error(TestFailure: "buffered terminal keys differ")
 end
 version_output = capture(cli_test, ["version"])
-if capture_status() != 0 or version_output != "0.9.1" + chr(10):
+if capture_status() != 0 or version_output != "0.9.2" + chr(10):
     Error(TestFailure: "CLI version output differs")
 end
 version_flag_output = capture(cli_test, ["--version"])
-if capture_status() != 0 or version_flag_output != "0.9.1" + chr(10):
+if capture_status() != 0 or version_flag_output != "0.9.2" + chr(10):
     Error(TestFailure: "CLI --version output differs")
 end
 config_output = capture(cli_test, ["config", "examples/config/system.lsl"])
@@ -978,6 +981,43 @@ call unlink(value_cycle_wrapper)
 value_cycle_output = capture(config_value_cycle_test, [])
 if capture_status() == 0 or value_cycle_output != "" or capture_stderr() != readfile("tests/config/value_cycle.err"):
     Error(TestFailure: "cyclic configuration value was not rejected")
+end
+
+# 0.9.2: nálezy auditu konfigurace (čistota, lexer, exporty, typy, merge).
+config_092_cases = [
+    ["printr", 1, "Impure configuration identifier printr"],
+    ["monotonic", 1, "Impure configuration identifier monotonic"],
+    ["cpu_count", 1, "Impure configuration identifier cpu_count"],
+    ["block_comment", 0, "{\"value\":1}"],
+    ["escaped_quote", 0, "{\"value\":\"a\\\"b\"}"],
+    ["assertions_tab", 1, "Configuration assertion failed: must fail"],
+    ["options_tab", 1, "Missing required option port"],
+    ["comment_raw", 0, "{\"v\":\"C:\\\\dir\\\\\"}"],
+    ["float_option", 0, "{\"rate\":1.5}"],
+    ["missing_sentinel", 0, "{\"data\":{\"__missing\":true}}"],
+    ["list_omit", 0, "{\"items\":[1,3]}"],
+    ["force_list", 0, "{\"items\":[1,2]}"],
+    ["invalid_default", 1, "Invalid default for option port Int String"],
+    ["priority/main", 0, "{\"items\":[1,2]}"]
+]
+for config_case in config_092_cases:
+    config_source = "tests/config/092/" + config_case[0] + ".lsl"
+    config_wrapper = "tests/config/092/.case-" + test_token + "-evaluator.lsl"
+    if config_case[0].startswith("priority/"):
+        config_wrapper = "tests/config/092/priority/.case-" + test_token + "-evaluator.lsl"
+    end
+    config_output = capture(configure, [config_source, config_wrapper])
+    config_status = capture_status()
+    if config_status == 0:
+        config_binary = test_path("config-092-case")
+        call require_success(run_compiler([config_wrapper, config_binary]), "compile 0.9.2 config case " + config_case[0])
+        config_output = capture(config_binary, [])
+        config_status = capture_status()
+    end
+    call unlink(config_wrapper)
+    if config_status != config_case[1] or config_output.find(config_case[2]) < 0:
+        Error(TestFailure: "0.9.2 config case " + config_case[0] + " differs: status " + String(config_status) + ", output " + config_output)
+    end
 end
 
 type_error_wrapper = "tests/config/.type-error-test-" + test_token + "-evaluator.lsl"

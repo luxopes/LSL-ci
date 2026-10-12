@@ -2425,6 +2425,68 @@ function emit_expression(generator, syntax):
                 call assembler.emit(output, x86_64.pop(7))
                 call assembler.relative(output, [232], "runtime_float_candidate_bits")
                 return
+            elif target["name"] == "__lsl_float_from_decimal":
+                for argument in syntax["arguments"]:
+                    call emit_expression(generator, argument)
+                    if semantic.infer_expression_type(argument, generator["types"], generator["function_returns"]) == "Any":
+                        call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                        call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+                    end
+                    call assembler.emit(output, x86_64.push(0))
+                end
+                call assembler.emit(output, x86_64.pop(6))
+                call assembler.emit(output, x86_64.pop(7))
+                call assembler.relative(output, [232], "runtime_decimal_bits")
+                return
+            elif target["name"] == "__lsl_decimal_compare":
+                for argument in syntax["arguments"]:
+                    call emit_expression(generator, argument)
+                    if semantic.infer_expression_type(argument, generator["types"], generator["function_returns"]) == "Any":
+                        call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                        call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+                    end
+                    call assembler.emit(output, x86_64.push(0))
+                end
+                call assembler.emit(output, x86_64.pop(1))
+                call assembler.emit(output, x86_64.pop(2))
+                call assembler.emit(output, x86_64.pop(6))
+                call assembler.emit(output, x86_64.pop(7))
+                call assembler.relative(output, [232], "runtime_decimal_compare")
+                return
+            elif target["name"] == "__lsl_float_nearer_upper":
+                for argument in syntax["arguments"]:
+                    call emit_expression(generator, argument)
+                    if semantic.infer_expression_type(argument, generator["types"], generator["function_returns"]) == "Any":
+                        call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                        call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+                    end
+                    call assembler.emit(output, x86_64.push(0))
+                end
+                call assembler.emit(output, x86_64.pop(1))
+                call assembler.emit(output, x86_64.pop(2))
+                call assembler.emit(output, x86_64.pop(6))
+                call assembler.emit(output, x86_64.pop(7))
+                call assembler.relative(output, [232], "runtime_float_nearer_upper")
+                return
+            elif target["name"] == "__lsl_decimal_digits_compare":
+                # První argument je ByteArray číslic (objekt, nerozbaluje se).
+                call emit_expression(generator, syntax["arguments"][0])
+                call assembler.emit(output, x86_64.push(0))
+                for argument in syntax["arguments"][1:]:
+                    call emit_expression(generator, argument)
+                    if semantic.infer_expression_type(argument, generator["types"], generator["function_returns"]) == "Any":
+                        call assembler.emit(output, x86_64.move_reg_reg(7, 0))
+                        call assembler.relative(output, [232], "runtime_unbox_dynamic_int")
+                    end
+                    call assembler.emit(output, x86_64.push(0))
+                end
+                call assembler.emit(output, x86_64.pop(8))
+                call assembler.emit(output, x86_64.pop(1))
+                call assembler.emit(output, x86_64.pop(2))
+                call assembler.emit(output, x86_64.pop(6))
+                call assembler.emit(output, x86_64.pop(7))
+                call assembler.relative(output, [232], "runtime_decimal_digits_compare")
+                return
             elif target["name"] == "__lsl_float_string":
                 call emit_expression(generator, syntax["arguments"][0])
                 call assembler.emit(output, x86_64.move_reg_reg(7, 0))

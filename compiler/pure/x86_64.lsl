@@ -396,6 +396,21 @@ function shift_left_cl(register):
     return [rex(True, False, False, register >= 8), 211, modrm(3, 4, register)]
 end
 
+function shift_right_logical_cl(register):
+    # SHR r/m64, CL. Stejné omezení počtu (6 bitů) jako shift_left_cl.
+    return [rex(True, False, False, register >= 8), 211, modrm(3, 5, register)]
+end
+
+function multiply_unsigned(register):
+    # MUL r/m64: rdx:rax = rax * register (bez znaménka, celých 128 bitů).
+    return [rex(True, False, False, register >= 8), 247, modrm(3, 4, register)]
+end
+
+function bit_scan_reverse(destination, source):
+    # BSR r64, r64: index nejvyššího nastaveného bitu (zdroj nesmí být 0).
+    return [rex(True, destination >= 8, False, source >= 8), 15, 189, modrm(3, destination, source)]
+end
+
 function shift_right_arithmetic_cl(register):
     # SAR r/m64, CL. Same 6-bit masking caveat as shift_left_cl.
     return [rex(True, False, False, register >= 8), 211, modrm(3, 7, register)]

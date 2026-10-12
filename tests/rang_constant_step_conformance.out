@@ -1,0 +1,15 @@
+a [0, 1, 2, 3, 4]
+b [2, 5, 8]
+c [9, 6, 3]
+d []
+e [3, 1, -1]
+f [-3, -1, 1]
+g [3, 2, 1]
+h []
+i []
+after 4
+break 6
+big [9223372036854775805, 9223372036854775806]
+zero ValueError: rang step cannot be zero at tests/rang_constant_step_conformance.lsl:66
+zerohex ValueError: rang step cannot be zero at tests/rang_constant_step_conformance.lsl:73
+hexneg [10, 8, 6, 4, 2]

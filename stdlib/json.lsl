@@ -130,11 +130,12 @@ function encode_value(value, depth, budget):
         end
         return "{" + ",".join(pieces) + "}"
     elif value_type == 4:
-        call spend(budget, 5)
+        # Rozpočet podle skutečné délky tokenu (true 4, false 5 bajtů).
         if __lsl_unbox_bool(value):
-            budget[0] += 1
+            call spend(budget, 4)
             return "true"
         end
+        call spend(budget, 5)
         return "false"
     elif value_type == 5:
         call spend(budget, 4)

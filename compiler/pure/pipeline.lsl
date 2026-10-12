@@ -10,6 +10,6 @@ function compile_mode(path, source, stdlib_source, safety_mode, internal_abi, en
         target_name = host.target_name()
     end
     selected = target.resolve(target_name)
-    unit = frontend.prepare(path, source, stdlib_source, safety_mode, internal_abi, selected["platform_module"])
+    unit = frontend.prepare(path, source, stdlib_source, safety_mode, internal_abi, selected["platform_module"], True)
     return qbe_toolchain.image(unit, selected, entry_source, backend_path)
 end

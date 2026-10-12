@@ -50,18 +50,27 @@ def elf_contract(path):
             'segments': segments, 'dynamic': dynamic, 'all_pass': True}
 
 
+def default_runtime():
+    # Vývojový checkout má build/qbe/runtime.o, čistý release jen compiler/qbe/runtime.o.
+    development = ROOT / 'build/qbe/runtime.o'
+    return development if development.exists() else ROOT / 'compiler/qbe/runtime.o'
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--compiler', type=Path, required=True)
     parser.add_argument('--backend', type=Path, required=True)
     parser.add_argument('--build-directory', type=Path, required=True)
     parser.add_argument('--report', type=Path, required=True)
+    parser.add_argument('--runtime', type=Path, default=None,
+                        help='runtime object; default build/qbe/runtime.o, else the release compiler/qbe/runtime.o')
     args = parser.parse_args()
+    runtime_path = args.runtime or default_runtime()
     build = args.build_directory.resolve()
     build.mkdir(parents=True, exist_ok=True)
     compiler, backend = args.compiler.resolve(), args.backend.resolve()
     report = {'compiler_sha256': digest(compiler), 'backend_sha256': digest(backend),
-              'runtime_sha256': digest(ROOT / 'build/qbe/runtime.o'),
+              'runtime_sha256': digest(runtime_path),
               'scope': 'real frontend -> native LSL QBE -> system as/ld; no C codegen; serialized scratch cleanup check',
               'source_sha256': {str(p.relative_to(ROOT)): digest(p) for p in [
                   ROOT / 'compiler/pure/qbe_toolchain.lsl', ROOT / 'compiler/pure/qbe_emit.lsl',
@@ -136,7 +145,7 @@ def main():
     report['complete'] = report['all_pass'] = True
     report['binaries_unchanged'] = (digest(compiler) == report['compiler_sha256']
                                     and digest(backend) == report['backend_sha256']
-                                    and digest(ROOT / 'build/qbe/runtime.o') == report['runtime_sha256'])
+                                    and digest(runtime_path) == report['runtime_sha256'])
     assert report['binaries_unchanged']
     save()
     print('PASS deterministic stripped static PIE, source-entry, ASLR, tool failure and cleanup')

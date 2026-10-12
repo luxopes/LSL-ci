@@ -48,6 +48,6 @@ if safety_mode == -1:
 end
 selected = target.resolve(target_name)
 stdlib = readfile(host.resource_path("compiler/pure/dynamic_stdlib.lsl"))
-unit = frontend.prepare(source_path, source, stdlib, safety_mode, internal_abi, selected["platform_module"])
+unit = frontend.prepare(source_path, source, stdlib, safety_mode, internal_abi, selected["platform_module"], True)
 image = qbe_toolchain.image(unit, selected, "", backend_path)
 call writebytes(output_path, image)

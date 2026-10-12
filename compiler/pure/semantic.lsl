@@ -181,7 +181,7 @@ end
 
 # Builtin return types are immutable. A single lookup replaces repeated long
 # chains of String comparisons at every inference visit.
-BUILTIN_RETURN_TYPES = {"len":"Int","Int":"Int","ord":"Int","arg_count":"Int","run":"Int","__lsl_run":"Int","run_clean":"Int","__lsl_run_clean":"Int","capture_status":"Int","native_u64":"Int","native_size":"Int","native_call":"Int","native_close":"Int","__lsl_type_code":"Int","__lsl_raw_equal":"Int","__lsl_float_bits":"Int","__lsl_float_to_int":"Int","__lsl_unbox_int":"Int","__lsl_raw_int":"Int","__lsl_typed_int":"Int","__lsl_checked_index":"Int","__lsl_parse_literal_int":"Int","__lsl_test_fd_fault":"Int","__lsl_address":"Int","__lsl_object_table_mask":"Int","__lsl_intern_table_mask":"Int","__lsl_fd_open":"Int","__lsl_fd_read":"Int","__lsl_fd_write":"Int","__lsl_fd_seek":"Int","__lsl_fd_close":"Int","__lsl_fd_socket":"Int","__lsl_fd_connect":"Int","__lsl_raster_pack":"Int","__lsl_raster_copy":"Int","__lsl_raster_fill":"Int","__lsl_fd_ioctl":"Int","__lsl_fd_mmap":"Int","__lsl_mem_pack":"Int","__lsl_data_address":"Int","__lsl_syscall":"Int","__lsl_syscall6":"Int","__lsl_mem_unpack":"Int","__lsl_byte_copy":"Int","__lsl_text_byte":"Int","__lsl_text_byte_length":"Int","__lsl_text_scan_digits":"Int","__lsl_text_digits":"Int","atomic_add":"Int","atomic_xchg":"Int","atomic_cas":"Int","thread_spawn":"Int","thread_join":"Int","cpu_count":"Int","popcount":"Int","trailing_zeros":"Int","Float":"Float","sqrt":"Float","__lsl_float_from_bits":"Float","float_sum":"Float","float_dot":"Float","__lsl_wall_time":"Float","Bool":"Bool","__lsl_isatty":"Bool","__lsl_stdin_eof":"Bool","last_error":"Any","String":"String","chr":"String","arg":"Any","input":"String","readfile":"String","type":"String","capture":"String","__lsl_capture":"String","capture_clean":"String","__lsl_capture_clean":"String","capture_stream":"String","capture_stream_clean":"String","capture_input":"String","capture_input_clean":"String","capture_input_stream":"String","capture_input_stream_clean":"String","capture_stderr":"String","executable_path":"String","__lsl_text_from_bytes":"String","__lsl_text_piece":"String","__lsl_floatarray_bytes":"String","clock":"String","monotonic":"Float","__lsl_monotonic":"Float","exists":"Bool","native_name_equal":"Bool","__lsl_sleep":"None","atomic_pause":"None","help":"None","__lsl_set_append":"None","__lsl_set_store":"None","List":"List","sorted":"List","dedup":"List","__lsl_text_split_byte":"List","set":"Set","__lsl_new_set":"Set","Tuple":"Tuple","RealArray":"RealArray","IntArray":"IntArray","__lsl_int_zeros":"IntArray","FloatArray":"FloatArray","float_zeros":"FloatArray","float_matmul":"FloatArray","__lsl_floatarray_from_bytes":"FloatArray","ByteArray":"ByteArray","readbytes":"ByteArray","__lsl_byte_zeros":"ByteArray","Dictionary":"Dictionary"}
+BUILTIN_RETURN_TYPES = {"len":"Int","Int":"Int","ord":"Int","arg_count":"Int","run":"Int","__lsl_run":"Int","run_clean":"Int","__lsl_run_clean":"Int","capture_status":"Int","native_u64":"Int","native_size":"Int","native_call":"Int","native_close":"Int","__lsl_type_code":"Int","__lsl_raw_equal":"Int","__lsl_float_bits":"Int","__lsl_float_candidate_bits":"Int","__lsl_float_from_decimal":"Int","__lsl_decimal_compare":"Int","__lsl_decimal_digits_compare":"Int","__lsl_float_nearer_upper":"Bool","__lsl_float_to_int":"Int","__lsl_unbox_int":"Int","__lsl_raw_int":"Int","__lsl_typed_int":"Int","__lsl_checked_index":"Int","__lsl_parse_literal_int":"Int","__lsl_test_fd_fault":"Int","__lsl_address":"Int","__lsl_object_table_mask":"Int","__lsl_intern_table_mask":"Int","__lsl_fd_open":"Int","__lsl_fd_read":"Int","__lsl_fd_write":"Int","__lsl_fd_seek":"Int","__lsl_fd_close":"Int","__lsl_fd_socket":"Int","__lsl_fd_connect":"Int","__lsl_raster_pack":"Int","__lsl_raster_copy":"Int","__lsl_raster_fill":"Int","__lsl_fd_ioctl":"Int","__lsl_fd_mmap":"Int","__lsl_mem_pack":"Int","__lsl_data_address":"Int","__lsl_syscall":"Int","__lsl_syscall6":"Int","__lsl_mem_unpack":"Int","__lsl_byte_copy":"Int","__lsl_text_byte":"Int","__lsl_text_byte_length":"Int","__lsl_text_scan_digits":"Int","__lsl_text_digits":"Int","atomic_add":"Int","atomic_xchg":"Int","atomic_cas":"Int","thread_spawn":"Int","thread_join":"Int","cpu_count":"Int","popcount":"Int","trailing_zeros":"Int","Float":"Float","sqrt":"Float","__lsl_float_from_bits":"Float","float_sum":"Float","float_dot":"Float","__lsl_wall_time":"Float","Bool":"Bool","__lsl_isatty":"Bool","__lsl_stdin_eof":"Bool","last_error":"Any","String":"String","chr":"String","arg":"Any","input":"String","readfile":"String","type":"String","capture":"String","__lsl_capture":"String","capture_clean":"String","__lsl_capture_clean":"String","capture_stream":"String","capture_stream_clean":"String","capture_input":"String","capture_input_clean":"String","capture_input_stream":"String","capture_input_stream_clean":"String","capture_stderr":"String","executable_path":"String","__lsl_text_from_bytes":"String","__lsl_text_piece":"String","__lsl_floatarray_bytes":"String","clock":"String","monotonic":"Float","__lsl_monotonic":"Float","exists":"Bool","native_name_equal":"Bool","__lsl_sleep":"None","atomic_pause":"None","help":"None","__lsl_set_append":"None","__lsl_set_store":"None","List":"List","sorted":"List","dedup":"List","__lsl_text_split_byte":"List","set":"Set","__lsl_new_set":"Set","Tuple":"Tuple","RealArray":"RealArray","IntArray":"IntArray","__lsl_int_zeros":"IntArray","FloatArray":"FloatArray","float_zeros":"FloatArray","float_matmul":"FloatArray","__lsl_floatarray_from_bytes":"FloatArray","ByteArray":"ByteArray","readbytes":"ByteArray","__lsl_byte_zeros":"ByteArray","Dictionary":"Dictionary"}
 
 function return_type_value(function_returns, key):
     value = function_returns[key]
@@ -1408,7 +1408,82 @@ function return_dependency_values_unchanged(previous, result):
     return True
 end
 
-function infer_function_returns(functions, classes, parameter_types, global_types):
+# Všechny řetězce v AST těla (jména, cíle, atributy, literály): konzervativní
+# nadmnožina globálních jmen, která může inference funkce přečíst.
+function syntax_strings(node, found):
+    if type(node) == "Dictionary":
+        for key in node.keys():
+            call syntax_strings(node[key], found)
+        end
+    elif type(node) == "List":
+        for item in node:
+            call syntax_strings(item, found)
+        end
+    elif type(node) == "String":
+        found[node] = True
+    end
+end
+
+# Funkce, jejichž výsledek z předchozího volání (memo) platí beze změny: stejné
+# typy parametrů, žádné čtené globální jméno se změněným typem a všechny
+# zaznamenané závislosti jsou opět takové funkce (uzavřený podsystém má
+# stejný nejmenší pevný bod). Metody tříd a aliasy se nepřebírají.
+function reusable_returns(functions, parameter_types, global_types, memo):
+    stable = {}
+    if "result" not in memo or not memo["converged"]:
+        return stable
+    end
+    previous_parameters = memo["parameters"]
+    previous_globals = memo["globals"]
+    strings = memo["strings"]
+    for name in functions.keys():
+        declaration = functions[name]
+        if "class_name" in declaration or name not in memo["inputs"] or name not in previous_parameters:
+            continue
+        end
+        if parameter_types[name] != previous_parameters[name]:
+            continue
+        end
+        if name not in strings:
+            found = {}
+            call syntax_strings(declaration["body"], found)
+            strings[name] = found
+        end
+        locals = memo["locals"][name]
+        same = True
+        for text in strings[name]:
+            if text not in locals and global_types.get(text, None) != previous_globals.get(text, None):
+                same = False
+                break
+            end
+        end
+        if same:
+            stable[name] = True
+        end
+    end
+    removed = True
+    while removed:
+        removed = False
+        for name in stable.keys():
+            for key in memo["inputs"][name]:
+                if key in functions:
+                    if key not in stable:
+                        del(stable[name])
+                        removed = True
+                        break
+                    end
+                elif not key.startswith("__class__"):
+                    del(stable[name])
+                    removed = True
+                    break
+                end
+            end
+        end
+    end
+    return stable
+end
+
+function infer_function_returns(functions, classes, parameter_types, global_types, memo=None):
     # Least-fixed-point over the 3-level lattice None < concrete < Any. Start at
     # bottom (None) so a not-yet-resolved recursive call is the merge identity
     # rather than Any; otherwise merge(Bool, Any) = Any poisoned recursive
@@ -1424,6 +1499,13 @@ function infer_function_returns(functions, classes, parameter_types, global_type
     names = functions.keys()
     for name in names:
         result[name] = "None"
+    end
+    stable = {}
+    if memo != None:
+        stable = reusable_returns(functions, parameter_types, global_types, memo)
+        for name in stable.keys():
+            result[name] = memo["result"][name]
+        end
     end
     call populate_inherited_returns(classes, functions, result)
     max_iterations = len(names) * 2 + 4
@@ -1443,6 +1525,10 @@ function infer_function_returns(functions, classes, parameter_types, global_type
                 locals = {}
                 call collect_variables(declaration["body"], locals)
                 local_names[name] = locals.keys()
+            end
+            if name in stable:
+                previous_inputs[name] = memo["inputs"][name]
+                continue
             end
             if name in previous_inputs:
                 if return_dependency_values_unchanged(previous_inputs[name], result):
@@ -1484,6 +1570,26 @@ function infer_function_returns(functions, classes, parameter_types, global_type
         end
         call populate_inherited_returns(classes, functions, result)
         iteration += 1
+    end
+    if memo != None:
+        memo["result"] = Dictionary(result)
+        memo["inputs"] = previous_inputs
+        memo["parameters"] = parameter_types
+        memo["globals"] = Dictionary(global_types)
+        memo["converged"] = not changed
+        locals_by_name = {}
+        for name in local_names.keys():
+            locals_by_name[name] = set(local_names[name])
+        end
+        for parameter_owner in names:
+            for parameter in functions[parameter_owner]["parameters"]:
+                locals_by_name[parameter_owner].add(parameter)
+            end
+        end
+        memo["locals"] = locals_by_name
+        if "strings" not in memo:
+            memo["strings"] = {}
+        end
     end
     return result
 end
@@ -1655,7 +1761,10 @@ function source_has_directive(source, directive):
 end
 
 # Výstup je společný kontrakt frontendu a backendu, bez registrů a bytových offsetů.
-function analyze(path, source, program, internal_abi):
+function analyze(path, source, program, internal_abi, lazy_functions=None):
+    if lazy_functions == None:
+        lazy_functions = {}
+    end
     lines = source
     call declarations.lower(program, path, source)
     classes = class_table(path, lines, program)
@@ -1663,7 +1772,8 @@ function analyze(path, source, program, internal_abi):
     functions = function_table(path, lines, program)
     noreturn = flow.noreturn_functions(functions)
     parameter_types = dynamic_parameter_types(functions)
-    function_returns = infer_function_returns(functions, classes, parameter_types, {})
+    return_memo = {}
+    function_returns = infer_function_returns(functions, classes, parameter_types, {}, return_memo)
     main_variables = {}
     call collect_variables(program, main_variables)
     main_reads = flow.check(path, source, program, main_variables, [], constant_truth_expression, constant_if_body, noreturn, main_variables, True)
@@ -1695,7 +1805,7 @@ function analyze(path, source, program, internal_abi):
     call widen_written_globals(main_types, written_globals)
     # Global types and return types depend on each other; one more round with
     # the globals visible resolves returns that read global state.
-    function_returns = infer_function_returns(functions, classes, parameter_types, main_types)
+    function_returns = infer_function_returns(functions, classes, parameter_types, main_types, return_memo)
     main_types = {}
     call collect_types_stable(program, main_types, function_returns)
     call widen_written_globals(main_types, written_globals)
@@ -1703,17 +1813,29 @@ function analyze(path, source, program, internal_abi):
         # Direct-call observations propagate parameter types through helper
         # chains. Escaping callbacks retain their dynamic ABI.
         parameter_types = infer_function_parameters(program, functions, function_returns, main_types)
-        function_returns = infer_function_returns(functions, classes, parameter_types, main_types)
+        function_returns = infer_function_returns(functions, classes, parameter_types, main_types, return_memo)
         main_types = {}
         call collect_types_stable(program, main_types, function_returns)
         call widen_written_globals(main_types, written_globals)
     end
     unit = {"path": path, "source": source, "program": program, "internal_abi": internal_abi, "unchecked_intarray": source_has_directive(source, "# lsl: unchecked-intarray"), "classes": classes, "functions": functions, "noreturn": noreturn, "function_parameters": parameter_types, "function_returns": function_returns, "variables": main_variables, "types": main_types, "global_reads": guarded_main_reads, "mutable_globals": mutable_globals, "function_scopes": {}}
+    unit["lazy_functions"] = lazy_functions
     scopes = unit["function_scopes"]
     for name in functions.keys():
-        scopes[name] = analyze_function(unit, functions[name])
+        if name not in lazy_functions:
+            scopes[name] = analyze_function(unit, functions[name])
+        end
     end
     return unit
+end
+
+# Rozsah funkce knihovny odložené v analyze (první použití).
+function ensure_function_scope(unit, name):
+    scopes = unit["function_scopes"]
+    if name not in scopes:
+        scopes[name] = analyze_function(unit, unit["functions"][name])
+    end
+    return scopes[name]
 end
 
 # Způsobilost raw Int stromů je společná politika; počet potřebných registrů řeší backend.

@@ -12,7 +12,11 @@ LN2 = 0.6931471805599453
 SQRT2 = 1.4142135623730951
 
 function floor(value):
+    if type(value) == "Int" or type(value) == "Bool":
+        return Int(value)
+    end
     number = Float(value)
+    call check_integral(number)
     truncated = Int(number)
     if Float(truncated) > number:
         return truncated - 1
@@ -21,7 +25,11 @@ function floor(value):
 end
 
 function ceil(value):
+    if type(value) == "Int" or type(value) == "Bool":
+        return Int(value)
+    end
     number = Float(value)
+    call check_integral(number)
     truncated = Int(number)
     if Float(truncated) < number:
         return truncated + 1
@@ -78,6 +86,12 @@ function decimal_round(value, places, round_half):
     parts = decimal_parts(number)
     digits = parts[1]
     point = parts[2]
+    # Meze před součtem: point je malé, places může být až Int.MIN/MAX.
+    if places >= len(digits) - point:
+        return number
+    elif places < -point - 1:
+        return 0.0
+    end
     keep = point + places
     if keep >= len(digits):
         return number
@@ -119,35 +133,49 @@ function decimal_round(value, places, round_half):
 end
 
 # Int vstup: přesné zaokrouhlení na desítky, stovky… bez převodu na Float.
+# Pracuje se zbytkem a posunem k nule, nikdy s abs/negací Int.MIN.
 function integer_round(value, places, round_half):
     if places >= 0 or value == 0:
         return value
-    elif value == -9223372036854775807 - 1:
-        Error(ValueError: "value is outside the Int range")
-    elif -places >= 19:
+    elif places < -19:
+        # |value| < 9.3e18 < 0.5·10^20: výsledek je vždy 0.
+        return 0
+    elif places == -19:
+        # 10^19 se do Int nevejde; |value| < 10^19, takže výsledek je 0,
+        # nebo ±10^19 (mimo rozsah Int) při zaokrouhlení poloviny od nuly.
+        if round_half and (value >= 5000000000000000000 or value <= -5000000000000000000):
+            Error(ValueError: "rounded value is outside the Int range")
+        end
         return 0
     end
     unit = 1
     for step in rang(-places):
         unit *= 10
     end
-    negative = value < 0
-    magnitude = value
-    if negative:
-        magnitude = -value
+    remainder = value % unit
+    if value >= 0:
+        toward_zero = value - remainder
+        distance = remainder
+    elif remainder == 0:
+        toward_zero = value
+        distance = 0
+    else:
+        toward_zero = value - remainder + unit
+        distance = unit - remainder
     end
-    remainder = magnitude % unit
-    base = magnitude - remainder
-    if round_half and remainder >= unit - remainder:
-        if base > 9223372036854775807 - unit:
+    if round_half and distance > 0 and distance >= unit - distance:
+        if value >= 0:
+            if toward_zero > 9223372036854775807 - unit:
+                Error(ValueError: "rounded value is outside the Int range")
+            end
+            return toward_zero + unit
+        end
+        if toward_zero < -9223372036854775807 - 1 + unit:
             Error(ValueError: "rounded value is outside the Int range")
         end
-        base += unit
+        return toward_zero - unit
     end
-    if negative:
-        return -base
-    end
-    return base
+    return toward_zero
 end
 
 # Převod Float na Int jen pro konečné hodnoty v rozsahu Int.
@@ -251,8 +279,23 @@ function radians(degrees_value):
 end
 
 function gcd(left, right):
-    a = abs(Int(left))
-    b = abs(Int(right))
+    a = Int(left)
+    b = Int(right)
+    minimum = -9223372036854775807 - 1
+    # |Int.MIN| se do Int nevejde: gcd(Int.MIN, 0) a gcd(Int.MIN, Int.MIN)
+    # by bylo 2^63; jinak se Int.MIN nejdřív zmenší zbytkem.
+    if a == minimum or b == minimum:
+        if (a == minimum and (b == 0 or b == minimum)) or (b == minimum and a == 0):
+            Error(OverflowError: "gcd result does not fit in Int")
+        end
+        if a == minimum:
+            a = a % abs(b)
+        else:
+            b = b % abs(a)
+        end
+    end
+    a = abs(a)
+    b = abs(b)
     while b != 0:
         remainder = a % b
         a = b
@@ -267,7 +310,17 @@ function lcm(left, right):
     if a == 0 or b == 0:
         return 0
     end
-    return abs((a // gcd(a, b)) * b)
+    minimum = -9223372036854775807 - 1
+    if a == minimum or b == minimum:
+        Error(OverflowError: "lcm result does not fit in Int")
+    end
+    a = abs(a)
+    b = abs(b)
+    reduced = a // gcd(a, b)
+    if reduced > 9223372036854775807 // b:
+        Error(OverflowError: "lcm result does not fit in Int")
+    end
+    return reduced * b
 end
 
 function factorial(value):
@@ -302,43 +355,62 @@ function factorial_big(value):
     return result
 end
 
-function exp(value):
-    number = Float(value)
-    if number > 709.0:
-        return 1.0 / 0.0
-    elif number < -745.0:
-        return 0.0
-    end
-
-    negative = number < 0.0
-    if negative:
-        number = -number
-    end
-
-    # Repeated halving keeps the Taylor series close to zero; repeated
-    # squaring restores the original exponent without requiring libc.
-    squarings = 0
-    while number > 0.5:
-        number /= 2.0
-        squarings += 1
-    end
-
+# 2^power jako Float přesně (power v rozsahu normálních čísel).
+function _power_of_two(power):
     result = 1.0
-    term = 1.0
-    index = 1
-    while index <= 24:
-        term = term * number / Float(index)
-        result += term
-        index += 1
-    end
-    while squarings > 0:
-        result *= result
-        squarings -= 1
-    end
-    if negative:
-        return 1.0 / result
+    if power >= 0:
+        for step in rang(power):
+            result *= 2.0
+        end
+    else:
+        for step in rang(-power):
+            result *= 0.5
+        end
     end
     return result
+end
+
+# value · 2^power s jediným zaokrouhlením i v subnormální oblasti.
+function _scale_by_power_of_two(value, power):
+    if power > 1023:
+        return value * _power_of_two(1023) * _power_of_two(power - 1023)
+    elif power < -1022:
+        return value * _power_of_two(-1022) * _power_of_two(power + 1022)
+    end
+    return value * _power_of_two(power)
+end
+
+function exp(value):
+    number = Float(value)
+    if number != number:
+        return number
+    elif number > 709.782712893384:
+        return 1.0 / 0.0
+    elif number < -745.1332191019412:
+        return 0.0
+    end
+    # x = k·ln2 + r, |r| <= ln2/2 (Cody-Waite rozklad ln2), e^x = e^r · 2^k.
+    k = round_half_even_int(number / LN2)
+    reduced = (number - Float(k) * 6.93147180369123816490e-01) - Float(k) * 1.90821492927058770002e-10
+    # Hornerovo schéma od nejmenšího členu: 1 + r(1 + r/2(1 + r/3(...))).
+    result = 1.0
+    index = 20
+    while index >= 1:
+        result = 1.0 + reduced * result / Float(index)
+        index -= 1
+    end
+    return _scale_by_power_of_two(result, k)
+end
+
+function round_half_even_int(number):
+    whole = Int(number)
+    fraction = number - Float(whole)
+    if fraction > 0.5 or (fraction == 0.5 and whole % 2 != 0):
+        return whole + 1
+    elif fraction < -0.5 or (fraction == -0.5 and whole % 2 != 0):
+        return whole - 1
+    end
+    return whole
 end
 
 function log(value):
@@ -380,8 +452,67 @@ function log10(value):
     return log(value) / 2.302585092994046
 end
 
+# Binární rozvoj 1/(2π) (1280 bitů za řádovou čárkou) pro přesnou redukci
+# velkých argumentů (Payne-Hanek).
+INVERSE_TAU_HEX = "28be60db9391054a7f09d5f47d4d377036d8a5664f10e4107f9458eaf7aef1586dc91b8e909374b801924bba827464873f877ac72c4a69cfba208d7d4baed1213a671c09ad17df904e64758e60d4ce7d272117e2ef7e4a0ec7fe25fff7816603fbcbc462d6829b47db4d9fb3c9f2c26dd3d18fd9a797fa8b5d49eeb1faf97c5ecf41ce7de294a4ba9afed7ec47e357421580cc11bf1edaeafc33ef0826bd0d87"
+
+# Bit na pozici position (1 = první za řádovou čárkou) rozvoje 1/(2π).
+function _inverse_tau_bit(position):
+    if position < 1 or position > 1280:
+        return 0
+    end
+    nibble = "0123456789abcdef".find(INVERSE_TAU_HEX[(position - 1) // 4])
+    return (nibble >> (3 - (position - 1) % 4)) & 1
+end
+
+# Úhel v [-π, π] pro |x| >= 2^25: frac(m·2^e/(2π)) z okna 120 bitů rozvoje.
+function _reduced_large_angle(number):
+    bits = __lsl_float_bits(number)
+    exponent_field = (bits >> 52) & 2047
+    mantissa = (bits & 4503599627370495) | 4503599627370496
+    exponent = exponent_field - 1075
+    # Okno F = bity (e+1)..(e+120) rozvoje; pět limbů po 24 bitech.
+    window = [0, 0, 0, 0, 0]
+    for offset in rang(120):
+        bit = _inverse_tau_bit(exponent + 1 + offset)
+        if bit == 1:
+            place = 119 - offset
+            window[place // 24] += 1 << (place % 24)
+        end
+    end
+    # m po 24 bitech a dolních 120 bitů součinu m·F.
+    mantissa_limbs = [mantissa & 16777215, (mantissa >> 24) & 16777215, mantissa >> 48]
+    product = [0, 0, 0, 0, 0, 0, 0, 0]
+    for left in rang(3):
+        for right in rang(5):
+            product[left + right] += mantissa_limbs[left] * window[right]
+        end
+    end
+    carry = 0
+    for index in rang(8):
+        total = product[index] + carry
+        product[index] = total & 16777215
+        carry = total >> 24
+    end
+    fraction = Float(product[4]) / 16777216.0 + Float(product[3]) / 281474976710656.0 + Float(product[2]) / 4722366482869645213696.0
+    angle = fraction * TAU
+    if angle > PI:
+        angle -= TAU
+    end
+    return angle
+end
+
 function _normalized_angle(value):
     number = Float(value)
+    if number != number or number - number != 0.0:
+        Error(ValueError: "math domain error: trigonometric function of NaN or Infinity")
+    end
+    if number >= 33554432.0 or number <= -33554432.0:
+        if number < 0.0:
+            return -_reduced_large_angle(-number)
+        end
+        return _reduced_large_angle(number)
+    end
     turns = floor((number + PI) / TAU)
     return number - Float(turns) * TAU
 end
@@ -469,14 +600,39 @@ function swish(value):
 end
 
 function hypot(x, y):
-    left = Float(x)
-    right = Float(y)
-    return sqrt(left * left + right * right)
+    left = abs(Float(x))
+    right = abs(Float(y))
+    infinity = 1.0 / 0.0
+    if left == infinity or right == infinity:
+        return infinity
+    elif left != left or right != right:
+        return 0.0 / 0.0
+    end
+    larger = max(left, right)
+    smaller = min(left, right)
+    if larger == 0.0:
+        return 0.0
+    end
+    # Škálování největší hodnotou: bez zbytečného přetečení i podtečení.
+    ratio = smaller / larger
+    return larger * sqrt(1.0 + ratio * ratio)
 end
 
 function is_close(left, right, relative_tolerance, absolute_tolerance):
     a = Float(left)
     b = Float(right)
+    relative = Float(relative_tolerance)
+    absolute = Float(absolute_tolerance)
+    if relative < 0.0 or absolute < 0.0 or relative != relative or absolute != absolute:
+        Error(ValueError: "tolerances must be non-negative")
+    end
+    if a == b:
+        return True
+    end
+    # NaN není blízko ničemu; nekonečno jen sobě (řeší rovnost výše).
+    if a != a or b != b or a - a != 0.0 or b - b != 0.0:
+        return False
+    end
     difference = abs(a - b)
     limit = max(Float(absolute_tolerance), Float(relative_tolerance) * max(abs(a), abs(b)))
     return difference <= limit
@@ -490,7 +646,23 @@ function mean(values):
     for value in values:
         total += Float(value)
     end
-    return total / Float(len(values))
+    count = Float(len(values))
+    if total - total != 0.0 and total == total:
+        # Mezisoučet přetekl: konečné hodnoty sečíst škálované počtem.
+        scaled = 0.0
+        finite = True
+        for value in values:
+            number = Float(value)
+            if number - number != 0.0:
+                finite = False
+            end
+            scaled += number / count
+        end
+        if finite:
+            return scaled
+        end
+    end
+    return total / count
 end
 
 function variance(values):
@@ -520,7 +692,13 @@ function median(values):
     if len(ordered) % 2 == 1:
         return Float(ordered[middle])
     end
-    return (Float(ordered[middle - 1]) + Float(ordered[middle])) / 2.0
+    lower = Float(ordered[middle - 1])
+    upper = Float(ordered[middle])
+    middle_value = (lower + upper) / 2.0
+    if middle_value - middle_value != 0.0 and lower - lower == 0.0 and upper - upper == 0.0:
+        return lower / 2.0 + upper / 2.0
+    end
+    return middle_value
 end
 
 function pi(decimal_places):

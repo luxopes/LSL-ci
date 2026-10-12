@@ -16,9 +16,9 @@ True True True
 set() {'a', 'b'} [3, 1]
 [[1], {'a': 2}, None]
 {(1, 2)}
-TypeError: object is not indexable
+TypeError: object is not indexable, got Set
 TypeError: object does not support append
-TypeError: object does not support indexed assignment
+TypeError: object does not support indexed assignment, got Set
 TypeError: method requires an indexable sequence
 TypeError: pop requires a List or Dictionary
 TypeError: mutable Set cannot be a Dictionary key

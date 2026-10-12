@@ -228,6 +228,17 @@ function bind_arguments(state, syntax, declaration, skip):
     return values
 end
 
+# Název typu pro hlášku (třída nebo instance bez vnitřního jména).
+function shown_type(value_type):
+    text = String(value_type)
+    if text.startswith("Class:"):
+        return "Class"
+    elif text.startswith("Instance:"):
+        return "Instance"
+    end
+    return text
+end
+
 function builtin_arities():
     builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "Dictionary": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sqrt": 1, "sum": 1, "float_zeros": 1, "float_fill": 2, "float_sum": 1, "float_dot": 2, "float_axpy": 3, "float_matmul": 5, "type": 1, "exit": 1, "input": 1, "readfile": 1, "readbytes": 1, "__lsl_getenv": 1, "mkdir": 1, "unlink": 1, "rmdir": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "help": 0, "run": 2, "run_clean": 2, "capture": 2, "capture_clean": 2, "capture_stream": 3, "capture_stream_clean": 3, "capture_input": 3, "capture_input_clean": 3, "capture_input_stream": 4, "capture_input_stream_clean": 4, "capture_status": 0, "capture_stderr": 0, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2, "native_open": 1, "native_size": 1, "native_u64": 2, "native_name_equal": 3, "native_function": 2, "native_call": 2, "native_close": 1, "__lsl_test_small_tables": 0, "__lsl_test_fd_fault": 1, "__lsl_object_table_mask": 0, "__lsl_intern_table_mask": 0, "__lsl_wall_time": 0, "__lsl_sleep": 1, "__lsl_isatty": 1, "__lsl_stdin_eof": 0, "__lsl_run": 2, "__lsl_run_clean": 2, "__lsl_capture": 2, "__lsl_capture_clean": 2, "__lsl_fd_open": 2, "__lsl_fd_read": 3, "__lsl_fd_write": 3, "__lsl_fd_seek": 2, "__lsl_fd_close": 1, "__lsl_fd_socket": 2, "__lsl_fd_connect": 3, "__lsl_checked_index": 1, "__lsl_int_zeros": 1, "__lsl_byte_zeros": 1, "__lsl_raster_pack": 5, "__lsl_raster_copy": 5, "__lsl_raster_fill": 4, "__lsl_fd_ioctl": 3, "__lsl_fd_mmap": 3, "__lsl_mem_pack": 5, "__lsl_data_address": 1, "__lsl_syscall": 5, "__lsl_mem_unpack": 4, "__lsl_text_from_bytes": 3, "__lsl_byte_copy": 5, "__lsl_text_byte": 2, "__lsl_text_byte_length": 1, "__lsl_text_piece": 3, "__lsl_text_scan_digits": 2, "__lsl_text_digits": 3, "__lsl_text_split_byte": 2, "__lsl_floatarray_bytes": 1, "__lsl_floatarray_from_bytes": 1, "atomic_add": 3, "atomic_xchg": 3, "atomic_cas": 4, "atomic_pause": 0, "thread_spawn": 1, "thread_join": 1, "cpu_count": 0, "popcount": 1, "trailing_zeros": 1}
     builtin_arity["__lsl_mkdir_private"] = 1
@@ -274,6 +285,10 @@ function builtin_arities():
     builtin_arity["__lsl_float_accumulate"] = 2
     builtin_arity["__lsl_float_bits"] = 1
     builtin_arity["__lsl_float_candidate_bits"] = 3
+    builtin_arity["__lsl_float_from_decimal"] = 2
+    builtin_arity["__lsl_decimal_compare"] = 4
+    builtin_arity["__lsl_decimal_digits_compare"] = 5
+    builtin_arity["__lsl_float_nearer_upper"] = 4
     builtin_arity["__lsl_float_from_bits"] = 1
     builtin_arity["__lsl_float_from_int"] = 1
     builtin_arity["__lsl_float_string"] = 1
@@ -440,10 +455,10 @@ function expression(state, syntax):
             call semantic.unsupported(state["path"], state["lines"], syntax, "value of type " + target_type + " is not indexable", "index a String, collection, typed array, or Dictionary")
         elif semantic.is_sequence_type(target_type) and index_type != "Int" and index_type != "Bool" and index_type != "Any":
             if state["error_label"] != "":
-                call record_error(state, syntax["index"], "index_value", "TypeError", "sequence index must be Int")
+                call record_error(state, syntax["index"], "index_value", "TypeError", "sequence index must be Int, got " + shown_type(index_type))
                 return
             end
-            call semantic.unsupported(state["path"], state["lines"], syntax["index"], "sequence index must be Int", "convert the index with Int(...)")
+            call semantic.unsupported(state["path"], state["lines"], syntax["index"], "sequence index must be Int, got " + shown_type(index_type), "convert the index with Int(...)")
         end
         call expression(state, syntax["target"])
         call expression(state, syntax["index"])
@@ -854,7 +869,7 @@ function expression(state, syntax):
                 call expression(state, syntax["arguments"][0])
                 call expression(state, syntax["arguments"][1])
                 return
-            elif target["name"] == "__lsl_float_candidate_bits":
+            elif target["name"] == "__lsl_float_candidate_bits" or target["name"] == "__lsl_float_from_decimal" or target["name"] == "__lsl_decimal_compare" or target["name"] == "__lsl_float_nearer_upper" or target["name"] == "__lsl_decimal_digits_compare":
                 for argument in syntax["arguments"]:
                     call expression(state, argument)
                 end
@@ -1440,10 +1455,10 @@ function expression(state, syntax):
                 method_index_type = semantic.infer_expression_type(syntax["arguments"][0], state["types"], state["function_returns"])
                 if method_index_type != "Int" and method_index_type != "Bool" and method_index_type != "Any":
                     if state["error_label"] != "":
-                        call record_error(state, syntax["arguments"][0], "method_index", "TypeError", "sequence index must be Int")
+                        call record_error(state, syntax["arguments"][0], "method_index", "TypeError", "sequence index must be Int, got " + shown_type(method_index_type))
                         return
                     end
-                    call semantic.unsupported(state["path"], state["lines"], syntax["arguments"][0], "sequence index must be Int", "convert the index with Int(...)")
+                    call semantic.unsupported(state["path"], state["lines"], syntax["arguments"][0], "sequence index must be Int, got " + shown_type(method_index_type), "convert the index with Int(...)")
                 end
             end
             if (receiver_type == "Set" and target["name"] != "clear") or ((receiver_type == "Any") and (semantic.set_method(target["name"]) or target["name"] == "remove" or target["name"] == "update")):
@@ -1846,10 +1861,10 @@ function statements(state, body, break_label, continue_label, return_label):
                     call semantic.unsupported(state["path"], state["lines"], statement, "value of type " + target_type + " does not support indexed assignment", "assign through a mutable collection or Dictionary")
                 elif target_type != "Dictionary" and target_type != "Any" and index_type != "Int" and index_type != "Bool" and index_type != "Any":
                     if state["error_label"] != "":
-                        call record_error(state, target["index"], "assignment_index", "TypeError", "sequence index must be Int")
+                        call record_error(state, target["index"], "assignment_index", "TypeError", "sequence index must be Int, got " + shown_type(index_type))
                         return
                     end
-                    call semantic.unsupported(state["path"], state["lines"], target["index"], "sequence index must be Int", "convert the index with Int(...)")
+                    call semantic.unsupported(state["path"], state["lines"], target["index"], "sequence index must be Int, got " + shown_type(index_type), "convert the index with Int(...)")
                 end
                 fast_value = statement["value"]
                 if statement["operator"] != "=":
@@ -2195,7 +2210,7 @@ end
 # Pořadí odpovídá deklaracím a následnému hlavnímu tělu; konstantní mrtvé větve se nevalidují.
 function check_function(state, unit, declaration):
     name = declaration["name"]
-    scope = unit["function_scopes"][name]
+    scope = semantic.ensure_function_scope(unit, name)
     state["scope_name"] = name
     state["variables"] = scope["variables"]
     state["types"] = Dictionary(scope["types"])
@@ -2214,10 +2229,14 @@ function prepare(unit):
     # Arity rules are immutable during one validation pass; constructing the
     # complete intrinsic catalog for every call dominated large-source builds.
     state["builtin_arity"] = builtin_arities()
+    unit["validation_state"] = state
+    unit["validation_checked"] = {}
+    state["family_checked"] = {}
+    lazy_functions = unit.get("lazy_functions", {})
     checked_functions = 0
     for statement in unit["program"]:
         if statement["kind"] == "function":
-            if not help_family(statement["name"]) and not lazy_runtime(statement["name"]):
+            if not help_family(statement["name"]) and not lazy_runtime(statement["name"]) and statement["name"] not in lazy_functions:
                 call check_function(state, unit, statement)
                 checked_functions += 1
             end
@@ -2245,15 +2264,42 @@ function prepare(unit):
     state["current_class_name"] = ""
     state["error_label"] = ""
     call statements(state, unit["program"], "", "", "")
+    call check_families(state, unit)
+    return unit
+end
+
+# Rodiny help a líného runtime: každá funkce nejvýš jednou, jakmile je použita.
+function check_families(state, unit):
+    checked = state["family_checked"]
     if state["help_used"]:
         for name in HELP_FAMILY:
-            call check_function(state, unit, unit["functions"][name])
+            if name not in checked:
+                checked[name] = True
+                call check_function(state, unit, unit["functions"][name])
+            end
         end
     end
     for name in LAZY_RUNTIME:
-        if name in state["lazy_used"]:
+        if name in state["lazy_used"] and name not in checked:
+            checked[name] = True
             call check_function(state, unit, unit["functions"][name])
         end
     end
-    return unit
+end
+
+# Validace funkce knihovny odložená v prepare: provede se při prvním použití
+# generátorem kódu (stejně jako v prepare, jen později a jen pro použité).
+function ensure_function_checked(unit, name):
+    if name not in unit.get("lazy_functions", {}) or help_family(name) or lazy_runtime(name):
+        return None
+    end
+    checked = unit["validation_checked"]
+    if name in checked:
+        return None
+    end
+    checked[name] = True
+    state = unit["validation_state"]
+    call check_function(state, unit, unit["functions"][name])
+    call check_families(state, unit)
+    return None
 end

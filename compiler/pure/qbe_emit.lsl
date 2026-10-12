@@ -278,6 +278,7 @@ function used(s,name):
         if name not in s["unit"]["functions"]:
             Error(CompileError: "LuxIR missing helper: "+name)
         end
+        call validation.ensure_function_checked(s["unit"],name)
         s["used"][name] = True
         s["queue"].append(name)
     end
@@ -1205,6 +1206,32 @@ function expression_validation_error(s,node):
     end
     return False
 end
+# Znaménko celočíselného literálu kroku rang (i s unárním minus), jinak 0.
+function constant_step_sign(node):
+    negative = False
+    while node["kind"] == "unary" and node["operator"] in ["-","+"]:
+        if node["operator"] == "-":
+            negative = not negative
+        end
+        node = node["operand"]
+    end
+    if node["kind"] != "literal" or node.get("literal_kind","") != "number":
+        return 0
+    end
+    text = node["value"]
+    if text.find(".") >= 0 or text.find("e") >= 0 or text.find("E") >= 0 or text.find("x") >= 0 or text.find("X") >= 0:
+        return 0
+    end
+    for character in text:
+        if character != "0" and character != "_":
+            if negative:
+                return -1
+            end
+            return 1
+        end
+    end
+    return 0
+end
 function checked_integer_expression(s,node):
     if class_validation_error(s,node,["integer_value"]):
         return ["0","Int"]
@@ -1376,6 +1403,53 @@ function assign(s,target,value):
         Error(CompileError: "LuxIR assignment target")
     end
 end
+# Další znak Stringu od bajtového offsetu: vedoucí bajt a navazující bajty
+# 10xxxxxx tvoří jeden znak (stejné dělení jako délka Stringu).
+function for_string_step(s,target,string_mode,byte_offset,index):
+    string_path = label(s)
+    other_path = label(s)
+    joined = label(s)
+    result = temp(s,"copy(0)")
+    if string_mode != "1":
+        call jump_if(s,string_mode,string_path,other_path)
+    else:
+        call jump(s,string_path)
+    end
+    call mark(s,string_path)
+    width = temp(s,"copy(1)")
+    scan = label(s)
+    grow = label(s)
+    done = label(s)
+    call jump(s,scan)
+    call mark(s,scan)
+    following = rt(s,"text_byte",[target[0],temp(s,"add("+byte_offset+", "+width+")")],"Int",False)[0]
+    continuation = temp(s,"eq("+temp(s,"and("+typed(following,"Int64")+", 192)")+", 128)","w")
+    call jump_if(s,continuation,grow,done)
+    call mark(s,grow)
+    call define(s,width,"add("+width+", 1)")
+    call jump(s,scan)
+    call mark(s,done)
+    piece = rt(s,"text_piece",[target[0],byte_offset,width],"String",False)[0]
+    call define(s,byte_offset,"add("+byte_offset+", "+width+")")
+    call define(s,result,"copy("+piece+")")
+    call jump(s,joined)
+    call mark(s,other_path)
+    if string_mode != "1":
+        if target[1] == "Any" and not s["internal"]:
+            other = rt(s,"iter_get",[target[0],boxed(s,[index,"Int"])],"Any")
+        else:
+            other = read_at(s,target,[index,"Int"],target[1])
+        end
+        call define(s,result,"copy("+boxed(s,other,True)+")")
+    end
+    call jump(s,joined)
+    call mark(s,joined)
+    if string_mode == "1":
+        return [result,"String"]
+    end
+    return [result,"Any"]
+end
+
 function statements(s,body,break_target,continue_target):
     for node in body:
         if s["ended"]:
@@ -1464,7 +1538,12 @@ function statements(s,body,break_target,continue_target):
             range_loop = iterable["kind"] == "call" and iterable["target"]["kind"] == "name" and iterable["target"]["name"] in ["rang","range"]
             start = "0"
             step = "1"
+            # Znaménko kroku známé při překladu (1/-1), jinak 0: podmínka
+            # smyčky je pak jediné porovnání místo výběru podle směru.
+            step_sign = 1
             target = ["0","None"]
+            string_mode = ""
+            byte_offset = ""
             if range_loop:
                 if class_validation_error(s,iterable,["rang_keywords"]) or class_validation_error(s,node,["rang_loop_arity"]):
                     continue
@@ -1481,6 +1560,7 @@ function statements(s,body,break_target,continue_target):
                         if class_validation_error(s,arguments[2],["rang_step"]):
                             continue
                         end
+                        step_sign = constant_step_sign(arguments[2])
                         step_value = expression(s,arguments[2])
                         step = step_value[0]
                         if step_value[1] == "Any":
@@ -1516,6 +1596,16 @@ function statements(s,body,break_target,continue_target):
                     target = [collection,"Any"]
                 end
                 stop = rt(s,"dynamic_length",[target[0]],"Int")[0]
+                # String se prochází po bajtových offsetech (UTF-8), ne přes
+                # index znaku, který by pokaždé hledal od začátku (O(n²)).
+                if target[1] == "String":
+                    string_mode = "1"
+                elif target[1] == "Any":
+                    string_mode = temp(s,"eq("+typed(rt(s,"type_code",[target[0]],"Int",False)[0],"Int64")+", 1)","w")
+                end
+                if string_mode != "":
+                    byte_offset = temp(s,"copy(0)")
+                end
             end
             index = temp(s,"copy("+start+")")
             head = label(s)
@@ -1527,7 +1617,11 @@ function statements(s,body,break_target,continue_target):
             poll_position = len(s["lines"])
             allocation_calls = s["allocation_calls"]
             call rt(s,"maybe_gc",[],"None",False)
-            if range_loop:
+            if range_loop and step_sign > 0:
+                condition = temp(s,"lt("+typed(index,"Int64")+", "+stop+")","w")
+            elif range_loop and step_sign < 0:
+                condition = temp(s,"gt("+typed(index,"Int64")+", "+stop+")","w")
+            elif range_loop:
                 positive = temp(s,"gt("+typed(step,"Int64")+", 0)","w")
                 less = temp(s,"lt("+typed(index,"Int64")+", "+stop+")","w")
                 greater = temp(s,"gt("+typed(index,"Int64")+", "+stop+")","w")
@@ -1546,6 +1640,8 @@ function statements(s,body,break_target,continue_target):
                 # Iteraci řídí interní počítadlo; přiřazení do proměnné v těle
                 # ani vnořená smyčka se stejným jménem počet iterací nemění.
                 call store_name(s,node["name"],value)
+            elif string_mode != "":
+                value = for_string_step(s,target,string_mode,byte_offset,index)
             else:
                 if target[1] == "Any" and not s["internal"]:
                     value = rt(s,"iter_get",[target[0],boxed(s,[index,"Int"])],"Any")
@@ -1698,7 +1794,7 @@ NATIVE = {
 "__lsl_box_int":["box_int","Any"],"__lsl_box_bool":["box_bool","Any"],"__lsl_box_none":["box_none","Any"],
 "__lsl_type_code":["type_code","Int"],"__lsl_is_heap":["is_heap_object","Bool"],"__lsl_raw_equal":["equal_any","Int"],
 "__lsl_test_small_tables":["test_small_tables","None"],"__lsl_test_fd_fault":["test_fd_fault","Int"],"__lsl_object_table_mask":["object_table_mask","Int"],"__lsl_intern_table_mask":["intern_table_mask","Int"],
-"__lsl_float_accumulate":["float_accumulate","Float"],"__lsl_float_candidate_bits":["float_candidate_bits","Int"],"__lsl_float_from_int":["float_from_int","Float"],"__lsl_float_to_int":["float_to_int","Int"],"__lsl_float_from_bits":["float_new","Float"],
+"__lsl_float_accumulate":["float_accumulate","Float"],"__lsl_float_candidate_bits":["float_candidate_bits","Int"],"__lsl_float_from_decimal":["decimal_bits","Int"],"__lsl_decimal_compare":["decimal_compare","Int"],"__lsl_decimal_digits_compare":["decimal_digits_compare","Int"],"__lsl_float_nearer_upper":["float_nearer_upper","Bool"],"__lsl_float_from_int":["float_from_int","Float"],"__lsl_float_to_int":["float_to_int","Int"],"__lsl_float_from_bits":["float_new","Float"],
 "__lsl_text_byte_length":["text_byte_length","Int"],"__lsl_text_byte":["text_byte","Int"],"__lsl_text_byte_offset":["string_byte_offset","Int"],
 "__lsl_text_piece":["text_piece","String"],"__lsl_text_scan_digits":["text_scan_digits","Int"],"__lsl_text_digits":["text_digits","Int"],"__lsl_text_split_byte":["text_split_byte","List"],
 "__lsl_byte_zeros":["byte_array_zeros","ByteArray"],"__lsl_byte_copy":["byte_copy","Int"],"__lsl_text_from_bytes":["text_from_bytes","String"],
@@ -1718,7 +1814,7 @@ METHODS = {"startswith":"__lsl_startswith","endswith":"__lsl_endswith","split":"
 # is Any. The helpers perform their own receiver checks; scalar unboxing first
 # can also reinterpret an unboxed integer equal to another live object's
 # address. In particular an explicit unbox must receive the original value.
-OBJECT_NATIVE_ARGS = {"__lsl_raster_pack":[0,1],"__lsl_raster_copy":[0,1],"__lsl_raster_fill":[0],"__lsl_set_append":[0,1],"__lsl_set_store":[0,2],"__lsl_unbox_int":[0],"__lsl_unbox_bool":[0],"__lsl_unbox_float":[0],"__lsl_unbox_function":[0],"__lsl_text_byte":[0],"__lsl_text_piece":[0],"__lsl_text_scan_digits":[0],"__lsl_text_digits":[0],"__lsl_text_split_byte":[0],"__lsl_text_from_bytes":[0],"__lsl_data_address":[0],"__lsl_byte_copy":[0,1]}
+OBJECT_NATIVE_ARGS = {"__lsl_raster_pack":[0,1],"__lsl_raster_copy":[0,1],"__lsl_raster_fill":[0],"__lsl_set_append":[0,1],"__lsl_set_store":[0,2],"__lsl_unbox_int":[0],"__lsl_unbox_bool":[0],"__lsl_unbox_float":[0],"__lsl_unbox_function":[0],"__lsl_text_byte":[0],"__lsl_text_piece":[0],"__lsl_text_scan_digits":[0],"__lsl_text_digits":[0],"__lsl_text_split_byte":[0],"__lsl_text_from_bytes":[0],"__lsl_data_address":[0],"__lsl_byte_copy":[0,1],"__lsl_decimal_digits_compare":[0]}
 function atomic_call(s,node,name):
     if name == "atomic_pause":
         return rt(s,"atomic_pause",[],"None",False)
@@ -2481,7 +2577,7 @@ function emit_function(shared,name,declaration,callback=False):
     if declaration != None:
         s["internal"] = shared["unit"]["internal_abi"] and declaration.get("internal_abi",False)
         s["trusted"] = declaration.get("internal_abi",False)
-        scope = shared["unit"]["function_scopes"][name]
+        scope = semantic.ensure_function_scope(shared["unit"],name)
         s["global_reads"] = scope["global_reads"]
         s["types"].update(scope["types"])
         s["locals"] = scope["variables"]
