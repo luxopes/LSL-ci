@@ -1,13 +1,11 @@
 # Runtime LSL v LuxIR: řetězcové primitivy (přenositelné, SysV ABI).
-# Zatím interní (lsl_*): horké x86 rutiny (equal_any, contains) volají své
-# x86 verze; rt_runtime_* jména dostanou, až budou přepsáni i jejich volající.
 # String objekt: +0 tag, +8 délka v bajtech, od +16 bajty UTF-8.
 # Stav runtime je na adrese v lsl_state (+120 = per-process seed hashe).
 ir_version "1"
 runtime_abi "none"
 
 # Rovnost dvou Stringů: stejný ukazatel, stejná délka a stejné bajty.
-export function lsl_runtime_string_equal(Ptr(left), Ptr(right)) -> Int64:
+export function rt_runtime_string_equal(Ptr(left), Ptr(right)) -> Int64:
     Int32(same) = eq(left, right)
     if same goto yes else lengths
 lengths:
@@ -68,7 +66,7 @@ export function lsl_runtime_hash_mix(Int64(value)) -> Int64:
 end
 
 # FNV-1a nad bajty Stringu se seedem procesu, pak SplitMix64.
-export function lsl_runtime_string_hash(Ptr(text)) -> Int64:
+export function rt_runtime_string_hash(Ptr(text)) -> Int64:
     Ptr(state) = load(lsl_state)
     Ptr(seed) = add(state, 120)
     Int64(h) = load(seed)
