@@ -1,4 +1,4 @@
-load _platform_linux_x86_64 as platform
+load _platform as platform
 # Filesystem transaction for the signed updater. Only the caller's private
 # staging tree and the LSL-owned deployment store are written. No shell.
 load fd
@@ -42,13 +42,13 @@ end
 function metadata(path):
     encoded = cstring(path)
     data = __lsl_byte_zeros(platform.STAT_BYTES)
-    status = __lsl_syscall(platform.SYS_LSTAT, __lsl_data_address(encoded), __lsl_data_address(data), 0, 0)
+    status = __lsl_syscall(platform.SYS_NEWFSTATAT, platform.AT_FDCWD, __lsl_data_address(encoded), __lsl_data_address(data), platform.AT_SYMLINK_NOFOLLOW)
     if status == -2:
         return None
     elif status < 0:
         call fail("cannot inspect path: " + path)
     end
-    return {"mode": little(data, platform.STAT_MODE, 4), "uid": little(data, platform.STAT_UID, 4), "size": little(data, platform.STAT_SIZE, 8), "links": little(data, platform.STAT_NLINK, 8)}
+    return {"mode": little(data, platform.STAT_MODE, 4), "uid": little(data, platform.STAT_UID, 4), "size": little(data, platform.STAT_SIZE, 8), "links": little(data, platform.STAT_NLINK, platform.STAT_NLINK_BYTES)}
 end
 
 function owned_directory(path):
@@ -71,7 +71,7 @@ end
 function public_directory(path):
     call owned_directory(path)
     encoded = cstring(path)
-    if __lsl_syscall(platform.SYS_CHMOD, __lsl_data_address(encoded), 493, 0, 0) < 0:
+    if __lsl_syscall(platform.SYS_FCHMODAT, platform.AT_FDCWD, __lsl_data_address(encoded), 493, 0) < 0:
         call fail("cannot make deployment directory accessible: " + path)
     end
 end
@@ -99,7 +99,7 @@ end
 function rename(source, destination):
     first = cstring(source)
     second = cstring(destination)
-    if __lsl_syscall(platform.SYS_RENAME, __lsl_data_address(first), __lsl_data_address(second), 0, 0) < 0:
+    if __lsl_syscall6(platform.SYS_RENAMEAT2, platform.AT_FDCWD, __lsl_data_address(first), platform.AT_FDCWD, __lsl_data_address(second), 0, 0) < 0:
         call fail("atomic rename failed: " + destination)
     end
 end
@@ -107,7 +107,7 @@ end
 function link(target, destination):
     first = cstring(target)
     second = cstring(destination)
-    if __lsl_syscall(platform.SYS_SYMLINK, __lsl_data_address(first), __lsl_data_address(second), 0, 0) < 0:
+    if __lsl_syscall(platform.SYS_SYMLINKAT, __lsl_data_address(first), platform.AT_FDCWD, __lsl_data_address(second), 0) < 0:
         call fail("cannot create deployment link: " + destination)
     end
 end
@@ -115,7 +115,7 @@ end
 function read_link(path):
     encoded = cstring(path)
     buffer = __lsl_byte_zeros(4096)
-    count = __lsl_syscall(platform.SYS_READLINK, __lsl_data_address(encoded), __lsl_data_address(buffer), 4096, 0)
+    count = __lsl_syscall(platform.SYS_READLINKAT, platform.AT_FDCWD, __lsl_data_address(encoded), __lsl_data_address(buffer), 4096)
     if count < 1 or count >= 4096:
         call fail("invalid deployment link: " + path)
     end
@@ -213,13 +213,13 @@ end
 
 function lock(store):
     path = cstring(store + "/lock")
-    handle = __lsl_syscall(platform.SYS_OPEN, __lsl_data_address(path), 2 + 64 + 524288 + 131072, 384, 0)
+    handle = __lsl_syscall(platform.SYS_OPENAT, platform.AT_FDCWD, __lsl_data_address(path), platform.O_RDWR + platform.O_CREAT + platform.O_CLOEXEC + platform.O_NOFOLLOW, 384)
     if handle < 0:
         call fail("cannot open updater lock")
     end
     info = __lsl_byte_zeros(platform.STAT_BYTES)
     status = __lsl_syscall(platform.SYS_FSTAT, handle, __lsl_data_address(info), 0, 0)
-    if status < 0 or (little(info, platform.STAT_MODE, 4) & 61440) != 32768 or little(info, platform.STAT_NLINK, 8) != 1 or little(info, platform.STAT_UID, 4) != __lsl_syscall(platform.SYS_GETEUID, 0, 0, 0, 0) or (little(info, platform.STAT_MODE, 4) & 18) != 0:
+    if status < 0 or (little(info, platform.STAT_MODE, 4) & 61440) != 32768 or little(info, platform.STAT_NLINK, platform.STAT_NLINK_BYTES) != 1 or little(info, platform.STAT_UID, 4) != __lsl_syscall(platform.SYS_GETEUID, 0, 0, 0, 0) or (little(info, platform.STAT_MODE, 4) & 18) != 0:
         call fd.close(handle)
         call fail("unsafe updater lock")
     end

@@ -315,7 +315,7 @@ end
 
 function rt_runtime_gc():
     # Kořeny v callee-saved registrech volajících (kód LuxIR je tam smí držet).
-    registers = __lsl_qbe_alloc(48)
+    registers = __lsl_qbe_alloc(96)
     stack = __lsl_qbe_call1(__lsl_symbol("lsl_arch_spill"), registers)
     base = core.state()
     # Sbírá jen hlavní vlákno; pracovní vlákna se vrátí hned.

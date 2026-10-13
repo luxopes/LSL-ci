@@ -1,4 +1,4 @@
-load _platform_linux_x86_64 as platform
+load _platform as platform
 # Per-user LSL source library installer. Downloads use curl argv directly,
 # validate a registry-published SHA-256, compile the source, and atomically move
 # it into the user module directory. No shell is involved.

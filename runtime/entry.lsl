@@ -72,7 +72,10 @@ function lsl_runtime_start(stack):
     action = __lsl_qbe_alloc(32)
     __lsl_qbe_store64(action + platform.SIGACTION_HANDLER, __lsl_symbol("lsl_thread_signal"))
     __lsl_qbe_store64(action + platform.SIGACTION_FLAGS, platform.SA_RESTORER | platform.SA_RESTART)
-    __lsl_qbe_store64(action + platform.SIGACTION_RESTORER, __lsl_symbol("lsl_arch_signal_restorer"))
+    # Bez pole restorer (riscv64) jádro vrací ze signálu přes vDSO.
+    if platform.SIGACTION_RESTORER >= 0:
+        __lsl_qbe_store64(action + platform.SIGACTION_RESTORER, __lsl_symbol("lsl_arch_signal_restorer"))
+    end
     __lsl_qbe_store64(action + platform.SIGACTION_MASK, 0)
     if os_linux.syscall6(platform.SYS_RT_SIGACTION, SIGUSR1, action, 0, platform.SIGSET_BYTES, 0, 0) < 0:
         call cold_fatal_setup()
@@ -108,7 +111,7 @@ function lsl_thread_signal(signal):
     if entry == 0:
         return 0
     end
-    registers = __lsl_qbe_alloc(48)
+    registers = __lsl_qbe_alloc(96)
     __lsl_qbe_store64(entry + 24, __lsl_qbe_call1(__lsl_symbol("lsl_arch_spill"), registers))
     __lsl_qbe_store64(entry + 16, 2)
     gate = core.state() + GC_GATE

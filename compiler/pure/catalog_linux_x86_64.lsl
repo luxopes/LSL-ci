@@ -1,4 +1,4 @@
-load _platform_linux_x86_64 as platform
+load _platform as platform
 load console
 load fd
 load package
@@ -13,7 +13,7 @@ function library_file(path):
         encoded[index] = __lsl_text_byte(String(path), index)
     end
     metadata = __lsl_byte_zeros(platform.STAT_BYTES)
-    status = __lsl_syscall(platform.SYS_STAT, __lsl_data_address(encoded), __lsl_data_address(metadata), 0, 0)
+    status = __lsl_syscall(platform.SYS_NEWFSTATAT, platform.AT_FDCWD, __lsl_data_address(encoded), __lsl_data_address(metadata), 0)
     if status == -2 or status == -20:
         return False
     elif status < 0:

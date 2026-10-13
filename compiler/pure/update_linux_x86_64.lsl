@@ -1,4 +1,4 @@
-load _platform_linux_x86_64 as platform
+load _platform as platform
 # Stable-channel self-update client. Trust root is compiled into the ELF;
 # neither environment variables nor downloaded keys can replace it.
 load fd
@@ -463,7 +463,7 @@ function extract_archive(work, artifact):
                 mode = 493
             end
             encoded = update_install.cstring(path)
-            if __lsl_syscall(platform.SYS_CHMOD, __lsl_data_address(encoded), mode, 0, 0) != 0:
+            if __lsl_syscall(platform.SYS_FCHMODAT, platform.AT_FDCWD, __lsl_data_address(encoded), mode, 0) != 0:
                 call fail("cannot set safe archive permissions")
             end
         end

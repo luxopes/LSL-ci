@@ -1,8 +1,11 @@
 # Registry cílových komponent. Neimplementovaný port není dostupný cíl překladu.
 
-function provider_modules(os):
+# Poskytovatelé platformy: modul konstant je pro každou architekturu vlastní,
+# ostatní poskytovatelé daného OS jsou na architektuře nezávislí (konstanty
+# berou z _platform), proto zůstávají společné.
+function provider_modules(os, architecture="x86_64"):
     suffix = os + "_x86_64"
-    result = {"_platform": "_platform_" + suffix}
+    result = {"_platform": "_platform_" + os + "_" + architecture}
     for name in ["fd", "unixsock", "random", "tui", "system", "os", "sandbox", "luxos", "plugin", "native"]:
         result["_" + name + "_platform"] = "_" + name + "_" + suffix
     end
@@ -21,9 +24,23 @@ function describe(name):
     os = ""
     format = ""
     available = False
+    architecture = "x86_64"
+    backend = "x86_64"
     if name == "linux-x86_64":
         os = "linux"
         format = "elf64-linux"
+        available = True
+    elif name == "linux-arm64":
+        os = "linux"
+        format = "elf64-linux"
+        architecture = "arm64"
+        backend = "arm64"
+        available = True
+    elif name == "linux-riscv64":
+        os = "linux"
+        format = "elf64-linux"
+        architecture = "riscv64"
+        backend = "rv64"
         available = True
     elif name == "windows-x86_64":
         os = "windows"
@@ -34,9 +51,9 @@ function describe(name):
     else:
         Error(CompileError: "unsupported compilation target: " + String(name))
     end
-    selected = {"name": name, "abi": "lsl-x86_64-v1", "backend": "x86_64", "runtime": "lsl-runtime-" + name + "-v1", "platform_module": "_platform_" + os + "_x86_64", "os": os, "architecture": "x86_64", "pointer_bytes": 8, "byte_order": "little", "image_format": format, "available": available, "modules": provider_modules(os)}
+    selected = {"name": name, "abi": "lsl-" + architecture + "-v1", "backend": backend, "runtime": "lsl-runtime-" + name + "-v1", "platform_module": "_platform_" + os + "_" + architecture, "os": os, "architecture": architecture, "pointer_bytes": 8, "byte_order": "little", "image_format": format, "available": available, "modules": provider_modules(os, architecture)}
     if os == "linux":
-        selected["elf_machine"] = 62
+        selected["elf_machine"] = {"x86_64": 62, "arm64": 183, "riscv64": 243}[architecture]
         selected["segment_alignment"] = 4096
     end
     return selected
@@ -51,7 +68,7 @@ function resolve(name):
 end
 
 function modules_for_platform(platform_module):
-    for name in ["linux-x86_64", "windows-x86_64", "macos-x86_64"]:
+    for name in ["linux-x86_64", "linux-arm64", "linux-riscv64", "windows-x86_64", "macos-x86_64"]:
         selected = describe(name)
         if selected["platform_module"] == platform_module:
             return selected["modules"]
@@ -62,15 +79,17 @@ end
 
 function builtin_provider(name):
     for os in ["linux", "windows", "macos"]:
-        modules = provider_modules(os)
-        for alias in modules:
-            module = modules[alias]
-            if module.startswith("_") and name == alias:
-                return True
-            end
-            # Nástroje compileru mají vlastní provenance a nejsou veřejné stdlib.
-            if module.startswith("_") and name == module:
-                return True
+        for architecture in ["x86_64", "arm64", "riscv64"]:
+            modules = provider_modules(os, architecture)
+            for alias in modules:
+                module = modules[alias]
+                if module.startswith("_") and name == alias:
+                    return True
+                end
+                # Nástroje compileru mají vlastní provenance a nejsou veřejné stdlib.
+                if module.startswith("_") and name == module:
+                    return True
+                end
             end
         end
     end

@@ -1,4 +1,4 @@
-load _platform_linux_x86_64 as platform
+load _platform as platform
 # Unix-domain sockets with file-descriptor passing, in pure LSL on top of
 # the raw syscall builtin. This is what a display server needs and a plain
 # fd wrapper cannot express: clients hand over shared-memory buffers as
@@ -29,6 +29,9 @@ SYS_MUNMAP = platform.SYS_MUNMAP
 SYS_PIPE2 = platform.SYS_PIPE2
 SYS_CHMOD = platform.SYS_CHMOD
 SYS_CHOWN = platform.SYS_CHOWN
+# chmod/chown přes *at varianty: existují na všech architekturách Linuxu.
+SYS_FCHMODAT = platform.SYS_FCHMODAT
+SYS_FCHOWNAT = platform.SYS_FCHOWNAT
 
 AF_UNIX = platform.AF_UNIX
 SOCK_STREAM = platform.SOCK_STREAM
@@ -146,7 +149,7 @@ function chmod_path(path, mode):
         i = i + 1
     end
     call buf.append(0)
-    return __lsl_syscall(SYS_CHMOD, u_address(buf), permissions, 0, 0)
+    return __lsl_syscall(SYS_FCHMODAT, platform.AT_FDCWD, u_address(buf), permissions, 0)
 end
 
 function chown_path(path, user, group):
@@ -161,7 +164,7 @@ function chown_path(path, user, group):
         call buf.append(ord(character))
     end
     call buf.append(0)
-    return __lsl_syscall(SYS_CHOWN, u_address(buf), uid, gid, 0)
+    return __lsl_syscall6(SYS_FCHOWNAT, platform.AT_FDCWD, u_address(buf), uid, gid, 0, 0)
 end
 
 function set_nonblocking(handle):

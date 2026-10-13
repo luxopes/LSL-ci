@@ -1,4 +1,4 @@
-load _platform_linux_x86_64 as platform
+load _platform as platform
 load os
 
 function stty_tool():
@@ -43,6 +43,15 @@ end
 function wait_readable(timeout):
     descriptor = __lsl_byte_zeros(platform.POLLFD_BYTES)
     descriptor[platform.POLLFD_EVENTS] = platform.POLLIN
-    ready = __lsl_syscall(platform.SYS_POLL, __lsl_data_address(descriptor), 1, Int(timeout), 0)
+    # ppoll místo poll (poll na arm64/rv64 není); timeout v ms -> timespec.
+    milliseconds = Int(timeout)
+    limit = __lsl_byte_zeros(16)
+    seconds = milliseconds // 1000
+    nanoseconds = (milliseconds % 1000) * 1000000
+    for index in range(8):
+        limit[index] = (seconds >> (index * 8)) & 255
+        limit[8 + index] = (nanoseconds >> (index * 8)) & 255
+    end
+    ready = __lsl_syscall(platform.SYS_PPOLL, __lsl_data_address(descriptor), 1, __lsl_data_address(limit), 0)
     return ready
 end

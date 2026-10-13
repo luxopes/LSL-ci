@@ -1,4 +1,4 @@
-load _platform_linux_x86_64 as platform
+load _platform as platform
 # Raw file-descriptor I/O over the __lsl_fd_* runtime builtins. Device
 # nodes (framebuffer, evdev) need a persistent descriptor, byte-level
 # reads and nonblocking mode, which the path-based readbytes/writebytes

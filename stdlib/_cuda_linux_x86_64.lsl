@@ -1,4 +1,4 @@
-load _platform_linux_x86_64 as platform
+load _platform as platform
 load time
 
 MAX_CUDA_BINARY_ELEMENTS = 2000000
