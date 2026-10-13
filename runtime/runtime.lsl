@@ -20,3 +20,6 @@ load numbers
 load processes
 load text
 load io
+load strops
+load lists
+load tables
