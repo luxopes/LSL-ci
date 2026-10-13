@@ -2958,6 +2958,10 @@ function generate_runtime(unit,path):
                 # Konstanty modulů mimo runtime (např. _platform): jen čísla;
                 # textové hodnoty runtime nepoužívá.
                 value_node = statement["value"]
+                # Záporné číslo (AT_FDCWD = -100) je také číselná konstanta.
+                if value_node["kind"] == "unary" and value_node["operator"] == "-":
+                    value_node = value_node["operand"]
+                end
                 if value_node["kind"] != "literal" or value_node["literal_kind"] != "number":
                     skipped[target_name] = True
                     continue

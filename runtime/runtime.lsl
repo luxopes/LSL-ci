@@ -10,3 +10,5 @@ load os_linux
 load core
 load strings
 load dict
+load numbers
+load processes
