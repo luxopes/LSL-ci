@@ -23,10 +23,16 @@ function atomic_add(address, delta):
     return __lsl_qbe_call2(__lsl_symbol("lsl_arch_add64"), address, delta)
 end
 
+# Rychlá cesta bez smyčky se vkládá do volajícího (jedno atomické volání);
+# spor řeší lock_contended.
 function lock(word):
-    if atomic_cas(word, 0, 1) == 0:
-        return 0
+    if atomic_cas(word, 0, 1) != 0:
+        call lock_contended(word)
     end
+    return 0
+end
+
+function lock_contended(word):
     # Slovo označí za sporné; byl-li zámek mezitím volný, patří nám.
     while atomic_xchg(word, 2) != 0:
         call os_linux.futex_wait(word, 2)

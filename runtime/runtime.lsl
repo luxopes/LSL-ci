@@ -13,3 +13,6 @@ load heap
 load gc
 load strings
 load dict
+load elf
+load ffi_linux
+load ffi
