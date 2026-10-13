@@ -74,6 +74,11 @@ function error_check(s):
     call mark(s,next)
 end
 function invoke(s,name,args,ty="Any",checked=True):
+    if s["runtime"]:
+        # Runtime nevyhazuje výjimky LSL a sám nespouští GC: přímé volání.
+        params = [typed(v) for v in args]
+        return [temp(s,"call "+name+"("+", ".join(params)+")"),ty]
+    end
     if name.startswith("fn"):
         s["callees"][name] = True
     elif name not in ["rt_runtime_maybe_gc","qbe_error_flag"]:
@@ -121,6 +126,10 @@ function string(s,text):
     strings = s["strings"]
     if text not in strings:
         strings[text] = len(strings)
+    end
+    if s["runtime"]:
+        # Literál runtime je statický záznam String, adresa se nemění.
+        return ["lslrt_str"+String(strings[text]),"Int"]
     end
     # Immutable literals have program lifetime. Clone each one once during
     # startup, keep it in the registered global roots, and reuse its pointer.
@@ -282,9 +291,127 @@ function used(s,name):
         s["used"][name] = True
         s["queue"].append(name)
     end
+    if s["runtime"]:
+        return runtime_symbol(name)
+    end
     return "fn"+String(s["ids"][name])
 end
+# Symbol funkce nebo globálu runtime: jméno z LSL bez prefixu modulu.
+function runtime_base_name(name):
+    return String(name).split("@")[-1]
+end
+function runtime_symbol(name):
+    text = runtime_base_name(name)
+    # Rozhraní (rt_*, qbe_*, lsl_*) má pevná jména, pomocné funkce prefix.
+    if text.startswith("rt_") or text.startswith("qbe_") or text.startswith("lsl_"):
+        return text
+    end
+    return "lslrt_"+text
+end
+# Globál runtime je samostatný datový symbol; tls_ jsou thread-local.
+function runtime_global(s,name):
+    symbol = runtime_global_symbol(name)
+    if runtime_base_name(name).startswith("tls_"):
+        return temp(s,"copy(thread("+symbol+"))")
+    end
+    return symbol
+end
+function runtime_global_symbol(name):
+    return "lslrt_g_"+String(name).replace("@","_")
+end
+# Konstanta runtime: jméno jen z velkých písmen, číslic a _, inlinuje se.
+function runtime_constant_name(name):
+    text = runtime_base_name(name)
+    letter = False
+    for index in rang(__lsl_text_byte_length(text)):
+        byte = __lsl_text_byte(text,index)
+        if byte >= 65 and byte <= 90:
+            letter = True
+        elif not (byte == 95 or (byte >= 48 and byte <= 57)):
+            return False
+        end
+    end
+    return letter
+end
+# Runtime: malé funkce bez cyklů se vkládají přímo do volajícího (LuxIR
+# zatím neinlinuje); runtime se tak dá psát s malými pomocnými funkcemi.
+RUNTIME_INLINE_NODES = 200
+function syntax_size(node,limit):
+    count = 1
+    if type(node) == "Dictionary":
+        if node.get("kind","") in ["while","for"]:
+            return limit + 1
+        end
+        for key in node:
+            value = node[key]
+            kind = type(value)
+            if kind == "Dictionary" or kind == "List":
+                count += syntax_size(value,limit - count)
+                if count > limit:
+                    return count
+                end
+            end
+        end
+    elif type(node) == "List":
+        for item in node:
+            kind = type(item)
+            if kind == "Dictionary" or kind == "List":
+                count += syntax_size(item,limit - count)
+                if count > limit:
+                    return count
+                end
+            end
+        end
+    end
+    return count
+end
+function runtime_inlinable(s,name):
+    cache = s["inline_cache"]
+    if name not in cache:
+        cache[name] = syntax_size(s["unit"]["functions"][name]["body"],RUNTIME_INLINE_NODES) <= RUNTIME_INLINE_NODES
+    end
+    return cache[name] and name not in s["inline_stack"] and len(s["inline_stack"]) < 4
+end
+function inline_call(s,name,values):
+    declaration = s["unit"]["functions"][name]
+    scope = semantic.ensure_function_scope(s["unit"],name)
+    saved = [s["locals"],s["types"],s["inline_return"],s["local_conditions"]]
+    mapping = {}
+    types = Dictionary(s["types"])
+    for local in scope["variables"]:
+        s["inline_counter"] += 1
+        mapping[local] = 100000 + s["inline_counter"]
+        types[local] = "Int"
+    end
+    operands = [integer(s,value) for value in values]
+    s["locals"] = mapping
+    s["types"] = types
+    s["local_conditions"] = {}
+    for index in rang(len(declaration["parameters"])):
+        call define(s,"v"+String(mapping[declaration["parameters"][index]]),"copy("+operands[index]+")")
+    end
+    s["inline_counter"] += 1
+    result = "v"+String(100000 + s["inline_counter"])
+    done = label(s)
+    s["inline_return"] = [result,done]
+    s["inline_stack"].append(name)
+    call statements(s,declaration["body"],"","")
+    call s["inline_stack"].pop()
+    if not s["ended"]:
+        call define(s,result,"copy(0)")
+        call jump(s,done)
+    end
+    call mark(s,done)
+    s["locals"] = saved[0]
+    s["types"] = saved[1]
+    s["inline_return"] = saved[2]
+    s["local_conditions"] = {}
+    return [result,"Int"]
+end
 function function_call(s,name,values):
+    if s["runtime"] and runtime_inlinable(s,name):
+        return inline_call(s,name,values)
+    end
     target = used(s,name)
     declaration = s["unit"]["functions"][name]
     parameters = s["unit"]["function_parameters"][name]
@@ -311,6 +438,11 @@ function load_name(s,name,node=None):
             value.append(s["local_conditions"][name])
         end
         return value
+    elif name in s["unit"]["variables"] and s["runtime"]:
+        if name in s["runtime_constants"]:
+            return [String(s["runtime_constants"][name]),"Int"]
+        end
+        return [temp(s,"load("+runtime_global(s,name)+")"),"Int"]
     elif name in s["unit"]["variables"]:
         index = s["unit"]["variables"][name]-1
         if name in s["global_reads"]:
@@ -355,6 +487,13 @@ function store_name(s,name,value,initialized=True):
         operand = boxed(s,value)
     elif expected in ["Int","Bool"]:
         operand = integer(s,value)
+    end
+    if name not in s["locals"] and s["runtime"]:
+        if name in s["runtime_constants"]:
+            Error(CompileError: "runtime constant cannot be assigned: "+runtime_base_name(name))
+        end
+        call store(s,"Int64",operand,runtime_global(s,name))
+        return None
     end
     if name in s["locals"]:
         call define(s,"v"+String(s["locals"][name]),"copy("+operand+")")
@@ -481,7 +620,7 @@ function copy_join_bytes(s,destination,text,position):
     return temp(s,"add("+position+", "+count+")")
 end
 function native_join(shared):
-    s = {"unit":shared["unit"],"strings":shared["strings"],"lines":[],"counter":0,"label":0,"ended":False,"local_conditions":{}}
+    s = {"unit":shared["unit"],"strings":shared["strings"],"lines":[],"counter":0,"label":0,"ended":False,"local_conditions":{},"runtime":False}
     call line(s,"function lsl_join_native(Int64(separator), Int64(values)) -> Int64:")
     call mark(s,"start")
     count = temp(s,"load("+temp(s,"add(values, 8)")+")")
@@ -943,6 +1082,9 @@ function expression(s,node):
             return ["0","None"]
         elif infer(s,node) == "Float":
             bits = String(__lsl_float_bits(__lsl_parse_float(value)))
+            if s["runtime"]:
+                return [bits,"Int"]
+            end
             return rt(s,"float_new",[bits],"Float",False)
         end
         return [String(semantic.integer_literal(node)),"Int"]
@@ -1501,8 +1643,13 @@ function statements(s,body,break_target,continue_target):
             if len(s["error_cleanups"]) > 0:
                 call invoke(s,"qbe_error_clear",[],"None",False)
             end
-            call line(s,"    return "+operand)
-            s["ended"] = True
+            if s["runtime"] and s["inline_return"] != None:
+                call define(s,s["inline_return"][0],"copy("+operand+")")
+                call jump(s,s["inline_return"][1])
+            else:
+                call line(s,"    return "+operand)
+                s["ended"] = True
+            end
         elif kind == "if":
             selected = semantic.constant_if_body(node)
             if selected[0]:
@@ -2373,6 +2520,16 @@ function call_expression(s,node):
         return rt(s,"checked_index",[boxed(s,values[0])],"Int")
     elif name in ["__lsl_address","__lsl_raw_int"]:
         return [args[0],"Int"]
+    elif name == "__lsl_symbol":
+        # Adresa symbolu (funkce nebo dat) mimo LSL; volání přes
+        # __lsl_qbe_callN(__lsl_symbol("f"), …) je přímé volání f.
+        symbol_node = node["arguments"][0]
+        if symbol_node["kind"] != "literal" or symbol_node["literal_kind"] != "string":
+            Error(CompileError: "__lsl_symbol expects a string literal")
+        end
+        return [String(symbol_node["value"]),"Int"]
+    elif name.startswith("__lsl_raw_f"):
+        return raw_float(s,name,values)
     elif name == "__lsl_box_function":
         return rt(s,"box_function",[args[0],"-1"],"Any",False)
     elif name in ["popcount","trailing_zeros"]:
@@ -2605,6 +2762,10 @@ function emit_function(shared,name,declaration,callback=False):
     s["scope"] = name
     s["internal"] = shared["unit"]["internal_abi"]
     s["trusted"] = s["internal"]
+    s["runtime"] = shared["runtime"]
+    s["inline_return"] = None
+    s["inline_stack"] = []
+    s["inline_counter"] = 0
     s["locals"] = {}
     s["local_conditions"] = {}
     s["types"] = Dictionary(shared["unit"]["types"])
@@ -2624,6 +2785,13 @@ function emit_function(shared,name,declaration,callback=False):
         parameters = ["Int64(arg"+String(i)+")" for i in rang(len(declaration["parameters"]))]
         body = declaration["body"]
         symbol = "fn"+String(shared["ids"][name])
+        if s["runtime"]:
+            symbol = runtime_symbol(name)
+            # Runtime pracuje jen se surovými slovy (Int, adresy, bity Float).
+            for local in s["locals"]:
+                s["types"][local] = "Int"
+            end
+        end
         if callback:
             symbol = "callback"+String(shared["ids"][name])
         end
@@ -2676,7 +2844,9 @@ function emit_function(shared,name,declaration,callback=False):
     end
     # Constructors are complete at function/loop boundaries. Polling here
     # bounds temporary allocation without collecting half-built objects.
-    call rt(s,"maybe_gc",[],"None",False)
+    if not s["runtime"]:
+        call rt(s,"maybe_gc",[],"None",False)
+    end
     if callback:
         values = [["arg"+String(i),"Any"] for i in rang(len(declaration["parameters"]))]
         value = function_call(s,name,values)
@@ -2702,6 +2872,96 @@ function emit_function(shared,name,declaration,callback=False):
     end
     shared["effects"][symbol] = [s["local_may_error"],s["callees"]]
     return [s["lines"],s["checked_calls"]]
+end
+# Desetinná čísla v runtime jsou bity binary64 v Int; výsledek zase bity.
+RAW_FLOAT_BINARY = {"__lsl_raw_fadd":"add","__lsl_raw_fsub":"sub","__lsl_raw_fmul":"mul","__lsl_raw_fdiv":"div"}
+RAW_FLOAT_COMPARE = {"__lsl_raw_feq":"eq","__lsl_raw_fne":"ne","__lsl_raw_flt":"lt","__lsl_raw_fle":"le","__lsl_raw_fgt":"gt","__lsl_raw_fge":"ge"}
+function raw_float(s,name,values):
+    if name == "__lsl_raw_fitof":
+        return scalar(s,"bitcast("+temp(s,"itof("+typed(integer(s,values[0]))+")","d")+")")
+    end
+    operands = [temp(s,"bitcast("+typed(integer(s,value))+")","d") for value in values]
+    if name in RAW_FLOAT_BINARY:
+        return scalar(s,"bitcast("+temp(s,RAW_FLOAT_BINARY[name]+"("+operands[0]+", "+operands[1]+")","d")+")")
+    elif name in RAW_FLOAT_COMPARE:
+        condition = temp(s,RAW_FLOAT_COMPARE[name]+"("+operands[0]+", "+operands[1]+")","w")
+        return [temp(s,"zext32("+condition+")"),"Int",condition]
+    elif name == "__lsl_raw_fftoi":
+        return scalar(s,"ftoi("+operands[0]+")")
+    elif name == "__lsl_raw_fneg":
+        return scalar(s,"bitcast("+temp(s,"neg("+operands[0]+")","d")+")")
+    end
+    Error(CompileError: "unknown raw float operation: "+name)
+end
+# Hodnota top-level přiřazení runtime: jen celočíselná konstanta.
+function runtime_constant(node):
+    if node["kind"] == "literal" and node["literal_kind"] == "number":
+        return semantic.integer_literal(node)
+    elif node["kind"] == "unary" and node["operator"] == "-":
+        return -runtime_constant(node["operand"])
+    end
+    Error(CompileError: "runtime global needs an integer literal value (line "+String(node.get("line",0))+")")
+end
+# Runtime jazyka napsaný v LSL (# lsl: runtime): každá funkce je exportovaný
+# symbol se svým jménem, globály jsou datové symboly, literály statické
+# záznamy String. Bez lsl_entry, bez kontrol výjimek a bez bodů GC.
+function generate_runtime(unit,path):
+    ids = {}
+    for name in unit["functions"]:
+        ids[name] = len(ids)
+        unit["function_returns"][name] = "Int"
+        unit["function_parameters"][name] = ["Int" for parameter in unit["functions"][name]["parameters"]]
+    end
+    # V runtime není kde vyhodit výjimku: každá chyba validace zastaví překlad.
+    for rule in unit["validation_errors"]:
+        for key in unit["validation_errors"][rule]:
+            entry = unit["validation_errors"][rule][key]
+            Error(CompileError: "runtime "+String(key)+": "+String(entry[0])+": "+String(entry[1]))
+        end
+    end
+    shared = {"unit":unit,"entry_source":"","ids":ids,"strings":{},"used":{},"queue":[],"effects":{},"native_helpers":{},"callbacks":{},"guarded_globals":{},"has_validation_errors":len(unit["validation_errors"]) > 0,"runtime":True,"runtime_constants":{},"inline_cache":{}}
+    initial = {}
+    for statement in unit["program"]:
+        if statement["kind"] in ["function","load"]:
+            continue
+        elif statement["kind"] == "assign" and statement["target"]["kind"] == "name":
+            target_name = statement["target"]["name"]
+            initial[target_name] = runtime_constant(statement["value"])
+            if runtime_constant_name(target_name):
+                shared["runtime_constants"][target_name] = initial[target_name]
+            end
+        else:
+            Error(CompileError: "runtime top level allows only functions and integer constants (line "+String(statement.get("line",0))+")")
+        end
+    end
+    call writefile(path,"ir_version \"1\""+chr(10))
+    bodies = []
+    for name in unit["functions"]:
+        if not unit["functions"][name].get("internal_abi",False):
+            continue
+        end
+        shared["used"][name] = True
+        bodies.append(emit_function(shared,name,unit["functions"][name]))
+    end
+    call write_bodies(shared,path,bodies)
+    data = []
+    for name in unit["variables"]:
+        if name in shared["runtime_constants"]:
+            continue
+        end
+        symbol = runtime_global_symbol(name)
+        linkage = "export data "
+        if runtime_base_name(name).startswith("tls_"):
+            linkage = "export thread data "
+        end
+        data.append(linkage+symbol+" align 8 = Int64("+String(initial.get(name,0))+")"+chr(10))
+    end
+    for text in shared["strings"]:
+        escaped = text.replace("\\","\\\\").replace("\"","\\\"").replace(chr(10),"\\n").replace(chr(13),"\\r").replace(chr(9),"\\t").replace(chr(0),"\\0")
+        length = __lsl_text_byte_length(String(text))
+        data.append("data lslrt_str"+String(shared["strings"][text])+" align 8 = [Int64(1, "+String(length)+"), \""+escaped+"\", Int8(0)]"+chr(10))
+    end
+    call appendfile(path,"".join(data))
 end
 function write_bodies(shared,path,bodies):
     # Propagate possible exceptions backward through the call graph. Cycles
@@ -2760,7 +3020,7 @@ function generate(unit,path,entry_source=""):
     for scope in unit["function_scopes"].values():
         guarded_globals.update(scope["global_reads"])
     end
-    shared = {"unit":unit,"entry_source":entry_source,"ids":ids,"strings":{},"used":{},"queue":[],"effects":{},"native_helpers":{},"callbacks":{},"guarded_globals":guarded_globals,"has_validation_errors":len(unit["validation_errors"]) > 0}
+    shared = {"unit":unit,"entry_source":entry_source,"ids":ids,"strings":{},"used":{},"queue":[],"effects":{},"native_helpers":{},"callbacks":{},"guarded_globals":guarded_globals,"has_validation_errors":len(unit["validation_errors"]) > 0,"runtime":False}
     bodies = [emit_function(shared,"",None)]
     call writefile(path,"")
     cursor = 0

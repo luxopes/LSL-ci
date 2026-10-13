@@ -3,6 +3,9 @@ The source compiler emits QBE, never machine bytes or an AST fallback.
 """
 import sys, pathlib, subprocess, re
 prefix=pathlib.Path(sys.argv[1]); code=prefix.with_suffix('.bin').read_bytes()
+# Volitelně soubor se jmény rt_runtime_*, které už definuje runtime v LSL
+# (runtime/); pro ně se x86 můstek nevytváří.
+replaced=set(pathlib.Path(sys.argv[2]).read_text().split()) if len(sys.argv)>2 else set()
 labels={};fixups={}
 for line in prefix.with_suffix('.labels').read_text().splitlines():
  pos,name=line.split(' ',1);labels.setdefault(int(pos),[]).append(name)
@@ -31,8 +34,9 @@ def abi_offset(name):
     match=re.search(r'^'+re.escape(name)+r' = (\d+)$',abi_source,re.M)
     if not match:raise SystemExit('missing runtime ABI offset: '+name)
     return int(match[1])
+bridges_start=len(out)
 for name in sorted(names):
-    if not name.startswith('runtime_'):
+    if not name.startswith('runtime_') or 'rt_'+name in replaced:
         continue
     # Můstky volané z každé iterace zarovnané jako běžné funkce (16 B).
     out += ['.p2align 4','.globl rt_'+name,'rt_'+name+':']
@@ -54,7 +58,8 @@ for name in sorted(names):
 out += ['.globl _start','_start:','jmp qbe_runtime_start']
 # qbe_runtime_start ends after initialization, then falls through here.
 # Labels/wrappers above follow the runtime bytes; append a jump at byte end.
-end_index=out.index('.globl rt_'+sorted(n for n in names if n.startswith('runtime_'))[0])
+# Za zarovnání prvního můstku, jako dosud.
+end_index=bridges_start+1 if out[bridges_start]=='.p2align 4' else bridges_start
 out[end_index:end_index]=['mov %rbx,lsl_state(%rip)','call lsl_entry','mov %rax,%rdi','jmp qbe_exit']
 out += ['.globl qbe_error_flag','qbe_error_flag:','mov %fs:8,%rax','ret',
 '.globl qbe_error_pending','qbe_error_pending:',

@@ -255,6 +255,14 @@ function builtin_arities():
     builtin_arity["__lsl_qbe_copy"] = 3
     builtin_arity["__lsl_qbe_zero"] = 2
     builtin_arity["__lsl_qbe_raw_int"] = 1
+    # Runtime LSL (# lsl: runtime): adresa symbolu a surová desetinná čísla.
+    builtin_arity["__lsl_symbol"] = 1
+    for operation in ["fadd","fsub","fmul","fdiv","feq","fne","flt","fle","fgt","fge"]:
+        builtin_arity["__lsl_raw_"+operation] = 2
+    end
+    for operation in ["fitof","fftoi","fneg"]:
+        builtin_arity["__lsl_raw_"+operation] = 1
+    end
     for count in rang(9):
         builtin_arity["__lsl_qbe_call"+String(count)] = count + 1
         builtin_arity["__lsl_qbe_fcall"+String(count)] = count + 1
@@ -682,7 +690,7 @@ function expression(state, syntax):
                     call semantic.unsupported(state["path"], state["lines"], syntax, "builtin " + target["name"] + " expects zero or one argument", "pass no argument for a new array or an existing array as a checked cast")
                 end
             end
-            if target["name"].startswith("__lsl_qbe_") and target["name"] in builtin_arity:
+            if (target["name"].startswith("__lsl_qbe_") or target["name"].startswith("__lsl_raw_f") or target["name"] == "__lsl_symbol") and target["name"] in builtin_arity:
                 for argument in syntax["arguments"]:
                     call expression(state, argument)
                 end

@@ -582,7 +582,7 @@ function collect_module(name, owner_path, cache, output, source_budget, internal
     if internal_graph:
         # Samostatné projekty (např. backend LuxIR) se označí stejnou značkou
         # jako vstupní zdroj; mimo důvěryhodný graf značka nic neznamená.
-        internal_module = path.startswith("compiler/pure/") or path.find("/compiler/pure/") >= 0 or String(source).startswith("# lsl: internal-abi" + chr(10))
+        internal_module = path.startswith("compiler/pure/") or path.find("/compiler/pure/") >= 0 or String(source).startswith("# lsl: internal-abi" + chr(10)) or String(source).startswith("# lsl: runtime" + chr(10))
     end
     call mark_internal_abi(program, internal_module)
     prefix = module_prefix(len(cache))

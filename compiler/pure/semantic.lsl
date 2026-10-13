@@ -331,7 +331,7 @@ function infer_expression_type(syntax, types, function_returns):
             end
             if name.startswith("__lsl_qbe_fcall") or name in ["__lsl_qbe_f32","__lsl_qbe_loadf32","__lsl_qbe_fadd","__lsl_qbe_fsub","__lsl_qbe_fmul","__lsl_qbe_fdiv","__lsl_qbe_uitof"]:
                 return "Float"
-            elif name.startswith("__lsl_qbe_"):
+            elif name.startswith("__lsl_qbe_") or name.startswith("__lsl_raw_f") or name == "__lsl_symbol":
                 return "Int"
             end
             if name in BUILTIN_RETURN_TYPES:
@@ -1809,6 +1809,12 @@ function analyze(path, source, program, internal_abi, lazy_functions=None):
     functions = function_table(path, lines, program)
     noreturn = flow.noreturn_functions(functions)
     parameter_types = dynamic_parameter_types(functions)
+    # Runtime napsaný v LSL pracuje jen se surovými slovy: parametry jsou Int.
+    if String(source).startswith("# lsl: runtime" + chr(10)):
+        for runtime_function in parameter_types.keys():
+            parameter_types[runtime_function] = ["Int" for runtime_parameter in parameter_types[runtime_function]]
+        end
+    end
     return_memo = {}
     function_returns = infer_function_returns(functions, classes, parameter_types, {}, return_memo)
     main_variables = {}
