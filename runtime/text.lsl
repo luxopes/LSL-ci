@@ -4,6 +4,7 @@
 # se ověřují, takže chybné volání nic nepoškodí. Kromě nových řetězců
 # a seznamů nic nealokují.
 load core
+load lists
 
 TAG_LIST = 2
 TAG_INT_ARRAY = 13
@@ -148,7 +149,7 @@ end
 # __lsl_text_split_byte: List kusů mezi oddělovači (celý text bez
 # oddělovače, prázdný List pro jiný typ než String).
 function rt_runtime_text_split_byte(text, separator):
-    pieces = __lsl_qbe_call2(__lsl_symbol("rt_runtime_list_new"), 0, 0)
+    pieces = lists.rt_runtime_list_new(0, 0)
     if not rt_runtime_heap_type_valid(text, core.TAG_STRING):
         return pieces
     end
@@ -156,12 +157,12 @@ function rt_runtime_text_split_byte(text, separator):
     position = 0
     while position < __lsl_qbe_load64(text + 8):
         if __lsl_qbe_load8(text + 16 + position) == separator:
-            call __lsl_qbe_call2(__lsl_symbol("rt_runtime_list_append"), pieces, rt_runtime_text_piece(text, start, position - start))
+            call lists.rt_runtime_list_append(pieces, rt_runtime_text_piece(text, start, position - start))
             start = position + 1
         end
         position += 1
     end
-    call __lsl_qbe_call2(__lsl_symbol("rt_runtime_list_append"), pieces, rt_runtime_text_piece(text, start, __lsl_qbe_load64(text + 8) - start))
+    call lists.rt_runtime_list_append(pieces, rt_runtime_text_piece(text, start, __lsl_qbe_load64(text + 8) - start))
     return pieces
 end
 
