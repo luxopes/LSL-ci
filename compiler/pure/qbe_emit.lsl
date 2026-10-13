@@ -2965,9 +2965,12 @@ function generate_runtime(unit,path):
         elif statement["kind"] == "assign" and statement["target"]["kind"] == "name":
             target_name = statement["target"]["name"]
             if not statement.get("internal_abi",False):
-                # Konstanty modulů mimo runtime (např. _platform): jen čísla;
-                # textové hodnoty runtime nepoužívá.
+                # Konstanty modulů mimo runtime (např. _platform): jen čísla,
+                # i záporná (AT_FDCWD = -100); textové hodnoty runtime nepoužívá.
                 value_node = statement["value"]
+                if value_node["kind"] == "unary" and value_node["operator"] == "-":
+                    value_node = value_node["operand"]
+                end
                 if value_node["kind"] != "literal" or value_node["literal_kind"] != "number":
                     skipped[target_name] = True
                     continue

@@ -16,6 +16,18 @@ lsl_arch_syscall6:
 	syscall
 	ret
 
+# lsl_arch_syscall3(číslo, a1, a2, a3) -> výsledek jádra; bez sedmého
+# argumentu na zásobníku je volání kratší než přes lsl_arch_syscall6.
+	.globl lsl_arch_syscall3
+	.p2align 4
+lsl_arch_syscall3:
+	mov %rdi, %rax
+	mov %rsi, %rdi
+	mov %rdx, %rsi
+	mov %rcx, %rdx
+	syscall
+	ret
+
 # Atomické operace nad 64bitovým slovem (sekvenčně konzistentní).
 # lsl_arch_cas64(adresa, očekávaná, nová) -> původní hodnota
 	.globl lsl_arch_cas64

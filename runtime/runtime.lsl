@@ -12,3 +12,6 @@ load sync
 load heap
 load strings
 load dict
+load elf
+load ffi_linux
+load ffi
