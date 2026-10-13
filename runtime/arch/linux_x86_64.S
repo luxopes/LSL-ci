@@ -82,4 +82,100 @@ lsl_arch_tls_load:
 	mov %fs:(%rdi), %rax
 	ret
 
+# lsl_arch_clone_thread(flags, zásobník, ctid, tls) -> tid potomka nebo -errno.
+# Potomek začne na novém zásobníku, kde leží [rsp] = položka tabulky vláken
+# a [rsp+8] = funkce, a zavolá lsl_thread_main(položka, funkce); nevrací se.
+	.globl lsl_arch_clone_thread
+	.p2align 4
+lsl_arch_clone_thread:
+	mov %rcx, %r8
+	mov %rdx, %r10
+	xor %edx, %edx
+	mov $56, %eax
+	syscall
+	test %rax, %rax
+	jz 1f
+	ret
+1:
+	xor %ebp, %ebp
+	mov (%rsp), %rdi
+	mov 8(%rsp), %rsi
+	call lsl_thread_main
+	ud2
+
+# Návrat z obsluhy signálu (sa_restorer).
+	.globl lsl_arch_signal_restorer
+	.p2align 4
+lsl_arch_signal_restorer:
+	mov $15, %eax
+	syscall
+
+# Vstup programu: jádro předá na zásobníku argc, argv, envp a auxv.
+# lsl_runtime_start(vrchol zásobníku) se nevrací.
+	.globl _start
+	.p2align 4
+_start:
+	mov %rsp, %rdi
+	xor %ebp, %ebp
+	and $-16, %rsp
+	call lsl_runtime_start
+	ud2
+
+# Thread pointer (fs) = blok vlákna runtime; 0 nebo -errno.
+	.globl lsl_arch_set_thread_pointer
+	.p2align 4
+lsl_arch_set_thread_pointer:
+	mov %rdi, %rsi
+	mov $4098, %edi
+	mov $158, %eax
+	syscall
+	ret
+
+# Zápis slova bloku vlákna: lsl_arch_tls_store(posun, hodnota).
+	.globl lsl_arch_tls_store
+	.p2align 4
+lsl_arch_tls_store:
+	mov %rsi, %fs:(%rdi)
+	xor %eax, %eax
+	ret
+
+# Chybový stav vlákna (blok vlákna +0 chyba, +8 příznak). qbe_error_flag se
+# volá po každém volání, které může selhat: dvě instrukce bez rámce.
+	.globl qbe_error_flag
+	.p2align 4
+qbe_error_flag:
+	mov %fs:8, %rax
+	ret
+
+	.globl qbe_error_set
+	.p2align 4
+qbe_error_set:
+	mov %rdi, %fs:0
+	movq $1, %fs:8
+	xor %eax, %eax
+	ret
+
+	.globl qbe_error_catch
+	.p2align 4
+qbe_error_catch:
+	movq $0, %fs:8
+	xor %eax, %eax
+	ret
+
+	.globl qbe_error_clear
+	.p2align 4
+qbe_error_clear:
+	movq $0, %fs:0
+	movq $0, %fs:8
+	xor %eax, %eax
+	ret
+
+# Adresa stavu runtime (blok na začátku haldy).
+	.bss
+	.p2align 3
+	.globl lsl_state
+lsl_state:
+	.zero 8
+	.text
+
 	.section .note.GNU-stack,"",@progbits

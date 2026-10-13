@@ -45,9 +45,11 @@ def main():
     run(backend, '-t', 'amd64_sysv', '-o', build / 'lslrt.s', build / 'lslrt.lir')
     run('as', '--64', '-o', build / 'lslrt.o', build / 'lslrt.s')
     run('as', '--64', '-o', build / 'arch.o', 'runtime/arch/linux_x86_64.S')
-    symbols = subprocess.run(['nm', '-g', '--defined-only', str(build / 'lslrt.o')],
+    symbols = subprocess.run(['nm', '-g', '--defined-only', str(build / 'lslrt.o'), str(build / 'arch.o')],
                              capture_output=True, text=True, check=True).stdout.split()
-    replaced = sorted(n for n in symbols if n.startswith('rt_runtime_') or n.startswith('qbe_'))
+    # Rozhraní, které už dodává LSL nebo vrstva architektury: x86 část ho
+    # negeneruje (můstky, vstup _start, chybové funkce, lsl_state).
+    replaced = sorted(set(n for n in symbols if n.startswith('rt_runtime_') or n.startswith('qbe_') or n in ('_start', 'lsl_state')))
     (build / 'replaced.txt').write_text('\n'.join(replaced) + '\n')
     # 2. Zbývající x86 emitory bez nahrazených můstků.
     run(build / 'runtime-dump', build / 'x86')

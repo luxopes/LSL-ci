@@ -8,6 +8,7 @@
 load _platform as platform
 load os_linux as os
 load io
+load entry
 
 TLS_ERROR = 0
 # Zdrojový řádek se ukáže nejvýš z prvních 4096 bajtů, cesta má méně než
@@ -479,14 +480,8 @@ function rt_runtime_uncaught_error():
     return 0
 end
 
-# Selhání nastavení procesu při startu (thread pointer, signály).
-function fatal_setup():
-    message = "LSL runtime error: OSError: required process protection is unavailable\n"
-    call os.write(2, message + 16, __lsl_qbe_load64(message + 8))
-    call os.exit_process(71)
-    return 0
-end
-
+# Selhání nastavení procesu při startu (thread pointer, signály): text
+# a stav 71 dodává entry.
 function rt_runtime_fatal_setup():
-    return fatal_setup()
+    return entry.cold_fatal_setup()
 end

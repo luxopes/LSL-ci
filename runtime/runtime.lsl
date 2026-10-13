@@ -11,6 +11,8 @@ load core
 load sync
 load heap
 load gc
+load threads
+load entry
 load strings
 load dict
 load elf
