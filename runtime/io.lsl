@@ -82,7 +82,7 @@ function stdout_detect(base):
     elif kind != 8 and kind != 1:
         return 0
     end
-    buffer = os.map_anonymous(BUFFER_BYTES)
+    buffer = os.map_anonymous(BUFFER_BYTES, 0)
     if buffer < 0:
         return 0
     end
@@ -155,7 +155,7 @@ function stdin_detect(base):
     if os.file_kind(0) != 8:
         return 0
     end
-    buffer = os.map_anonymous(BUFFER_BYTES)
+    buffer = os.map_anonymous(BUFFER_BYTES, 0)
     if buffer < 0:
         return 0
     end
@@ -612,7 +612,7 @@ function rt_runtime_fd_snapshot(fd, offset, count):
     if fd < 0 or offset < 0 or count <= 0 or count > WHOLE_FILE_LIMIT or offset > 1099511627776:
         return -EINVAL
     end
-    mapping = os.map_anonymous(count)
+    mapping = os.map_anonymous(count, 0)
     if mapping < 0:
         return mapping
     end
