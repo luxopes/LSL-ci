@@ -6,6 +6,7 @@
 # Přechod z x86 emitorů: rutiny definované tady nahrazují stejnojmenné x86
 # můstky (tools/runtime/build.py). Datové struktury (stav, halda, objekty)
 # zůstávají stejné, takže obě části pracují nad stejnými daty.
+load os_linux
 load core
 load strings
 load dict

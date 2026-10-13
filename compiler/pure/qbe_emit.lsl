@@ -2026,6 +2026,14 @@ end
 function call_expression(s,node):
     target = node["target"]
     name = target.get("name","")
+    if target["kind"] == "name" and name == "__lsl_symbol":
+        # Adresa symbolu mimo LSL; argument se nevyhodnocuje (žádný literál).
+        symbol_node = node["arguments"][0]
+        if symbol_node["kind"] != "literal" or symbol_node["literal_kind"] != "string":
+            Error(CompileError: "__lsl_symbol expects a string literal")
+        end
+        return [String(symbol_node["value"]),"Int"]
+    end
     if target["kind"] == "name" and name in ["atomic_add","atomic_xchg","atomic_cas","atomic_pause"]:
         return atomic_call(s,node,name)
     end
@@ -2520,14 +2528,6 @@ function call_expression(s,node):
         return rt(s,"checked_index",[boxed(s,values[0])],"Int")
     elif name in ["__lsl_address","__lsl_raw_int"]:
         return [args[0],"Int"]
-    elif name == "__lsl_symbol":
-        # Adresa symbolu (funkce nebo dat) mimo LSL; volání přes
-        # __lsl_qbe_callN(__lsl_symbol("f"), …) je přímé volání f.
-        symbol_node = node["arguments"][0]
-        if symbol_node["kind"] != "literal" or symbol_node["literal_kind"] != "string":
-            Error(CompileError: "__lsl_symbol expects a string literal")
-        end
-        return [String(symbol_node["value"]),"Int"]
     elif name.startswith("__lsl_raw_f"):
         return raw_float(s,name,values)
     elif name == "__lsl_box_function":
@@ -2893,14 +2893,41 @@ function raw_float(s,name,values):
     end
     Error(CompileError: "unknown raw float operation: "+name)
 end
-# Hodnota top-level přiřazení runtime: jen celočíselná konstanta.
-function runtime_constant(node):
-    if node["kind"] == "literal" and node["literal_kind"] == "number":
+# Hodnota top-level přiřazení runtime: celočíselný konstantní výraz
+# z literálů a dříve definovaných konstant.
+function runtime_constant(node,known):
+    kind = node["kind"]
+    if kind == "literal" and node["literal_kind"] == "number":
         return semantic.integer_literal(node)
-    elif node["kind"] == "unary" and node["operator"] == "-":
-        return -runtime_constant(node["operand"])
+    elif kind == "name" and node["name"] in known:
+        return known[node["name"]]
+    elif kind == "unary" and node["operator"] == "-":
+        return -runtime_constant(node["operand"],known)
+    elif kind == "unary" and node["operator"] == "~":
+        return ~runtime_constant(node["operand"],known)
+    elif kind == "binary":
+        left = runtime_constant(node["left"],known)
+        right = runtime_constant(node["right"],known)
+        operator = node["operator"]
+        if operator == "+":
+            return left + right
+        elif operator == "-":
+            return left - right
+        elif operator == "*":
+            return left * right
+        elif operator == "|":
+            return left | right
+        elif operator == "&":
+            return left & right
+        elif operator == "~":
+            return left ~ right
+        elif operator == "<<":
+            return left << right
+        elif operator == ">>":
+            return left >> right
+        end
     end
-    Error(CompileError: "runtime global needs an integer literal value (line "+String(node.get("line",0))+")")
+    Error(CompileError: "runtime global needs an integer constant value (line "+String(node.get("line",0))+")")
 end
 # Runtime jazyka napsaný v LSL (# lsl: runtime): každá funkce je exportovaný
 # symbol se svým jménem, globály jsou datové symboly, literály statické
@@ -2921,12 +2948,22 @@ function generate_runtime(unit,path):
     end
     shared = {"unit":unit,"entry_source":"","ids":ids,"strings":{},"used":{},"queue":[],"effects":{},"native_helpers":{},"callbacks":{},"guarded_globals":{},"has_validation_errors":len(unit["validation_errors"]) > 0,"runtime":True,"runtime_constants":{},"inline_cache":{}}
     initial = {}
+    skipped = {}
     for statement in unit["program"]:
         if statement["kind"] in ["function","load"]:
             continue
         elif statement["kind"] == "assign" and statement["target"]["kind"] == "name":
             target_name = statement["target"]["name"]
-            initial[target_name] = runtime_constant(statement["value"])
+            if not statement.get("internal_abi",False):
+                # Konstanty modulů mimo runtime (např. _platform): jen čísla;
+                # textové hodnoty runtime nepoužívá.
+                value_node = statement["value"]
+                if value_node["kind"] != "literal" or value_node["literal_kind"] != "number":
+                    skipped[target_name] = True
+                    continue
+                end
+            end
+            initial[target_name] = runtime_constant(statement["value"],initial)
             if runtime_constant_name(target_name):
                 shared["runtime_constants"][target_name] = initial[target_name]
             end
@@ -2946,7 +2983,7 @@ function generate_runtime(unit,path):
     call write_bodies(shared,path,bodies)
     data = []
     for name in unit["variables"]:
-        if name in shared["runtime_constants"]:
+        if name in shared["runtime_constants"] or name in skipped:
             continue
         end
         symbol = runtime_global_symbol(name)

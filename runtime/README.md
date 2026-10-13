@@ -10,7 +10,12 @@ ho přeloží pro každý cíl. Pro každou platformu se liší jen dvě tenké 
 | architektura | `arch/<os>_<cpu>.S` | instrukce CPU, které LuxIR nemá: `syscall`, nastavení thread pointeru, vstup vlákna, návrat ze signálu |
 | operační systém | `os_<os>.lsl` | soubory, procesy, paměť, čas přes rozhraní systému (Linux syscalls, Win32) |
 
-Všechno ostatní je společné.
+Všechno ostatní je společné. Obecný kód (buffery, `readfile`, procesy…)
+volá funkce vrstvy OS (`os_linux.read(…)`); ta na Linuxu používá jen
+systémová volání společná x86_64, arm64 i rv64 (`openat`, `pipe2`, `dup3`,
+`clone`, `mkdirat`, `unlinkat`, `newfstatat`, `ppoll`) s čísly z modulu
+platformy cíle (`load _platform as platform`, `platform.SYS_OPENAT`).
+Velikosti a posuny kernelových struktur patří taky do modulu platformy.
 
 ## Přechod z x86 emitorů
 
