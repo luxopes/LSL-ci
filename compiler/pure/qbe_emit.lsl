@@ -2802,7 +2802,13 @@ function emit_function(shared,name,declaration,callback=False):
             symbol = "callback"+String(shared["ids"][name])
         end
     end
-    call line(s,"export function "+symbol+"("+", ".join(parameters)+") -> Int64:")
+    linkage = "export function "
+    if s["runtime"]:
+        # Každá funkce runtime ve vlastní sekci: linker s --gc-sections
+        # přibalí k programu jen funkce, které opravdu používá.
+        linkage = "export section \".text."+symbol+"\" function "
+    end
+    call line(s,linkage+symbol+"("+", ".join(parameters)+") -> Int64:")
     call mark(s,"start")
     for local in s["locals"]:
         call define(s,"v"+String(s["locals"][local]),"copy(0)")
@@ -3000,7 +3006,7 @@ function generate_runtime(unit,path):
         if len(words) == 0:
             words = ["0"]
         end
-        data.append("data "+runtime_global_symbol(name)+" align 8 = Int64("+", ".join(words)+")"+chr(10))
+        data.append("section \".rodata."+runtime_global_symbol(name)+"\" data "+runtime_global_symbol(name)+" align 8 = Int64("+", ".join(words)+")"+chr(10))
     end
     for name in unit["variables"]:
         if name in shared["runtime_constants"] or name in skipped or name in shared["runtime_tables"]:
@@ -3011,12 +3017,16 @@ function generate_runtime(unit,path):
         if runtime_base_name(name).startswith("tls_"):
             linkage = "export thread data "
         end
+        if linkage == "export data ":
+            linkage = "export section \".data."+symbol+"\" data "
+        end
         data.append(linkage+symbol+" align 8 = Int64("+String(initial.get(name,0))+")"+chr(10))
     end
     for text in shared["strings"]:
         escaped = text.replace("\\","\\\\").replace("\"","\\\"").replace(chr(10),"\\n").replace(chr(13),"\\r").replace(chr(9),"\\t").replace(chr(0),"\\0")
         length = __lsl_text_byte_length(String(text))
-        data.append("data lslrt_str"+String(shared["strings"][text])+" align 8 = [Int64(1, "+String(length)+"), \""+escaped+"\", Int8(0)]"+chr(10))
+        label = "lslrt_str"+String(shared["strings"][text])
+        data.append("section \".rodata."+label+"\" data "+label+" align 8 = [Int64(1, "+String(length)+"), \""+escaped+"\", Int8(0)]"+chr(10))
     end
     call appendfile(path,"".join(data))
 end

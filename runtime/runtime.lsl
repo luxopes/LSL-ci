@@ -18,3 +18,5 @@ load ffi_linux
 load ffi
 load numbers
 load processes
+load text
+load io

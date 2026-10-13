@@ -87,7 +87,7 @@ function new_string(length):
 end
 
 function stdout_write(buffer, length):
-    return __lsl_qbe_call3(__lsl_symbol("rt_runtime_stdout_write"), 1, buffer, length)
+    return __lsl_qbe_call2(__lsl_symbol("rt_runtime_stdout_write"), buffer, length)
 end
 
 function rt_runtime_print_string(text):

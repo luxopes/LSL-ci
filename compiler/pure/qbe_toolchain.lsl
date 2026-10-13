@@ -82,7 +82,7 @@ function image(unit, selected, entry_source="", backend_path=""):
         call invoke(assembler, ["--64", "-o", path + ".o", path + ".s"], "assembler")
         # All runtime/code references are PC relative. -z text makes absolute
         # relocations in executable pages a hard error instead of weakening PIE.
-        call invoke(linker, ["-nostdlib", "-static", "-pie", "--no-dynamic-linker", "-z", "text", "-z", "noexecstack", "--build-id=none", "-s", "-o", path, path + ".o", runtime], "linker")
+        call invoke(linker, ["-nostdlib", "-static", "-pie", "--no-dynamic-linker", "-z", "text", "-z", "noexecstack", "--build-id=none", "--gc-sections", "-s", "-o", path, path + ".o", runtime], "linker")
         result = readbytes(path)
     else:
         failure = last_error()
