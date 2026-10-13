@@ -401,3 +401,16 @@ function child_move(fd, target):
     call os_close(fd)
     return 1
 end
+
+function gettid():
+    return syscall3(platform.SYS_GETTID, 0, 0, 0)
+end
+
+function sched_getaffinity(size, mask):
+    return syscall3(platform.SYS_SCHED_GETAFFINITY, 0, size, mask)
+end
+
+# Čekání na futex nejvýš daný počet nanosekund (relativně).
+function futex_wait_timeout(address, expected, timespec):
+    return syscall6(platform.SYS_FUTEX, address, platform.FUTEX_WAIT, expected, timespec, 0, 0)
+end
