@@ -8,5 +8,7 @@
 # zůstávají stejné, takže obě části pracují nad stejnými daty.
 load os_linux
 load core
+load sync
+load heap
 load strings
 load dict

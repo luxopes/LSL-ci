@@ -43,7 +43,9 @@ Každý modul začíná řádkem `# lsl: runtime`. Kód je omezená podmnožina 
   musí být jedinečná napříč moduly. `rt_runtime_*` volá vygenerovaný kód.
 - Globál s jménem z velkých písmen (`OBJECT_DATA = 24`) je konstanta,
   dosadí se přímo do kódu. Ostatní globály jsou datové symboly, globály
-  `tls_*` jsou thread-local. Hodnota na nejvyšší úrovni musí být celé číslo.
+  `tls_*` jsou thread-local. Hodnota na nejvyšší úrovni musí být celé číslo
+  nebo konstantní výraz. Globál přiřazený seznamem celočíselných konstant
+  (`TABULKA = [1, 2, 3]`) je pole slov v datech; jméno dává jeho adresu.
 - Textový literál je statický záznam String (`+0` tag 1, `+8` délka, `+16`
   bajty); výraz dává jeho adresu.
 - Paměť: `__lsl_qbe_load8/16/32/64(adresa)`, `__lsl_qbe_store8/16/32/64(adresa, hodnota)`.
@@ -61,6 +63,8 @@ Každý modul začíná řádkem `# lsl: runtime`. Kód je omezená podmnožina 
 - Chyba: `__lsl_qbe_call1(__lsl_symbol("qbe_error_set"), "KeyError: …")`
   a návrat 0; text musí přesně odpovídat dosavadním výstupům.
 - `maybe_gc` ani výjimky LSL tu nejsou; alokace GC nespouští.
+- Malé funkce bez cyklů se vkládají do volajícího (LuxIR zatím neinlinuje);
+  funkce `fatal_*` a `cold_*` nikdy, ať chladné cesty nezvětšují kód.
 
 ## Ověření každé změny
 

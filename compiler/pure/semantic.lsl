@@ -193,12 +193,23 @@ function return_type_value(function_returns, key):
     return value
 end
 
+# Runtime napsaný v LSL (# lsl: runtime): literály jsou surová slova
+# (String je adresa statického záznamu, Float jsou bity binary64).
+RUNTIME_SOURCE = [False]
+
 function infer_expression_type(syntax, types, function_returns):
     if syntax == None:
         return "None"
     end
     kind = syntax["kind"]
+    if RUNTIME_SOURCE[0] and kind == "list":
+        # Tabulka runtime: hodnotou je adresa pole slov.
+        return "Int"
+    end
     if kind == "literal":
+        if RUNTIME_SOURCE[0] and (syntax["literal_kind"] == "string" or syntax["literal_kind"] == "number"):
+            return "Int"
+        end
         if syntax["literal_kind"] == "string":
             return "String"
         elif syntax["literal_kind"] == "number":
@@ -1810,7 +1821,8 @@ function analyze(path, source, program, internal_abi, lazy_functions=None):
     noreturn = flow.noreturn_functions(functions)
     parameter_types = dynamic_parameter_types(functions)
     # Runtime napsaný v LSL pracuje jen se surovými slovy: parametry jsou Int.
-    if String(source).startswith("# lsl: runtime" + chr(10)):
+    RUNTIME_SOURCE[0] = String(source).startswith("# lsl: runtime" + chr(10))
+    if RUNTIME_SOURCE[0]:
         for runtime_function in parameter_types.keys():
             parameter_types[runtime_function] = ["Int" for runtime_parameter in parameter_types[runtime_function]]
         end

@@ -368,7 +368,10 @@ end
 function runtime_inlinable(s,name):
     cache = s["inline_cache"]
     if name not in cache:
-        cache[name] = syntax_size(s["unit"]["functions"][name]["body"],RUNTIME_INLINE_NODES) <= RUNTIME_INLINE_NODES
+        # Chladné cesty (fatal_*, cold_*) zůstávají voláním: nezvětšují kód.
+        base_name = runtime_base_name(name)
+        cold = base_name.startswith("fatal_") or base_name.startswith("cold_")
+        cache[name] = not cold and syntax_size(s["unit"]["functions"][name]["body"],RUNTIME_INLINE_NODES) <= RUNTIME_INLINE_NODES
     end
     return cache[name] and name not in s["inline_stack"] and len(s["inline_stack"]) < 4
 end
@@ -441,6 +444,9 @@ function load_name(s,name,node=None):
     elif name in s["unit"]["variables"] and s["runtime"]:
         if name in s["runtime_constants"]:
             return [String(s["runtime_constants"][name]),"Int"]
+        elif name in s["runtime_tables"]:
+            # Konstantní tabulka: hodnotou jména je adresa pole slov.
+            return [runtime_global_symbol(name),"Int"]
         end
         return [temp(s,"load("+runtime_global(s,name)+")"),"Int"]
     elif name in s["unit"]["variables"]:
@@ -489,7 +495,7 @@ function store_name(s,name,value,initialized=True):
         operand = integer(s,value)
     end
     if name not in s["locals"] and s["runtime"]:
-        if name in s["runtime_constants"]:
+        if name in s["runtime_constants"] or name in s["runtime_tables"]:
             Error(CompileError: "runtime constant cannot be assigned: "+runtime_base_name(name))
         end
         call store(s,"Int64",operand,runtime_global(s,name))
@@ -1080,11 +1086,11 @@ function expression(s,node):
             return ["0","Bool"]
         elif value == "None":
             return ["0","None"]
+        elif s["runtime"] and ("." in value or "e" in value or "E" in value):
+            # Desetinný literál runtime: bity binary64 (bez objektu Float).
+            return [String(__lsl_float_bits(__lsl_parse_float(value))),"Int"]
         elif infer(s,node) == "Float":
             bits = String(__lsl_float_bits(__lsl_parse_float(value)))
-            if s["runtime"]:
-                return [bits,"Int"]
-            end
             return rt(s,"float_new",[bits],"Float",False)
         end
         return [String(semantic.integer_literal(node)),"Int"]
@@ -2946,12 +2952,16 @@ function generate_runtime(unit,path):
             Error(CompileError: "runtime "+String(key)+": "+String(entry[0])+": "+String(entry[1]))
         end
     end
-    shared = {"unit":unit,"entry_source":"","ids":ids,"strings":{},"used":{},"queue":[],"effects":{},"native_helpers":{},"callbacks":{},"guarded_globals":{},"has_validation_errors":len(unit["validation_errors"]) > 0,"runtime":True,"runtime_constants":{},"inline_cache":{}}
+    shared = {"unit":unit,"entry_source":"","ids":ids,"strings":{},"used":{},"queue":[],"effects":{},"native_helpers":{},"callbacks":{},"guarded_globals":{},"has_validation_errors":len(unit["validation_errors"]) > 0,"runtime":True,"runtime_constants":{},"runtime_tables":{},"inline_cache":{}}
     initial = {}
     skipped = {}
     for statement in unit["program"]:
         if statement["kind"] in ["function","load"]:
             continue
+        elif statement["kind"] == "assign" and statement["target"]["kind"] == "name" and statement["value"]["kind"] == "list" and statement.get("internal_abi",False):
+            # Tabulka runtime: seznam celočíselných konstant -> pole Int64.
+            target_name = statement["target"]["name"]
+            shared["runtime_tables"][target_name] = [runtime_constant(item,initial) for item in statement["value"]["items"]]
         elif statement["kind"] == "assign" and statement["target"]["kind"] == "name":
             target_name = statement["target"]["name"]
             if not statement.get("internal_abi",False):
@@ -2982,8 +2992,15 @@ function generate_runtime(unit,path):
     end
     call write_bodies(shared,path,bodies)
     data = []
+    for name in shared["runtime_tables"]:
+        words = [String(word) for word in shared["runtime_tables"][name]]
+        if len(words) == 0:
+            words = ["0"]
+        end
+        data.append("data "+runtime_global_symbol(name)+" align 8 = Int64("+", ".join(words)+")"+chr(10))
+    end
     for name in unit["variables"]:
-        if name in shared["runtime_constants"] or name in skipped:
+        if name in shared["runtime_constants"] or name in skipped or name in shared["runtime_tables"]:
             continue
         end
         symbol = runtime_global_symbol(name)
