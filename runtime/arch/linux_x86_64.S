@@ -48,4 +48,26 @@ lsl_arch_pause:
 	pause
 	ret
 
+# lsl_arch_spill(buffer) -> ukazatel zásobníku volajícího. Uloží callee-saved
+# registry (rbx, rbp, r12-r15) do bufferu, aby je konzervativní GC viděl.
+	.globl lsl_arch_spill
+	.p2align 4
+lsl_arch_spill:
+	mov %rbx, 0(%rdi)
+	mov %rbp, 8(%rdi)
+	mov %r12, 16(%rdi)
+	mov %r13, 24(%rdi)
+	mov %r14, 32(%rdi)
+	mov %r15, 40(%rdi)
+	lea 8(%rsp), %rax
+	ret
+
+# lsl_arch_tls_load(posun) -> slovo TLS bloku runtime (fs:posun). Dočasné:
+# po přechodu na thread-local proměnné LuxIR zmizí.
+	.globl lsl_arch_tls_load
+	.p2align 4
+lsl_arch_tls_load:
+	mov %fs:(%rdi), %rax
+	ret
+
 	.section .note.GNU-stack,"",@progbits

@@ -38,3 +38,19 @@ end
 function futex_wake(address, count):
     return syscall6(platform.SYS_FUTEX, address, platform.FUTEX_WAKE, count, 0, 0, 0)
 end
+
+function getpid():
+    return syscall3(platform.SYS_GETPID, 0, 0, 0)
+end
+
+function tgkill(process, thread, signal):
+    return syscall3(platform.SYS_TGKILL, process, thread, signal)
+end
+
+function unmap(address, size):
+    return syscall3(platform.SYS_MUNMAP, address, size, 0)
+end
+
+function sched_yield():
+    return syscall3(platform.SYS_SCHED_YIELD, 0, 0, 0)
+end

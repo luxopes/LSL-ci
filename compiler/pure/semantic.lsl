@@ -1873,6 +1873,12 @@ function analyze(path, source, program, internal_abi, lazy_functions=None):
         call collect_types_stable(program, main_types, function_returns)
         call widen_written_globals(main_types, written_globals)
     end
+    # Runtime: i globály jsou surová slova (bitové operace bez pomocných funkcí).
+    if RUNTIME_SOURCE[0]:
+        for runtime_global in main_variables.keys():
+            main_types[runtime_global] = "Int"
+        end
+    end
     unit = {"path": path, "source": source, "program": program, "internal_abi": internal_abi, "unchecked_intarray": source_has_directive(source, "# lsl: unchecked-intarray"), "classes": classes, "functions": functions, "noreturn": noreturn, "function_parameters": parameter_types, "function_returns": function_returns, "variables": main_variables, "types": main_types, "global_reads": guarded_main_reads, "mutable_globals": mutable_globals, "function_scopes": {}}
     unit["lazy_functions"] = lazy_functions
     scopes = unit["function_scopes"]

@@ -10,5 +10,6 @@ load os_linux
 load core
 load sync
 load heap
+load gc
 load strings
 load dict
