@@ -682,7 +682,9 @@ function serve_static_tls(root, address, port, certificate, private_key, maximum
     nginx = nginx_tool()
     print "LSL HTTPS server listening on https://" + String(address) + ":" + String(number) + "/"
     # Winsock v nginx potřebuje prostředí (SystemRoot): run, ne run_clean.
+    print "DEBUG config", config_path, exists(config_path), len(readfile(config_path)), nginx
     status = run(nginx, ["-p", directory + "/", "-c", config_path])
+    print "DEBUG status", status, exists(config_path)
     call unlink(directory + "/nginx.pid")
     call unlink(config_path)
     call rmdir(directory + "/client-body")
