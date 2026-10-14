@@ -546,11 +546,82 @@ function nginx_tool():
             return root + "\\nginx.exe"
         end
     end
+    chocolatey = chocolatey_nginx()
+    if chocolatey != None:
+        return chocolatey
+    end
     found = os.which("nginx")
     if found == None:
-        Error(ServerError: "nginx for Windows is required (C:\\nginx, Program Files or PATH)")
+        Error(ServerError: "nginx for Windows is required (C:\\nginx, Program Files, Chocolatey or PATH)")
     end
     return String(found)
+end
+
+# Balíček Chocolatey dá nginx do %ChocolateyToolsLocation%\nginx-<verze>
+# (výchozí C:\tools) bez záznamu v PATH; vybere se nejvyšší verze.
+function chocolatey_nginx():
+    tools = __lsl_getenv("ChocolateyToolsLocation")
+    if tools == None or String(tools) == "":
+        tools = "C:\\tools"
+    end
+    root = String(tools)
+    found = __lsl_byte_zeros(600)
+    handle = Int(__lsl_qbe_call2(__lsl_symbol("FindFirstFileW"), data_address(wide(root + "\\nginx-*")), data_address(found)))
+    if handle == -1:
+        return None
+    end
+    best = ""
+    loop:
+        # WIN32_FIND_DATAW: +0 atributy, +44 jméno (UTF-16).
+        name = ""
+        index = 44
+        while found[index] != 0 or found[index + 1] != 0:
+            name += chr(found[index] + found[index + 1] * 256)
+            index += 2
+        end
+        if get_u32(found, 0) & FILE_ATTRIBUTE_DIRECTORY != 0 and exists(root + "\\" + name + "\\nginx.exe") and newer_version(name, best):
+            best = name
+        end
+        if int32(__lsl_qbe_call2(__lsl_symbol("FindNextFileW"), handle, data_address(found))) == 0:
+            break
+        end
+    end
+    call __lsl_qbe_call1(__lsl_symbol("FindClose"), handle)
+    if best == "":
+        return None
+    end
+    return root + "\\" + best + "\\nginx.exe"
+end
+
+# Porovná nginx-A.B.C podle číselných částí verze.
+function newer_version(candidate, current):
+    if current == "":
+        return True
+    end
+    left = candidate[6:len(candidate)].split(".")
+    right = current[6:len(current)].split(".")
+    index = 0
+    while index < len(left) and index < len(right):
+        a = digits_value(left[index])
+        b = digits_value(right[index])
+        if a != b:
+            return a > b
+        end
+        index += 1
+    end
+    return len(left) > len(right)
+end
+
+function digits_value(text):
+    value = 0
+    for character in text:
+        code = ord(character)
+        if code < 48 or code > 57:
+            return value
+        end
+        value = value * 10 + code - 48
+    end
+    return value
 end
 
 function serve_static_tls(root, address, port, certificate, private_key, maximum_requests):
