@@ -466,7 +466,7 @@ function system_tool(primary, fallback, label):
     Error(ServerError: "trusted " + String(label) + " executable is required")
 end
 
-# Soukromý pracovní adresář nginx v %TEMP% (cesta s lomítky pro nginx).
+# Soukromý pracovní adresář nginx v %TEMP% (dlouhá cesta s lomítky).
 function runtime_directory():
     base = __lsl_getenv("TEMP")
     if base == None or String(base) == "":
@@ -483,7 +483,9 @@ function runtime_directory():
         end
         directory = base + "/lsl-https-" + process + "-" + String(attempt)
     end
-    return directory
+    # Dlouhá cesta: %TEMP% bývá zkrácené jméno 8.3 (RUNNER~1) a nginx pro
+    # Windows takové cesty odmítá jako neexistující.
+    return canonical_path(directory, "HTTPS runtime directory")
 end
 
 function forward_slashes(path):
@@ -682,9 +684,7 @@ function serve_static_tls(root, address, port, certificate, private_key, maximum
     nginx = nginx_tool()
     print "LSL HTTPS server listening on https://" + String(address) + ":" + String(number) + "/"
     # Winsock v nginx potřebuje prostředí (SystemRoot): run, ne run_clean.
-    print "DEBUG config", config_path, exists(config_path), len(readfile(config_path)), nginx
     status = run(nginx, ["-p", directory + "/", "-c", config_path])
-    print "DEBUG status", status, exists(config_path)
     call unlink(directory + "/nginx.pid")
     call unlink(config_path)
     call rmdir(directory + "/client-body")
