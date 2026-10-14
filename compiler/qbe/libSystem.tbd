@@ -1,0 +1,35 @@
+--- !tapi-tbd
+# Textový stub libSystem pro linkování programů pro macOS bez SDK (ld64.lld):
+# jen funkce, které volá runtime LSL (runtime/os_macos.lsl, vrstva
+# architektury) a knihovny (stdlib/_*_macos_*.lsl). Skutečnou knihovnu
+# načte dyld při spuštění.
+tbd-version:     4
+targets:         [ x86_64-macos, arm64-macos ]
+install-name:    '/usr/lib/libSystem.B.dylib'
+current-version: 1351
+exports:
+  - targets:         [ x86_64-macos, arm64-macos ]
+    symbols:         [ __NSGetExecutablePath, ___error, ___ulock_wait,
+                       ___ulock_wake, __exit, _accept, _access,
+                       _arc4random_buf, _bind, _clock_gettime, _close,
+                       _connect, _fcntl, _fstat, _getpid, _getsockname,
+                       _getsockopt, _ioctl, _isatty, _kill, _listen, _lseek,
+                       _mkdir, _mkostemp, _mmap, _mprotect, _munmap,
+                       _nanosleep, _open, _openat, _pipe, _poll,
+                       _posix_spawn, _posix_spawn_file_actions_adddup2,
+                       _posix_spawn_file_actions_addinherit_np,
+                       _posix_spawn_file_actions_destroy,
+                       _posix_spawn_file_actions_init,
+                       _posix_spawnattr_destroy, _posix_spawnattr_init,
+                       _posix_spawnattr_setflags, _pread,
+                       _pthread_attr_destroy, _pthread_attr_init,
+                       _pthread_attr_setdetachstate,
+                       _pthread_attr_setstacksize, _pthread_create,
+                       _pthread_exit, _pthread_get_stackaddr_np,
+                       _pthread_key_create, _pthread_kill, _pthread_self,
+                       _read, _recv, _rmdir, _sched_yield, _send, _setrlimit,
+                       _setsockopt, _shutdown, _sigaction, _socket, _sysconf,
+                       _unlink, _waitpid, _write, dyld_stub_binder ]
+  - targets:         [ x86_64-macos ]
+    symbols:         [ '_fstat$INODE64' ]
+...

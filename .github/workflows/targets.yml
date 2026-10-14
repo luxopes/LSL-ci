@@ -1,4 +1,5 @@
-# Testy cílů na skutečných strojích. Ubuntu x86_64 sestaví kompilátor ze
+# Testy cílů na skutečných strojích (Windows, Linux arm64, macOS Apple
+# Silicon a Intel). Ubuntu x86_64 sestaví kompilátor ze
 # zabaleného bootstrapu (compiler/pure/lslc-qbe), runtime cílů a přeloží
 # konformní testy; stroje cíle je spustí a porovnají s tests/*.out.
 name: targets
@@ -14,7 +15,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Cross binutils
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq binutils-mingw-w64-x86-64 mingw-w64-x86-64-dev binutils-aarch64-linux-gnu
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq binutils-mingw-w64-x86-64 mingw-w64-x86-64-dev binutils-aarch64-linux-gnu clang lld
+          # Linker Mach-O (macOS) z LLVM pod jménem, které hledá kompilátor.
+          sudo ln -sf $(ls /usr/lib/llvm-*/bin/ld64.lld | sort -V | tail -1) /usr/bin/ld64.lld
       - name: Compiler from the bootstrap
         run: |
           mkdir -p build/ci
@@ -22,13 +27,15 @@ jobs:
           build/ci/lslc1 compiler/pure/lslc_qbe.lsl build/ci/lslc
       - name: Target runtimes
         run: |
-          for target in windows-x86_64 linux-arm64; do
+          for target in windows-x86_64 linux-arm64 macos-x86_64 macos-arm64; do
             python3 tools/runtime/build.py --compiler build/ci/lslc --target $target --bootstrap-runtime compiler/qbe/runtime.o
           done
       - name: Test bundles
         run: |
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target windows-x86_64 --output bundle/windows-x86_64
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target linux-arm64 --output bundle/linux-arm64
+          python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target macos-x86_64 --output bundle/macos-x86_64
+          python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target macos-arm64 --output bundle/macos-arm64
       - uses: actions/upload-artifact@v4
         with:
           name: bundles
@@ -45,6 +52,8 @@ jobs:
           # Windows na ARM spouští x86_64 programy v emulaci (Prism).
           - {runner: windows-11-arm, bundle: windows-x86_64}
           - {runner: ubuntu-24.04-arm, bundle: linux-arm64}
+          - {runner: macos-15, bundle: macos-arm64}
+          - {runner: macos-15-intel, bundle: macos-x86_64}
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4

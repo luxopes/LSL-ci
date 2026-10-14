@@ -2812,7 +2812,7 @@ function emit_function(shared,name,declaration,callback=False):
     if s["runtime"]:
         # Každá funkce runtime ve vlastní sekci: linker s --gc-sections
         # přibalí k programu jen funkce, které opravdu používá.
-        linkage = "export section \".text."+symbol+"\" function "
+        linkage = "export "+runtime_section(shared["unit"],"text",symbol)+" function "
     end
     call line(s,linkage+symbol+"("+", ".join(parameters)+") -> Int64:")
     call mark(s,"start")
@@ -2963,11 +2963,20 @@ end
 # Runtime jazyka napsaný v LSL (# lsl: runtime): každá funkce je exportovaný
 # symbol se svým jménem, globály jsou datové symboly, literály statické
 # záznamy String. Bez lsl_entry, bez kontrol výjimek a bez bodů GC.
-# Sekce jednoho datového symbolu runtime (linker s --gc-sections je přibalí
-# jen použité). ELF: .rodata.<symbol>, .data.<symbol>. PE (Windows): linker
+# Sekce jednoho symbolu runtime (linker s --gc-sections je přibalí jen
+# použité). ELF: .text.<symbol>, .rodata.<symbol>, .data.<symbol>. PE (Windows): linker
 # slučuje jen skupiny .rdata$<symbol> a .data$<symbol>; příznaky COFF
 # (d data, r jen čtení, w zápis) drží konstanty jen pro čtení.
 function runtime_section(unit,kind,symbol):
+    if unit["platform_module"].find("_macos_") >= 0:
+        # Mach-O: běžné sekce, nepoužité symboly odstraní -dead_strip
+        # (.subsections_via_symbols). Konstanty jsou zatím v datech: LuxIR
+        # píše jméno sekce v uvozovkách, které assembler Mach-O nepřijme.
+        return ""
+    end
+    if kind == "text":
+        return "section \".text."+symbol+"\""
+    end
     if unit["platform_module"].find("_windows_") >= 0:
         if kind == "rodata":
             return "section \".rdata$"+symbol+"\" \"dr\""

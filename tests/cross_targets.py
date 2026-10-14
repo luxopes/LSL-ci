@@ -51,10 +51,29 @@ def run_adb(binary, timeout):
     result = run(['adb', 'shell', f'cd {ADB_DIRECTORY} && chmod 700 {binary.name} && ./{binary.name}; status=$?; rm -f {binary.name}; exit $status'], timeout)
     return result
 
+# macOS má POSIX nástroje i /dev/null; chybí syscally Linuxu a /proc.
+MACOS_SKIP = {
+    'automatic_gc_conformance.lsl': 'memory from /proc/self/status',
+    'gc_bigheap_threads_conformance.lsl': 'Linux syscall (setitimer)',
+    'process_fork_fault_conformance.lsl': 'Linux syscalls (geteuid, prlimit)',
+    'syscall6_conformance.lsl': 'Linux syscalls',
+    'x11_transport_conformance.lsl': 'Linux syscalls (socketpair)',
+}
+
+
+def skip_reason(target, name):
+    """Důvod, proč test na cíli nemá smysl, nebo None."""
+    if target.startswith('windows-'):
+        return WINDOWS_SKIP.get(name)
+    if target.startswith('macos-'):
+        return MACOS_SKIP.get(name)
+    return None
+
 
 def check(compiler, target, source, scratch, timeout, adb=False):
-    if target.startswith('windows-') and source.name in WINDOWS_SKIP:
-        return 'skip', source.name, WINDOWS_SKIP[source.name]
+    reason = skip_reason(target, source.name)
+    if reason:
+        return 'skip', source.name, reason
     expected = source.with_suffix('.out').read_bytes()
     results = {}
     # Jako test_runner v režimu qbe: korpus používá i surové služby runtime.

@@ -3,14 +3,14 @@ load qbe_emit
 load host
 
 # Cíl backendu podle platformy LSL.
-BACKEND_TARGETS = {"linux-x86_64":"amd64_sysv","linux-arm64":"arm64","linux-riscv64":"rv64","windows-x86_64":"amd64_win"}
+BACKEND_TARGETS = {"linux-x86_64":"amd64_sysv","linux-arm64":"arm64","linux-riscv64":"rv64","windows-x86_64":"amd64_win","macos-x86_64":"amd64_apple","macos-arm64":"arm64_apple"}
 # Nástroje a příznaky cíle: cross assembler a linker, jinak nativní. rv64:
 # adresy symbolů relativně k PC (-p) a bez relaxace linkeru (runtime
 # nenastavuje gp).
-BACKEND_FLAGS = {"linux-x86_64":[],"linux-arm64":[],"linux-riscv64":["-p"],"windows-x86_64":[]}
-ASSEMBLERS = {"linux-x86_64":["/usr/bin/as","/bin/as",["--64"]],"linux-arm64":["/usr/bin/aarch64-linux-gnu-as","/usr/bin/as",[]],"linux-riscv64":["/usr/bin/riscv64-linux-gnu-as","/usr/bin/as",["-march=rv64gc"]],"windows-x86_64":["/usr/bin/x86_64-w64-mingw32-as","/usr/bin/x86_64-w64-mingw32-as",[]]}
-LINKERS = {"linux-x86_64":["/usr/bin/ld","/bin/ld",[]],"linux-arm64":["/usr/bin/aarch64-linux-gnu-ld","/usr/bin/ld",[]],"linux-riscv64":["/usr/bin/riscv64-linux-gnu-ld","/usr/bin/ld",["--no-relax"]],"windows-x86_64":["/usr/bin/x86_64-w64-mingw32-ld","/usr/bin/x86_64-w64-mingw32-ld",[]]}
-RUNTIME_OBJECTS = {"linux-x86_64":"runtime.o","linux-arm64":"runtime-linux-arm64.o","linux-riscv64":"runtime-linux-riscv64.o","windows-x86_64":"runtime-windows-x86_64.o"}
+BACKEND_FLAGS = {"linux-x86_64":[],"linux-arm64":[],"linux-riscv64":["-p"],"windows-x86_64":[],"macos-x86_64":[],"macos-arm64":[]}
+ASSEMBLERS = {"linux-x86_64":["/usr/bin/as","/bin/as",["--64"]],"linux-arm64":["/usr/bin/aarch64-linux-gnu-as","/usr/bin/as",[]],"linux-riscv64":["/usr/bin/riscv64-linux-gnu-as","/usr/bin/as",["-march=rv64gc"]],"windows-x86_64":["/usr/bin/x86_64-w64-mingw32-as","/usr/bin/x86_64-w64-mingw32-as",[]],"macos-x86_64":["/usr/bin/clang","/usr/local/bin/clang",["-target","x86_64-apple-macos11","-c","-x","assembler"]],"macos-arm64":["/usr/bin/clang","/usr/local/bin/clang",["-target","arm64-apple-macos11","-c","-x","assembler"]]}
+LINKERS = {"linux-x86_64":["/usr/bin/ld","/bin/ld",[]],"linux-arm64":["/usr/bin/aarch64-linux-gnu-ld","/usr/bin/ld",[]],"linux-riscv64":["/usr/bin/riscv64-linux-gnu-ld","/usr/bin/ld",["--no-relax"]],"windows-x86_64":["/usr/bin/x86_64-w64-mingw32-ld","/usr/bin/x86_64-w64-mingw32-ld",[]],"macos-x86_64":["/usr/bin/ld64.lld","/usr/local/bin/ld64.lld",["-arch","x86_64","-platform_version","macos","11.0","11.0"]],"macos-arm64":["/usr/bin/ld64.lld","/usr/local/bin/ld64.lld",["-arch","arm64","-platform_version","macos","11.0","11.0"]]}
+RUNTIME_OBJECTS = {"linux-x86_64":"runtime.o","linux-arm64":"runtime-linux-arm64.o","linux-riscv64":"runtime-linux-riscv64.o","windows-x86_64":"runtime-windows-x86_64.o","macos-x86_64":"runtime-macos-x86_64.o","macos-arm64":"runtime-macos-arm64.o"}
 # Windows: importní knihovny Win32 (kernel32, WaitOnAddress, BCryptGenRandom,
 # Winsock) z mingw-w64.
 WINDOWS_LIBRARIES = "/usr/x86_64-w64-mingw32/lib"
@@ -106,8 +106,18 @@ function image(unit, selected, entry_source="", backend_path=""):
         call invoke(backend, tool_arguments(["-t", BACKEND_TARGETS[name]], BACKEND_FLAGS[name], ["-o", path + ".s", path + ".lir"]), "LuxIR backend")
         # No private scratch filename is embedded in the resulting image.
         call appendfile(path + ".s", chr(10) + ".file \"luxir\"" + chr(10))
+        if selected["os"] == "macos":
+            # Každý symbol ve vlastní podsekci: -dead_strip zahodí nepoužité.
+            call appendfile(path + ".s", ".subsections_via_symbols" + chr(10))
+        end
         call invoke(assembler, tool_arguments([], ASSEMBLERS[name][2], ["-o", path + ".o", path + ".s"]), "assembler")
-        if selected["os"] == "windows":
+        if selected["os"] == "macos":
+            # Mach-O spustitelný soubor (PIE, na arm64 s ad-hoc podpisem od
+            # ld64.lld) dynamicky linkovaný s libSystem: macOS nepodporuje
+            # statické programy ani přímá systémová volání. libSystem.tbd je
+            # textový stub, takže se linkuje bez SDK.
+            call invoke(linker, tool_arguments([], LINKERS[name][2], ["-dead_strip", "-x", "-o", path, path + ".o", runtime, host.resource_path("compiler/qbe/libSystem.tbd")]), "linker")
+        elif selected["os"] == "windows":
             # PE konzolový program s ASLR a DEP. Zásobník hlavního vlákna je
             # celý zpřístupněný (8 MiB jako na Linuxu): LuxIR na Windows
             # nesonduje zásobník po stránkách. Bez časového razítka, aby

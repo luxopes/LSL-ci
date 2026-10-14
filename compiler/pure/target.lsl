@@ -52,6 +52,13 @@ function describe(name):
     elif name == "macos-x86_64":
         os = "macos"
         format = "mach64-macos"
+        available = True
+    elif name == "macos-arm64":
+        os = "macos"
+        format = "mach64-macos"
+        architecture = "arm64"
+        backend = "arm64"
+        available = True
     else:
         Error(CompileError: "unsupported compilation target: " + String(name))
     end
@@ -72,7 +79,7 @@ function resolve(name):
 end
 
 function modules_for_platform(platform_module):
-    for name in ["linux-x86_64", "linux-arm64", "linux-riscv64", "windows-x86_64", "macos-x86_64"]:
+    for name in ["linux-x86_64", "linux-arm64", "linux-riscv64", "windows-x86_64", "macos-x86_64", "macos-arm64"]:
         selected = describe(name)
         if selected["platform_module"] == platform_module:
             return selected["modules"]

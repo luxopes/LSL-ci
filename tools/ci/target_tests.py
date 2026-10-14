@@ -12,7 +12,7 @@ import argparse, concurrent.futures, json, os, pathlib, subprocess, sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tests'))
-from cross_targets import WINDOWS_SKIP  # noqa: E402
+from cross_targets import skip_reason  # noqa: E402
 
 
 def run(command, timeout):
@@ -24,7 +24,7 @@ def run(command, timeout):
 
 
 def build_one(compiler, target, source, output):
-    if target.startswith('windows-') and source.name in WINDOWS_SKIP:
+    if skip_reason(target, source.name):
         return None
     expected = source.with_suffix('.out').read_bytes()
     host = output / 'host' / source.stem

@@ -19,6 +19,10 @@ TARGETS = {
     'linux-arm64': ('arm64', [], 'aarch64-linux-gnu-as', [], 'aarch64-linux-gnu-ld', 'linux_arm64', 'runtime-linux-arm64.o'),
     'linux-riscv64': ('rv64', ['-p'], 'riscv64-linux-gnu-as', ['-march=rv64gc'], 'riscv64-linux-gnu-ld', 'linux_riscv64', 'runtime-linux-riscv64.o'),
     'windows-x86_64': ('amd64_win', [], 'x86_64-w64-mingw32-as', [], 'x86_64-w64-mingw32-ld', 'windows_x86_64', 'runtime-windows-x86_64.o'),
+    # macOS: clang jako assembler Mach-O; ld64.lld neumí -r, proto se vrstva
+    # architektury a runtime spojí už jako assembler (linker None).
+    'macos-x86_64': ('amd64_apple', [], 'clang', ['-target', 'x86_64-apple-macos11', '-c', '-x', 'assembler'], None, 'macos_x86_64', 'runtime-macos-x86_64.o'),
+    'macos-arm64': ('arm64_apple', [], 'clang', ['-target', 'arm64-apple-macos11', '-c', '-x', 'assembler'], None, 'macos_arm64', 'runtime-macos-arm64.o'),
 }
 
 
@@ -53,11 +57,16 @@ def main():
     # 1. Runtime v LSL -> LuxIR -> objekt; vrstva architektury.
     run(build / 'lslc-runtime', '--target', a.target, 'runtime/runtime.lsl', build / 'lslrt.lir')
     run(backend, '-t', luxir_target, *luxir_flags, '-o', build / 'lslrt.s', build / 'lslrt.lir')
-    run(assembler, *as_flags, '-o', build / 'lslrt.o', build / 'lslrt.s')
-    run(assembler, *as_flags, '-o', build / 'arch.o', f'runtime/arch/{arch}.S')
-    parts = [build / 'lslrt.o', build / 'arch.o']
-    # 2. Jeden relokovatelný objekt pro linker.
-    run(linker, '-r', '-o', build / 'runtime.o', *parts)
+    if linker is None:
+        combined = (ROOT / f'runtime/arch/{arch}.S').read_text() + '\n' + (build / 'lslrt.s').read_text()
+        (build / 'runtime.s').write_text(combined + '\n.subsections_via_symbols\n')
+        run(assembler, *as_flags, '-o', build / 'runtime.o', build / 'runtime.s')
+    else:
+        run(assembler, *as_flags, '-o', build / 'lslrt.o', build / 'lslrt.s')
+        run(assembler, *as_flags, '-o', build / 'arch.o', f'runtime/arch/{arch}.S')
+        parts = [build / 'lslrt.o', build / 'arch.o']
+        # 2. Jeden relokovatelný objekt pro linker.
+        run(linker, '-r', '-o', build / 'runtime.o', *parts)
     shutil.copyfile(build / 'runtime.o', output)
     print(f'runtime {a.target}: LSL + arch {arch} -> {output}')
 
