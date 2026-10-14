@@ -71,6 +71,36 @@ lsl_arch_pause:
 	yield
 	ret
 
+// lsl_arch_sync_code(adresa, délka): zapsaný kód do bodu sjednocení
+// (dc cvau), zneplatnit instrukční cache (ic ivau), velikosti řádků z CTR_EL0.
+	.globl lsl_arch_sync_code
+	.p2align 4
+lsl_arch_sync_code:
+	add x1, x0, x1
+	mrs x2, ctr_el0
+	ubfx x3, x2, #16, #4
+	mov x4, #4
+	lsl x3, x4, x3
+	sub x5, x3, #1
+	bic x6, x0, x5
+1:	dc cvau, x6
+	add x6, x6, x3
+	cmp x6, x1
+	b.lo 1b
+	dsb ish
+	and x3, x2, #15
+	lsl x3, x4, x3
+	sub x5, x3, #1
+	bic x6, x0, x5
+2:	ic ivau, x6
+	add x6, x6, x3
+	cmp x6, x1
+	b.lo 2b
+	dsb ish
+	isb
+	mov x0, #0
+	ret
+
 // lsl_arch_sqrt(bity) -> bity: odmocnina binary64 podle IEEE 754.
 	.globl lsl_arch_sqrt
 	.p2align 4

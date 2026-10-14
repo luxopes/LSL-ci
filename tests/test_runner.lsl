@@ -47,7 +47,11 @@ end
 
 function require_hardened_elf(path):
     image = readbytes(path)
-    if len(image) < 176 or elf_integer(image, 16, 2) != 3 or elf_integer(image, 18, 2) != 62:
+    machine = {"": 62, "linux-x86_64": 62, "linux-arm64": 183, "linux-riscv64": 243}[test_target]
+    if len(image) < 176 or elf_integer(image, 16, 2) != 3 or elf_integer(image, 18, 2) != machine:
+        if test_target != "":
+            Error(TestFailure: "generated executable is not " + test_target + " static PIE")
+        end
         Error(TestFailure: "generated executable is not Linux x86_64 static PIE")
     end
     program_offset = elf_integer(image, 32, 8)
@@ -124,9 +128,9 @@ function require_output(program, arguments, expected_path, name, expected_status
     end
 end
 
-function aggregate_expected():
+function aggregate_expected(source):
     result = ""
-    for line in readfile("tests/full_conformance.lsl").split(chr(10)):
+    for line in readfile(source).split(chr(10)):
         if line.startswith("load "):
             result += readfile("tests/" + line[5:len(line)] + ".out")
         end
@@ -164,7 +168,17 @@ if compiler == None:
     end
 end
 
+# LSL_TEST_TARGET=linux-arm64 apod.: testované programy se překládají pro
+# jiný cíl a spouštějí přes qemu-user (binfmt).
+test_target = env.get("LSL_TEST_TARGET", "")
+# Pod qemu-user: emulátor si vytváří vlastní vlákno, takže vyhodnocení
+# konfigurace s prlimit --nproc=32 nelze spustit (host má víc vláken).
+emulated = test_target != "" and test_target != "linux-x86_64"
+X86_BACKEND_TESTS = ["backend_conformance", "abi_conformance", "platform_runtime_conformance", "object_image_conformance", "automatic_gc_codegen_conformance", "safe_codegen_conformance"]
 function compiler_arguments(arguments):
+    if test_target != "":
+        arguments = ["--target", test_target] + arguments
+    end
     if qbe_mode:
         # This low-level regression corpus deliberately exercises raw runtime
         # services. Public CLI tests below still exercise its safe default.
@@ -208,7 +222,15 @@ function require_fixed_point_compiler():
     end
     call require_success(run_compiler([frontend_source, fixed_test]), "compile fixed-point stage")
     call require_hardened_elf(fixed_test)
-    if readfile(compiler) != readfile(fixed_test):
+    if emulated:
+        # Jiný cíl: compiler pro cíl (fáze 1) přeloží pod emulací sám sebe
+        # (fáze 2); obě binárky cíle musí být stejné.
+        second_test = test_path("fixed-test-2")
+        call require_success(run(fixed_test, compiler_arguments([frontend_source, second_test])), "compile fixed-point stage on " + test_target)
+        if readfile(fixed_test) != readfile(second_test):
+            Error(TestFailure: "compiler fixed point differs on " + test_target)
+        end
+    elif readfile(compiler) != readfile(fixed_test):
         Error(TestFailure: "compiler fixed point differs")
     end
 
@@ -239,7 +261,12 @@ function require_fixed_point_compiler():
     call writefile(shadow_root + "/lib/lsl/compiler/pure/dynamic_stdlib.lsl", "print \"stale resource\"" + chr(10))
     shadow_fixed = test_path("shadow-fixed-test")
     call require_success(run(shadow_compiler, compiler_arguments([frontend_source, shadow_fixed])), "compile fixed point beside stale prefix resources")
-    if readfile(compiler) != readfile(shadow_fixed):
+    # Pod emulací se srovnává s compilerem cíle z fáze 1.
+    reference_compiler = compiler
+    if emulated:
+        reference_compiler = fixed_test
+    end
+    if readfile(reference_compiler) != readfile(shadow_fixed):
         Error(TestFailure: "development compiler consumed stale prefix resources")
     end
 
@@ -322,8 +349,14 @@ call require_output(optimization_test, [], "tests/codegen_optimization_conforman
 # about 400 bytes more in 0.8.9 (input() and its stdin buffer are emitted
 # only for programs that read stdin). Keep about 400 bytes of headroom; the
 # allocation-free and safe success-path instruction tests stay strict.
-if len(readbytes(optimization_test)) > 110400:
-    Error(TestFailure: "optimized standalone ELF exceeds 110400 bytes")
+# arm64: kód je asi o 16 % delší (pevné 4B instrukce) a datový segment za
+# RELRO se zarovnává na 64 KiB (jádra se 64K stránkami); stejná rezerva.
+size_limit = 110400
+if test_target == "linux-arm64":
+    size_limit = 149000
+end
+if len(readbytes(optimization_test)) > size_limit:
+    Error(TestFailure: "optimized standalone ELF exceeds " + String(size_limit) + " bytes")
 end
 for collection_negative in ["sorted()", "sorted([], [])", "sorted([], key=None)", "dedup()", "dedup([], [])", "set([], [])", "set(values=[])", "set()[0]", "set().append(1)", "set().add()", "set().pop(0)", "set().union()", "set().discard(1, 2)"]:
     collection_source = test_path("collection-arity-negative.lsl")
@@ -374,6 +407,11 @@ call require_output(env_integration, [cli_test, compiler, test_root], "tests/com
 call require_success(run_compiler(["tests/compiler/cli_080_conformance.lsl", cli_080_test]), "compile CLI 0.8.0 conformance")
 call require_output(cli_080_test, [cli_test, compiler], "tests/compiler/cli_080_conformance.out", "CLI 0.8.0 conformance differs")
 for release_test in ["color_conformance", "frontend_conformance", "backend_conformance", "semantic_validation_conformance", "abi_conformance", "platform_runtime_conformance", "object_image_conformance", "safe_codegen_conformance", "ai_manual_conformance", "automatic_gc_codegen_conformance", "definite_assignment_conformance", "import_diagnostics_conformance", "language_safety_negative"]:
+    # Testy starého přímého backendu x86_64 (backend_x86_64, emitory) mají
+    # smysl jen na x86_64; pro jiný cíl se přeskočí.
+    if test_target != "" and test_target != "linux-x86_64" and release_test in X86_BACKEND_TESTS:
+        continue
+    end
     release_binary = test_path(release_test)
     call require_success(run_compiler(["tests/compiler/" + release_test + ".lsl", release_binary]), "compile " + release_test)
     call require_output(release_binary, [cli_test], "tests/compiler/" + release_test + ".out", release_test + " differs")
@@ -395,9 +433,13 @@ version_flag_output = capture(cli_test, ["--version"])
 if capture_status() != 0 or version_flag_output != "0.9.2" + chr(10):
     Error(TestFailure: "CLI --version output differs")
 end
-config_output = capture(cli_test, ["config", "examples/config/system.lsl"])
-if capture_status() != 0 or config_output != readfile("tests/config_expected.json"):
-    Error(TestFailure: "CLI trusted config wrapper output differs")
+if not emulated:
+    config_output = capture(cli_test, ["config", "examples/config/system.lsl"])
+    if capture_status() != 0 or config_output != readfile("tests/config_expected.json"):
+        Error(TestFailure: "CLI trusted config wrapper output differs")
+    end
+else:
+    print "skipped under emulation: CLI trusted config wrapper (prlimit --nproc)"
 end
 origin_output = capture(cli_test, ["origin"])
 if capture_status() != 0 or origin_output != "https://lsl.lux-ai.cz/packages" + chr(10):
@@ -795,10 +837,28 @@ for boundary_name in boundary_tests:
     call require_output(boundary_test, [], "tests/" + boundary_name + ".out", boundary_name + " output differs")
 end
 
-call require_success(run_compiler(["tests/full_conformance.lsl", aggregate_test]), "compile aggregated conformance")
+# Pod qemu-user nelze spustit izolovaná nativní volání: emulátor nepodporuje
+# strict seccomp, runtime proto volání bez sandboxu správně odmítne.
+aggregate_source = "tests/full_conformance.lsl"
+expected_aggregate_output = aggregate_expected(aggregate_source)
+if emulated:
+    aggregate_source = "tests/full_conformance_emulated.lsl"
+    filtered = ""
+    for line in readfile("tests/full_conformance.lsl").split(chr(10)):
+        if line != "load native_elf_conformance":
+            filtered += line + chr(10)
+        end
+    end
+    call writefile(aggregate_source, filtered[0:len(filtered) - 1])
+    expected_aggregate_output = aggregate_expected(aggregate_source)
+    print "skipped under emulation: native_elf_conformance (no seccomp in qemu-user)"
+end
+call require_success(run_compiler([aggregate_source, aggregate_test]), "compile aggregated conformance")
+if emulated:
+    call unlink(aggregate_source)
+end
 call require_hardened_elf(aggregate_test)
 aggregate_output = capture(aggregate_test, [test_root])
-expected_aggregate_output = aggregate_expected()
 if capture_status() != 0 or aggregate_output != expected_aggregate_output:
     call writefile(test_path("aggregate.actual"), aggregate_output)
     call writefile(test_path("aggregate.expected"), expected_aggregate_output)

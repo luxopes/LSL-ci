@@ -1,4 +1,13 @@
 load native
+load _platform as platform
+
+# Strojový kód fixtur podle architektury cíle: add(a, b), čtení z adresy 0,
+# zakázaný syscall (getpid) a nekonečná smyčka. Nejvýš 8 B (jméno je na 72).
+CODE = {
+    62: {"add": [72, 137, 248, 72, 1, 240, 195], "crash": [72, 49, 192, 72, 139, 0, 195], "syscall": [106, 39, 88, 15, 5, 195], "hang": [235, 254]},
+    183: {"add": [0, 0, 1, 139, 192, 3, 95, 214], "crash": [0, 0, 128, 210, 0, 0, 64, 249], "syscall": [136, 21, 128, 210, 1, 0, 0, 212], "hang": [0, 0, 0, 20]},
+    243: {"add": [51, 5, 181, 0, 103, 128, 0, 0], "crash": [3, 53, 0, 0, 103, 128, 0, 0], "syscall": [147, 8, 192, 10, 115, 0, 0, 0], "hang": [111, 0, 0, 0]}
+}[platform.ELF_MACHINE]
 
 test_root = arg(1)
 
@@ -48,8 +57,7 @@ end
 
 function sandbox_rejects(base_image, code, path):
     candidate = base_image[0:len(base_image)]
-    call put(candidate, 64, [144, 144, 144, 144, 144, 144, 144])
-    call put(candidate, 64, code)
+        call put(candidate, 64, code)
     call writebytes(path, candidate)
     library = native.open(path)
     target = native.symbol(library, "add")
@@ -69,24 +77,24 @@ for index in rang(384):
 end
 call put(image, 0, [127, 69, 76, 70, 2, 1, 1, 0])
 call put(image, 16, little(3, 2))
-call put(image, 18, little(62, 2))
+call put(image, 18, little(platform.ELF_MACHINE, 2))
 call put(image, 20, little(1, 4))
 call put(image, 40, little(128, 8))
 call put(image, 52, little(64, 2))
 call put(image, 58, little(64, 2))
 call put(image, 60, little(4, 2))
-call put(image, 64, [72, 137, 248, 72, 1, 240, 195])
+call put(image, 64, CODE["add"])
 call put(image, 72, [0, 97, 100, 100, 0])
 call put(image, 104, little(1, 4))
 image[108] = 18
 call put(image, 110, little(1, 2))
 call put(image, 112, little(64, 8))
-call put(image, 120, little(7, 8))
+call put(image, 120, little(len(CODE["add"]), 8))
 call put(image, 196, little(1, 4))
 call put(image, 200, little(6, 8))
 call put(image, 208, little(64, 8))
 call put(image, 216, little(64, 8))
-call put(image, 224, little(7, 8))
+call put(image, 224, little(len(CODE["add"]), 8))
 call put(image, 240, little(16, 8))
 call put(image, 260, little(3, 4))
 call put(image, 280, little(72, 8))
@@ -155,9 +163,9 @@ while iteration < 16:
 end
 print race_safe
 
-crash_rejected = sandbox_rejects(image, [72, 49, 192, 72, 139, 0, 195], test_root + "/native-crash.so")
-syscall_rejected = sandbox_rejects(image, [106, 39, 88, 15, 5, 195], test_root + "/native-syscall.so")
-hang_rejected = sandbox_rejects(image, [235, 254], test_root + "/native-hang.so")
+crash_rejected = sandbox_rejects(image, CODE["crash"], test_root + "/native-crash.so")
+syscall_rejected = sandbox_rejects(image, CODE["syscall"], test_root + "/native-syscall.so")
+hang_rejected = sandbox_rejects(image, CODE["hang"], test_root + "/native-hang.so")
 print crash_rejected, syscall_rejected, hang_rejected
 
 relocation_image = image[0:len(image)]

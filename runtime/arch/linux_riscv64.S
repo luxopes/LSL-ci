@@ -58,6 +58,19 @@ lsl_arch_pause:
 	nop
 	ret
 
+# lsl_arch_sync_code(adresa, délka): riscv_flush_icache(začátek, konec, 0)
+# pro všechna jádra procesu (fence.i platí jen pro aktuální hart).
+	.globl lsl_arch_sync_code
+	.p2align 4
+lsl_arch_sync_code:
+	add a1, a0, a1
+	li a2, 0
+	li a7, 259
+	ecall
+	fence.i
+	li a0, 0
+	ret
+
 # lsl_arch_sqrt(bity) -> bity: odmocnina binary64 podle IEEE 754.
 	.globl lsl_arch_sqrt
 	.p2align 4

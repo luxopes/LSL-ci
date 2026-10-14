@@ -52,7 +52,9 @@ function native_image_load(path, size_out):
 end
 
 # W^X: zapisovatelný jen během kopie, pak po celou dobu jen čtení a spuštění.
+# Na arm64 a riscv64 se instrukční cache s daty nesynchronizuje sama.
 function native_image_seal(image, size):
+    call __lsl_qbe_call2(__lsl_symbol("lsl_arch_sync_code"), image, size)
     return os.mprotect(image, size, platform.PROT_READ | platform.PROT_EXEC)
 end
 

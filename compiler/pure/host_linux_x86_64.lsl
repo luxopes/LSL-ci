@@ -233,8 +233,10 @@ function module_path_base(name, owner_path, home, builtin):
     return standard_path
 end
 
+# Cíl, pro který byl tento program přeložen (modul platformy se volí podle
+# cíle): compiler přeložený pro arm64 překládá implicitně pro arm64.
 function target_name():
-    return "linux-x86_64"
+    return platform.NAME
 end
 
 function home():

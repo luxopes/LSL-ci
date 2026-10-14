@@ -60,6 +60,13 @@ lsl_arch_pause:
 	pause
 	ret
 
+# lsl_arch_sync_code(adresa, délka): x86_64 má koherentní instrukční cache.
+	.globl lsl_arch_sync_code
+	.p2align 4
+lsl_arch_sync_code:
+	xorl %eax, %eax
+	ret
+
 # lsl_arch_sqrt(bity) -> bity: odmocnina binary64 zaokrouhlená podle IEEE 754
 # (LuxIR nemá instrukci odmocniny). arm64: fmov d0, x0; fsqrt d0, d0;
 # fmov x0, d0. rv64: fmv.d.x fa0, a0; fsqrt.d fa0, fa0; fmv.x.d a0, fa0.
