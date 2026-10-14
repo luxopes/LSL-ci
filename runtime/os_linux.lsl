@@ -515,3 +515,9 @@ end
 function process_deadline_cancel(watch):
     return 0
 end
+
+# Počká na skončení potomka bez jeho úklidu (s process_deadline; na Linuxu
+# se nepoužívá).
+function os_wait_exit(pid):
+    return 0
+end

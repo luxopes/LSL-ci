@@ -39,6 +39,8 @@ jobs:
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target macos-arm64 --output bundle/macos-arm64
           for target in macos-x86_64 macos-arm64; do
             build/ci/lslc --target $target tools/ci/tls_serve.lsl bundle/$target/tls-serve
+            build/ci/lslc --target $target tools/ci/sandbox_check.lsl bundle/$target/sandbox-check
+            build/ci/lslc --target $target tools/ci/sandbox_child.lsl bundle/$target/sandbox-child
           done
           build/ci/lslc --target windows-x86_64 tools/ci/tls_serve.lsl bundle/windows-x86_64/tls-serve.exe
       - uses: actions/upload-artifact@v4
@@ -72,6 +74,15 @@ jobs:
           path: bundle
       - name: Run ${{ matrix.bundle }} tests
         run: python tools/ci/target_tests.py run bundle/${{ matrix.bundle }}
+      - name: Process sandbox
+        if: startsWith(matrix.bundle, 'macos')
+        run: |
+          b="$GITHUB_WORKSPACE/bundle/${{ matrix.bundle }}"
+          chmod +x "$b/sandbox-check" "$b/sandbox-child"
+          "$b/sandbox-check" "$b/sandbox-child" "$(mktemp -d)" | tee sandbox.txt
+          for line in "available True" "input hello" "secret readable False" "profile strict" "status 0" "output written" "timeout 124"; do
+            grep -qx "$line" sandbox.txt || { echo "missing: $line"; exit 1; }
+          done
       - name: HTTPS through nginx
         if: startsWith(matrix.bundle, 'macos') || matrix.runner == 'windows-2025'
         shell: bash

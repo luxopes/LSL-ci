@@ -776,3 +776,23 @@ function process_deadline_cancel(watch):
     call munmap(watch, WATCH_BYTES)
     return expired
 end
+
+# Počká na skončení potomka bez jeho úklidu (waitid s WNOWAIT): pid zůstane
+# obsazený, dokud ho os_wait neuklidí. siginfo_t má 104 B.
+P_PID = 1
+WEXITED = 4
+WNOWAIT = 32
+
+function os_wait_exit(pid):
+    if pid == SPAWN_FAILED:
+        return 0
+    end
+    information = __lsl_qbe_alloc(128)
+    while True:
+        result = checked(__lsl_qbe_call4(__lsl_symbol("waitid"), P_PID, pid, information, WEXITED | WNOWAIT))
+        if result != 0 - platform.EINTR:
+            return result
+        end
+    end
+    return 0
+end

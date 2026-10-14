@@ -1409,10 +1409,10 @@ function builtin_argument(s,name,node,index):
     helper = ""
     if name in ["chr","arg","exit","thread_join"] and index == 0:
         return checked_integer_expression(s,node)
-    elif (name in ["ord","native_open","readfile","readbytes","exists","mkdir","unlink","rmdir","writefile","appendfile","writebytes","run","run_clean","capture","capture_clean","__lsl_run","__lsl_run_clean","__lsl_capture","__lsl_capture_clean","capture_input","capture_input_clean","capture_stream","capture_stream_clean","capture_input_stream","capture_input_stream_clean","__lsl_capture_input_timeout"] and index == 0) or (name in ["writefile","appendfile"] and index == 1) or (name in ["capture_input","capture_input_clean","capture_input_stream","capture_input_stream_clean","__lsl_capture_input_timeout"] and index == 2):
+    elif (name in ["ord","native_open","readfile","readbytes","exists","mkdir","unlink","rmdir","writefile","appendfile","writebytes","run","run_clean","capture","capture_clean","__lsl_run","__lsl_run_clean","__lsl_capture","__lsl_capture_clean","capture_input","capture_input_clean","capture_stream","capture_stream_clean","capture_input_stream","capture_input_stream_clean","__lsl_capture_input_timeout","__lsl_run_timeout"] and index == 0) or (name in ["writefile","appendfile"] and index == 1) or (name in ["capture_input","capture_input_clean","capture_input_stream","capture_input_stream_clean","__lsl_capture_input_timeout"] and index == 2):
         rule = "string_value"
         helper = "__lsl_require_string_value"
-    elif name in ["run","run_clean","capture","capture_clean","__lsl_run","__lsl_run_clean","__lsl_capture","__lsl_capture_clean","capture_input","capture_input_clean","capture_stream","capture_stream_clean","capture_input_stream","capture_input_stream_clean","__lsl_capture_input_timeout"] and index == 1:
+    elif name in ["run","run_clean","capture","capture_clean","__lsl_run","__lsl_run_clean","__lsl_capture","__lsl_capture_clean","capture_input","capture_input_clean","capture_stream","capture_stream_clean","capture_input_stream","capture_input_stream_clean","__lsl_capture_input_timeout","__lsl_run_timeout"] and index == 1:
         rule = "list_value"
         helper = "__lsl_require_list"
     elif name == "writebytes" and index == 1:
@@ -2232,6 +2232,8 @@ function call_expression(s,node):
             callback = boxed(s,values[3],True)
         end
         return rt(s,helper,[args[0],args[1],callback,input_text,clean],result_type)
+    elif name == "__lsl_run_timeout":
+        return rt(s,"run_timeout",[args[0],args[1],integer(s,values[2])],"Int")
     elif name == "__lsl_capture_input_timeout":
         return rt(s,"capture_timeout",[args[0],args[1],args[2],integer(s,values[3])],"String")
     elif name in ["String","__lsl_declared_String"]:

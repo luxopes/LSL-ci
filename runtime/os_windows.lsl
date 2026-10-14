@@ -1270,3 +1270,11 @@ function process_deadline_cancel(watch):
     call unmap(watch, 4096)
     return expired
 end
+
+# Počká na skončení potomka; HANDLE zůstává platný pro os_wait.
+function os_wait_exit(pid):
+    if pid != SPAWN_FAILED:
+        call __lsl_qbe_call2(__lsl_symbol("WaitForSingleObject"), pid, INFINITE)
+    end
+    return 0
+end

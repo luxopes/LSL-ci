@@ -124,6 +124,39 @@ function rt_runtime_run(executable, arguments, callback, input, clean):
     return code
 end
 
+# run_clean s časovým limitem (interní builtin pro knihovny na Windows
+# a macOS): po seconds sekundách vrstva OS potomka ukončí a výsledek je 124
+# jako u timeout; 126 při chybě spuštění.
+function rt_runtime_run_timeout(executable, arguments, seconds):
+    if seconds < 1 or seconds > 3600 or not process_call_valid(executable, arguments):
+        return 126
+    end
+    argv = build_argv(executable, arguments)
+    if argv == 0:
+        return 126
+    end
+    call stdio_release()
+    pid = os.os_spawn(executable + 16, argv, 1, -1, -1, -1, -1)
+    if pid < 0:
+        return 126
+    end
+    watch = os.process_deadline(pid, seconds * 1000)
+    if watch == 0:
+        call os.os_kill(pid)
+        call os.os_wait(pid)
+        return 126
+    end
+    call os.os_wait_exit(pid)
+    expired = os.process_deadline_cancel(watch)
+    code = os.os_wait(pid)
+    if code < 0:
+        return 126
+    elif expired:
+        return 124
+    end
+    return code
+end
+
 # Předá přečtený kus stdout funkci capture_stream jako nový String; po
 # chybě (i z dřívějšího volání) už nevolá nic.
 function rt_runtime_capture_callback(callback, data, length):
@@ -289,6 +322,8 @@ function capture_core(executable, arguments, callback, input, clean, millisecond
     # pak nemůže zasáhnout jiný proces se stejným pid.
     expired = 0
     if watch != 0:
+        # Limit platí až do konce potomka, i když už zavřel výstup.
+        call os.os_wait_exit(pid)
         expired = os.process_deadline_cancel(watch)
     end
     code = os.os_wait(pid)
