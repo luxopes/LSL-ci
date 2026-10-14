@@ -22,3 +22,4 @@ load numbers
 load processes
 load text
 load io
+load report
