@@ -38,6 +38,7 @@ WINDOWS_SKIP = {
     'process_fork_fault_conformance.lsl': 'Linux syscalls (geteuid, prlimit)',
     'requests_conformance.lsl': 'curl.exe (missing in wine)',
     'syscall6_conformance.lsl': 'Linux syscalls',
+    'unixsock_fd_passing_conformance.lsl': 'no descriptor passing (SCM_RIGHTS)',
     'x11_transport_conformance.lsl': 'Linux syscalls (socketpair)',
 }
 

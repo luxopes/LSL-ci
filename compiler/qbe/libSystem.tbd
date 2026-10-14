@@ -11,8 +11,8 @@ exports:
   - targets:         [ x86_64-macos, arm64-macos ]
     symbols:         [ __NSGetExecutablePath, ___error, ___ulock_wait,
                        ___ulock_wake, __exit, _accept, _access,
-                       _arc4random_buf, _bind, _clock_gettime, _close,
-                       _connect, _fcntl, _fstat, _getpid, _getsockname,
+                       _arc4random_buf, _bind, _chmod, _chown, _clock_gettime, _close,
+                       _connect, _fcntl, _fstat, _ftruncate, _getpid, _getsockname,
                        _getsockopt, _ioctl, _isatty, _kill, _listen, _lseek,
                        _mkdir, _mkostemp, _mmap, _mprotect, _munmap,
                        _nanosleep, _open, _openat, _pipe, _poll,
@@ -27,7 +27,7 @@ exports:
                        _pthread_attr_setstacksize, _pthread_create,
                        _pthread_exit, _pthread_get_stackaddr_np,
                        _pthread_key_create, _pthread_kill, _pthread_self, _pthread_threadid_np,
-                       _read, _recv, _rmdir, _sched_yield, _send, _setrlimit,
+                       _read, _recv, _recvmsg, _rmdir, _sched_yield, _send, _sendmsg, _setrlimit,
                        _setsockopt, _shutdown, _sigaction, _socket, _sysconf,
                        _unlink, _waitpid, _write, dyld_stub_binder ]
   - targets:         [ x86_64-macos ]
