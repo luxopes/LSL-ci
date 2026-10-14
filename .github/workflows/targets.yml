@@ -91,6 +91,8 @@ jobs:
           server=$!
           for i in $(seq 1 30); do curl -sk https://127.0.0.1:18443/index.html > got.txt && break; sleep 1; done
           kill $server || true
+          wait $server; echo "tls-serve exit $?"
+          ls -la "${TEMP:-/tmp}" | grep lsl-https || true
           cat server.log
           cat got.txt
           grep -qx "lsl https" got.txt
