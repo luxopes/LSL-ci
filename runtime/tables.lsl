@@ -5,7 +5,7 @@
 # a tabulka internovaných literálů (+48 adresa, +56 maska, strops).
 load core
 load heap
-load os_linux
+load _runtime_os as os
 
 GLOBAL_ROOT_BEGIN = 16
 GLOBAL_ROOT_END = 24
@@ -34,13 +34,13 @@ function rt_runtime_reserve_object_table(size, mask):
     end
     old = __lsl_qbe_load64(base + OBJECT_TABLE)
     old_size = __lsl_qbe_shl(__lsl_qbe_load64(base + OBJECT_MASK) + 1, 3)
-    table = os_linux.map_anonymous(size, 0)
+    table = os.map_anonymous(size, 0)
     if table < 0:
         call heap.fatal_allocation()
     end
     __lsl_qbe_store64(base + OBJECT_TABLE, table)
     __lsl_qbe_store64(base + OBJECT_MASK, mask)
-    call os_linux.unmap(old, old_size)
+    call os.unmap(old, old_size)
     return 0
 end
 
@@ -90,7 +90,7 @@ function rt_runtime_grow_object_table(value):
     end
     capacity = (mask + 1) * 2
     new_mask = capacity - 1
-    table = os_linux.map_anonymous(__lsl_qbe_shl(capacity, 3), 0)
+    table = os.map_anonymous(__lsl_qbe_shl(capacity, 3), 0)
     if table < 0:
         call heap.fatal_allocation()
     end

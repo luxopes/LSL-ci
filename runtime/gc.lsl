@@ -7,7 +7,7 @@
 # v intruzivním pracovním seznamu (stav +184), takže značkování nealokuje
 # a nerekurzí ani na hlubokých a cyklických grafech.
 load core
-load os_linux
+load _runtime_os as os
 load heap
 load sync
 
@@ -18,7 +18,9 @@ INTERN_TABLE = 48
 INTERN_MASK = 56
 CAPTURE_STDERR = 72
 THREAD_TABLE = 112
-MAIN_STACK_TOP = 120
+# Blok hlavního vlákna (+16 vrchol jeho zásobníku). Stav +120 je blok
+# argumentů procesu, na Linuxu shodný s vrcholem zásobníku.
+MAIN_THREAD_BLOCK = 160
 GC_GATE = 128
 GC_ALLOCATED_BYTES = 144
 GC_BUDGET = 152
@@ -220,10 +222,11 @@ function thread_entry(index):
     return __lsl_qbe_load64(core.state() + THREAD_TABLE) + __lsl_qbe_shl(index, 6) + 8
 end
 
-# Zastaví běžící pracovní vlákna (SIGUSR1) a počká, až se všechna uspí
-# v obsluze signálu (status 2). Stav 4 = signál odeslán, ještě nespí.
+# Zastaví běžící pracovní vlákna (vrstva OS: Linux SIGUSR1, obsluha signálu
+# vlákno uspí; Windows SuspendThread) a počká, až jsou všechna uspaná
+# (status 2). Stav 4 = zastavení vyžádané, vlákno ještě běží.
 function suspend_workers():
-    process = os_linux.getpid()
+    process = os.getpid()
     while True:
         pending = 0
         index = 0
@@ -233,7 +236,7 @@ function suspend_workers():
             # 1 -> 4 atomicky: končící vlákno mezitím může stav vynulovat
             # (CLONE_CHILD_CLEARTID) a zapsaná 4 by pak zůstala navždy.
             if status == 1 and sync.atomic_cas(entry + 16, 1, 4) == 1:
-                call os_linux.tgkill(process, __lsl_qbe_load64(entry), 10)
+                call os.thread_suspend(process, entry)
                 pending = 1
             elif status == 4:
                 pending = 1
@@ -248,11 +251,28 @@ function suspend_workers():
     return 0
 end
 
+# Vrstva OS, která vlákna zastavuje sama (Windows), je zase spustí; na
+# Linuxu se vlákna probudí na bráně.
+function resume_workers():
+    if not os.THREAD_RESUME:
+        return 0
+    end
+    index = 0
+    while index < THREAD_SLOTS - 1:
+        entry = thread_entry(index)
+        if __lsl_qbe_load64(entry + 16) == 2:
+            call os.thread_resume(entry)
+        end
+        index += 1
+    end
+    return 0
+end
+
 function wait_resumed():
     index = 0
     while index < THREAD_SLOTS - 1:
         if __lsl_qbe_load64(thread_entry(index) + 16) == 2:
-            call os_linux.sched_yield()
+            call os.sched_yield()
         else:
             index += 1
         end
@@ -265,9 +285,19 @@ function mark_workers():
     index = 0
     while index < THREAD_SLOTS - 1:
         entry = thread_entry(index)
-        if __lsl_qbe_load64(entry + 16) == 2:
+        status = __lsl_qbe_load64(entry + 16)
+        if status == 2:
             call rt_runtime_mark(__lsl_qbe_load64(entry + 32))
             call mark_range(__lsl_qbe_load64(entry + 24), __lsl_qbe_load64(entry + 8))
+            # Registry zastaveného vlákna, které vrstva OS uložila mimo jeho
+            # zásobník (Windows: kontext z GetThreadContext).
+            registers = os.thread_registers(entry)
+            if registers != 0:
+                call mark_range(registers, registers + 128)
+            end
+        elif status == 3:
+            # Spuštěné vlákno, které se ještě nezveřejnilo: jeho funkce.
+            call rt_runtime_mark(__lsl_qbe_load64(entry + 24))
         end
         index += 1
     end
@@ -295,7 +325,7 @@ function sweep(live):
                 tag = __lsl_qbe_load64(block + 32)
                 if kind != 2 and tag == 11 and __lsl_qbe_load64(block + 40) != 0 and __lsl_qbe_load64(block + 48) >= 64:
                     # Nedosažitelná nativní knihovna: odmapovat její obraz.
-                    call os_linux.unmap(__lsl_qbe_load64(block + 40), __lsl_qbe_load64(block + 48))
+                    call os.unmap(__lsl_qbe_load64(block + 40), __lsl_qbe_load64(block + 48))
                 end
                 __lsl_qbe_store64(block + 16, 1)
                 head = base + heap.FREE_LISTS + __lsl_qbe_shl(heap.rt_runtime_size_class(__lsl_qbe_load64(block)), 3)
@@ -319,7 +349,7 @@ function rt_runtime_gc():
     stack = __lsl_qbe_call1(__lsl_symbol("lsl_arch_spill"), registers)
     base = core.state()
     # Sbírá jen hlavní vlákno; pracovní vlákna se vrátí hned.
-    if thread_word(TLS_STACK_TOP) != __lsl_qbe_load64(base + MAIN_STACK_TOP):
+    if thread_word(TLS_STACK_TOP) != __lsl_qbe_load64(base + MAIN_THREAD_BLOCK + TLS_STACK_TOP):
         return 0
     end
     call sync.rt_runtime_mutex_lock()
@@ -374,7 +404,8 @@ function rt_runtime_gc():
     __lsl_qbe_store64(base + GC_WORKLIST, 0)
     # Probudit uspaná vlákna až po sweepu.
     __lsl_qbe_store64(base + GC_GATE, 0)
-    call os_linux.futex_wake(base + GC_GATE, 2147483647)
+    call os.futex_wake(base + GC_GATE, 2147483647)
+    call resume_workers()
     # Počkat, až všechna uspaná vlákna opustí bránu (stav 2 -> 1). Jinak by
     # další gc() viděl stav 2 z tohoto cyklu a pokládal by běžící vlákno za
     # zastavené.
@@ -394,7 +425,7 @@ end
 
 function cold_collect():
     base = core.state()
-    if thread_word(TLS_STACK_TOP) != __lsl_qbe_load64(base + MAIN_STACK_TOP):
+    if thread_word(TLS_STACK_TOP) != __lsl_qbe_load64(base + MAIN_THREAD_BLOCK + TLS_STACK_TOP):
         return 0
     end
     if __lsl_qbe_load64(base + GC_ALLOCATED_BYTES) < __lsl_qbe_load64(base + GC_BUDGET):

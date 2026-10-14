@@ -12,6 +12,9 @@ function provider_modules(os, architecture="x86_64"):
     result["_httpserver_transport"] = "_httpserver_" + suffix
     result["_cuda_transport"] = "_cuda_" + suffix
     result["_ai_platform"] = "_ai_" + suffix
+    # Vrstvy OS runtime (runtime/os_<os>.lsl, runtime/ffi_<os>.lsl).
+    result["_runtime_os"] = "os_" + os
+    result["_runtime_ffi"] = "ffi_" + os
     result["_compiler_host_platform"] = "host_" + suffix
     result["_host_platform"] = "_host_" + suffix
     for name in ["update", "update_install", "catalog", "package", "install"]:
@@ -45,6 +48,7 @@ function describe(name):
     elif name == "windows-x86_64":
         os = "windows"
         format = "pe32plus-windows"
+        available = True
     elif name == "macos-x86_64":
         os = "macos"
         format = "mach64-macos"

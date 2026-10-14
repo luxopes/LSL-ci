@@ -5,7 +5,7 @@
 # (1 MiB, 65536 párů) je samostatné mapování. Blok hlavního vlákna je na
 # stav+160 (+0 čekající chyba, +8 příznak chyby, +16 vrchol zásobníku).
 load core
-load os_linux
+load _runtime_os as os
 load heap
 load threads
 load _platform as platform
@@ -34,16 +34,16 @@ SIGUSR1 = 10
 
 function cold_fatal_setup():
     message = "LSL runtime error: OSError: required process protection is unavailable\n"
-    call os_linux.write(2, message + 16, __lsl_qbe_load64(message + 8))
-    call os_linux.exit_process(71)
+    call os.write(2, message + 16, __lsl_qbe_load64(message + 8))
+    call os.exit_process(71)
     return 0
 end
 
-# Volá _start s ukazatelem na argc (vrchol zásobníku hlavního vlákna).
+# Volá _start s vrcholem zásobníku hlavního vlákna (Linux: ukazatel na argc).
 function lsl_runtime_start(stack):
     base = (__lsl_symbol("lsl_state") + HEAP_GAP) & -heap.COMMIT_GRAIN
     attempt = 0
-    while os_linux.map_at(base, heap.COMMIT_GRAIN) == 0:
+    while os.map_at(base, heap.COMMIT_GRAIN) == 0:
         attempt += 1
         if attempt >= HEAP_ATTEMPTS:
             call heap.fatal_allocation()
@@ -53,11 +53,11 @@ function lsl_runtime_start(stack):
     __lsl_qbe_store64(__lsl_symbol("lsl_state"), base)
     __lsl_qbe_store64(base + heap.HEAP_RESERVED, base + heap.COMMIT_GRAIN)
     __lsl_qbe_store64(base + heap.HEAP_BUMP, base + STATE_BYTES)
-    intern = os_linux.map_anonymous(INTERN_BYTES, 0)
+    intern = os.map_anonymous(INTERN_BYTES, 0)
     if intern < 0:
         call heap.fatal_allocation()
     end
-    registry = os_linux.map_anonymous(REGISTRY_BYTES, 0)
+    registry = os.map_anonymous(REGISTRY_BYTES, 0)
     if registry < 0:
         call heap.fatal_allocation()
     end
@@ -66,35 +66,32 @@ function lsl_runtime_start(stack):
     __lsl_qbe_store64(base + 48, intern)
     __lsl_qbe_store64(base + 56, INTERN_MASK)
     # Bitmapa začátků objektů: 1 bit na 8 B od začátku stavu, MAP_NORESERVE.
-    bitmap = os_linux.map_anonymous(BITMAP_INITIAL, platform.MAP_NORESERVE)
+    bitmap = os.map_anonymous(BITMAP_INITIAL, platform.MAP_NORESERVE)
     if bitmap < 0:
         call heap.fatal_allocation()
     end
     __lsl_qbe_store64(base + OBJECT_BITMAP, bitmap)
     __lsl_qbe_store64(base + OBJECT_BITMAP_CAPACITY, BITMAP_INITIAL)
-    # Identita hlavního vlákna pro gc() a seed hashe: vrchol zásobníku.
-    __lsl_qbe_store64(base + MAIN_STACK_TOP, stack)
+    # Blok argumentů procesu (argc, argv, 0, prostředí, 0) a seed hashe. Na
+    # Linuxu ho jádro předalo na zásobníku (= vrchol zásobníku), jinde ho
+    # vrstva OS sestaví. Hlavní vlákno pozná gc() podle bloku vlákna +16.
+    arguments = os.process_arguments(stack)
+    if arguments == 0:
+        call heap.fatal_allocation()
+    end
+    __lsl_qbe_store64(base + MAIN_STACK_TOP, arguments)
     __lsl_qbe_store64(base + GC_BUDGET, 4194304)
     if __lsl_qbe_call1(__lsl_symbol("lsl_arch_set_thread_pointer"), base + MAIN_THREAD_BLOCK) < 0:
         call cold_fatal_setup()
     end
     call __lsl_qbe_call2(__lsl_symbol("lsl_arch_tls_store"), TLS_STACK_TOP, stack)
-    table = os_linux.map_anonymous(8192, 0)
+    table = os.map_anonymous(8192, 0)
     if table < 0:
         call heap.fatal_allocation()
     end
     __lsl_qbe_store64(base + THREAD_TABLE, table)
-    # Obsluha SIGUSR1 pro zastavení světa; SA_RESTART: vnitřní GC nesmí
-    # vracet EINTR z I/O ani čekání na procesy.
-    action = __lsl_qbe_alloc(32)
-    __lsl_qbe_store64(action + platform.SIGACTION_HANDLER, __lsl_symbol("lsl_thread_signal"))
-    __lsl_qbe_store64(action + platform.SIGACTION_FLAGS, platform.SA_RESTORER | platform.SA_RESTART)
-    # Bez pole restorer (riscv64) jádro vrací ze signálu přes vDSO.
-    if platform.SIGACTION_RESTORER >= 0:
-        __lsl_qbe_store64(action + platform.SIGACTION_RESTORER, __lsl_symbol("lsl_arch_signal_restorer"))
-    end
-    __lsl_qbe_store64(action + platform.SIGACTION_MASK, 0)
-    if os_linux.syscall6(platform.SYS_RT_SIGACTION, SIGUSR1, action, 0, platform.SIGSET_BYTES, 0, 0) < 0:
+    # Zastavení světa pro GC (Linux: obsluha SIGUSR1 lsl_thread_signal).
+    if os.install_thread_suspend() < 0:
         call cold_fatal_setup()
     end
     call __lsl_qbe_call2(__lsl_symbol("rt_runtime_set_global_roots"), base + STATE_BYTES, base + STATE_BYTES)
@@ -104,7 +101,7 @@ end
 
 function qbe_exit(status):
     call __lsl_qbe_call0(__lsl_symbol("rt_runtime_stdout_flush"))
-    call os_linux.exit_process(status)
+    call os.exit_process(status)
     return 0
 end
 
@@ -124,7 +121,7 @@ end
 # do rámce signálu na zásobníku vlákna; GC prohledá zásobník od rámce této
 # obsluhy k základně, takže vidí i je. rt_sigreturn je pak obnoví.
 function lsl_thread_signal(signal):
-    entry = threads.find_entry(os_linux.gettid())
+    entry = threads.find_entry(os.gettid())
     if entry == 0:
         return 0
     end
@@ -133,7 +130,7 @@ function lsl_thread_signal(signal):
     __lsl_qbe_store64(entry + 16, 2)
     gate = core.state() + GC_GATE
     while __lsl_qbe_load64(gate) == 1:
-        call os_linux.futex_wait(gate, 1)
+        call os.futex_wait(gate, 1)
     end
     __lsl_qbe_store64(entry + 16, 1)
     return 0

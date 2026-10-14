@@ -4,7 +4,7 @@
 # Zámek haldy (stav +96) nic nedělá, dokud první thread_spawn nenastaví
 # příznak +136: program bez vláken platí jen jedno čtení.
 load core
-load os_linux
+load _runtime_os as os
 
 NATIVE_MUTEX = 88
 HEAP_MUTEX = 96
@@ -35,14 +35,14 @@ end
 function lock_contended(word):
     # Slovo označí za sporné; byl-li zámek mezitím volný, patří nám.
     while atomic_xchg(word, 2) != 0:
-        call os_linux.futex_wait(word, 2)
+        call os.futex_wait(word, 2)
     end
     return 0
 end
 
 function unlock(word):
     if atomic_xchg(word, 0) == 2:
-        call os_linux.futex_wake(word, 1)
+        call os.futex_wake(word, 1)
     end
     return 0
 end

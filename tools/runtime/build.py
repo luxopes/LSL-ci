@@ -18,6 +18,7 @@ TARGETS = {
     'linux-x86_64': ('amd64_sysv', [], 'as', ['--64'], 'ld', 'linux_x86_64', 'runtime.o'),
     'linux-arm64': ('arm64', [], 'aarch64-linux-gnu-as', [], 'aarch64-linux-gnu-ld', 'linux_arm64', 'runtime-linux-arm64.o'),
     'linux-riscv64': ('rv64', ['-p'], 'riscv64-linux-gnu-as', ['-march=rv64gc'], 'riscv64-linux-gnu-ld', 'linux_riscv64', 'runtime-linux-riscv64.o'),
+    'windows-x86_64': ('amd64_win', [], 'x86_64-w64-mingw32-as', [], 'x86_64-w64-mingw32-ld', 'windows_x86_64', 'runtime-windows-x86_64.o'),
 }
 
 

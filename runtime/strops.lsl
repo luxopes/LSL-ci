@@ -6,7 +6,7 @@
 # bajtů, které nejsou pokračovací (10xxxxxx), stejně jako dřívější x86 rutiny.
 load core
 load heap
-load os_linux
+load _runtime_os as os
 
 INTERN_TABLE = 48
 INTERN_MASK = 56
@@ -89,7 +89,7 @@ function rt_runtime_grow_intern_table():
     capacity = (mask + 1) * 2
     new_mask = capacity - 1
     size = __lsl_qbe_shl(capacity, 4)
-    table = os_linux.map_anonymous(size, 0)
+    table = os.map_anonymous(size, 0)
     if table < 0:
         call heap.fatal_allocation()
     end

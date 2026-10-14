@@ -1,20 +1,20 @@
 # lsl: runtime
-# Vlákna: tabulka vláken (stav +112, 127 položek po 64 B od +8), spawn přes
-# clone se sdílenou pamětí, join a vstup vlákna. Položka: +0 tid jádra
+# Vlákna: tabulka vláken (stav +112, 127 položek po 64 B od +8), spawn
+# (vrstva OS: clone se sdílenou pamětí, CreateThread), join a vstup vlákna. Položka: +0 tid jádra
 # (horní bit = už připojené), +8 vrchol zásobníku, +16 stav (0 volno/skončilo,
 # 1 běží, 2 uspané GC, 3 rezervované spawnem, 4 signál odeslán), +24 uložený
-# rsp uspaného vlákna, +32.. blok vlákna (thread pointer): +32 čekající chyba,
+# rsp uspaného vlákna (před startem vlákna jeho funkce), +32.. blok vlákna (thread pointer): +32 čekající chyba,
 # +40 příznak chyby, +48 vrchol zásobníku, +56 ukazatel na stav runtime.
 load core
-load os_linux
+load _runtime_os as os
 load sync
 load gc
-load _platform as platform
 
 THREAD_TABLE = 112
 THREADS_STARTED = 136
 GC_ALLOCATED_BYTES = 144
 GC_BUDGET = 152
+GC_GATE = 128
 THREAD_SLOTS = 127
 STACK_BYTES = 8392704
 GUARD_BYTES = 4096
@@ -89,32 +89,28 @@ function rt_runtime_thread_spawn(function):
     __lsl_qbe_store64(entry, 0)
     top = __lsl_qbe_load64(entry + 8)
     call sync.rt_runtime_table_unlock()
-    if top == 0:
-        stack = os_linux.mmap(0, STACK_BYTES, 3, 131106, -1, 0)
-        if stack < 0:
-            return cold_spawn_failed(entry)
-        end
-        # Strážní stránka na dně zásobníku.
-        if os_linux.mprotect(stack, GUARD_BYTES, 0) != 0:
-            call os_linux.munmap(stack, STACK_BYTES)
-            return cold_spawn_failed(entry)
-        end
-        top = stack + STACK_BYTES
+    # Zásobník vytvoří vrstva OS (Linux: vlastní mapování se strážní
+    # stránkou, znovu použité; Windows: systém s vláknem, vrchol 0).
+    top = os.thread_stack(top, STACK_BYTES, GUARD_BYTES)
+    if top < 0:
+        return cold_spawn_failed(entry)
     end
-    __lsl_qbe_store64(top - 16, entry)
-    __lsl_qbe_store64(top - 8, function)
     # Vrchol zásobníku a stav zveřejnit pod zámkem tabulky: gc() nesmí
-    # vidět běžící vlákno s neplatným rozsahem zásobníku.
+    # vidět běžící vlákno s neplatným rozsahem zásobníku. Vlákno, jehož
+    # zásobník zná až ono samo (os.THREAD_SELF_PUBLISH), zůstane ve stavu 3
+    # a zveřejní se v lsl_thread_begin; funkci do té doby drží +24 (GC ji
+    # ve stavu 3 označí).
     call sync.rt_runtime_table_lock()
     __lsl_qbe_store64(entry + 8, top)
-    __lsl_qbe_store64(entry + 16, 1)
+    if not os.THREAD_SELF_PUBLISH:
+        __lsl_qbe_store64(entry + 16, 1)
+    end
+    __lsl_qbe_store64(entry + 24, function)
     __lsl_qbe_store64(entry + 32, 0)
     __lsl_qbe_store64(entry + 40, 0)
     __lsl_qbe_store64(entry + 48, top)
     __lsl_qbe_store64(entry + 56, base)
-    # CLONE_CHILD_CLEARTID na stav: jádro ho vynuluje a probudí čekající až
-    # po úplném skončení vlákna; CLONE_SETTLS ukáže na blok vlákna.
-    tid = __lsl_qbe_call4(__lsl_symbol("lsl_arch_clone_thread"), platform.THREAD_CLONE_FLAGS, top - 16, entry + 16, entry + 32)
+    tid = os.thread_start(entry, top, function)
     if tid < 0:
         # Zásobník zůstává pro dalšího obyvatele položky.
         __lsl_qbe_store64(entry + 16, 0)
@@ -133,7 +129,27 @@ function cold_spawn_failed(entry):
     return -1
 end
 
-# Vstup nového vlákna (z lsl_arch_clone_thread); končí jen exit vlákna.
+# Vstup vlákna, jehož zásobník vytvořil systém (Windows, z arch vrstvy):
+# zveřejní vrchol zásobníku a blok vlákna. Během GC (brána +128) čeká:
+# nové vlákno nesmí měnit objekty, když GC trasuje nebo uklízí.
+function lsl_thread_begin(entry, top):
+    base = __lsl_qbe_load64(entry + 56)
+    call sync.rt_runtime_table_lock()
+    while __lsl_qbe_load64(base + GC_GATE) == 1:
+        call sync.rt_runtime_table_unlock()
+        call os.futex_wait(base + GC_GATE, 1)
+        call sync.rt_runtime_table_lock()
+    end
+    callee = __lsl_qbe_load64(entry + 24)
+    __lsl_qbe_store64(entry + 8, top)
+    __lsl_qbe_store64(entry + 48, top)
+    call __lsl_qbe_call1(__lsl_symbol("lsl_arch_set_thread_pointer"), entry + 32)
+    __lsl_qbe_store64(entry + 16, 1)
+    call sync.rt_runtime_table_unlock()
+    return lsl_thread_main(entry, callee)
+end
+
+# Vstup nového vlákna; končí jen os.thread_exit.
 function lsl_thread_main(entry, function):
     code = core.rt_runtime_unbox_dynamic_function(function)
     call __lsl_qbe_call0(code)
@@ -141,12 +157,12 @@ function lsl_thread_main(entry, function):
     if __lsl_qbe_load64(entry + 40) != 0:
         message = __lsl_qbe_load64(entry + 32)
         prefix = "LSL worker error: "
-        call os_linux.write(2, prefix + 16, __lsl_qbe_load64(prefix + 8))
-        call os_linux.write(2, message + 16, __lsl_qbe_load64(message + 8))
+        call os.write(2, prefix + 16, __lsl_qbe_load64(prefix + 8))
+        call os.write(2, message + 16, __lsl_qbe_load64(message + 8))
         newline = "\n"
-        call os_linux.write(2, newline + 16, 1)
+        call os.write(2, newline + 16, 1)
     end
-    call os_linux.exit_thread(0)
+    call os.thread_exit(entry)
     return 0
 end
 
@@ -171,7 +187,7 @@ function rt_runtime_thread_join(tid):
         end
         __lsl_qbe_store64(timeout, 0)
         __lsl_qbe_store64(timeout + 8, 10000000)
-        call os_linux.futex_wait_timeout(entry + 16, status, timeout)
+        call os.futex_wait_timeout(entry + 16, status, timeout)
     end
     call sync.rt_runtime_table_lock()
     entry = find_entry(tid)
@@ -185,7 +201,7 @@ end
 # Počet CPU v masce afinity, 1 při chybě.
 function rt_runtime_cpu_count():
     mask = __lsl_qbe_alloc(128)
-    size = os_linux.sched_getaffinity(128, mask)
+    size = os.sched_getaffinity(128, mask)
     if size <= 0:
         return 1
     end

@@ -8,7 +8,7 @@
 load core
 load sync
 load elf
-load ffi_linux as host
+load _runtime_ffi as host
 
 TAG_LIST = 2
 TAG_NATIVE_LIBRARY = 11

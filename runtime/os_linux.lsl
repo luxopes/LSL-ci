@@ -424,3 +424,77 @@ end
 function futex_wait_timeout(address, expected, timespec):
     return syscall6(platform.SYS_FUTEX, address, platform.FUTEX_WAIT, expected, timespec, 0, 0)
 end
+
+# Rozhraní pro start procesu, vlákna a GC (stejná jména v os_windows.lsl).
+
+# Vlákno se zveřejňuje samo (lsl_thread_begin)? Linux: ne, spawn zná zásobník.
+THREAD_SELF_PUBLISH = 0
+# Spouští GC zastavená vlákna sám (thread_resume)? Linux: ne, probudí je brána.
+THREAD_RESUME = 0
+# Jména proměnných prostředí rozlišují velikost písmen.
+ENV_IGNORE_CASE = 0
+SIGUSR1 = 10
+
+# Blok argumentů (argc, argv, 0, prostředí, 0) předalo jádro na zásobníku.
+function process_arguments(stack):
+    return stack
+end
+
+# Obsluha SIGUSR1 pro zastavení světa; SA_RESTART: vnitřní GC nesmí vracet
+# EINTR z I/O ani čekání na procesy. Záporné = chyba.
+function install_thread_suspend():
+    action = __lsl_qbe_alloc(32)
+    __lsl_qbe_store64(action + platform.SIGACTION_HANDLER, __lsl_symbol("lsl_thread_signal"))
+    __lsl_qbe_store64(action + platform.SIGACTION_FLAGS, platform.SA_RESTORER | platform.SA_RESTART)
+    # Bez pole restorer (riscv64) jádro vrací ze signálu přes vDSO.
+    if platform.SIGACTION_RESTORER >= 0:
+        __lsl_qbe_store64(action + platform.SIGACTION_RESTORER, __lsl_symbol("lsl_arch_signal_restorer"))
+    end
+    __lsl_qbe_store64(action + platform.SIGACTION_MASK, 0)
+    return syscall6(platform.SYS_RT_SIGACTION, SIGUSR1, action, 0, platform.SIGSET_BYTES, 0, 0)
+end
+
+# Zásobník vlákna: dosavadní (top != 0) se použije znovu, jinak nové mapování
+# se strážní stránkou na dně. Vrchol, nebo -1.
+function thread_stack(top, size, guard):
+    if top != 0:
+        return top
+    end
+    stack = mmap(0, size, 3, 131106, -1, 0)
+    if stack < 0:
+        return -1
+    end
+    if mprotect(stack, guard, 0) != 0:
+        call munmap(stack, size)
+        return -1
+    end
+    return stack + size
+end
+
+# clone se sdílenou pamětí. CLONE_CHILD_CLEARTID na stav: jádro ho vynuluje
+# a probudí čekající až po úplném skončení vlákna; CLONE_SETTLS ukáže na
+# blok vlákna. Potomek najde na zásobníku položku a funkci. tid, nebo -errno.
+function thread_start(entry, top, function):
+    __lsl_qbe_store64(top - 16, entry)
+    __lsl_qbe_store64(top - 8, function)
+    return __lsl_qbe_call4(__lsl_symbol("lsl_arch_clone_thread"), platform.THREAD_CLONE_FLAGS, top - 16, entry + 16, entry + 32)
+end
+
+# Konec vlákna: stav vynuluje jádro (CLONE_CHILD_CLEARTID).
+function thread_exit(entry):
+    return exit_thread(0)
+end
+
+# Zastavení pro GC: obsluha SIGUSR1 (entry.lsl) uloží registry a uspí se.
+function thread_suspend(process, entry):
+    return tgkill(process, __lsl_qbe_load64(entry), SIGUSR1)
+end
+
+function thread_resume(entry):
+    return 0
+end
+
+# Registry zastaveného vlákna leží v rámci signálu na jeho zásobníku.
+function thread_registers(entry):
+    return 0
+end

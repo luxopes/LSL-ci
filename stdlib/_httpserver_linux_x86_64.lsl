@@ -86,6 +86,17 @@ function socket_write(handle, payload):
     return 0
 end
 
+# Čtení a zavření socketu klienta nebo naslouchajícího socketu (Windows
+# potřebuje recv a closesocket místo obecného deskriptoru).
+function socket_read(handle, buffer, count):
+    return __lsl_fd_read(Int(handle), buffer, count)
+end
+
+function socket_close(handle):
+    call fd.close(handle)
+    return None
+end
+
 function cstring(value):
     text = String(value)
     if len(text) == 0 or __lsl_text_byte_length(text) > 4095:

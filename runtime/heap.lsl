@@ -11,7 +11,7 @@
 # Limit adresního prostoru (prlimit --as) počítá jen skutečně použitou
 # paměť, stejně jako u brk.
 load core
-load os_linux
+load _runtime_os as os
 load sync
 
 HEAP_BLOCKS = 0
@@ -29,8 +29,8 @@ REUSE_PROBES = 128
 
 function fatal_allocation():
     message = "LSL runtime error: MemoryError: allocator or object table exhausted\n"
-    call os_linux.write(2, message + 16, __lsl_qbe_load64(message + 8))
-    call os_linux.exit_process(70)
+    call os.write(2, message + 16, __lsl_qbe_load64(message + 8))
+    call os.exit_process(70)
     return 0
 end
 
@@ -89,7 +89,7 @@ function rt_runtime_object_bitmap_ensure():
         return 0
     end
     size = (needed * 2 + 4095) & -4096
-    bitmap = os_linux.map_anonymous(size, 16384)
+    bitmap = os.map_anonymous(size, 16384)
     if bitmap < 0:
         call fatal_allocation()
     end
@@ -126,7 +126,7 @@ function commit_heap(limit):
     if __lsl_qbe_ule(top, committed):
         return 1
     end
-    if os_linux.map_at(committed, top - committed) == 0:
+    if os.map_at(committed, top - committed) == 0:
         return 0
     end
     __lsl_qbe_store64(base + HEAP_RESERVED, top)

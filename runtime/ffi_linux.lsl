@@ -3,7 +3,7 @@
 # v krátkém procesu se strict seccomp. Obecná část je v ffi.lsl; jiný
 # systém dodá stejné funkce (native_image_*, native_sandbox_*).
 load _platform as platform
-load os_linux as os
+load _runtime_os as os
 
 # Obraz má nejvýš 256 MiB: omezí prostředky a pozdější změna souboru už
 # nezmění kód, který prošel kontrolou.

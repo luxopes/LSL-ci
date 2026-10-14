@@ -25,7 +25,12 @@ for name in ["linux-x86_64", "windows-x86_64", "macos-x86_64"]:
         else:
             rejected = "not implemented" in last_error()
         end
-        check(rejected, "an incomplete target was advertised as available")
+        # Windows má runtime v LSL přes LuxIR; macOS zatím ne.
+        if name == "windows-x86_64":
+            check(not rejected, "the Windows target is not available")
+        else:
+            check(rejected, "an incomplete target was advertised as available")
+        end
         rejected = False
         try:
             call runtime.select(description)

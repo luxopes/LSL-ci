@@ -3,14 +3,17 @@ load qbe_emit
 load host
 
 # Cíl backendu podle platformy LSL.
-BACKEND_TARGETS = {"linux-x86_64":"amd64_sysv","linux-arm64":"arm64","linux-riscv64":"rv64"}
+BACKEND_TARGETS = {"linux-x86_64":"amd64_sysv","linux-arm64":"arm64","linux-riscv64":"rv64","windows-x86_64":"amd64_win"}
 # Nástroje a příznaky cíle: cross assembler a linker, jinak nativní. rv64:
 # adresy symbolů relativně k PC (-p) a bez relaxace linkeru (runtime
 # nenastavuje gp).
-BACKEND_FLAGS = {"linux-x86_64":[],"linux-arm64":[],"linux-riscv64":["-p"]}
-ASSEMBLERS = {"linux-x86_64":["/usr/bin/as","/bin/as",["--64"]],"linux-arm64":["/usr/bin/aarch64-linux-gnu-as","/usr/bin/as",[]],"linux-riscv64":["/usr/bin/riscv64-linux-gnu-as","/usr/bin/as",["-march=rv64gc"]]}
-LINKERS = {"linux-x86_64":["/usr/bin/ld","/bin/ld",[]],"linux-arm64":["/usr/bin/aarch64-linux-gnu-ld","/usr/bin/ld",[]],"linux-riscv64":["/usr/bin/riscv64-linux-gnu-ld","/usr/bin/ld",["--no-relax"]]}
-RUNTIME_OBJECTS = {"linux-x86_64":"runtime.o","linux-arm64":"runtime-linux-arm64.o","linux-riscv64":"runtime-linux-riscv64.o"}
+BACKEND_FLAGS = {"linux-x86_64":[],"linux-arm64":[],"linux-riscv64":["-p"],"windows-x86_64":[]}
+ASSEMBLERS = {"linux-x86_64":["/usr/bin/as","/bin/as",["--64"]],"linux-arm64":["/usr/bin/aarch64-linux-gnu-as","/usr/bin/as",[]],"linux-riscv64":["/usr/bin/riscv64-linux-gnu-as","/usr/bin/as",["-march=rv64gc"]],"windows-x86_64":["/usr/bin/x86_64-w64-mingw32-as","/usr/bin/x86_64-w64-mingw32-as",[]]}
+LINKERS = {"linux-x86_64":["/usr/bin/ld","/bin/ld",[]],"linux-arm64":["/usr/bin/aarch64-linux-gnu-ld","/usr/bin/ld",[]],"linux-riscv64":["/usr/bin/riscv64-linux-gnu-ld","/usr/bin/ld",["--no-relax"]],"windows-x86_64":["/usr/bin/x86_64-w64-mingw32-ld","/usr/bin/x86_64-w64-mingw32-ld",[]]}
+RUNTIME_OBJECTS = {"linux-x86_64":"runtime.o","linux-arm64":"runtime-linux-arm64.o","linux-riscv64":"runtime-linux-riscv64.o","windows-x86_64":"runtime-windows-x86_64.o"}
+# Windows: importní knihovny Win32 (kernel32, WaitOnAddress, BCryptGenRandom,
+# Winsock) z mingw-w64.
+WINDOWS_LIBRARIES = "/usr/x86_64-w64-mingw32/lib"
 
 # Backend není napevno zadaný: LSL_BACKEND je absolutní cesta k programu
 # kompatibilnímu s LuxIR, jinak se použije luxir vedle compileru nebo
@@ -104,9 +107,17 @@ function image(unit, selected, entry_source="", backend_path=""):
         # No private scratch filename is embedded in the resulting image.
         call appendfile(path + ".s", chr(10) + ".file \"luxir\"" + chr(10))
         call invoke(assembler, tool_arguments([], ASSEMBLERS[name][2], ["-o", path + ".o", path + ".s"]), "assembler")
-        # All runtime/code references are PC relative. -z text makes absolute
-        # relocations in executable pages a hard error instead of weakening PIE.
-        call invoke(linker, tool_arguments(["-nostdlib", "-static", "-pie", "--no-dynamic-linker", "-z", "text", "-z", "noexecstack", "--build-id=none", "--gc-sections", "-s"], LINKERS[name][2], ["-o", path, path + ".o", runtime]), "linker")
+        if selected["os"] == "windows":
+            # PE konzolový program s ASLR a DEP. Zásobník hlavního vlákna je
+            # celý zpřístupněný (8 MiB jako na Linuxu): LuxIR na Windows
+            # nesonduje zásobník po stránkách. Bez časového razítka, aby
+            # obraz byl reprodukovatelný.
+            call invoke(linker, tool_arguments(["-nostdlib", "-e", "_start", "--subsystem", "console", "--dynamicbase", "--high-entropy-va", "--nxcompat", "--stack", "8388608,8388608", "--no-insert-timestamp", "--gc-sections", "-s"], LINKERS[name][2], ["-o", path, path + ".o", runtime, "-L" + WINDOWS_LIBRARIES, "-lkernel32", "-lsynchronization", "-lbcrypt", "-lws2_32"]), "linker")
+        else:
+            # All runtime/code references are PC relative. -z text makes absolute
+            # relocations in executable pages a hard error instead of weakening PIE.
+            call invoke(linker, tool_arguments(["-nostdlib", "-static", "-pie", "--no-dynamic-linker", "-z", "text", "-z", "noexecstack", "--build-id=none", "--gc-sections", "-s"], LINKERS[name][2], ["-o", path, path + ".o", runtime]), "linker")
+        end
         result = readbytes(path)
     else:
         failure = last_error()

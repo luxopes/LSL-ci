@@ -17,6 +17,28 @@ systémová volání společná x86_64, arm64 i rv64 (`openat`, `pipe2`, `dup3`,
 platformy cíle (`load _platform as platform`, `platform.SYS_OPENAT`).
 Velikosti a posuny kernelových struktur patří taky do modulu platformy.
 
+## Windows
+
+`os_windows.lsl` má stejné rozhraní nad Win32 (kernel32, WaitOnAddress):
+deskriptor je HANDLE (0, 1, 2 = standardní proudy), chyby jsou záporné errno
+s hodnotami Linuxu, cesty a text UTF-8 (funkce `…W` dostávají UTF-16).
+Rozdíly, které řeší vrstva OS:
+
+- argv a prostředí sestaví `process_arguments` z `GetCommandLineW`
+  a `GetEnvironmentStringsW` do stejného bloku, jaký Linux předá na zásobníku
+  (stav +120); jména proměnných prostředí nerozlišují velikost písmen,
+- blok vlákna runtime je v TLS slotu (`TlsAlloc`, TEB+0x1480, `gs`),
+- vlákna vytváří `CreateThread`; vlákno zveřejní vrchol svého zásobníku samo
+  (`lsl_thread_begin`), GC ho zastaví `SuspendThread` a registry přečte
+  `GetThreadContext` (místo SIGUSR1),
+- procesy: `CreateProcessW` s příkazovou řádkou podle pravidel
+  `CommandLineToArgvW`, potomek dědí jen předané handle; memfd je dočasný
+  soubor smazaný po zavření; výjimky (pád) končí kódem 139/132 jako signály,
+- konzole: výstup `WriteConsoleW`, vstup `ReadConsoleW` v UTF-8 s `\n`.
+
+Program se linkuje jako konzolový PE (`x86_64-w64-mingw32-ld`, ASLR, DEP,
+zásobník 8 MiB celý zpřístupněný: LuxIR na Windows nesonduje zásobník).
+
 ## Přechod z x86 emitorů
 
 Dříve byl runtime strojový kód x86-64 generovaný emitory

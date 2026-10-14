@@ -1,10 +1,10 @@
 # lsl: runtime
 # Vstup a výstup: bufferovaný stdin a stdout, input, celé soubory
 # (readfile, writefile…), surové deskriptory pro stdlib fd, cesty.
-# Systémová volání dělá vrstva OS (os_linux); tady je logika nad nimi.
+# Systémová volání dělá vrstva OS (os_linux, os_windows); tady je logika nad nimi.
 load core
 load text
-load os_linux as os
+load _runtime_os as os
 load _platform as platform
 
 # Rozložení stavu (lsl_state, viz runtime_linux_x86_64.emit_entry).

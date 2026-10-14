@@ -2963,6 +2963,20 @@ end
 # Runtime jazyka napsaný v LSL (# lsl: runtime): každá funkce je exportovaný
 # symbol se svým jménem, globály jsou datové symboly, literály statické
 # záznamy String. Bez lsl_entry, bez kontrol výjimek a bez bodů GC.
+# Sekce jednoho datového symbolu runtime (linker s --gc-sections je přibalí
+# jen použité). ELF: .rodata.<symbol>, .data.<symbol>. PE (Windows): linker
+# slučuje jen skupiny .rdata$<symbol> a .data$<symbol>; příznaky COFF
+# (d data, r jen čtení, w zápis) drží konstanty jen pro čtení.
+function runtime_section(unit,kind,symbol):
+    if unit["platform_module"].find("_windows_") >= 0:
+        if kind == "rodata":
+            return "section \".rdata$"+symbol+"\" \"dr\""
+        end
+        return "section \".data$"+symbol+"\" \"dw\""
+    end
+    return "section \"."+kind+"."+symbol+"\""
+end
+
 function generate_runtime(unit,path):
     ids = {}
     for name in unit["functions"]:
@@ -3025,7 +3039,7 @@ function generate_runtime(unit,path):
         if len(words) == 0:
             words = ["0"]
         end
-        data.append("section \".rodata."+runtime_global_symbol(name)+"\" data "+runtime_global_symbol(name)+" align 8 = Int64("+", ".join(words)+")"+chr(10))
+        data.append(runtime_section(unit,"rodata",runtime_global_symbol(name))+" data "+runtime_global_symbol(name)+" align 8 = Int64("+", ".join(words)+")"+chr(10))
     end
     for name in unit["variables"]:
         if name in shared["runtime_constants"] or name in skipped or name in shared["runtime_tables"]:
@@ -3037,7 +3051,7 @@ function generate_runtime(unit,path):
             linkage = "export thread data "
         end
         if linkage == "export data ":
-            linkage = "export section \".data."+symbol+"\" data "
+            linkage = "export "+runtime_section(unit,"data",symbol)+" data "
         end
         data.append(linkage+symbol+" align 8 = Int64("+String(initial.get(name,0))+")"+chr(10))
     end
@@ -3045,7 +3059,7 @@ function generate_runtime(unit,path):
         escaped = text.replace("\\","\\\\").replace("\"","\\\"").replace(chr(10),"\\n").replace(chr(13),"\\r").replace(chr(9),"\\t").replace(chr(0),"\\0")
         length = __lsl_text_byte_length(String(text))
         label = "lslrt_str"+String(shared["strings"][text])
-        data.append("section \".rodata."+label+"\" data "+label+" align 8 = [Int64(1, "+String(length)+"), \""+escaped+"\", Int8(0)]"+chr(10))
+        data.append(runtime_section(unit,"rodata",label)+" data "+label+" align 8 = [Int64(1, "+String(length)+"), \""+escaped+"\", Int8(0)]"+chr(10))
     end
     call appendfile(path,"".join(data))
 end

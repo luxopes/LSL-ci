@@ -6,7 +6,7 @@
 # souborů .lsl (chyba může ukazovat do .env s tajnými hodnotami). Výstup je
 # bajt po bajtu stejný jako u dřívější x86 rutiny.
 load _platform as platform
-load os_linux as os
+load _runtime_os as os
 load io
 load entry
 

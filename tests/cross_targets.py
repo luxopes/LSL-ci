@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Konformní testy na dalších cílech: každý tests/X.lsl s tests/X.out se
 přeloží pro cíl i pro hostitele, spustí (cizí architektura přes qemu-user
-binfmt) a výstup se porovná s výstupem hostitele a s X.out.
+binfmt, Windows přes wine) a výstup se porovná s výstupem hostitele a s X.out.
 
 Test, který bez argumentů neprojde ani na hostiteli (potřebuje argumenty,
 vstup nebo prostředí test_runneru), se hlásí zvlášť jako "host-only".
 
-Použití: cross_targets.py --compiler LSLC --target linux-arm64 [-j N] [TEST...]
+Použití: cross_targets.py --compiler LSLC --target linux-arm64|windows-x86_64 [-j N] [TEST...]
 """
 import argparse, concurrent.futures, os, pathlib, subprocess, sys, tempfile
 
@@ -15,23 +15,44 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 def run(command, timeout):
     try:
-        r = subprocess.run(command, capture_output=True, timeout=timeout, cwd=ROOT, stdin=subprocess.DEVNULL)
+        r = subprocess.run(command, capture_output=True, timeout=timeout, cwd=ROOT, stdin=subprocess.DEVNULL, env=dict(os.environ, WINEDEBUG='-all'))
         return r.returncode, r.stdout, r.stderr
     except subprocess.TimeoutExpired:
         return 'timeout', b'', b''
 
 
+# Testy, které na Windows smysl nemají: surová systémová volání Linuxu,
+# unixové nástroje (/bin/sh, true, sh v PATH) nebo curl.exe, který wine
+# na rozdíl od Windows 10+ nemá.
+WINDOWS_SKIP = {
+    'gc_bigheap_threads_conformance.lsl': 'Linux syscall (setitimer)',
+    'gc_stream_worker_conformance.lsl': '/bin/sh',
+    'language_safety_features.lsl': 'Unix command true',
+    'module_group_conformance.lsl': 'Unix command sh',
+    'process_fork_fault_conformance.lsl': 'Linux syscalls (geteuid, prlimit)',
+    'requests_conformance.lsl': 'curl.exe (missing in wine)',
+    'syscall6_conformance.lsl': 'Linux syscalls',
+    'x11_transport_conformance.lsl': 'Linux syscalls (socketpair)',
+}
+
+
 def check(compiler, target, source, scratch, timeout):
+    if target.startswith('windows-') and source.name in WINDOWS_SKIP:
+        return 'skip', source.name, WINDOWS_SKIP[source.name]
     expected = source.with_suffix('.out').read_bytes()
     results = {}
     # Jako test_runner v režimu qbe: korpus používá i surové služby runtime.
     for name, extra in (('host', ['--unsafe']), (target, ['--unsafe', '--target', target])):
         binary = scratch / f'{source.stem}-{name}'
+        launcher = []
+        if name.startswith('windows-'):
+            binary = binary.with_name(binary.name + '.exe')
+            launcher = ['wine']
         status, _, error = run([str(compiler), *extra, str(source), str(binary)], 600)
         if status != 0:
             results[name] = ('compile', error.decode(errors='replace').strip().splitlines()[:3])
             continue
-        status, out, error = run([str(binary)], timeout)
+        status, out, error = run([*launcher, str(binary)], timeout)
         results[name] = (status, out, error)
     host, cross = results['host'], results[target]
     if host[0] == 'compile' or host[1] != expected:

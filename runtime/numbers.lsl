@@ -3,7 +3,7 @@
 # a spánek. Výstupy jsou bajt po bajtu stejné jako u dřívějších x86 rutin.
 load _platform as platform
 load core
-load os_linux
+load _runtime_os as os
 
 # Exponent binary64 samých jedniček: nekonečno, nad ním NaN.
 FLOAT_EXPONENT = 9218868437227405312
@@ -269,7 +269,7 @@ end
 # Sekundy hodin jako Float: sekundy + nanosekundy / 1e9.
 function clock_seconds(clock):
     timespec = __lsl_qbe_alloc(16)
-    call os_linux.os_clock_gettime(clock, timespec)
+    call os.os_clock_gettime(clock, timespec)
     seconds = __lsl_raw_fitof(__lsl_qbe_load64(timespec))
     fraction = __lsl_raw_fdiv(__lsl_raw_fitof(__lsl_qbe_load64(timespec + 8)), 1000000000.0)
     return __lsl_qbe_call1(__lsl_symbol("rt_runtime_float_new"), __lsl_raw_fadd(seconds, fraction))
@@ -296,11 +296,11 @@ function rt_runtime_sleep(number):
     __lsl_qbe_store64(request + 8, nanoseconds)
     __lsl_qbe_store64(remaining, 0)
     __lsl_qbe_store64(remaining + 8, 0)
-    result = os_linux.os_nanosleep(request, remaining)
+    result = os.os_nanosleep(request, remaining)
     while result == -platform.EINTR:
         __lsl_qbe_store64(request, __lsl_qbe_load64(remaining))
         __lsl_qbe_store64(request + 8, __lsl_qbe_load64(remaining + 8))
-        result = os_linux.os_nanosleep(request, remaining)
+        result = os.os_nanosleep(request, remaining)
     end
     if result < 0:
         call __lsl_qbe_call1(__lsl_symbol("qbe_error_set"), "ValueError: invalid sleep duration")

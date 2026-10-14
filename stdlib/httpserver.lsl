@@ -337,7 +337,7 @@ function read_body(client, collected, finish, total, content_length):
             call __lsl_byte_copy(grown, body, 0, 0, have)
             body = grown
         end
-        count = __lsl_fd_read(Int(client), chunk, len(chunk))
+        count = transport.socket_read(client, chunk, len(chunk))
         if count == -4:
             continue
         elif count == -11 or count == -110:
@@ -373,7 +373,7 @@ function read_request(client, allow_body):
     total = 0
     finish = -1
     while finish < 0:
-        count = __lsl_fd_read(Int(client), chunk, len(chunk))
+        count = transport.socket_read(client, chunk, len(chunk))
         if count == -4:
             continue
         elif count == -11 or count == -110:
@@ -855,7 +855,7 @@ function serve_client(client, root_handle, handler):
             call send_response(client, response["status"], response["reason"], response["body"], response["content_type"], head_only)
         end
     end
-    call fd.close(client)
+    call transport.socket_close(client)
 end
 
 # Worker pool: vlákna přijímají spojení ze sdíleného listeneru, takže pomalý
@@ -943,7 +943,7 @@ function serve_listener_workers(listener, handler, workers, maximum_requests):
         call thread_join(tid)
     end
     served = POOL_STATE[3]
-    call fd.close(listener)
+    call transport.socket_close(listener)
     call atomic_xchg(POOL_STATE, 5, 0)
     if len(threads) < workers:
         Error(ServerError: "cannot start HTTP worker threads")
@@ -965,7 +965,7 @@ function serve_listener(listener, root_handle, handler, maximum_requests, announ
         if client == -4:
             continue
         elif client < 0:
-            call fd.close(listener)
+            call transport.socket_close(listener)
             if root_handle >= 0:
                 call fd.close(root_handle)
             end
@@ -980,7 +980,7 @@ function serve_listener(listener, root_handle, handler, maximum_requests, announ
         # main thread stays flat.
         call gc()
     end
-    call fd.close(listener)
+    call transport.socket_close(listener)
     if root_handle >= 0:
         call fd.close(root_handle)
     end

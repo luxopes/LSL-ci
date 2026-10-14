@@ -263,7 +263,8 @@ function builtin_arities():
     for operation in ["fitof","fftoi","fneg"]:
         builtin_arity["__lsl_raw_"+operation] = 1
     end
-    for count in rang(9):
+    # Až deset argumentů: funkce Win32 jako CreateProcessW (runtime/os_windows.lsl).
+    for count in rang(11):
         builtin_arity["__lsl_qbe_call"+String(count)] = count + 1
         builtin_arity["__lsl_qbe_fcall"+String(count)] = count + 1
     end
