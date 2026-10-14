@@ -25,9 +25,12 @@ def run(command, timeout):
 
 
 # Testy, které na Windows smysl nemají: surová systémová volání Linuxu,
-# unixové nástroje (/bin/sh, true, sh v PATH) nebo curl.exe, který wine
-# na rozdíl od Windows 10+ nemá.
+# cesty Linuxu (/proc, /dev/null; wine je zpřístupní, Windows ne), unixové
+# nástroje (/bin/sh, true, sh v PATH) nebo curl.exe, který wine na rozdíl
+# od Windows 10+ nemá.
 WINDOWS_SKIP = {
+    'automatic_gc_conformance.lsl': 'memory from /proc/self/status',
+    'call_statement_conformance.lsl': 'writes /dev/null',
     'gc_bigheap_threads_conformance.lsl': 'Linux syscall (setitimer)',
     'gc_stream_worker_conformance.lsl': '/bin/sh',
     'language_safety_features.lsl': 'Unix command true',
