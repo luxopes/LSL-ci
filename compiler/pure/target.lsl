@@ -55,6 +55,14 @@ function describe(name):
         architecture = "arm64"
         backend = "arm64"
         available = True
+    elif name == "wasm32-wasi":
+        # WebAssembly s WASI: hodnoty LSL zůstávají 64bitové, adresy do
+        # lineární paměti 32bitové.
+        os = "wasi"
+        format = "wasm"
+        architecture = "wasm32"
+        backend = "wasm32"
+        available = True
     elif name == "macos-x86_64":
         os = "macos"
         format = "mach64-macos"
@@ -85,7 +93,7 @@ function resolve(name):
 end
 
 function modules_for_platform(platform_module):
-    for name in ["linux-x86_64", "linux-arm64", "linux-riscv64", "windows-x86_64", "windows-arm64", "macos-x86_64", "macos-arm64"]:
+    for name in ["linux-x86_64", "linux-arm64", "linux-riscv64", "windows-x86_64", "windows-arm64", "macos-x86_64", "macos-arm64", "wasm32-wasi"]:
         selected = describe(name)
         if selected["platform_module"] == platform_module:
             return selected["modules"]
@@ -95,8 +103,8 @@ function modules_for_platform(platform_module):
 end
 
 function builtin_provider(name):
-    for os in ["linux", "windows", "macos"]:
-        for architecture in ["x86_64", "arm64", "riscv64"]:
+    for os in ["linux", "windows", "macos", "wasi"]:
+        for architecture in ["x86_64", "arm64", "riscv64", "wasm32"]:
             modules = provider_modules(os, architecture)
             for alias in modules:
                 module = modules[alias]

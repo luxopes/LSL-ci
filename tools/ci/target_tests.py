@@ -35,7 +35,7 @@ def build_one(compiler, target, source, output):
     host.unlink()
     if status != 0 or out != expected:
         return None
-    name = source.stem + ('.exe' if target.startswith('windows-') else '')
+    name = source.stem + ('.exe' if target.startswith('windows-') else '.wasm' if target.startswith('wasm32-') else '')
     status, _, error = run([str(compiler), '--unsafe', '--target', target, str(source), str(output / name)], 600)
     if status != 0:
         raise SystemExit(f'{source.name}: cross compile failed: {error.decode(errors="replace")[:400]}')
@@ -62,7 +62,10 @@ def run_tests(a):
         binary = directory / test['binary']
         if os.name != 'nt':
             binary.chmod(0o755)
-        status, out, error = run([str(binary)], a.timeout)
+        command = [str(binary)]
+        if manifest['target'].startswith('wasm32-'):
+            command = ['node', '--no-warnings', str(ROOT / 'tools/wasi_run.mjs'), str(binary)]
+        status, out, error = run(command, a.timeout)
         expected = (directory / test['expected']).read_bytes()
         if status == 0 and out == expected:
             print(f'ok      {test["name"]}', flush=True)

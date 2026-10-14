@@ -119,6 +119,8 @@ function rt_runtime_thread_spawn(function):
     end
     __lsl_qbe_store64(entry, tid)
     call sync.rt_runtime_table_unlock()
+    # Systém bez vláken (WASI) spustí vlákno teď, mimo zámek tabulky.
+    call os.thread_run_pending(entry)
     return tid
 end
 

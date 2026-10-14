@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Konformní testy na dalších cílech: každý tests/X.lsl s tests/X.out se
 přeloží pro cíl i pro hostitele, spustí (cizí architektura přes qemu-user
-binfmt, Windows přes wine, s --adb na připojeném zařízení Android) a výstup se
+binfmt, Windows přes wine, WebAssembly v Node s WASI, s --adb na připojeném
+zařízení Android) a výstup se
 porovná s výstupem hostitele a s X.out.
 
 Test, který bez argumentů neprojde ani na hostiteli (potřebuje argumenty,
@@ -61,6 +62,24 @@ MACOS_SKIP = {
     'x11_transport_conformance.lsl': 'Linux syscalls (socketpair)',
 }
 
+# WebAssembly s WASI preview1: bez procesů, socketů, /proc, /dev/null
+# a nativního strojového kódu.
+WASI_SKIP = {
+    'automatic_gc_conformance.lsl': 'memory from /proc/self/status',
+    'automatic_gc_threads_conformance.lsl': 'processes (run, capture)',
+    'call_statement_conformance.lsl': 'writes /dev/null',
+    'gc_bigheap_threads_conformance.lsl': 'Linux syscall (setitimer)',
+    'gc_stream_worker_conformance.lsl': '/bin/sh',
+    'language_safety_features.lsl': 'processes (system)',
+    'native_portable_conformance.lsl': 'native machine code',
+    'plugin_timeout_conformance.lsl': 'processes (plugins)',
+    'process_fork_fault_conformance.lsl': 'Linux syscalls (geteuid, prlimit)',
+    'requests_conformance.lsl': 'sockets (HTTP server)',
+    'syscall6_conformance.lsl': 'Linux syscalls',
+    'unixsock_fd_passing_conformance.lsl': 'Unix sockets',
+    'x11_transport_conformance.lsl': 'Linux syscalls (socketpair)',
+}
+
 
 def skip_reason(target, name):
     """Důvod, proč test na cíli nemá smysl, nebo None."""
@@ -68,6 +87,8 @@ def skip_reason(target, name):
         return WINDOWS_SKIP.get(name)
     if target.startswith('macos-'):
         return MACOS_SKIP.get(name)
+    if target.startswith('wasm32-'):
+        return WASI_SKIP.get(name)
     return None
 
 
@@ -91,6 +112,9 @@ def check(compiler, target, source, scratch, timeout, adb=False):
         if name.startswith('windows-'):
             binary = binary.with_name(binary.name + '.exe')
             launcher = ['wine']
+        elif name.startswith('wasm32-'):
+            binary = binary.with_name(binary.name + '.wasm')
+            launcher = ['node', '--no-warnings', str(ROOT / 'tools/wasi_run.mjs')]
         status, _, error = run([str(compiler), *extra, str(source), str(binary)], 600)
         if status != 0:
             results[name] = ('compile', error.decode(errors='replace').strip().splitlines()[:3])

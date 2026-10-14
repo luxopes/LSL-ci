@@ -1278,3 +1278,8 @@ function os_wait_exit(pid):
     end
     return 0
 end
+
+# Vlákno běží samo od thread_start; nic nečeká na spuštění.
+function thread_run_pending(entry):
+    return 0
+end

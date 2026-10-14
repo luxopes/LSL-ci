@@ -21,6 +21,10 @@ TARGETS = {
     'windows-x86_64': ('amd64_win', [], 'x86_64-w64-mingw32-as', [], 'x86_64-w64-mingw32-ld', 'windows_x86_64', 'runtime-windows-x86_64.o'),
     # Windows arm64: clang jako assembler COFF; ld.lld (MinGW) neumí -r.
     'windows-arm64': ('arm64_win', [], 'clang', ['--target=aarch64-windows-gnu', '-c', '-x', 'assembler'], None, 'windows_arm64', 'runtime-windows-arm64.o'),
+    # WebAssembly: runtime zůstává v LIR (runtime-wasm32-wasi.lir); kompilátor
+    # ho přeloží spolu s programem do jednoho modulu (vrstva architektury
+    # runtime/arch/wasi_wasm32.wat).
+    'wasm32-wasi': ('wasm32', [], None, [], None, 'wasi_wasm32', 'runtime-wasm32-wasi.lir'),
     # macOS: clang jako assembler Mach-O; ld64.lld neumí -r, proto se vrstva
     # architektury a runtime spojí už jako assembler (linker None).
     'macos-x86_64': ('amd64_apple', [], 'clang', ['-target', 'x86_64-apple-macos11', '-c', '-x', 'assembler'], None, 'macos_x86_64', 'runtime-macos-x86_64.o'),
@@ -92,6 +96,12 @@ def main():
         host_runtime.write_bytes(current)
     # 1. Runtime v LSL -> LuxIR -> objekt; vrstva architektury.
     run(build / 'lslc-runtime', '--target', a.target, 'runtime/runtime.lsl', build / 'lslrt.lir')
+    if assembler is None:
+        # Kontrola, že backend runtime přeloží; do modulu jde LIR.
+        run(backend, '-t', luxir_target, '-o', build / 'lslrt.wat', build / 'lslrt.lir')
+        shutil.copyfile(build / 'lslrt.lir', output)
+        print(f'runtime {a.target}: LSL -> {output}')
+        return
     run(backend, '-t', luxir_target, *luxir_flags, '-o', build / 'lslrt.s', build / 'lslrt.lir')
     if linker is None:
         combined = (ROOT / f'runtime/arch/{arch}.S').read_text() + '\n' + (build / 'lslrt.s').read_text()
