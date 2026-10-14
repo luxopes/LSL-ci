@@ -2970,8 +2970,10 @@ end
 function runtime_section(unit,kind,symbol):
     if unit["platform_module"].find("_macos_") >= 0:
         # Mach-O: běžné sekce, nepoužité symboly odstraní -dead_strip
-        # (.subsections_via_symbols). Konstanty jsou zatím v datech: LuxIR
-        # píše jméno sekce v uvozovkách, které assembler Mach-O nepřijme.
+        # (.subsections_via_symbols); konstanty jen pro čtení.
+        if kind == "rodata":
+            return "section \"__TEXT,__const\""
+        end
         return ""
     end
     if kind == "text":
