@@ -64,8 +64,9 @@ end
 
 # Spustí code(a1..a6) v novém procesu; argumenty jsou položky items
 # (zabalené Int). Rodiči vrátí pid a do channel_out čtecí konec roury, při
-# chybě -1. Dítě se nevrací: do roury zapíše 8 B výsledku a skončí.
-function native_sandbox_start(code, items, channel_out):
+# chybě -1. Dítě (fork) vidí obraz image v paměti rodiče, nevrací se: do
+# roury zapíše 8 B výsledku a skončí.
+function native_sandbox_start(image, size, code, items, channel_out):
     fds = __lsl_qbe_alloc(8)
     if os.pipe2(fds, platform.O_CLOEXEC) < 0:
         return -1
@@ -146,4 +147,10 @@ function native_sandbox_finish(pid, reader, result_out):
         return 0
     end
     return 1
+end
+
+# Dítě izolovaného volání na systémech bez fork (Windows, macOS) spouští
+# runtime samo sebe; na Linuxu se nepoužívá.
+function native_child_main():
+    return 0
 end

@@ -127,6 +127,26 @@ _qbe_error_clear:
 	xor %eax, %eax
 	ret
 
+# lsl_arch_call_native(kód, argumenty) -> výsledek: nativní funkce (ELF,
+# System V jako macOS) se šesti slovy z argumenty v rdi, rsi, rdx, rcx,
+# r8, r9.
+	.globl _lsl_arch_call_native
+	.p2align 4
+_lsl_arch_call_native:
+	push %rbp
+	mov %rsp, %rbp
+	mov %rdi, %rax
+	mov %rsi, %r11
+	mov 0(%r11), %rdi
+	mov 8(%r11), %rsi
+	mov 16(%r11), %rdx
+	mov 24(%r11), %rcx
+	mov 32(%r11), %r8
+	mov 40(%r11), %r9
+	call *%rax
+	pop %rbp
+	ret
+
 # Vstup programu (LC_MAIN): dyld volá main(argc, argv, envp). Argumenty
 # si uloží os_macos.process_arguments z lsl_mac_args; lsl_runtime_start
 # dostane vrchol zásobníku hlavního vlákna a nevrací se.

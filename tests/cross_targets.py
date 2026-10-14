@@ -71,8 +71,15 @@ def skip_reason(target, name):
     return None
 
 
+# Pod qemu-user (cizí architektura Linuxu bez --adb) chybí strict seccomp,
+# runtime izolované nativní volání správně odmítne.
+EMULATED_SKIP = {'native_portable_conformance.lsl': 'no seccomp in qemu-user'}
+
+
 def check(compiler, target, source, scratch, timeout, adb=False):
     reason = skip_reason(target, source.name)
+    if not reason and target in ('linux-arm64', 'linux-riscv64') and not adb:
+        reason = EMULATED_SKIP.get(source.name)
     if reason:
         return 'skip', source.name, reason
     expected = source.with_suffix('.out').read_bytes()

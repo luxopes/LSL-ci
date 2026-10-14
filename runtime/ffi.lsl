@@ -198,7 +198,8 @@ function rt_runtime_native_call(target, arguments):
     end
     channel = __lsl_qbe_alloc(8)
     result = __lsl_qbe_alloc(8)
-    pid = host.native_sandbox_start(__lsl_qbe_load64(target + 8), __lsl_qbe_load64(arguments + 24), channel)
+    library = __lsl_qbe_load64(target + 16)
+    pid = host.native_sandbox_start(__lsl_qbe_load64(library + 8), __lsl_qbe_load64(library + 16), __lsl_qbe_load64(target + 8), __lsl_qbe_load64(arguments + 24), channel)
     call sync.rt_runtime_native_unlock()
     if pid < 0 or not host.native_sandbox_finish(pid, __lsl_qbe_load64(channel), result):
         call __lsl_qbe_call1(__lsl_symbol("qbe_error_set"), "NativeError: isolated native call failed or timed out")

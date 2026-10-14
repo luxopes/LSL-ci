@@ -9,6 +9,7 @@ load _runtime_os as os
 load heap
 load threads
 load _platform as platform
+load _runtime_ffi as host
 
 STATE_BYTES = 1344
 INTERN_BYTES = 1048576
@@ -95,6 +96,8 @@ function lsl_runtime_start(stack):
         call cold_fatal_setup()
     end
     call __lsl_qbe_call2(__lsl_symbol("rt_runtime_set_global_roots"), base + STATE_BYTES, base + STATE_BYTES)
+    # Dítě izolovaného nativního volání (Windows, macOS) se nevrací.
+    call host.native_child_main()
     status = __lsl_qbe_call0(__lsl_symbol("lsl_entry"))
     return qbe_exit(status)
 end

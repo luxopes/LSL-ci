@@ -32,8 +32,8 @@ TARGETS = {
 # podle DLL. Pro Windows arm64 z nich llvm-dlltool vyrobí importní knihovny
 # (mingw-w64 v distribucích je má jen pro x86); x86_64 bere mingw-w64.
 WINDOWS_IMPORTS = {
-    'kernel32': ('kernel32.dll', '''CloseHandle CreateDirectoryW CreateFileMappingW CreateFileW CreatePipe
-        CreateProcessW CreateThread CreateTimerQueueTimer DeleteFileW DeleteTimerQueueTimer DeleteProcThreadAttributeList ExitProcess ExitThread FindClose FindFirstFileW FindNextFileW
+    'kernel32': ('kernel32.dll', '''AssignProcessToJobObject CloseHandle CreateDirectoryW CreateJobObjectW CreateFileMappingW CreateFileW CreatePipe
+        CreateProcessW CreateThread CreateTimerQueueTimer DeleteFileW DeleteTimerQueueTimer DeleteProcThreadAttributeList ExitProcess ExitThread FindClose FindFirstFileW FindNextFileW FlushInstructionCache
         FreeEnvironmentStringsW GetCommandLineW GetConsoleCP GetConsoleMode GetConsoleScreenBufferInfo
         GetCurrentProcess GetModuleHandleW GetCurrentProcessId GetCurrentThreadId GetEnvironmentStringsW GetExitCodeProcess
         GetFileAttributesW GetFileInformationByHandle GetFileType GetFinalPathNameByHandleW
@@ -41,9 +41,9 @@ WINDOWS_IMPORTS = {
         GetSystemTimePreciseAsFileTime GetTempFileNameW GetTempPathW GetThreadContext
         InitializeProcThreadAttributeList MapViewOfFile MultiByteToWideChar PeekConsoleInputW PeekNamedPipe
         QueryPerformanceCounter QueryPerformanceFrequency ReadConsoleInputW ReadConsoleW ReadFile
-        RemoveDirectoryW ResumeThread SetConsoleCP SetConsoleMode SetFilePointerEx SetHandleInformation
+        RemoveDirectoryW ResumeThread SetConsoleCP SetConsoleMode SetFilePointerEx SetHandleInformation SetInformationJobObject
         SetUnhandledExceptionFilter Sleep SuspendThread SwitchToThread TerminateProcess TlsAlloc
-        UnmapViewOfFile UpdateProcThreadAttribute VirtualAlloc VirtualFree WaitForSingleObject
+        UnmapViewOfFile UpdateProcThreadAttribute VirtualProtect VirtualAlloc VirtualFree WaitForSingleObject
         WideCharToMultiByte WriteConsoleW WriteFile'''),
     'synchronization': ('api-ms-win-core-synch-l1-2-0.dll', 'WaitOnAddress WakeByAddressAll WakeByAddressSingle'),
     'bcrypt': ('bcrypt.dll', 'BCryptGenRandom'),

@@ -148,6 +148,25 @@ _qbe_error_clear:
 	mov x0, #0
 	ret
 
+// lsl_arch_call_native(kód, argumenty) -> výsledek: nativní funkce (ELF,
+// AAPCS64) se šesti slovy z argumenty v x0-x5; x18 (platformní registr) se
+// uloží a obnoví, kdyby ho kód z Linuxu změnil.
+	.globl _lsl_arch_call_native
+	.p2align 4
+_lsl_arch_call_native:
+	stp x29, x30, [sp, #-32]!
+	mov x29, sp
+	str x18, [sp, #16]
+	mov x16, x0
+	mov x17, x1
+	ldp x0, x1, [x17]
+	ldp x2, x3, [x17, #16]
+	ldp x4, x5, [x17, #32]
+	blr x16
+	ldr x18, [sp, #16]
+	ldp x29, x30, [sp], #32
+	ret
+
 // Vstup programu (LC_MAIN): dyld volá main(argc, argv, envp). Argumenty si
 // uloží os_macos.process_arguments z lsl_mac_args; lsl_runtime_start
 // dostane vrchol zásobníku hlavního vlákna a nevrací se.

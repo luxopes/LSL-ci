@@ -27,8 +27,8 @@ exports:
                        _pthread_attr_setstacksize, _pthread_create,
                        _pthread_exit, _pthread_get_stackaddr_np,
                        _pthread_key_create, _pthread_kill, _pthread_self, _pthread_threadid_np,
-                       _read, _recv, _recvmsg, _rmdir, _sched_yield, _send, _sendmsg, _setrlimit,
-                       _setsockopt, _shutdown, _sigaction, _socket, _sysconf,
+                       _read, _recv, _recvmsg, _rmdir, _sandbox_init, _sched_yield, _send, _sendmsg, _setrlimit,
+                       _setsockopt, _shutdown, _sigaction, _socket, _sysconf, _sys_icache_invalidate,
                        _unlink, _waitpid, _write, dyld_stub_binder ]
   - targets:         [ x86_64-macos ]
     symbols:         [ '_fstat$INODE64' ]
