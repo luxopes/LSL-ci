@@ -433,6 +433,8 @@ THREAD_SELF_PUBLISH = 0
 THREAD_RESUME = 0
 # Jména proměnných prostředí rozlišují velikost písmen.
 ENV_IGNORE_CASE = 0
+# Registry zastaveného vlákna leží na jeho zásobníku (thread_registers 0).
+THREAD_REGISTER_BYTES = 0
 SIGUSR1 = 10
 
 # Blok argumentů (argc, argv, 0, prostředí, 0) předalo jádro na zásobníku.

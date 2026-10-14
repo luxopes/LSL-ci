@@ -27,12 +27,13 @@ jobs:
           build/ci/lslc1 compiler/pure/lslc_qbe.lsl build/ci/lslc
       - name: Target runtimes
         run: |
-          for target in windows-x86_64 linux-arm64 macos-x86_64 macos-arm64; do
+          for target in windows-x86_64 windows-arm64 linux-arm64 macos-x86_64 macos-arm64; do
             python3 tools/runtime/build.py --compiler build/ci/lslc --target $target --bootstrap-runtime compiler/qbe/runtime.o
           done
       - name: Test bundles
         run: |
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target windows-x86_64 --output bundle/windows-x86_64
+          python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target windows-arm64 --output bundle/windows-arm64
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target linux-arm64 --output bundle/linux-arm64
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target macos-x86_64 --output bundle/macos-x86_64
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target macos-arm64 --output bundle/macos-arm64
@@ -49,7 +50,8 @@ jobs:
       matrix:
         include:
           - {runner: windows-2025, bundle: windows-x86_64}
-          # Windows na ARM spouští x86_64 programy v emulaci (Prism).
+          # Windows na ARM: nativní arm64 a x86_64 v emulaci (Prism).
+          - {runner: windows-11-arm, bundle: windows-arm64}
           - {runner: windows-11-arm, bundle: windows-x86_64}
           - {runner: ubuntu-24.04-arm, bundle: linux-arm64}
           - {runner: macos-15, bundle: macos-arm64}

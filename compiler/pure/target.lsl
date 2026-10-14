@@ -49,6 +49,12 @@ function describe(name):
         os = "windows"
         format = "pe32plus-windows"
         available = True
+    elif name == "windows-arm64":
+        os = "windows"
+        format = "pe32plus-windows"
+        architecture = "arm64"
+        backend = "arm64"
+        available = True
     elif name == "macos-x86_64":
         os = "macos"
         format = "mach64-macos"
@@ -79,7 +85,7 @@ function resolve(name):
 end
 
 function modules_for_platform(platform_module):
-    for name in ["linux-x86_64", "linux-arm64", "linux-riscv64", "windows-x86_64", "macos-x86_64", "macos-arm64"]:
+    for name in ["linux-x86_64", "linux-arm64", "linux-riscv64", "windows-x86_64", "windows-arm64", "macos-x86_64", "macos-arm64"]:
         selected = describe(name)
         if selected["platform_module"] == platform_module:
             return selected["modules"]

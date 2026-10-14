@@ -60,3 +60,12 @@ AF_UNIX = 1
 SOCK_STREAM = 1
 UNIX_PATH_MAX = 107
 EINPROGRESS = 115
+
+# CONTEXT (GetThreadContext) pro zastavení vláken GC: příznaky, první
+# obecný registr, počet registrů a ukazatel zásobníku. AMD64: CONTEXT_AMD64
+# | CONTROL | INTEGER, Rax..R15 od 0x78, Rsp na 0x98.
+CONTEXT_FLAGS_OFFSET = 48
+CONTEXT_FLAGS_VALUE = 1048579
+CONTEXT_REGISTERS = 120
+CONTEXT_REGISTER_COUNT = 16
+CONTEXT_STACK_POINTER = 152

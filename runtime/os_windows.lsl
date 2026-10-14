@@ -18,7 +18,9 @@ ENV_IGNORE_CASE = 1
 
 THREAD_TABLE = 112
 MAIN_STACK_TOP = 120
-WIN_THREAD_BYTES = 144
+# Údaje vlákna pro GC: HANDLE a registry z CONTEXT (platforma cíle).
+WIN_THREAD_BYTES = 8 + platform.CONTEXT_REGISTER_COUNT * 8
+THREAD_REGISTER_BYTES = platform.CONTEXT_REGISTER_COUNT * 8
 STACK_BYTES = 8392704
 
 INVALID_HANDLE = -1
@@ -53,10 +55,6 @@ MEM_RELEASE = 32768
 PAGE_READWRITE = 4
 FILE_MAP_READ_WRITE = 6
 
-CONTEXT_FLAGS = 48
-CONTEXT_INTEGER_CONTROL = 1048579
-CONTEXT_RAX = 120
-CONTEXT_RSP = 152
 
 HANDLE_FLAG_INHERIT = 1
 STARTF_USESTDHANDLES = 256
@@ -1143,19 +1141,23 @@ function thread_suspend(process, entry):
     context = __lsl_symbol("lsl_win_context")
     stopped = dword(__lsl_qbe_call1(__lsl_symbol("SuspendThread"), thread)) != INFINITE
     if stopped:
-        __lsl_qbe_store32(context + CONTEXT_FLAGS, CONTEXT_INTEGER_CONTROL)
+        __lsl_qbe_store32(context + platform.CONTEXT_FLAGS_OFFSET, platform.CONTEXT_FLAGS_VALUE)
         stopped = dword(__lsl_qbe_call2(__lsl_symbol("GetThreadContext"), thread, context)) != 0
     end
     if stopped:
         index = 0
-        while index < 16:
-            __lsl_qbe_store64(data + 8 + __lsl_qbe_shl(index, 3), __lsl_qbe_load64(context + CONTEXT_RAX + __lsl_qbe_shl(index, 3)))
+        while index < platform.CONTEXT_REGISTER_COUNT:
+            __lsl_qbe_store64(data + 8 + __lsl_qbe_shl(index, 3), __lsl_qbe_load64(context + platform.CONTEXT_REGISTERS + __lsl_qbe_shl(index, 3)))
             index += 1
         end
-        __lsl_qbe_store64(entry + 24, __lsl_qbe_load64(context + CONTEXT_RSP))
+        __lsl_qbe_store64(entry + 24, __lsl_qbe_load64(context + platform.CONTEXT_STACK_POINTER))
     else:
         # Bez kontextu prázdný rozsah zásobníku; ResumeThread pak nic nemění.
-        __lsl_qbe_zero(data + 8, 128)
+        index = 0
+        while index < platform.CONTEXT_REGISTER_COUNT:
+            __lsl_qbe_store64(data + 8 + __lsl_qbe_shl(index, 3), 0)
+            index += 1
+        end
         __lsl_qbe_store64(entry + 24, __lsl_qbe_load64(entry + 8))
     end
     __lsl_qbe_store64(entry + 16, 2)

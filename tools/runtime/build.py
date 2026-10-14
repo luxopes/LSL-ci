@@ -19,11 +19,47 @@ TARGETS = {
     'linux-arm64': ('arm64', [], 'aarch64-linux-gnu-as', [], 'aarch64-linux-gnu-ld', 'linux_arm64', 'runtime-linux-arm64.o'),
     'linux-riscv64': ('rv64', ['-p'], 'riscv64-linux-gnu-as', ['-march=rv64gc'], 'riscv64-linux-gnu-ld', 'linux_riscv64', 'runtime-linux-riscv64.o'),
     'windows-x86_64': ('amd64_win', [], 'x86_64-w64-mingw32-as', [], 'x86_64-w64-mingw32-ld', 'windows_x86_64', 'runtime-windows-x86_64.o'),
+    # Windows arm64: clang jako assembler COFF; ld.lld (MinGW) neumí -r.
+    'windows-arm64': ('arm64_win', [], 'clang', ['--target=aarch64-windows-gnu', '-c', '-x', 'assembler'], None, 'windows_arm64', 'runtime-windows-arm64.o'),
     # macOS: clang jako assembler Mach-O; ld64.lld neumí -r, proto se vrstva
     # architektury a runtime spojí už jako assembler (linker None).
     'macos-x86_64': ('amd64_apple', [], 'clang', ['-target', 'x86_64-apple-macos11', '-c', '-x', 'assembler'], None, 'macos_x86_64', 'runtime-macos-x86_64.o'),
     'macos-arm64': ('arm64_apple', [], 'clang', ['-target', 'arm64-apple-macos11', '-c', '-x', 'assembler'], None, 'macos_arm64', 'runtime-macos-arm64.o'),
 }
+
+
+# Funkce Win32, které volá runtime a knihovny (stdlib/_*_windows_*.lsl),
+# podle DLL. Pro Windows arm64 z nich llvm-dlltool vyrobí importní knihovny
+# (mingw-w64 v distribucích je má jen pro x86); x86_64 bere mingw-w64.
+WINDOWS_IMPORTS = {
+    'kernel32': ('kernel32.dll', '''CloseHandle CreateDirectoryW CreateFileMappingW CreateFileW CreatePipe
+        CreateProcessW CreateThread DeleteFileW DeleteProcThreadAttributeList ExitProcess ExitThread
+        FreeEnvironmentStringsW GetCommandLineW GetConsoleCP GetConsoleMode GetConsoleScreenBufferInfo
+        GetCurrentProcess GetCurrentProcessId GetCurrentThreadId GetEnvironmentStringsW GetExitCodeProcess
+        GetFileAttributesW GetFileInformationByHandle GetFileType GetFinalPathNameByHandleW
+        GetHandleInformation GetLastError GetModuleFileNameW GetProcessAffinityMask GetStdHandle
+        GetSystemTimePreciseAsFileTime GetTempFileNameW GetTempPathW GetThreadContext
+        InitializeProcThreadAttributeList MapViewOfFile MultiByteToWideChar PeekConsoleInputW PeekNamedPipe
+        QueryPerformanceCounter QueryPerformanceFrequency ReadConsoleInputW ReadConsoleW ReadFile
+        RemoveDirectoryW ResumeThread SetConsoleCP SetConsoleMode SetFilePointerEx SetHandleInformation
+        SetUnhandledExceptionFilter Sleep SuspendThread SwitchToThread TerminateProcess TlsAlloc
+        UnmapViewOfFile UpdateProcThreadAttribute VirtualAlloc VirtualFree WaitForSingleObject
+        WideCharToMultiByte WriteConsoleW WriteFile'''),
+    'synchronization': ('api-ms-win-core-synch-l1-2-0.dll', 'WaitOnAddress WakeByAddressAll WakeByAddressSingle'),
+    'bcrypt': ('bcrypt.dll', 'BCryptGenRandom'),
+    'ws2_32': ('ws2_32.dll', '''WSAGetLastError WSAPoll WSASocketW WSAStartup accept bind closesocket
+        getsockname getsockopt listen recv send setsockopt'''),
+}
+
+
+def windows_import_libraries(directory, machine):
+    tool = shutil.which('llvm-dlltool') or sorted(pathlib.Path('/usr/lib').glob('llvm-*/bin/llvm-dlltool'))[-1]
+    directory.mkdir(parents=True, exist_ok=True)
+    for name, (dll, functions) in WINDOWS_IMPORTS.items():
+        definition = directory / f'{name}.def'
+        definition.write_text(f'LIBRARY {dll}\nEXPORTS\n' + ''.join(f'{f}\n' for f in functions.split()))
+        run(tool, '-m', machine, '-d', definition, '-l', directory / f'lib{name}.a')
+        definition.unlink()
 
 
 def main():
@@ -59,7 +95,10 @@ def main():
     run(backend, '-t', luxir_target, *luxir_flags, '-o', build / 'lslrt.s', build / 'lslrt.lir')
     if linker is None:
         combined = (ROOT / f'runtime/arch/{arch}.S').read_text() + '\n' + (build / 'lslrt.s').read_text()
-        (build / 'runtime.s').write_text(combined + '\n.subsections_via_symbols\n')
+        if a.target.startswith('macos-'):
+            # Mach-O: každý symbol ve vlastní podsekci pro -dead_strip.
+            combined += '\n.subsections_via_symbols\n'
+        (build / 'runtime.s').write_text(combined)
         run(assembler, *as_flags, '-o', build / 'runtime.o', build / 'runtime.s')
     else:
         run(assembler, *as_flags, '-o', build / 'lslrt.o', build / 'lslrt.s')
@@ -68,6 +107,8 @@ def main():
         # 2. Jeden relokovatelný objekt pro linker.
         run(linker, '-r', '-o', build / 'runtime.o', *parts)
     shutil.copyfile(build / 'runtime.o', output)
+    if a.target == 'windows-arm64':
+        windows_import_libraries(output.parent / 'windows-arm64', 'arm64')
     print(f'runtime {a.target}: LSL + arch {arch} -> {output}')
 
 

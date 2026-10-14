@@ -17,6 +17,8 @@ load core
 THREAD_SELF_PUBLISH = 1
 THREAD_RESUME = 0
 ENV_IGNORE_CASE = 0
+# Registry zastaveného vlákna leží na jeho zásobníku (thread_registers 0).
+THREAD_REGISTER_BYTES = 0
 
 THREAD_TABLE = 112
 MAIN_STACK_TOP = 120

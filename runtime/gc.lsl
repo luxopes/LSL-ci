@@ -293,7 +293,7 @@ function mark_workers():
             # zásobník (Windows: kontext z GetThreadContext).
             registers = os.thread_registers(entry)
             if registers != 0:
-                call mark_range(registers, registers + 128)
+                call mark_range(registers, registers + os.THREAD_REGISTER_BYTES)
             end
         elif status == 3:
             # Spuštěné vlákno, které se ještě nezveřejnilo: jeho funkce.
