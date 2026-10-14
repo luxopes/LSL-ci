@@ -14,3 +14,6 @@ __pycache__/
 
 # Offline manuals are an export of the pinned LuxAI/LSL-Web dependency.
 docs/developer_guides
+
+# Runtime pro WebAssembly (LIR) vzniká v tools/runtime/build.py.
+compiler/qbe/runtime-wasm32-wasi.lir
