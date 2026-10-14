@@ -60,6 +60,17 @@ lsl_arch_pause:
 	pause
 	ret
 
+# lsl_arch_sqrt(bity) -> bity: odmocnina binary64 zaokrouhlená podle IEEE 754
+# (LuxIR nemá instrukci odmocniny). arm64: fmov d0, x0; fsqrt d0, d0;
+# fmov x0, d0. rv64: fmv.d.x fa0, a0; fsqrt.d fa0, fa0; fmv.x.d a0, fa0.
+	.globl lsl_arch_sqrt
+	.p2align 4
+lsl_arch_sqrt:
+	movq %rdi, %xmm0
+	sqrtsd %xmm0, %xmm0
+	movq %xmm0, %rax
+	ret
+
 # lsl_arch_spill(buffer) -> ukazatel zásobníku volajícího. Uloží callee-saved
 # registry (rbx, rbp, r12-r15) do bufferu, aby je konzervativní GC viděl.
 	.globl lsl_arch_spill

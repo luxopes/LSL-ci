@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-"""Sestaví runtime LSL: část v LSL (runtime/*.lsl) a zbývající x86 emitory.
+"""Sestaví runtime LSL pro cíl: runtime/*.lsl přes LuxIR a tenkou vrstvu
+architektury runtime/arch/<cíl>.S do jednoho relokovatelného objektu.
 
-Během přepisu do LSL obsahuje compiler/qbe/runtime.o obě části. Rutiny,
-které už definuje runtime v LSL (rt_runtime_*), nemají x86 můstek.
-
-Použití: build.py --compiler LSLC [--output compiler/qbe/runtime.o]
+Použití: build.py --compiler LSLC [--target linux-x86_64] [--output OBJEKT]
 """
 import argparse, pathlib, subprocess, shutil
 
@@ -47,8 +45,6 @@ def main():
     shutil.copyfile(a.bootstrap_runtime.resolve(), host_runtime)
     try:
         run(compiler, 'compiler/pure/lslc_runtime.lsl', build / 'lslc-runtime')
-        if a.target == 'linux-x86_64':
-            run(compiler, 'compiler/pure/qbe_runtime_dump.lsl', build / 'runtime-dump')
     finally:
         host_runtime.write_bytes(current)
     # 1. Runtime v LSL -> LuxIR -> objekt; vrstva architektury.
@@ -57,22 +53,10 @@ def main():
     run(assembler, *as_flags, '-o', build / 'lslrt.o', build / 'lslrt.s')
     run(assembler, *as_flags, '-o', build / 'arch.o', f'runtime/arch/{arch}.S')
     parts = [build / 'lslrt.o', build / 'arch.o']
-    replaced = []
-    if a.target == 'linux-x86_64':
-        symbols = subprocess.run(['nm', '-g', '--defined-only', str(build / 'lslrt.o'), str(build / 'arch.o')],
-                                 capture_output=True, text=True, check=True).stdout.split()
-        # Rozhraní, které už dodává LSL nebo vrstva architektury: x86 část ho
-        # negeneruje (můstky, vstup _start, chybové funkce, lsl_state).
-        replaced = sorted(set(n for n in symbols if n.startswith('rt_runtime_') or n.startswith('qbe_') or n in ('_start', 'lsl_state')))
-        (build / 'replaced.txt').write_text('\n'.join(replaced) + '\n')
-        # 2. Zbývající x86 emitory bez nahrazených můstků.
-        run(build / 'runtime-dump', build / 'x86')
-        run('python3', 'tools/qbe/runtime_object.py', build / 'x86', build / 'replaced.txt')
-        parts.insert(0, build / 'x86.o')
-    # 3. Jeden relokovatelný objekt pro linker.
+    # 2. Jeden relokovatelný objekt pro linker.
     run(linker, '-r', '-o', build / 'runtime.o', *parts)
     shutil.copyfile(build / 'runtime.o', output)
-    print(f'runtime {a.target}: {len(replaced) or "all"} routines from LSL -> {output}')
+    print(f'runtime {a.target}: LSL + arch {arch} -> {output}')
 
 
 if __name__ == '__main__':

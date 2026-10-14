@@ -26,3 +26,7 @@ load strops
 load lists
 load tables
 load report
+load floats
+load anyops
+load floatparse
+load floatarray

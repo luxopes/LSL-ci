@@ -71,6 +71,15 @@ lsl_arch_pause:
 	yield
 	ret
 
+// lsl_arch_sqrt(bity) -> bity: odmocnina binary64 podle IEEE 754.
+	.globl lsl_arch_sqrt
+	.p2align 4
+lsl_arch_sqrt:
+	fmov d0, x0
+	fsqrt d0, d0
+	fmov x0, d0
+	ret
+
 // lsl_arch_spill(buffer 96 B) -> ukazatel zásobníku volajícího; uloží
 // callee-saved registry x19-x29 pro konzervativní GC.
 	.globl lsl_arch_spill

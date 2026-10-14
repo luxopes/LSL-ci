@@ -58,6 +58,15 @@ lsl_arch_pause:
 	nop
 	ret
 
+# lsl_arch_sqrt(bity) -> bity: odmocnina binary64 podle IEEE 754.
+	.globl lsl_arch_sqrt
+	.p2align 4
+lsl_arch_sqrt:
+	fmv.d.x fa0, a0
+	fsqrt.d fa0, fa0
+	fmv.x.d a0, fa0
+	ret
+
 # lsl_arch_spill(buffer 96 B) -> ukazatel zásobníku volajícího; uloží s0-s11.
 	.globl lsl_arch_spill
 	.p2align 4
