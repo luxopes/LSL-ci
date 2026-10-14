@@ -17,3 +17,6 @@ docs/developer_guides
 
 # Runtime pro WebAssembly (LIR) vzniká v tools/runtime/build.py.
 compiler/qbe/runtime-wasm32-wasi.lir
+
+# Runtime pro bare metal (objekt) vzniká v tools/runtime/build.py.
+compiler/qbe/runtime-baremetal-riscv64.o

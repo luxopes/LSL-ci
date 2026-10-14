@@ -63,6 +63,14 @@ function describe(name):
         architecture = "wasm32"
         backend = "wasm32"
         available = True
+    elif name == "baremetal-riscv64":
+        # Bez operačního systému (M-mód, deska qemu virt): obraz ELF od
+        # 0x80000000, vstup a výstup přes semihosting nebo UART.
+        os = "baremetal"
+        format = "elf"
+        architecture = "riscv64"
+        backend = "rv64"
+        available = True
     elif name == "macos-x86_64":
         os = "macos"
         format = "mach64-macos"
@@ -93,7 +101,7 @@ function resolve(name):
 end
 
 function modules_for_platform(platform_module):
-    for name in ["linux-x86_64", "linux-arm64", "linux-riscv64", "windows-x86_64", "windows-arm64", "macos-x86_64", "macos-arm64", "wasm32-wasi"]:
+    for name in ["linux-x86_64", "linux-arm64", "linux-riscv64", "windows-x86_64", "windows-arm64", "macos-x86_64", "macos-arm64", "wasm32-wasi", "baremetal-riscv64"]:
         selected = describe(name)
         if selected["platform_module"] == platform_module:
             return selected["modules"]
@@ -103,7 +111,7 @@ function modules_for_platform(platform_module):
 end
 
 function builtin_provider(name):
-    for os in ["linux", "windows", "macos", "wasi"]:
+    for os in ["linux", "windows", "macos", "wasi", "baremetal"]:
         for architecture in ["x86_64", "arm64", "riscv64", "wasm32"]:
             modules = provider_modules(os, architecture)
             for alias in modules:

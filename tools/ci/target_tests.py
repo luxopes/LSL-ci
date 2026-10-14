@@ -65,6 +65,8 @@ def run_tests(a):
         command = [str(binary)]
         if manifest['target'].startswith('wasm32-'):
             command = ['node', '--no-warnings', str(ROOT / 'tools/wasi_run.mjs'), str(binary)]
+        elif manifest['target'].startswith('baremetal-'):
+            command = [sys.executable, str(ROOT / 'tools/baremetal_run.py'), str(binary)]
         status, out, error = run(command, a.timeout)
         expected = (directory / test['expected']).read_bytes()
         if status == 0 and out == expected:

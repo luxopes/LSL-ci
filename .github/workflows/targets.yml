@@ -1,5 +1,6 @@
 # Testy cílů na skutečných strojích (Windows, Linux arm64, macOS Apple
-# Silicon a Intel) a ve WebAssembly (Node s WASI). Ubuntu x86_64 sestaví kompilátor ze
+# Silicon a Intel), ve WebAssembly (Node s WASI) a na bare metal RISC-V
+# (qemu-system). Ubuntu x86_64 sestaví kompilátor ze
 # zabaleného bootstrapu (compiler/pure/lslc-qbe), runtime cílů a přeloží
 # konformní testy; stroje cíle je spustí a porovnají s tests/*.out.
 name: targets
@@ -17,7 +18,7 @@ jobs:
       - name: Cross binutils
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq binutils-mingw-w64-x86-64 mingw-w64-x86-64-dev binutils-aarch64-linux-gnu clang lld wabt
+          sudo apt-get install -y -qq binutils-mingw-w64-x86-64 mingw-w64-x86-64-dev binutils-aarch64-linux-gnu binutils-riscv64-linux-gnu clang lld wabt
           # Linker Mach-O (macOS) z LLVM pod jménem, které hledá kompilátor.
           sudo ln -sf $(ls /usr/lib/llvm-*/bin/ld64.lld | sort -V | tail -1) /usr/bin/ld64.lld
       - name: Compiler from the bootstrap
@@ -27,7 +28,7 @@ jobs:
           build/ci/lslc1 compiler/pure/lslc_qbe.lsl build/ci/lslc
       - name: Target runtimes
         run: |
-          for target in windows-x86_64 windows-arm64 linux-arm64 macos-x86_64 macos-arm64 wasm32-wasi; do
+          for target in windows-x86_64 windows-arm64 linux-arm64 macos-x86_64 macos-arm64 wasm32-wasi baremetal-riscv64; do
             python3 tools/runtime/build.py --compiler build/ci/lslc --target $target --bootstrap-runtime compiler/qbe/runtime.o
           done
       - name: Test bundles
@@ -38,6 +39,7 @@ jobs:
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target macos-x86_64 --output bundle/macos-x86_64
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target macos-arm64 --output bundle/macos-arm64
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target wasm32-wasi --output bundle/wasm32-wasi
+          python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target baremetal-riscv64 --output bundle/baremetal-riscv64
           for target in macos-x86_64 macos-arm64; do
             build/ci/lslc --target $target tools/ci/tls_serve.lsl bundle/$target/tls-serve
             build/ci/lslc --target $target tools/ci/sandbox_check.lsl bundle/$target/sandbox-check
@@ -65,6 +67,8 @@ jobs:
           - {runner: macos-15-intel, bundle: macos-x86_64}
           # WebAssembly v Node (WASI preview1).
           - {runner: ubuntu-24.04, bundle: wasm32-wasi}
+          # Bare metal RISC-V v qemu-system (deska virt, semihosting).
+          - {runner: ubuntu-24.04, bundle: baremetal-riscv64}
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
@@ -75,6 +79,9 @@ jobs:
         if: matrix.bundle == 'wasm32-wasi'
         with:
           node-version: '24'
+      - name: Install qemu-system-riscv64
+        if: matrix.bundle == 'baremetal-riscv64'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq qemu-system-misc
       - uses: actions/download-artifact@v4
         with:
           name: bundles

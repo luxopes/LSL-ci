@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Konformní testy na dalších cílech: každý tests/X.lsl s tests/X.out se
 přeloží pro cíl i pro hostitele, spustí (cizí architektura přes qemu-user
-binfmt, Windows přes wine, WebAssembly v Node s WASI, s --adb na připojeném
-zařízení Android) a výstup se
+binfmt, Windows přes wine, WebAssembly v Node s WASI, bare metal v qemu-system
+se semihostingem, s --adb na připojeném zařízení Android) a výstup se
 porovná s výstupem hostitele a s X.out.
 
 Test, který bez argumentů neprojde ani na hostiteli (potřebuje argumenty,
@@ -80,6 +80,23 @@ WASI_SKIP = {
     'x11_transport_conformance.lsl': 'Linux syscalls (socketpair)',
 }
 
+# Bare metal: bez procesů, socketů, systémových volání a nativního kódu;
+# /proc by četl stav qemu na hostiteli.
+BAREMETAL_SKIP = {
+    'automatic_gc_conformance.lsl': 'memory from /proc/self/status',
+    'automatic_gc_threads_conformance.lsl': 'processes (run, capture)',
+    'gc_bigheap_threads_conformance.lsl': 'Linux syscall (setitimer)',
+    'gc_stream_worker_conformance.lsl': '/bin/sh',
+    'language_safety_features.lsl': 'processes (system)',
+    'native_portable_conformance.lsl': 'native machine code',
+    'plugin_timeout_conformance.lsl': 'processes (plugins)',
+    'process_fork_fault_conformance.lsl': 'Linux syscalls (geteuid, prlimit)',
+    'requests_conformance.lsl': 'sockets (HTTP server)',
+    'syscall6_conformance.lsl': 'Linux syscalls',
+    'unixsock_fd_passing_conformance.lsl': 'Unix sockets',
+    'x11_transport_conformance.lsl': 'Linux syscalls (socketpair)',
+}
+
 
 def skip_reason(target, name):
     """Důvod, proč test na cíli nemá smysl, nebo None."""
@@ -89,6 +106,8 @@ def skip_reason(target, name):
         return MACOS_SKIP.get(name)
     if target.startswith('wasm32-'):
         return WASI_SKIP.get(name)
+    if target.startswith('baremetal-'):
+        return BAREMETAL_SKIP.get(name)
     return None
 
 
@@ -115,6 +134,8 @@ def check(compiler, target, source, scratch, timeout, adb=False):
         elif name.startswith('wasm32-'):
             binary = binary.with_name(binary.name + '.wasm')
             launcher = ['node', '--no-warnings', str(ROOT / 'tools/wasi_run.mjs')]
+        elif name.startswith('baremetal-'):
+            launcher = [sys.executable, str(ROOT / 'tools/baremetal_run.py')]
         status, _, error = run([str(compiler), *extra, str(source), str(binary)], 600)
         if status != 0:
             results[name] = ('compile', error.decode(errors='replace').strip().splitlines()[:3])
