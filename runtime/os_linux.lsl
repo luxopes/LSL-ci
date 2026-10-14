@@ -498,3 +498,8 @@ end
 function thread_registers(entry):
     return 0
 end
+
+# Začátek haldy: navržená adresa (1 GiB za obrazem programu).
+function heap_base(hint):
+    return hint
+end

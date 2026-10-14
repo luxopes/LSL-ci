@@ -245,3 +245,8 @@ _lsl_arch_fstat:
 	.globl _lsl_tls_slot
 	.zerofill __DATA,__bss,_lsl_mac_args,24,3
 	.globl _lsl_mac_args
+// Rezervace haldy (+0 začátek, +8 konec) a pthread_t vláken tabulky.
+	.zerofill __DATA,__bss,_lsl_mac_heap,16,3
+	.globl _lsl_mac_heap
+	.zerofill __DATA,__bss,_lsl_mac_threads,1024,3
+	.globl _lsl_mac_threads

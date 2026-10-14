@@ -1180,3 +1180,8 @@ end
 function tgkill(process, thread, signal):
     return 0 - platform.ENOSYS
 end
+
+# Začátek haldy: navržená adresa (1 GiB za obrazem programu).
+function heap_base(hint):
+    return hint
+end

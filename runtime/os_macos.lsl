@@ -139,9 +139,35 @@ function map_anonymous(size, extra_flags):
     return mmap(0, size, 3, MAC_MAP_PRIVATE | MAC_MAP_ANON, -1, 0)
 end
 
-# Paměť přesně na adrese (adresa je nápověda, výsledek se porovná):
-# 1 = hotovo, 0 = místo je obsazené.
+# Začátek haldy. mmap bere adresu jen jako nápovědu a na arm64 by halda
+# rychle narazila na sdílenou cache dyld, proto se adresní prostor haldy
+# (HEAP_RESERVE) vyhradí předem bez přístupu; map_at v něm jen zpřístupní
+# stránky (mprotect). Rezervace: lsl_mac_heap +0 začátek, +8 konec. Když
+# se nepovede, platí navržená adresa jako na Linuxu.
+HEAP_RESERVE = 68719476736
+HEAP_ALIGN = 65536
+
+function heap_base(hint):
+    reserved = mmap(0, HEAP_RESERVE + HEAP_ALIGN, 0, MAC_MAP_PRIVATE | MAC_MAP_ANON, -1, 0)
+    if reserved < 0:
+        return hint
+    end
+    start = (reserved + HEAP_ALIGN - 1) & -HEAP_ALIGN
+    region = __lsl_symbol("lsl_mac_heap")
+    __lsl_qbe_store64(region, start)
+    __lsl_qbe_store64(region + 8, start + HEAP_RESERVE)
+    return start
+end
+
+# Paměť přesně na adrese: 1 = hotovo, 0 = místo je obsazené. Uvnitř
+# rezervace haldy mprotect, jinak mmap s adresou jako nápovědou (výsledek
+# se porovná).
 function map_at(address, size):
+    region = __lsl_symbol("lsl_mac_heap")
+    start = __lsl_qbe_load64(region)
+    if start != 0 and not __lsl_qbe_ult(address, start) and not __lsl_qbe_ult(__lsl_qbe_load64(region + 8), address + size):
+        return mprotect(address, size, 3) == 0
+    end
     result = mmap(address, size, 3, MAC_MAP_PRIVATE | MAC_MAP_ANON, -1, 0)
     if result == address:
         return 1
@@ -314,9 +340,19 @@ function getpid():
     return int32(__lsl_qbe_call0(__lsl_symbol("getpid")))
 end
 
-# Identita vlákna = pthread_t (pthread_kill ho potřebuje pro zastavení GC).
+# Identita vlákna: systémově jedinečné ID (pthread_threadid_np). pthread_t
+# nestačí: macOS ho po skončení vlákna hned přidělí dalšímu.
 function gettid():
-    return __lsl_qbe_call0(__lsl_symbol("pthread_self"))
+    identifier = __lsl_qbe_alloc(8)
+    __lsl_qbe_store64(identifier, 0)
+    call __lsl_qbe_call2(__lsl_symbol("pthread_threadid_np"), 0, identifier)
+    return __lsl_qbe_load64(identifier)
+end
+
+# pthread_t vlákna položky (pro pthread_kill) v lsl_mac_threads.
+function thread_handle(entry):
+    index = __lsl_qbe_lshr(entry - __lsl_qbe_load64(core.state() + THREAD_TABLE) - 8, 6)
+    return __lsl_symbol("lsl_mac_threads") + __lsl_qbe_shl(index, 3)
 end
 
 function sched_yield():
@@ -595,7 +631,8 @@ function thread_stack(top, size, guard):
     return 0
 end
 
-# Volá se pod zámkem tabulky vláken. tid = pthread_t.
+# Volá se pod zámkem tabulky vláken: vlákno se zveřejní až po uložení
+# pthread_t. tid = jedinečné ID vlákna.
 function thread_start(entry, top, function):
     attributes = __lsl_qbe_alloc(128)
     thread = __lsl_qbe_alloc(8)
@@ -610,7 +647,11 @@ function thread_start(entry, top, function):
     if result != 0:
         return -1
     end
-    return __lsl_qbe_load64(thread)
+    __lsl_qbe_store64(thread_handle(entry), __lsl_qbe_load64(thread))
+    identifier = __lsl_qbe_alloc(8)
+    __lsl_qbe_store64(identifier, 0)
+    call __lsl_qbe_call2(__lsl_symbol("pthread_threadid_np"), __lsl_qbe_load64(thread), identifier)
+    return __lsl_qbe_load64(identifier)
 end
 
 # Konec vlákna: stav 1 -> 0 a probudit čekající join. Když GC vlákno právě
@@ -627,7 +668,7 @@ end
 # Zastavení pro GC: SIGUSR1 (obsluha lsl_thread_signal uloží registry
 # na zásobník vlákna a uspí se na bráně GC, jako na Linuxu).
 function thread_suspend(process, entry):
-    return int32(__lsl_qbe_call2(__lsl_symbol("pthread_kill"), __lsl_qbe_load64(entry) & 9223372036854775807, MAC_SIGUSR1))
+    return int32(__lsl_qbe_call2(__lsl_symbol("pthread_kill"), __lsl_qbe_load64(thread_handle(entry)), MAC_SIGUSR1))
 end
 
 function thread_resume(entry):

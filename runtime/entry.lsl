@@ -41,7 +41,7 @@ end
 
 # Volá _start s vrcholem zásobníku hlavního vlákna (Linux: ukazatel na argc).
 function lsl_runtime_start(stack):
-    base = (__lsl_symbol("lsl_state") + HEAP_GAP) & -heap.COMMIT_GRAIN
+    base = os.heap_base((__lsl_symbol("lsl_state") + HEAP_GAP) & -heap.COMMIT_GRAIN)
     attempt = 0
     while os.map_at(base, heap.COMMIT_GRAIN) == 0:
         attempt += 1
