@@ -1,0 +1,41 @@
+# Dočasná sonda: Mach-O sestavené na Linuxu (clang, ld64.lld, stub
+# libSystem.tbd) spuštěné na skutečném macOS (Apple Silicon a Intel).
+name: macos-probe
+
+on:
+  push:
+    branches: ['work/macos-*']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq lld clang
+      - run: |
+          cd tools/ci/macos-probe
+          clang -target arm64-apple-macos11 -c a64.s -o a64.o
+          clang -target x86_64-apple-macos11 -c x64.s -o x64.o
+          ld64.lld -arch arm64 -platform_version macos 11.0 11.0 -L. -lSystem -o hello-arm64 a64.o
+          ld64.lld -arch x86_64 -platform_version macos 11.0 11.0 -L. -lSystem -o hello-x86_64 x64.o
+      - uses: actions/upload-artifact@v4
+        with:
+          name: probe
+          path: tools/ci/macos-probe/hello-*
+
+  run:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-15, macos-15-intel]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: probe
+      - run: |
+          uname -a; sw_vers
+          chmod +x hello-*
+          ./hello-$(uname -m)
