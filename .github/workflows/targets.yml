@@ -80,8 +80,6 @@ jobs:
           b="$GITHUB_WORKSPACE/bundle/${{ matrix.bundle }}"
           chmod +x "$b/sandbox-check" "$b/sandbox-child"
           "$b/sandbox-check" "$b/sandbox-child" "$(mktemp -d)" | tee sandbox.txt
-          # Zamítnutí Seatbelt (diagnostika při selhání).
-          log show --style compact --last 3m --predicate 'sender == "Sandbox" OR eventMessage CONTAINS[c] "deny"' 2>/dev/null | grep -i "deny" | grep -v "grep" | tail -40 || true
           for line in "available True" "input hello" "secret readable False" "profile strict" "status 0" "output written" "timeout 124"; do
             grep -qx "$line" sandbox.txt || { echo "missing: $line"; exit 1; }
           done
