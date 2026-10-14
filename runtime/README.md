@@ -39,6 +39,15 @@ Rozdíly, které řeší vrstva OS:
 Program se linkuje jako konzolový PE (`x86_64-w64-mingw32-ld`, ASLR, DEP,
 zásobník 8 MiB celý zpřístupněný: LuxIR na Windows nesonduje zásobník).
 
+## Testy na dalších cílech
+
+- `tests/cross_targets.py --compiler LSLC --target T` přeloží každý
+  samostatný test pro cíl a porovná ho s hostitelem (arm64 a riscv64 přes
+  qemu-user, Windows přes wine, `--adb` na připojeném zařízení Android).
+- `.github/workflows/targets.yml` (zrcadlo na GitHubu) spustí testy na
+  skutečných strojích: Windows x64, Windows na ARM a Linux arm64
+  (`tools/ci/target_tests.py`).
+
 ## Přechod z x86 emitorů
 
 Dříve byl runtime strojový kód x86-64 generovaný emitory
