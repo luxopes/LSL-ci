@@ -2976,14 +2976,20 @@ function runtime_section(unit,kind,symbol):
         end
         return ""
     end
-    if kind == "text":
-        return "section \".text."+symbol+"\""
-    end
     if unit["platform_module"].find("_windows_") >= 0:
+        # PE: skupiny .text$ a .rdata$ linker sloučí; příznaky COFF výslovně
+        # (x kód, r čtení, w zápis, d data): assembler LLVM pro arm64 by
+        # sekci .text.<symbol> bez příznaků vzal jako data.
+        if kind == "text":
+            return "section \".text$"+symbol+"\" \"xr\""
+        end
         if kind == "rodata":
             return "section \".rdata$"+symbol+"\" \"dr\""
         end
         return "section \".data$"+symbol+"\" \"dw\""
+    end
+    if kind == "text":
+        return "section \".text."+symbol+"\""
     end
     return "section \"."+kind+"."+symbol+"\""
 end
