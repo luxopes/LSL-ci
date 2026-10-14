@@ -11,6 +11,9 @@ if directory.endswith("/"):
 end
 path = directory + "/lsl-us-" + String(random.randint(100000000, 999999999))
 server = unixsock.listen_unix(path, 4)
+if server < 0:
+    Error(TestFailure: "listen_unix failed: " + String(server))
+end
 client = fd.connect_unix(path)
 peer = -11
 while peer < 0:

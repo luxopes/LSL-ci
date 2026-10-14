@@ -76,17 +76,20 @@ jobs:
         if: startsWith(matrix.bundle, 'macos') || matrix.runner == 'windows-2025'
         shell: bash
         run: |
+          set -x
           case "${{ matrix.bundle }}" in
-            macos-*) brew install nginx >/dev/null; serve=tls-serve;;
-            *) choco install nginx -y --no-progress >/dev/null; serve=tls-serve.exe;;
+            macos-*) brew install nginx; serve=tls-serve;;
+            *) choco install nginx -y --no-progress; serve=tls-serve.exe;;
           esac
+          command -v nginx openssl curl || true
           cd "$RUNNER_TEMP"
           openssl req -x509 -newkey rsa:2048 -nodes -keyout key.pem -out cert.pem -days 1 -subj /CN=localhost 2>/dev/null
           mkdir -p www && echo "lsl https" > www/index.html
           chmod +x "$GITHUB_WORKSPACE/bundle/${{ matrix.bundle }}/$serve"
-          "$GITHUB_WORKSPACE/bundle/${{ matrix.bundle }}/$serve" www 18443 cert.pem key.pem &
+          "$GITHUB_WORKSPACE/bundle/${{ matrix.bundle }}/$serve" www 18443 cert.pem key.pem > server.log 2>&1 &
           server=$!
           for i in $(seq 1 30); do curl -sk https://127.0.0.1:18443/index.html > got.txt && break; sleep 1; done
           kill $server || true
+          cat server.log
           cat got.txt
           grep -qx "lsl https" got.txt
