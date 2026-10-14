@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 """Konformní testy na dalších cílech: každý tests/X.lsl s tests/X.out se
 přeloží pro cíl i pro hostitele, spustí (cizí architektura přes qemu-user
-binfmt, Windows přes wine) a výstup se porovná s výstupem hostitele a s X.out.
+binfmt, Windows přes wine, s --adb na připojeném zařízení Android) a výstup se
+porovná s výstupem hostitele a s X.out.
 
 Test, který bez argumentů neprojde ani na hostiteli (potřebuje argumenty,
 vstup nebo prostředí test_runneru), se hlásí zvlášť jako "host-only".
 
-Použití: cross_targets.py --compiler LSLC --target linux-arm64|windows-x86_64 [-j N] [TEST...]
+Použití: cross_targets.py --compiler LSLC --target linux-arm64|windows-x86_64 [--adb] [-j N] [TEST...]
 """
 import argparse, concurrent.futures, os, pathlib, subprocess, sys, tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+# Pracovní adresář testů na zařízení Android (adb shell smí spouštět odtud).
+ADB_DIRECTORY = '/data/local/tmp/lsl-cross'
 
 
 def run(command, timeout):
@@ -36,7 +39,17 @@ WINDOWS_SKIP = {
 }
 
 
-def check(compiler, target, source, scratch, timeout):
+def run_adb(binary, timeout):
+    """Spustí program na zařízení (adb shell vrací stdout, stderr i kód)."""
+    remote = f'{ADB_DIRECTORY}/{binary.name}'
+    status, _, error = run(['adb', 'push', str(binary), remote], 120)
+    if status != 0:
+        return 'adb', b'', error
+    result = run(['adb', 'shell', f'cd {ADB_DIRECTORY} && chmod 700 {binary.name} && ./{binary.name}; status=$?; rm -f {binary.name}; exit $status'], timeout)
+    return result
+
+
+def check(compiler, target, source, scratch, timeout, adb=False):
     if target.startswith('windows-') and source.name in WINDOWS_SKIP:
         return 'skip', source.name, WINDOWS_SKIP[source.name]
     expected = source.with_suffix('.out').read_bytes()
@@ -52,7 +65,10 @@ def check(compiler, target, source, scratch, timeout):
         if status != 0:
             results[name] = ('compile', error.decode(errors='replace').strip().splitlines()[:3])
             continue
-        status, out, error = run([*launcher, str(binary)], timeout)
+        if adb and name == target:
+            status, out, error = run_adb(binary, timeout)
+        else:
+            status, out, error = run([*launcher, str(binary)], timeout)
         results[name] = (status, out, error)
     host, cross = results['host'], results[target]
     if host[0] == 'compile' or host[1] != expected:
@@ -71,13 +87,16 @@ def main():
     ap.add_argument('--target', required=True)
     ap.add_argument('-j', type=int, default=os.cpu_count())
     ap.add_argument('--timeout', type=int, default=300)
+    ap.add_argument('--adb', action='store_true', help='spouštět cíl na zařízení přes adb')
     ap.add_argument('tests', nargs='*')
     a = ap.parse_args()
     sources = [ROOT / t for t in a.tests] if a.tests else sorted(p for p in (ROOT / 'tests').glob('*.lsl') if p.with_suffix('.out').exists())
     counts = {}
+    if a.adb:
+        run(['adb', 'shell', f'mkdir -p {ADB_DIRECTORY}'], 60)
     with tempfile.TemporaryDirectory(prefix='lsl-cross-') as scratch:
         with concurrent.futures.ThreadPoolExecutor(a.j) as pool:
-            jobs = [pool.submit(check, a.compiler.resolve(), a.target, s, pathlib.Path(scratch), a.timeout) for s in sources]
+            jobs = [pool.submit(check, a.compiler.resolve(), a.target, s, pathlib.Path(scratch), a.timeout, a.adb) for s in sources]
             for job in jobs:
                 verdict, name, detail = job.result()
                 counts[verdict] = counts.get(verdict, 0) + 1
