@@ -142,6 +142,8 @@ function seatbelt_profile(program, checked):
     rules += "(allow signal (target self))"
     rules += "(allow sysctl-read)"
     rules += "(allow file-read-metadata)"
+    # Jen výpis kořene (env ho při startu čte), nic pod ním.
+    rules += "(allow file-read-data (literal \"/\"))"
     rules += "(allow file-read* (literal " + quoted(program) + ") (literal \"/usr/bin/env\") (subpath \"/usr/lib\") (subpath \"/System\") (subpath \"/private/var/db/dyld\") (subpath \"/private/preboot/Cryptexes\") (literal \"/dev/null\") (literal \"/dev/random\") (literal \"/dev/urandom\") (literal \"/dev/zero\"))"
     rules += "(allow file-write-data (literal \"/dev/null\"))"
     for path in checked["read"]:
