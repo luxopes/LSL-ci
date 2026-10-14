@@ -20,3 +20,7 @@ load numbers
 load processes
 load text
 load io
+load floats
+load anyops
+load floatparse
+load floatarray

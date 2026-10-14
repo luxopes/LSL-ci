@@ -7,7 +7,7 @@ ho přeloží pro každý cíl. Pro každou platformu se liší jen dvě tenké 
 
 | Vrstva | Soubor | Obsah |
 |---|---|---|
-| architektura | `arch/<os>_<cpu>.S` | instrukce CPU, které LuxIR nemá: `syscall`, nastavení thread pointeru, vstup vlákna, návrat ze signálu |
+| architektura | `arch/<os>_<cpu>.S` | instrukce CPU, které LuxIR nemá: `syscall`, odmocnina (`lsl_arch_sqrt`), nastavení thread pointeru, vstup vlákna, návrat ze signálu |
 | operační systém | `os_<os>.lsl` | soubory, procesy, paměť, čas přes rozhraní systému (Linux syscalls, Win32) |
 
 Všechno ostatní je společné. Obecný kód (buffery, `readfile`, procesy…)
