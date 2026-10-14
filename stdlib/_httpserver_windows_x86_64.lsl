@@ -673,7 +673,8 @@ function serve_static_tls(root, address, port, certificate, private_key, maximum
     config += "    ssl_session_tickets off;" + chr(10)
     config += "    root " + nginx_quote(root_path) + ";" + chr(10)
     config += "    autoindex off;" + chr(10)
-    config += "    disable_symlinks on from=$document_root;" + chr(10)
+    # disable_symlinks nginx pro Windows nemá; odkazy v kořeni webu tak na
+    # Windows nehlídá (vytvořit je smí jen správce nebo vývojářský režim).
     config += "    add_header X-Content-Type-Options nosniff always;" + chr(10)
     config += "    add_header Referrer-Policy no-referrer always;" + chr(10)
     config += "    if ($request_method !~ ^(GET|HEAD)$) { return 405; }" + chr(10)
