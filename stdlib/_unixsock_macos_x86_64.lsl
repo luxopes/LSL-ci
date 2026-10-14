@@ -183,7 +183,7 @@ end
 # Returns the descriptor, or a negative errno.
 function listen_unix(path, backlog):
     p = socket_path(path)
-    s = checked(__lsl_qbe_call3(__lsl_symbol("socket"), AF_UNIX, SOCK_STREAM, 0))
+    s = Int(checked(__lsl_qbe_call3(__lsl_symbol("socket"), AF_UNIX, SOCK_STREAM, 0)))
     if s < 0:
         return s
     end
@@ -248,7 +248,7 @@ end
 
 # Accept one pending connection; -11 (EAGAIN) when none is waiting.
 function accept_unix(server):
-    client = checked(__lsl_qbe_call3(__lsl_symbol("accept"), Int(server), 0, 0))
+    client = Int(checked(__lsl_qbe_call3(__lsl_symbol("accept"), Int(server), 0, 0)))
     if client >= 0:
         call prepare(client)
     end
@@ -291,7 +291,7 @@ function memfd(name, size):
         call template.append(ord(character))
     end
     call template.append(0)
-    h = checked(__lsl_qbe_call2(__lsl_symbol("mkostemp"), u_address(template), O_CLOEXEC))
+    h = Int(checked(__lsl_qbe_call2(__lsl_symbol("mkostemp"), u_address(template), O_CLOEXEC)))
     if h < 0:
         return h
     end

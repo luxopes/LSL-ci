@@ -83,7 +83,8 @@ jobs:
           esac
           command -v nginx openssl curl || true
           cd "$RUNNER_TEMP"
-          openssl req -x509 -newkey rsa:2048 -nodes -keyout key.pem -out cert.pem -days 1 -subj /CN=localhost 2>/dev/null
+          # Git Bash by /CN=... převedl na cestu Windows.
+          MSYS_NO_PATHCONV=1 openssl req -x509 -newkey rsa:2048 -nodes -keyout key.pem -out cert.pem -days 1 -subj /CN=localhost
           mkdir -p www && echo "lsl https" > www/index.html
           chmod +x "$GITHUB_WORKSPACE/bundle/${{ matrix.bundle }}/$serve"
           "$GITHUB_WORKSPACE/bundle/${{ matrix.bundle }}/$serve" www 18443 cert.pem key.pem > server.log 2>&1 &
