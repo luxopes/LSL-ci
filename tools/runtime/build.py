@@ -43,7 +43,9 @@ def main():
     # (--bootstrap-runtime), ne s tím, který se právě přestavuje.
     host_runtime = ROOT / 'compiler/qbe/runtime.o'
     current = host_runtime.read_bytes()
-    shutil.copyfile(a.bootstrap_runtime.resolve(), host_runtime)
+    # V čisté kopii (CI) je ověřený runtime přímo compiler/qbe/runtime.o.
+    if a.bootstrap_runtime.resolve() != host_runtime.resolve():
+        shutil.copyfile(a.bootstrap_runtime.resolve(), host_runtime)
     try:
         run(compiler, 'compiler/pure/lslc_runtime.lsl', build / 'lslc-runtime')
     finally:

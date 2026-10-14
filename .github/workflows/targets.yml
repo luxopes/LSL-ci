@@ -1,0 +1,59 @@
+# Testy cílů na skutečných strojích. Ubuntu x86_64 sestaví kompilátor ze
+# zabaleného bootstrapu (compiler/pure/lslc-qbe), runtime cílů a přeloží
+# konformní testy; stroje cíle je spustí a porovnají s tests/*.out.
+name: targets
+
+on:
+  push:
+    branches: ['main', 'work/**']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cross binutils
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq binutils-mingw-w64-x86-64 mingw-w64-x86-64-dev binutils-aarch64-linux-gnu
+      - name: Compiler from the bootstrap
+        run: |
+          mkdir -p build/ci
+          compiler/pure/lslc-qbe compiler/pure/lslc_qbe.lsl build/ci/lslc1
+          build/ci/lslc1 compiler/pure/lslc_qbe.lsl build/ci/lslc
+      - name: Target runtimes
+        run: |
+          for target in windows-x86_64 linux-arm64; do
+            python3 tools/runtime/build.py --compiler build/ci/lslc --target $target --bootstrap-runtime compiler/qbe/runtime.o
+          done
+      - name: Test bundles
+        run: |
+          python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target windows-x86_64 --output bundle/windows-x86_64
+          python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target linux-arm64 --output bundle/linux-arm64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bundles
+          path: bundle/
+          retention-days: 7
+
+  run:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {runner: windows-2025, bundle: windows-x86_64}
+          # Windows na ARM spouští x86_64 programy v emulaci (Prism).
+          - {runner: windows-11-arm, bundle: windows-x86_64}
+          - {runner: ubuntu-24.04-arm, bundle: linux-arm64}
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: bundles
+          path: bundle
+      - name: Run ${{ matrix.bundle }} tests
+        run: python tools/ci/target_tests.py run bundle/${{ matrix.bundle }}
