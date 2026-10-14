@@ -695,3 +695,84 @@ end
 function tgkill(process, thread, signal):
     return 0 - platform.ENOSYS
 end
+
+# Časový limit potomka capture: hlídací vlákno (pthread bez bloku vlákna
+# runtime, volá jen libSystem) po milliseconds pošle SIGTERM a po sekundě
+# SIGKILL jako coreutils timeout. Hlídání (mmap): +0 pid, +8 limit v ms,
+# +16 stav (0 čeká, 1 ukončuje, 2 zrušeno, 3 ukončeno), +24 vypršelo.
+# Zrušení proběhne před úklidem potomka, signál tak nezasáhne cizí proces.
+# Paměť uvolní hlídač po zrušení (stav 2), jinak rušící strana.
+WATCH_BYTES = 16384
+
+function process_deadline(pid, milliseconds):
+    watch = map_anonymous(WATCH_BYTES, 0)
+    if watch < 0:
+        return 0
+    end
+    __lsl_qbe_store64(watch, pid)
+    __lsl_qbe_store64(watch + 8, milliseconds)
+    if pid == SPAWN_FAILED:
+        __lsl_qbe_store64(watch + 16, 3)
+        return watch
+    end
+    attributes = __lsl_qbe_alloc(128)
+    thread = __lsl_qbe_alloc(8)
+    if int32(__lsl_qbe_call1(__lsl_symbol("pthread_attr_init"), attributes)) != 0:
+        call munmap(watch, WATCH_BYTES)
+        return 0
+    end
+    call __lsl_qbe_call2(__lsl_symbol("pthread_attr_setdetachstate"), attributes, PTHREAD_CREATE_DETACHED)
+    result = int32(__lsl_qbe_call4(__lsl_symbol("pthread_create"), thread, attributes, __lsl_symbol("lsl_process_watchdog"), watch))
+    call __lsl_qbe_call1(__lsl_symbol("pthread_attr_destroy"), attributes)
+    if result != 0:
+        call munmap(watch, WATCH_BYTES)
+        return 0
+    end
+    return watch
+end
+
+# Spí po 10 ms, dokud limit nevyprší nebo hlídání nezruší capture.
+function watchdog_sleep(watch, milliseconds):
+    request = __lsl_qbe_alloc(16)
+    waited = 0
+    while waited < milliseconds:
+        if __lsl_qbe_load64(watch + 16) == 2:
+            return 0
+        end
+        __lsl_qbe_store64(request, 0)
+        __lsl_qbe_store64(request + 8, 10000000)
+        call __lsl_qbe_call2(__lsl_symbol("nanosleep"), request, 0)
+        waited += 10
+    end
+    return 1
+end
+
+function lsl_process_watchdog(watch):
+    if watchdog_sleep(watch, __lsl_qbe_load64(watch + 8)) and __lsl_qbe_call3(__lsl_symbol("lsl_arch_cas64"), watch + 16, 0, 1) == 0:
+        __lsl_qbe_store64(watch + 24, 1)
+        call __lsl_qbe_call2(__lsl_symbol("kill"), __lsl_qbe_load64(watch), 15)
+        request = __lsl_qbe_alloc(16)
+        __lsl_qbe_store64(request, 1)
+        __lsl_qbe_store64(request + 8, 0)
+        call __lsl_qbe_call2(__lsl_symbol("nanosleep"), request, 0)
+        call __lsl_qbe_call2(__lsl_symbol("kill"), __lsl_qbe_load64(watch), 9)
+        call __lsl_qbe_call2(__lsl_symbol("lsl_arch_xchg64"), watch + 16, 3)
+        return 0
+    end
+    # Zrušeno: hlídání patří hlídači.
+    call __lsl_qbe_call2(__lsl_symbol("munmap"), watch, WATCH_BYTES)
+    return 0
+end
+
+# 1, když limit vypršel (potomek ukončen).
+function process_deadline_cancel(watch):
+    if __lsl_qbe_load64(watch + 16) != 3 and __lsl_qbe_call3(__lsl_symbol("lsl_arch_cas64"), watch + 16, 0, 2) == 0:
+        return 0
+    end
+    while __lsl_qbe_load64(watch + 16) != 3:
+        call sched_yield()
+    end
+    expired = __lsl_qbe_load64(watch + 24)
+    call munmap(watch, WATCH_BYTES)
+    return expired
+end

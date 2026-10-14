@@ -1,9 +1,10 @@
-# Windows: izolace pluginů spouští program pod nástrojem timeout (coreutils),
-# který Windows nemá. Pluginy s časovým limitem na Windows hlásí chybu.
+# Windows: izolace pluginů s časovým limitem bez coreutils timeout: runtime
+# potomka po limitu ukončí sám (__lsl_capture_input_timeout, stav 124 jako
+# u timeout).
 
+# Časový limit zajišťuje runtime, žádný vnější nástroj.
 function timeout_tool():
-    Error(PluginError: "plugin isolation with a timeout is not available on Windows")
-    return ""
+    return "lsl-runtime"
 end
 
 function checked_timeout(seconds):
@@ -18,10 +19,17 @@ function capture_with_timeout(executable, arguments, input_text, seconds):
     if type(arguments) != "List" or len(arguments) > 4096:
         Error(PluginError: "plugin arguments must be a bounded List")
     end
-    call checked_timeout(seconds)
-    return timeout_tool()
+    timeout = checked_timeout(seconds)
+    values = []
+    for argument in arguments:
+        values.append(String(argument))
+    end
+    return __lsl_capture_input_timeout(String(executable), values, String(input_text), timeout)
 end
 
 function capture_argv(executable, encoded):
-    return timeout_tool()
+    if __lsl_text_byte_length(String(encoded)) > 32766:
+        Error(PluginError: "legacy argv plugin request exceeds the command line limit")
+    end
+    return __lsl_capture_input_timeout(String(executable), [String(encoded)], "", 30)
 end

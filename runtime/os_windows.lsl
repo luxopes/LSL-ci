@@ -1231,3 +1231,42 @@ end
 function heap_base(hint):
     return hint
 end
+
+# Časový limit potomka capture: časovač z thread poolu (CreateTimerQueueTimer)
+# po milliseconds ukončí proces s kódem 124. Hlídání (VirtualAlloc 4 KiB):
+# +0 HANDLE procesu, +8 vypršelo, +16 časovač. 0 = chyba.
+WT_EXECUTEONLYONCE = 8
+
+function process_deadline(pid, milliseconds):
+    watch = map_anonymous(4096, 0)
+    if watch < 0:
+        return 0
+    end
+    __lsl_qbe_store64(watch, pid)
+    if pid == SPAWN_FAILED:
+        return watch
+    end
+    if dword(__lsl_qbe_call7(__lsl_symbol("CreateTimerQueueTimer"), watch + 16, 0, __lsl_symbol("lsl_process_timer"), watch, milliseconds, 0, WT_EXECUTEONLYONCE)) == 0:
+        call unmap(watch, 4096)
+        return 0
+    end
+    return watch
+end
+
+# Obsluha časovače (vlákno thread poolu bez bloku vlákna runtime: jen Win32).
+function lsl_process_timer(watch, fired):
+    __lsl_qbe_store64(watch + 8, 1)
+    call __lsl_qbe_call2(__lsl_symbol("TerminateProcess"), __lsl_qbe_load64(watch), 124)
+    return 0
+end
+
+# Zruší časovač a počká na doběhnutí obsluhy (INVALID_HANDLE_VALUE); 1, když
+# limit vypršel.
+function process_deadline_cancel(watch):
+    if __lsl_qbe_load64(watch) != SPAWN_FAILED:
+        call __lsl_qbe_call3(__lsl_symbol("DeleteTimerQueueTimer"), 0, __lsl_qbe_load64(watch + 16), INVALID_HANDLE)
+    end
+    expired = __lsl_qbe_load64(watch + 8)
+    call unmap(watch, 4096)
+    return expired
+end

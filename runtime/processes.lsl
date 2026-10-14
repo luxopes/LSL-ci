@@ -200,6 +200,20 @@ end
 # kód do capture_status(), stderr do capture_stderr(). Volitelný stdin je
 # memfd (žádné uváznutí ani u velkého vstupu), stderr také memfd.
 function rt_runtime_capture(executable, arguments, callback, input, clean):
+    return capture_core(executable, arguments, callback, input, clean, 0)
+end
+
+# capture_input_clean s časovým limitem (interní builtin pro knihovny na
+# Windows a macOS, kde není coreutils timeout): po seconds sekundách vrstva
+# OS potomka ukončí a stav je 124 jako u timeout.
+function rt_runtime_capture_timeout(executable, arguments, input, seconds):
+    if seconds < 1 or seconds > 3600:
+        return set_error("ProcessError: timeout must be between 1 and 3600 seconds")
+    end
+    return capture_core(executable, arguments, 0, input, 1, seconds * 1000)
+end
+
+function capture_core(executable, arguments, callback, input, clean, milliseconds):
     fds = __lsl_qbe_alloc(8)
     state = core.state()
     # Chybové cesty nesmí ukázat výsledek předchozího capture.
@@ -253,6 +267,17 @@ function rt_runtime_capture(executable, arguments, callback, input, clean):
     end
     call os.os_close(write_end)
     call close_if_open(input_fd)
+    watch = 0
+    if milliseconds > 0:
+        watch = os.process_deadline(pid, milliseconds)
+        if watch == 0:
+            call os.os_kill(pid)
+            call os.os_close(read_end)
+            call os.os_wait(pid)
+            call os.os_close(error_fd)
+            return set_error("ProcessError: process timeout is unavailable")
+        end
+    end
     output = read_all(read_end, MAX_STDOUT_BYTES, 1, callback)
     # Po chybě (callback, čtení, limit) potomka ukončí před čekáním, jinak
     # by potomek ignorující SIGPIPE mohl běžet navždy.
@@ -260,7 +285,16 @@ function rt_runtime_capture(executable, arguments, callback, input, clean):
         call os.os_kill(pid)
     end
     call os.os_close(read_end)
+    # Hlídání limitu skončí před úklidem potomka: signál ani TerminateProcess
+    # pak nemůže zasáhnout jiný proces se stejným pid.
+    expired = 0
+    if watch != 0:
+        expired = os.process_deadline_cancel(watch)
+    end
     code = os.os_wait(pid)
+    if expired and code >= 0:
+        code = 124
+    end
     if code < 0:
         call set_error("ProcessError: capture I/O failed")
         code = 126

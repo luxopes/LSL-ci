@@ -33,7 +33,7 @@ TARGETS = {
 # (mingw-w64 v distribucích je má jen pro x86); x86_64 bere mingw-w64.
 WINDOWS_IMPORTS = {
     'kernel32': ('kernel32.dll', '''CloseHandle CreateDirectoryW CreateFileMappingW CreateFileW CreatePipe
-        CreateProcessW CreateThread DeleteFileW DeleteProcThreadAttributeList ExitProcess ExitThread
+        CreateProcessW CreateThread CreateTimerQueueTimer DeleteFileW DeleteTimerQueueTimer DeleteProcThreadAttributeList ExitProcess ExitThread
         FreeEnvironmentStringsW GetCommandLineW GetConsoleCP GetConsoleMode GetConsoleScreenBufferInfo
         GetCurrentProcess GetModuleHandleW GetCurrentProcessId GetCurrentThreadId GetEnvironmentStringsW GetExitCodeProcess
         GetFileAttributesW GetFileInformationByHandle GetFileType GetFinalPathNameByHandleW

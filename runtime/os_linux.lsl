@@ -505,3 +505,13 @@ end
 function heap_base(hint):
     return hint
 end
+
+# Časový limit potomka capture (interní builtin pro Windows a macOS; na
+# Linuxu knihovny používají coreutils timeout): nedostupné, 0.
+function process_deadline(pid, milliseconds):
+    return 0
+end
+
+function process_deadline_cancel(watch):
+    return 0
+end
