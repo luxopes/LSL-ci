@@ -2,8 +2,9 @@
 # v prvním bajtu, SIGPIPE potlačí SO_NOSIGPIPE (MSG_NOSIGNAL macOS nemá),
 # accept s limitem čeká přes poll. Statické soubory otevírá openat
 # s O_NOFOLLOW_ANY (macOS 11+): jádro odmítne symbolický odkaz kdekoli
-# v cestě. Chyby mají hodnoty errno Linuxu jako zbytek runtime. Argumenty
-# surových volání musí být Int.
+# v cestě. HTTPS obstará nginx (Homebrew, MacPorts) jako na Linuxu. Chyby
+# mají hodnoty errno Linuxu jako zbytek runtime. Argumenty surových volání
+# musí být Int.
 load _platform as platform
 load fd
 load time
@@ -358,11 +359,122 @@ function system_tool(primary, fallback, label):
 end
 
 function runtime_directory():
-    Error(ServerError: "HTTPS mode (nginx) is not available on macOS")
+    process = String(int32(__lsl_qbe_call0(__lsl_symbol("getpid"))))
+    attempt = 0
+    directory = "/tmp/lsl-https-" + process
+    while __lsl_mkdir_private(directory) != 0:
+        attempt += 1
+        if attempt > 100:
+            Error(ServerError: "cannot create a private HTTPS runtime directory")
+        end
+        directory = "/tmp/lsl-https-" + process + "-" + String(attempt)
+    end
+    return directory
 end
 
+function canonical_path(path, label):
+    # BSD realpath nezná -e; neexistující cestu odmítne i bez něj.
+    realpath = system_tool("/bin/realpath", "/usr/bin/realpath", "realpath")
+    result = capture_clean(realpath, ["--", String(path)])
+    if capture_status() != 0 or not result.endswith(chr(10)):
+        Error(ServerError: "cannot resolve " + String(label) + ": " + String(path))
+    end
+    result = result[0:len(result) - 1]
+    if len(result) == 0 or chr(10) in result or chr(13) in result:
+        Error(ServerError: String(label) + " has an unsupported path")
+    end
+    return result
+end
+
+function nginx_quote(value):
+    result = "\""
+    for character in String(value):
+        if character == chr(92) or character == "\"" or character == "$":
+            result += chr(92)
+        end
+        result += character
+    end
+    return result + "\""
+end
+
+# nginx z Homebrew (Apple Silicon, Intel) nebo MacPorts.
+function nginx_tool():
+    for candidate in ["/opt/homebrew/bin/nginx", "/usr/local/bin/nginx", "/opt/local/sbin/nginx"]:
+        if exists(candidate):
+            return candidate
+        end
+    end
+    Error(ServerError: "trusted nginx executable is required (Homebrew or MacPorts)")
+end
+
+
 function serve_static_tls(root, address, port, certificate, private_key, maximum_requests):
-    Error(ServerError: "HTTPS mode (nginx) is not available on macOS")
+    if maximum_requests != 0:
+        Error(ServerError: "HTTPS mode does not support --max-requests")
+    end
+    number = port
+    if number < 1 or number > 65535:
+        Error(ServerError: "HTTPS port must be between 1 and 65535")
+    end
+    # Validate the address using the same strict numeric parser as native HTTP.
+    call ipv4_octets(address)
+    root_path = canonical_path(root, "server root")
+    certificate_path = canonical_path(certificate, "TLS certificate")
+    key_path = canonical_path(private_key, "TLS private key")
+    directory = runtime_directory()
+    config_path = directory + "/nginx.conf"
+    config = "worker_processes 1;" + chr(10)
+    config += "master_process off;" + chr(10)
+    config += "daemon off;" + chr(10)
+    config += "pid " + nginx_quote(directory + "/nginx.pid") + ";" + chr(10)
+    config += "error_log stderr warn;" + chr(10)
+    config += "events { worker_connections 128; }" + chr(10)
+    config += "http {" + chr(10)
+    config += "  access_log off;" + chr(10)
+    config += "  server_tokens off;" + chr(10)
+    config += "  client_body_temp_path " + nginx_quote(directory + "/client-body") + ";" + chr(10)
+    config += "  proxy_temp_path " + nginx_quote(directory + "/proxy") + ";" + chr(10)
+    config += "  fastcgi_temp_path " + nginx_quote(directory + "/fastcgi") + ";" + chr(10)
+    config += "  uwsgi_temp_path " + nginx_quote(directory + "/uwsgi") + ";" + chr(10)
+    config += "  scgi_temp_path " + nginx_quote(directory + "/scgi") + ";" + chr(10)
+    config += "  sendfile on;" + chr(10)
+    config += "  client_header_timeout 5s;" + chr(10)
+    config += "  client_body_timeout 5s;" + chr(10)
+    config += "  send_timeout 5s;" + chr(10)
+    config += "  keepalive_timeout 0;" + chr(10)
+    config += "  client_max_body_size 1k;" + chr(10)
+    config += "  large_client_header_buffers 2 8k;" + chr(10)
+    config += "  default_type application/octet-stream;" + chr(10)
+    config += "  types { text/html html htm; text/css css; text/javascript js; application/json json; text/plain txt md; image/svg+xml svg; image/png png; image/jpeg jpg jpeg; image/gif gif; application/wasm wasm; }" + chr(10)
+    config += "  server {" + chr(10)
+    config += "    listen " + String(address) + ":" + String(number) + " ssl;" + chr(10)
+    config += "    server_name _;" + chr(10)
+    config += "    ssl_certificate " + nginx_quote(certificate_path) + ";" + chr(10)
+    config += "    ssl_certificate_key " + nginx_quote(key_path) + ";" + chr(10)
+    config += "    ssl_protocols TLSv1.2 TLSv1.3;" + chr(10)
+    config += "    ssl_session_tickets off;" + chr(10)
+    config += "    root " + nginx_quote(root_path) + ";" + chr(10)
+    config += "    autoindex off;" + chr(10)
+    config += "    disable_symlinks on from=$document_root;" + chr(10)
+    config += "    add_header X-Content-Type-Options nosniff always;" + chr(10)
+    config += "    add_header Referrer-Policy no-referrer always;" + chr(10)
+    config += "    if ($request_method !~ ^(GET|HEAD)$) { return 405; }" + chr(10)
+    config += "    location / { try_files $uri =404; }" + chr(10)
+    config += "  }" + chr(10)
+    config += "}" + chr(10)
+    call writefile(config_path, config)
+    nginx = nginx_tool()
+    print "LSL HTTPS server listening on https://" + String(address) + ":" + String(number) + "/"
+    status = run_clean(nginx, ["-p", directory + "/", "-c", config_path])
+    call unlink(directory + "/nginx.pid")
+    call unlink(config_path)
+    call rmdir(directory + "/client-body")
+    call rmdir(directory + "/proxy")
+    call rmdir(directory + "/fastcgi")
+    call rmdir(directory + "/uwsgi")
+    call rmdir(directory + "/scgi")
+    call rmdir(directory)
+    return status
 end
 
 function interrupted(result):

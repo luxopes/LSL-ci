@@ -2,10 +2,12 @@
 # bez WSA_FLAG_OVERLAPPED) a nedědí se potomkům. Čtení a zápis jdou přes
 # recv/send, časové limity SO_RCVTIMEO/SO_SNDTIMEO jsou v milisekundách
 # a accept s limitem čeká přes WSAPoll (accept na Windows SO_RCVTIMEO
-# nerespektuje). Chyby mají hodnoty errno Linuxu jako zbytek runtime.
+# nerespektuje). HTTPS obstará nginx pro Windows jako na Linuxu. Chyby mají
+# hodnoty errno Linuxu jako zbytek runtime.
 # Argumenty surových volání Win32 musí být Int.
 load _platform as platform
 load fd
+load os
 load time
 
 # Linuxová čísla systémových volání veřejné fasády na Windows neexistují.
@@ -464,12 +466,161 @@ function system_tool(primary, fallback, label):
     Error(ServerError: "trusted " + String(label) + " executable is required")
 end
 
+# Soukromý pracovní adresář nginx v %TEMP% (cesta s lomítky pro nginx).
 function runtime_directory():
-    Error(ServerError: "HTTPS mode (nginx) is not available on Windows")
+    base = __lsl_getenv("TEMP")
+    if base == None or String(base) == "":
+        base = "C:\\Windows\\Temp"
+    end
+    base = forward_slashes(String(base))
+    process = String(Int(__lsl_qbe_call0(__lsl_symbol("GetCurrentProcessId"))) & 4294967295)
+    attempt = 0
+    directory = base + "/lsl-https-" + process
+    while __lsl_mkdir_private(directory) != 0:
+        attempt += 1
+        if attempt > 100:
+            Error(ServerError: "cannot create a private HTTPS runtime directory")
+        end
+        directory = base + "/lsl-https-" + process + "-" + String(attempt)
+    end
+    return directory
+end
+
+function forward_slashes(path):
+    result = ""
+    for character in String(path):
+        if character == "\\":
+            result += "/"
+        else:
+            result += character
+        end
+    end
+    return result
+end
+
+# Skutečná cesta existujícího souboru nebo adresáře pro nginx (C:/...).
+function canonical_path(path, label):
+    handle = Int(__lsl_qbe_call7(__lsl_symbol("CreateFileW"), data_address(wide(String(path))), 0, FILE_SHARE_READ + 2 + 4, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0))
+    if handle == -1:
+        Error(ServerError: "cannot resolve " + String(label) + ": " + String(path))
+    end
+    wide_buffer = __lsl_byte_zeros(65536)
+    count = int32(__lsl_qbe_call4(__lsl_symbol("GetFinalPathNameByHandleW"), handle, data_address(wide_buffer), 32767, 0))
+    call fd.close(handle)
+    if count <= 0 or count >= 32767:
+        Error(ServerError: "cannot resolve " + String(label) + ": " + String(path))
+    end
+    text = __lsl_byte_zeros(count * 3 + 1)
+    size = int32(__lsl_qbe_call8(__lsl_symbol("WideCharToMultiByte"), 65001, 0, data_address(wide_buffer), count, data_address(text), len(text), 0, 0))
+    result = __lsl_text_from_bytes(text, 0, size)
+    if result.startswith("\\\\?\\"):
+        result = result[4:len(result)]
+    end
+    result = forward_slashes(result)
+    if len(result) == 0 or chr(10) in result or chr(13) in result or "\"" in result:
+        Error(ServerError: String(label) + " has an unsupported path")
+    end
+    return result
+end
+
+function nginx_quote(value):
+    result = "\""
+    for character in String(value):
+        if character == chr(92) or character == "\"" or character == "$":
+            result += chr(92)
+        end
+        result += character
+    end
+    return result + "\""
+end
+
+# nginx pro Windows: C:\\nginx, Program Files, nebo PATH (shim Chocolatey).
+function nginx_tool():
+    roots = ["C:\\nginx"]
+    program_files = __lsl_getenv("ProgramFiles")
+    if program_files != None:
+        roots.append(String(program_files) + "\\nginx")
+    end
+    for root in roots:
+        if exists(root + "\\nginx.exe"):
+            return root + "\\nginx.exe"
+        end
+    end
+    found = os.which("nginx")
+    if found == None:
+        Error(ServerError: "nginx for Windows is required (C:\\nginx, Program Files or PATH)")
+    end
+    return String(found)
 end
 
 function serve_static_tls(root, address, port, certificate, private_key, maximum_requests):
-    Error(ServerError: "HTTPS mode (nginx) is not available on Windows")
+    if maximum_requests != 0:
+        Error(ServerError: "HTTPS mode does not support --max-requests")
+    end
+    number = port
+    if number < 1 or number > 65535:
+        Error(ServerError: "HTTPS port must be between 1 and 65535")
+    end
+    # Validate the address using the same strict numeric parser as native HTTP.
+    call ipv4_octets(address)
+    root_path = canonical_path(root, "server root")
+    certificate_path = canonical_path(certificate, "TLS certificate")
+    key_path = canonical_path(private_key, "TLS private key")
+    directory = runtime_directory()
+    config_path = directory + "/nginx.conf"
+    config = "worker_processes 1;" + chr(10)
+    config += "master_process off;" + chr(10)
+    config += "daemon off;" + chr(10)
+    config += "pid " + nginx_quote(directory + "/nginx.pid") + ";" + chr(10)
+    config += "error_log stderr warn;" + chr(10)
+    config += "events { worker_connections 128; }" + chr(10)
+    config += "http {" + chr(10)
+    config += "  access_log off;" + chr(10)
+    config += "  server_tokens off;" + chr(10)
+    config += "  client_body_temp_path " + nginx_quote(directory + "/client-body") + ";" + chr(10)
+    config += "  proxy_temp_path " + nginx_quote(directory + "/proxy") + ";" + chr(10)
+    config += "  fastcgi_temp_path " + nginx_quote(directory + "/fastcgi") + ";" + chr(10)
+    config += "  uwsgi_temp_path " + nginx_quote(directory + "/uwsgi") + ";" + chr(10)
+    config += "  scgi_temp_path " + nginx_quote(directory + "/scgi") + ";" + chr(10)
+    config += "  sendfile on;" + chr(10)
+    config += "  client_header_timeout 5s;" + chr(10)
+    config += "  client_body_timeout 5s;" + chr(10)
+    config += "  send_timeout 5s;" + chr(10)
+    config += "  keepalive_timeout 0;" + chr(10)
+    config += "  client_max_body_size 1k;" + chr(10)
+    config += "  large_client_header_buffers 2 8k;" + chr(10)
+    config += "  default_type application/octet-stream;" + chr(10)
+    config += "  types { text/html html htm; text/css css; text/javascript js; application/json json; text/plain txt md; image/svg+xml svg; image/png png; image/jpeg jpg jpeg; image/gif gif; application/wasm wasm; }" + chr(10)
+    config += "  server {" + chr(10)
+    config += "    listen " + String(address) + ":" + String(number) + " ssl;" + chr(10)
+    config += "    server_name _;" + chr(10)
+    config += "    ssl_certificate " + nginx_quote(certificate_path) + ";" + chr(10)
+    config += "    ssl_certificate_key " + nginx_quote(key_path) + ";" + chr(10)
+    config += "    ssl_protocols TLSv1.2 TLSv1.3;" + chr(10)
+    config += "    ssl_session_tickets off;" + chr(10)
+    config += "    root " + nginx_quote(root_path) + ";" + chr(10)
+    config += "    autoindex off;" + chr(10)
+    config += "    disable_symlinks on from=$document_root;" + chr(10)
+    config += "    add_header X-Content-Type-Options nosniff always;" + chr(10)
+    config += "    add_header Referrer-Policy no-referrer always;" + chr(10)
+    config += "    if ($request_method !~ ^(GET|HEAD)$) { return 405; }" + chr(10)
+    config += "    location / { try_files $uri =404; }" + chr(10)
+    config += "  }" + chr(10)
+    config += "}" + chr(10)
+    call writefile(config_path, config)
+    nginx = nginx_tool()
+    print "LSL HTTPS server listening on https://" + String(address) + ":" + String(number) + "/"
+    # Winsock v nginx potřebuje prostředí (SystemRoot): run, ne run_clean.
+    status = run(nginx, ["-p", directory + "/", "-c", config_path])
+    call unlink(directory + "/nginx.pid")
+    call unlink(config_path)
+    call rmdir(directory + "/client-body")
+    call rmdir(directory + "/proxy")
+    call rmdir(directory + "/fastcgi")
+    call rmdir(directory + "/uwsgi")
+    call rmdir(directory + "/scgi")
+    call rmdir(directory)
+    return status
 end
 
 function interrupted(result):

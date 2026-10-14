@@ -37,6 +37,10 @@ jobs:
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target linux-arm64 --output bundle/linux-arm64
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target macos-x86_64 --output bundle/macos-x86_64
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target macos-arm64 --output bundle/macos-arm64
+          for target in macos-x86_64 macos-arm64; do
+            build/ci/lslc --target $target tools/ci/tls_serve.lsl bundle/$target/tls-serve
+          done
+          build/ci/lslc --target windows-x86_64 tools/ci/tls_serve.lsl bundle/windows-x86_64/tls-serve.exe
       - uses: actions/upload-artifact@v4
         with:
           name: bundles
@@ -68,3 +72,21 @@ jobs:
           path: bundle
       - name: Run ${{ matrix.bundle }} tests
         run: python tools/ci/target_tests.py run bundle/${{ matrix.bundle }}
+      - name: HTTPS through nginx
+        if: startsWith(matrix.bundle, 'macos') || matrix.runner == 'windows-2025'
+        shell: bash
+        run: |
+          case "${{ matrix.bundle }}" in
+            macos-*) brew install nginx >/dev/null; serve=tls-serve;;
+            *) choco install nginx -y --no-progress >/dev/null; serve=tls-serve.exe;;
+          esac
+          cd "$RUNNER_TEMP"
+          openssl req -x509 -newkey rsa:2048 -nodes -keyout key.pem -out cert.pem -days 1 -subj /CN=localhost 2>/dev/null
+          mkdir -p www && echo "lsl https" > www/index.html
+          chmod +x "$GITHUB_WORKSPACE/bundle/${{ matrix.bundle }}/$serve"
+          "$GITHUB_WORKSPACE/bundle/${{ matrix.bundle }}/$serve" www 18443 cert.pem key.pem &
+          server=$!
+          for i in $(seq 1 30); do curl -sk https://127.0.0.1:18443/index.html > got.txt && break; sleep 1; done
+          kill $server || true
+          cat got.txt
+          grep -qx "lsl https" got.txt
