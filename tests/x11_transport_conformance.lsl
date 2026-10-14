@@ -1,3 +1,4 @@
+load _platform as platform
 load x11
 load fd
 load time
@@ -11,12 +12,12 @@ end
 function pair():
     unsafe:
         handles = __lsl_byte_zeros(8)
-        call require(__lsl_syscall(53, 1, 526337, 0, __lsl_data_address(handles)) == 0, "socketpair")
+        call require(__lsl_syscall(platform.SYS_SOCKETPAIR, 1, 526337, 0, __lsl_data_address(handles)) == 0, "socketpair")
         writer = x11.get32(handles, 0)
         reader = x11.get32(handles, 4)
         size = __lsl_byte_zeros(4)
         size[1] = 16
-        call require(__lsl_syscall6(54, writer, 1, 7, __lsl_data_address(size), 4, 0) == 0, "small send buffer")
+        call require(__lsl_syscall6(platform.SYS_SETSOCKOPT, writer, 1, 7, __lsl_data_address(size), 4, 0) == 0, "small send buffer")
     end
     return (writer, reader)
 end

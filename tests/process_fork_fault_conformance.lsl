@@ -1,6 +1,7 @@
 # Syntetický fault injection větve fork: RLIMIT_NPROC = 0 způsobí, že fork
 # selže s EAGAIN. Ověřuje se čistá chyba a žádný únik popisovačů. Root limit
 # nezná, proto se test pod rootem přeskočí se stejným výstupem.
+load _platform as platform
 load fd
 
 function lowest_free_fd():
@@ -13,7 +14,7 @@ function chunk(text):
     return None
 end
 
-if __lsl_syscall(102, 0, 0, 0, 0) == 0:
+if __lsl_syscall(platform.SYS_GETEUID, 0, 0, 0, 0) == 0:
     for name in ["capture", "run", "capture_input", "capture_stream"]:
         if name == "run":
             print name, "status 126"
@@ -25,7 +26,8 @@ if __lsl_syscall(102, 0, 0, 0, 0) == 0:
 else:
     first = lowest_free_fd()
     limit = __lsl_byte_zeros(16)
-    if __lsl_syscall(160, 6, __lsl_data_address(limit), 0, 0) != 0:
+    # prlimit64 místo setrlimit: setrlimit na riscv64 není.
+    if __lsl_syscall(platform.SYS_PRLIMIT64, 0, 6, __lsl_data_address(limit), 0) != 0:
         Error(TestFailure: "cannot lower RLIMIT_NPROC")
     end
     for name in ["capture", "run", "capture_input", "capture_stream"]:

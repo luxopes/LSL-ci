@@ -6,6 +6,7 @@
 # display.Display class can drive them: LSL method dispatch needs a
 # statically known receiver type, which a polymorphic backend lacks.
 
+load _platform as platform
 load env
 load fd
 load time
@@ -71,7 +72,7 @@ function write_failure(handle, message):
     unsafe:
         # A partially sent X11 request cannot be retried from the beginning.
         # Shut down, but leave descriptor ownership with Display.close().
-        call __lsl_syscall(48, Int(handle), 2, 0, 0)
+        call __lsl_syscall(platform.SYS_SHUTDOWN, Int(handle), 2, 0, 0)
     end
     Error(X11Error: message)
 end
@@ -93,7 +94,7 @@ function write_bytes(handle, buffer, count, timeout=10.0):
         while offset < amount:
             # Per-call nonblocking + MSG_NOSIGNAL. Unlike fd.write, sendto
             # returns each partial count, so no prefix is lost or duplicated.
-            sent = __lsl_syscall6(44, descriptor, __lsl_data_address(payload) + offset, amount - offset, 16448, 0, 0)
+            sent = __lsl_syscall6(platform.SYS_SENDTO, descriptor, __lsl_data_address(payload) + offset, amount - offset, 16448, 0, 0)
             if sent > 0:
                 offset += sent
                 continue
@@ -117,7 +118,15 @@ function write_bytes(handle, buffer, count, timeout=10.0):
                 readiness[4] = 4
             end
             wait_ms = min(60000, max(1, Int(remaining * 1000.0) + 1))
-            ready = __lsl_syscall(7, __lsl_data_address(readiness), 1, wait_ms, 0)
+            # ppoll místo poll (poll na arm64/rv64 není); ms -> timespec.
+            limit = __lsl_byte_zeros(16)
+            seconds = wait_ms // 1000
+            nanoseconds = wait_ms % 1000 * 1000000
+            for index in range(8):
+                limit[index] = (seconds >> (index * 8)) & 255
+                limit[8 + index] = (nanoseconds >> (index * 8)) & 255
+            end
+            ready = __lsl_syscall(platform.SYS_PPOLL, __lsl_data_address(readiness), 1, __lsl_data_address(limit), 0)
             if ready < 0 and ready != -4:
                 call write_failure(descriptor, "cannot wait for the X server socket (errno " + String(0 - ready) + ")")
             elif ready > 0 and (readiness[6] & 56) != 0:

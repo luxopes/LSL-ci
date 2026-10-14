@@ -1,3 +1,4 @@
+load _platform as platform
 load fd
 load httpserver
 load time
@@ -332,7 +333,7 @@ function exchange_half_close(request):
         call fd.close(client)
         Error(TestFailure: "HTTP request write failed")
     end
-    if __lsl_syscall(48, client, 1, 0, 0) < 0:
+    if __lsl_syscall(platform.SYS_SHUTDOWN, client, 1, 0, 0) < 0:
         call fd.close(client)
         Error(TestFailure: "HTTP client shutdown failed")
     end
@@ -358,7 +359,7 @@ if run_clean("/usr/bin/mkfifo", [fifo_path]) != 0:
 end
 escape_target = httpserver.cstring("/etc/passwd")
 escape_name = httpserver.cstring(escape_path)
-if __lsl_syscall(88, httpserver.data_address(escape_target), httpserver.data_address(escape_name), 0, 0) < 0:
+if __lsl_syscall(platform.SYS_SYMLINKAT, httpserver.data_address(escape_target), platform.AT_FDCWD, httpserver.data_address(escape_name), 0) < 0:
     Error(TestFailure: "cannot create HTTP symlink fixture")
 end
 

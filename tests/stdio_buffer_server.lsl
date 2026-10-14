@@ -1,5 +1,6 @@
 # Helper for stdio_buffer_conformance: exercises the buffered stdin/stdout
 # runtime paths from a child that the test drives through /bin/sh.
+load _platform as platform
 load fd
 mode = arg(1)
 if mode == "handoff":
@@ -32,7 +33,7 @@ elif mode == "redirect":
     # dup2 a opětovné otevření stdin musí zrušit dřívější buffer i detekci.
     print input("")
     other = fd.open(arg(2), fd.read_only)
-    print "dup", __lsl_syscall(33, other, 0, 0, 0)
+    print "dup", __lsl_syscall(platform.SYS_DUP3, other, 0, 0, 0)
     print "redirect", input("")
     call fd.close(0)
     reopened = fd.open(arg(2), fd.read_only)

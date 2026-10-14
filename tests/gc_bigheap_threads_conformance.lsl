@@ -4,11 +4,19 @@
 # serving loop with per-request gc() effectively hung while holding the heap
 # mutex. Segregated size-class free lists (0.7.6) keep allocation O(1); this
 # test completes in seconds or times out in the runner when it regresses.
+load _platform as platform
 load fd
 load httpserver
 
 # Bound the process even if a failed client leaves the listener in accept().
-call __lsl_syscall(37, 180, 0, 0, 0)
+# setitimer(ITIMER_REAL) instead of alarm, which arm64 and riscv64 lack.
+function watchdog(seconds):
+    timer = __lsl_byte_zeros(32)
+    timer[16] = seconds & 255
+    timer[17] = seconds >> 8
+    return __lsl_syscall(platform.SYS_SETITIMER, 0, __lsl_data_address(timer), 0, 0)
+end
+call watchdog(180)
 
 listener_box = IntArray()
 port_box = IntArray()
@@ -96,4 +104,4 @@ call httpserver.serve_listener(memory_listener, -1, garbage_handler, 30, False)
 check(thread_join(memory_worker) == 0, "join memory")
 print "memory served"
 print "done"
-call __lsl_syscall(37, 0, 0, 0, 0)
+call watchdog(0)

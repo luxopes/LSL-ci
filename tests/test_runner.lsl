@@ -2,6 +2,7 @@
 # Positive conformance modules are linked into one program so parser/runtime
 # generation is paid once while every original source span remains intact.
 
+load _platform as platform
 load env
 load host
 
@@ -182,7 +183,7 @@ end
 
 # Every invocation owns a fresh namespace. This prevents concurrent or aborted
 # runs from reusing executables, installer prefixes and conformance fixtures.
-test_pid = String(__lsl_syscall(39, 0, 0, 0, 0))
+test_pid = String(__lsl_syscall(platform.SYS_GETPID, 0, 0, 0, 0))
 test_token = test_pid
 test_root = "/tmp/lsl-test-" + test_token
 test_suffix = 0
@@ -753,7 +754,7 @@ fd_leak = __lsl_fd_open(fd_leak_fixture, 0)
 if fd_leak < 0:
     Error(TestFailure: "cannot create descriptor inheritance fixture")
 end
-if __lsl_syscall(72, fd_leak, 2, 0, 0) < 0:
+if __lsl_syscall(platform.SYS_FCNTL, fd_leak, 2, 0, 0) < 0:
     Error(TestFailure: "cannot clear CLOEXEC on inheritance fixture")
 end
 fd_inherit_output = capture(test_path("fd-inherit-server"), [String(fd_leak)])
