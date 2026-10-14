@@ -71,6 +71,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - uses: actions/setup-node@v4
+        if: matrix.bundle == 'wasm32-wasi'
+        with:
+          node-version: '24'
       - uses: actions/download-artifact@v4
         with:
           name: bundles
