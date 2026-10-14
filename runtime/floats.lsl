@@ -18,9 +18,9 @@ function rt_runtime_float_from_int(value):
     return rt_runtime_float_new(__lsl_raw_fitof(value))
 end
 
-# Převod k nule (cvttsd2si); mimo rozsah Int dává Int minimum.
+# Převod k nule; mimo rozsah Int dává Int minimum (core.truncate_float).
 function rt_runtime_float_to_int(number):
-    return __lsl_raw_fftoi(__lsl_qbe_load64(number + 8))
+    return core.truncate_float(__lsl_qbe_load64(number + 8))
 end
 
 # Soukromý akumulátor parseru: hodnota = hodnota * 10.0 + číslice, na místě

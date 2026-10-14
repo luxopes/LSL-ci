@@ -1,7 +1,8 @@
 # lsl: runtime
 # Start programu, chybový stav vlákna a obsluha signálu GC.
-# Stav runtime leží na začátku haldy (brk): 1344 B stavu, za ním tabulka
-# internovaných řetězců (1 MiB, 65536 párů). Blok hlavního vlákna je na
+# Stav runtime leží na začátku haldy (souvislá oblast, heap.lsl): 1344 B
+# stavu, za ním bloky. Tabulka internovaných řetězců
+# (1 MiB, 65536 párů) je samostatné mapování. Blok hlavního vlákna je na
 # stav+160 (+0 čekající chyba, +8 příznak chyby, +16 vrchol zásobníku).
 load core
 load os_linux
@@ -17,6 +18,11 @@ REGISTRY_MASK = 65535
 OBJECT_BITMAP = 1328
 OBJECT_BITMAP_CAPACITY = 1336
 BITMAP_INITIAL = 4194304
+# Začátek haldy: 1 GiB za koncem obrazu programu (tam, kde by byl brk),
+# daleko od mapování jádra, která rostou shora dolů; obsazené místo ->
+# o 1 GiB dál, nejvýš 64 pokusů.
+HEAP_GAP = 1073741824
+HEAP_ATTEMPTS = 64
 THREAD_TABLE = 112
 MAIN_STACK_TOP = 120
 GC_GATE = 128
@@ -35,18 +41,29 @@ end
 
 # Volá _start s ukazatelem na argc (vrchol zásobníku hlavního vlákna).
 function lsl_runtime_start(stack):
-    base = os_linux.brk(0)
-    if os_linux.brk(base + STATE_BYTES + INTERN_BYTES) != base + STATE_BYTES + INTERN_BYTES:
-        call heap.fatal_allocation()
+    base = (__lsl_symbol("lsl_state") + HEAP_GAP) & -heap.COMMIT_GRAIN
+    attempt = 0
+    while os_linux.map_at(base, heap.COMMIT_GRAIN) == 0:
+        attempt += 1
+        if attempt >= HEAP_ATTEMPTS:
+            call heap.fatal_allocation()
+        end
+        base += HEAP_GAP
     end
     __lsl_qbe_store64(__lsl_symbol("lsl_state"), base)
+    __lsl_qbe_store64(base + heap.HEAP_RESERVED, base + heap.COMMIT_GRAIN)
+    __lsl_qbe_store64(base + heap.HEAP_BUMP, base + STATE_BYTES)
+    intern = os_linux.map_anonymous(INTERN_BYTES, 0)
+    if intern < 0:
+        call heap.fatal_allocation()
+    end
     registry = os_linux.map_anonymous(REGISTRY_BYTES, 0)
     if registry < 0:
         call heap.fatal_allocation()
     end
     __lsl_qbe_store64(base + 32, registry)
     __lsl_qbe_store64(base + 40, REGISTRY_MASK)
-    __lsl_qbe_store64(base + 48, base + STATE_BYTES)
+    __lsl_qbe_store64(base + 48, intern)
     __lsl_qbe_store64(base + 56, INTERN_MASK)
     # Bitmapa začátků objektů: 1 bit na 8 B od začátku stavu, MAP_NORESERVE.
     bitmap = os_linux.map_anonymous(BITMAP_INITIAL, platform.MAP_NORESERVE)

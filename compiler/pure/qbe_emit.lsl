@@ -1086,7 +1086,7 @@ function expression(s,node):
             return ["0","Bool"]
         elif value == "None":
             return ["0","None"]
-        elif s["runtime"] and ("." in value or "e" in value or "E" in value):
+        elif s["runtime"] and runtime_decimal(value):
             # Desetinný literál runtime: bity binary64 (bez objektu Float).
             return [String(__lsl_float_bits(__lsl_parse_float(value))),"Int"]
         elif infer(s,node) == "Float":
@@ -1174,7 +1174,13 @@ function expression(s,node):
         end
         return function_call(s,"__lsl_slice3",[target,start,[has_start,"Bool"],stop,[has_stop,"Bool"],step])
     elif kind == "unary":
-        value = expression(s,node["operand"])
+        operand = node["operand"]
+        if s["runtime"] and node["operator"] == "-" and operand["kind"] == "literal" and operand["literal_kind"] == "number" and runtime_decimal(operand["value"]):
+            # Záporný desetinný literál runtime: bity záporného binary64
+            # (celočíselná negace bitů by dala jiné číslo).
+            return [String(__lsl_float_bits(-__lsl_parse_float(operand["value"]))),"Int"]
+        end
+        value = expression(s,operand)
         op = node["operator"]
         if op == "not":
             result = temp(s,"eq(Int32("+truth(s,value)+"), 0)","w")
@@ -2907,12 +2913,25 @@ function raw_float(s,name,values):
 end
 # Hodnota top-level přiřazení runtime: celočíselný konstantní výraz
 # z literálů a dříve definovaných konstant.
+# Desetinný (Float) zápis číselného literálu v runtime. Šestnáctkové
+# literály (0x…E…) jsou celá čísla.
+function runtime_decimal(value):
+    if value.startswith("0x") or value.startswith("0X"):
+        return False
+    end
+    return "." in value or "e" in value or "E" in value
+end
 function runtime_constant(node,known):
     kind = node["kind"]
-    if kind == "literal" and node["literal_kind"] == "number":
+    if kind == "literal" and node["literal_kind"] == "number" and runtime_decimal(node["value"]):
+        # Desetinná konstanta: bity binary64, jako literál v kódu.
+        return __lsl_float_bits(__lsl_parse_float(node["value"]))
+    elif kind == "literal" and node["literal_kind"] == "number":
         return semantic.integer_literal(node)
     elif kind == "name" and node["name"] in known:
         return known[node["name"]]
+    elif kind == "unary" and node["operator"] == "-" and node["operand"]["kind"] == "literal" and node["operand"]["literal_kind"] == "number" and runtime_decimal(node["operand"]["value"]):
+        return __lsl_float_bits(-__lsl_parse_float(node["operand"]["value"]))
     elif kind == "unary" and node["operator"] == "-":
         return -runtime_constant(node["operand"],known)
     elif kind == "unary" and node["operator"] == "~":

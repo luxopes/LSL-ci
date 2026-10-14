@@ -78,7 +78,7 @@ end
 
 # Tabulka internovaných literálů (stav +48, maska +56): dvojice (statický
 # záznam, String na haldě) po 16 B; slot = (adresa >> 3) & maska. Nová
-# dvojnásobná tabulka z brk (paměť je nulová), stará se nevrací.
+# dvojnásobná tabulka je nové mapování (paměť je nulová), stará se nevrací.
 function rt_runtime_grow_intern_table():
     base = core.state()
     old = __lsl_qbe_load64(base + INTERN_TABLE)
@@ -89,8 +89,8 @@ function rt_runtime_grow_intern_table():
     capacity = (mask + 1) * 2
     new_mask = capacity - 1
     size = __lsl_qbe_shl(capacity, 4)
-    table = os_linux.brk(0)
-    if os_linux.brk(table + size) != table + size:
+    table = os_linux.map_anonymous(size, 0)
+    if table < 0:
         call heap.fatal_allocation()
     end
     index = 0

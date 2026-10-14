@@ -96,3 +96,13 @@ function rt_runtime_unbox_dynamic_float(value):
     return value
 end
 
+
+# Float -> Int useknutím k nule se stejným výsledkem na všech cílech: NaN
+# a hodnoty mimo rozsah Int dávají Int minimum (jako cvttsd2si na x86_64;
+# arm64 a riscv64 by saturovaly a NaN převedly na 0).
+function truncate_float(bits):
+    if __lsl_raw_flt(bits, 9223372036854775808.0) and __lsl_raw_fge(bits, -9223372036854775808.0):
+        return __lsl_raw_fftoi(bits)
+    end
+    return __lsl_qbe_shl(1, 63)
+end

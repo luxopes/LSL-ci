@@ -161,9 +161,19 @@ function exit_process(status):
     return syscall3(platform.SYS_EXIT_GROUP, status, 0, 0)
 end
 
-# Konec haldy brk; brk(0) vrátí současný konec.
-function brk(address):
-    return syscall3(platform.SYS_BRK, address, 0, 0)
+# Anonymní paměť přesně na adrese address, bez přepsání existujícího
+# mapování: 1 = hotovo, 0 = místo je obsazené. Jádra před 4.17 příznak
+# NOREPLACE neznají a berou adresu jen jako nápovědu, proto se výsledek
+# vždy porovná a jinde vytvořené mapování se vrátí.
+function map_at(address, size):
+    result = syscall6(platform.SYS_MMAP, address, size, platform.PROT_READ | platform.PROT_WRITE, platform.MAP_PRIVATE | platform.MAP_ANONYMOUS | platform.MAP_FIXED_NOREPLACE, -1, 0)
+    if result == address:
+        return 1
+    end
+    if result >= 0:
+        call munmap(result, size)
+    end
+    return 0
 end
 
 # Anonymní soukromé mapování paměti (čtení a zápis); záporné = chyba.

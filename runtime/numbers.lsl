@@ -195,7 +195,7 @@ function rt_runtime_fraction_string(value):
     return text
 end
 
-# Pevný zápis Float: celá část (cvttsd2si), tečka a šest číslic zlomku,
+# Pevný zápis Float: celá část (core.truncate_float), tečka a šest číslic zlomku,
 # obojí useknuté k nule; mimo rozsah Int dává převod Int minimum jako
 # dřív. Vrací délku; nekonečna a NaN řeší special_float_text.
 function write_fixed_float(buffer, bits):
@@ -205,11 +205,11 @@ function write_fixed_float(buffer, bits):
         length = 1
         bits = bits & 9223372036854775807
     end
-    whole = __lsl_raw_fftoi(bits)
+    whole = core.truncate_float(bits)
     length += write_int(buffer + length, whole)
     __lsl_qbe_store8(buffer + length, 46)
     length += 1
-    fraction = __lsl_raw_fftoi(__lsl_raw_fmul(__lsl_raw_fsub(bits, __lsl_raw_fitof(whole)), 1000000.0))
+    fraction = core.truncate_float(__lsl_raw_fmul(__lsl_raw_fsub(bits, __lsl_raw_fitof(whole)), 1000000.0))
     return length + write_fraction6(buffer + length, fraction)
 end
 
@@ -290,8 +290,8 @@ function rt_runtime_sleep(number):
     remaining = __lsl_qbe_alloc(16)
     call __lsl_qbe_call0(__lsl_symbol("rt_runtime_stdout_flush"))
     bits = __lsl_qbe_load64(number + 8)
-    seconds = __lsl_raw_fftoi(bits)
-    nanoseconds = __lsl_raw_fftoi(__lsl_raw_fmul(__lsl_raw_fsub(bits, __lsl_raw_fitof(seconds)), 1000000000.0))
+    seconds = core.truncate_float(bits)
+    nanoseconds = core.truncate_float(__lsl_raw_fmul(__lsl_raw_fsub(bits, __lsl_raw_fitof(seconds)), 1000000000.0))
     __lsl_qbe_store64(request, seconds)
     __lsl_qbe_store64(request + 8, nanoseconds)
     __lsl_qbe_store64(remaining, 0)
