@@ -35,7 +35,7 @@ WINDOWS_IMPORTS = {
     'kernel32': ('kernel32.dll', '''CloseHandle CreateDirectoryW CreateFileMappingW CreateFileW CreatePipe
         CreateProcessW CreateThread DeleteFileW DeleteProcThreadAttributeList ExitProcess ExitThread
         FreeEnvironmentStringsW GetCommandLineW GetConsoleCP GetConsoleMode GetConsoleScreenBufferInfo
-        GetCurrentProcess GetCurrentProcessId GetCurrentThreadId GetEnvironmentStringsW GetExitCodeProcess
+        GetCurrentProcess GetModuleHandleW GetCurrentProcessId GetCurrentThreadId GetEnvironmentStringsW GetExitCodeProcess
         GetFileAttributesW GetFileInformationByHandle GetFileType GetFinalPathNameByHandleW
         GetHandleInformation GetLastError GetModuleFileNameW GetProcessAffinityMask GetStdHandle
         GetSystemTimePreciseAsFileTime GetTempFileNameW GetTempPathW GetThreadContext

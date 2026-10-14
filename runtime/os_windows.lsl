@@ -667,11 +667,55 @@ function process_arguments(stack):
     return block
 end
 
-# Filtr neošetřené výjimky (Win32 volá s EXCEPTION_POINTERS):
-# EXCEPTION_EXECUTE_HANDLER ukončí proces s kódem výjimky (os_wait ho
-# převede na 139, 132…).
+# Filtr neošetřené výjimky (Win32 volá s EXCEPTION_POINTERS): vypíše kód
+# výjimky a adresu vůči začátku obrazu programu a EXCEPTION_EXECUTE_HANDLER
+# ukončí proces s kódem výjimky (os_wait ho převede na 139, 132…).
 function lsl_unhandled_exception(information):
+    record = __lsl_qbe_load64(information)
+    text = __lsl_qbe_alloc(128)
+    used = copy_text(text, 0, __lsl_address("LSL runtime crash: exception 0x") + 16)
+    used = put_hex(text, used, dword(__lsl_qbe_load32(record)), 8)
+    used = copy_text(text, used, __lsl_address(" at image+0x") + 16)
+    image = __lsl_qbe_call1(__lsl_symbol("GetModuleHandleW"), 0)
+    used = put_hex(text, used, __lsl_qbe_load64(record + 16) - image, 8)
+    __lsl_qbe_store8(text + used, 10)
+    call write(2, text, used + 1)
     return 1
+end
+
+# Zkopíruje C řetězec do bufferu od pozice used; nová pozice.
+function copy_text(buffer, used, source):
+    while __lsl_qbe_load8(source) != 0:
+        __lsl_qbe_store8(buffer + used, __lsl_qbe_load8(source))
+        used += 1
+        source += 1
+    end
+    return used
+end
+
+# Číslo šestnáctkově, aspoň digits číslic; nová pozice.
+function put_hex(buffer, used, value, digits):
+    count = 1
+    probe = __lsl_qbe_lshr(value, 4)
+    while probe != 0:
+        count += 1
+        probe = __lsl_qbe_lshr(probe, 4)
+    end
+    if count < digits:
+        count = digits
+    end
+    index = count
+    while index > 0:
+        index -= 1
+        digit = value & 15
+        if digit < 10:
+            __lsl_qbe_store8(buffer + used + index, 48 + digit)
+        else:
+            __lsl_qbe_store8(buffer + used + index, 87 + digit)
+        end
+        value = __lsl_qbe_lshr(value, 4)
+    end
+    return used + count
 end
 
 # Počet znaků UTF-16 do NUL.
