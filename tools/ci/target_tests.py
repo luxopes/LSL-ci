@@ -100,7 +100,11 @@ def native(a):
     if status != 0:
         return 1
     lsl = str(package / 'bin' / ('lsl' + suffix))
-    for command in (['about'], ['help'], ['man', '--plain', '18-platforms'], ['list'], ['about', 'json']):
+    commands = [['about'], ['help'], ['list'], ['about', 'json']]
+    if (package / 'lib/lsl/docs/developer_guides/18-platforms.md').exists():
+        # Balík vydání s manuálem (CI ho bez zdroje webu nemá).
+        commands.append(['man', '--plain', '18-platforms'])
+    for command in commands:
         status, out, error = run([lsl, *command], 120)
         print('lsl', ' '.join(command) + ':', status, len(out), 'bytes', error.decode(errors='replace').strip()[:200], flush=True)
         if status != 0 or len(out) == 0:
