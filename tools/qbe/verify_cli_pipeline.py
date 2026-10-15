@@ -71,9 +71,10 @@ def main():
           diagnostic='internal ABI requires compiler trust mode')
     check('compiler rejects unknown option', [compiler, '--missing', safe, executable], status=2)
     check('compiler missing target value', [compiler, '--target'], status=2)
+    # Od 0.10 jsou Windows, macOS, WebAssembly i bare metal dostupné cíle.
     check('compiler unavailable target',
-          [compiler, '--target', 'windows-x86_64', safe, executable], status=1,
-          diagnostic='compilation target is not implemented')
+          [compiler, '--target', 'solaris-sparc64', safe, executable], status=1,
+          diagnostic='unsupported compilation target')
     if check('public CLI compile', [cli, 'compile', safe, executable]):
         check('public CLI compiled output', [executable], stdout='native public 42\n')
     check('public CLI safe compile', [cli, 'compile', unsafe, executable], status=1,

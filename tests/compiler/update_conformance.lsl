@@ -122,6 +122,14 @@ function main():
     call reject_manifest(text.replace("1397462", "-1"))
     call reject_manifest(text.replace("1397462", "1.5"))
     call reject_manifest(text.replace("x86_64", "aarch64"))
+    # Neznámé platformy podepsaného manifestu se přeskakují; známá s
+    # chybným formátem dál selže.
+    unknown = text.replace("\"artifacts\": [", "\"artifacts\": [{\"os\": \"linux\", \"architecture\": \"mips64\", \"format\": \"tar.zst\", \"url\": \"x\", \"size\": 0, \"sha256\": \"x\", \"archive_root\": \"x\", \"installer\": \"x\"}, {\"os\": \"freebsd\", \"architecture\": \"x86_64\", \"format\": \"tar.gz\", \"url\": \"x\", \"size\": 0, \"sha256\": \"x\", \"archive_root\": \"x\", \"installer\": \"x\"}, ")
+    skipped = update.manifest_value(unknown, "0.7.7", "x86_64", False)
+    call require(skipped["artifact"]["architecture"] == "x86_64", "unknown platform not skipped")
+    call reject_manifest(unknown.replace("\"architecture\": \"mips64\"", "\"architecture\": \"riscv64\""))
+    riscv = text.replace("x86_64", "riscv64")
+    call require(update.manifest_value(riscv, "0.7.7", "riscv64", False)["artifact"]["architecture"] == "riscv64", "riscv64 artifact rejected")
     call reject_manifest(text.replace("linux", "windows"))
     call reject_manifest(text.replace("tar.gz", "zip"))
     call reject_manifest(text.replace("bin/lsl-install", "bin/evil"))

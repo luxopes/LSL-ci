@@ -9,5 +9,7 @@ for index in rang(40):
     objects.append([index])
 end
 call gc()
-print __lsl_object_table_mask() >= 63, __lsl_intern_table_mask() >= 15
+# Od 0.10 eviduje objekty bitmapa začátků objektů, tabulka objektů už
+# s počtem objektů neroste; roste tabulka internovaných literálů.
+print __lsl_intern_table_mask() >= 15
 print objects[39][0], texts[11], remembered()

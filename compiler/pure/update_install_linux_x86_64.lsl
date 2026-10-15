@@ -316,6 +316,14 @@ function health(generation, expected, scratch):
     end
 end
 
+# Runtime nativní platformy této instalace (compiler/qbe).
+function native_runtime_name():
+    if platform.NAME == "linux-x86_64":
+        return "runtime.o"
+    end
+    return "runtime-" + platform.NAME + ".o"
+end
+
 function install_stage(installer, generation, version, scratch):
     # The signed installer's ordinary 0755/0644 modes must also work for
     # system users when the administrator's personal umask is 077.
@@ -341,7 +349,7 @@ function install_stage(installer, generation, version, scratch):
     # include the native emitter must carry their own LuxIR backend and runtime.
     if metadata(generation + "/lib/lsl/compiler/pure/qbe_emit.lsl") != None:
         backend = metadata(generation + "/bin/luxir")
-        object = metadata(generation + "/lib/lsl/compiler/qbe/runtime.o")
+        object = metadata(generation + "/lib/lsl/compiler/qbe/" + native_runtime_name())
         if backend == None or (backend["mode"] & 61440) != 32768 or (backend["mode"] & 73) == 0 or object == None or (object["mode"] & 61440) != 32768 or object["size"] == 0:
             call fail("installer omitted LuxIR backend or native runtime")
         end

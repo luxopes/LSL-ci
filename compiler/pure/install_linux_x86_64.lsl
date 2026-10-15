@@ -25,9 +25,9 @@ function reinstall_managed(prefix):
             call update_install.health(active, previous_version, work)
         end
         generation = update_install.private_work(store + "/generations")
-        call update_install.install_stage(executable_path(), generation, "0.9.2", work)
+        call update_install.install_stage(executable_path(), generation, "0.10.0", work)
         call update_install.prepare(prefix, prefix + "/bin/lsl", previous_version, work)
-        call update_install.activate(store, generation, "0.9.2", work)
+        call update_install.activate(store, generation, "0.10.0", work)
     else:
         failure = last_error()
     end
@@ -43,7 +43,7 @@ function reinstall_managed(prefix):
     elif cleanup_failure != None:
         Error(InstallError: String(cleanup_failure))
     end
-    print "Installed LSL 0.9.2 atomically; previous version retained for rollback."
+    print "Installed LSL 0.10.0 atomically; previous version retained for rollback."
 end
 
 function dirname(path):
@@ -237,7 +237,8 @@ sources = [
     "x86_64.lsl"
 ]
 standard_modules = ["_ai_baremetal_x86_64.lsl", "_ai_linux_x86_64.lsl", "_ai_macos_x86_64.lsl", "_ai_platform.lsl", "_ai_wasi_x86_64.lsl", "_ai_windows_x86_64.lsl", "_cuda_baremetal_x86_64.lsl", "_cuda_linux_x86_64.lsl", "_cuda_macos_x86_64.lsl", "_cuda_transport.lsl", "_cuda_wasi_x86_64.lsl", "_cuda_windows_x86_64.lsl", "_fd_baremetal_x86_64.lsl", "_fd_linux_x86_64.lsl", "_fd_macos_x86_64.lsl", "_fd_platform.lsl", "_fd_wasi_x86_64.lsl", "_fd_windows_x86_64.lsl", "_host_baremetal_x86_64.lsl", "_host_linux_x86_64.lsl", "_host_macos_x86_64.lsl", "_host_platform.lsl", "_host_wasi_x86_64.lsl", "_host_windows_x86_64.lsl", "_httpserver_baremetal_x86_64.lsl", "_httpserver_linux_x86_64.lsl", "_httpserver_macos_x86_64.lsl", "_httpserver_transport.lsl", "_httpserver_wasi_x86_64.lsl", "_httpserver_windows_x86_64.lsl", "_luxos_baremetal_x86_64.lsl", "_luxos_linux_x86_64.lsl", "_luxos_macos_x86_64.lsl", "_luxos_platform.lsl", "_luxos_wasi_x86_64.lsl", "_luxos_windows_x86_64.lsl", "_native_baremetal_x86_64.lsl", "_native_linux_x86_64.lsl", "_native_macos_x86_64.lsl", "_native_platform.lsl", "_native_wasi_x86_64.lsl", "_native_windows_x86_64.lsl", "_os_baremetal_x86_64.lsl", "_os_linux_x86_64.lsl", "_os_macos_x86_64.lsl", "_os_platform.lsl", "_os_wasi_x86_64.lsl", "_os_windows_x86_64.lsl", "_platform.lsl", "_platform_baremetal_riscv64.lsl", "_platform_linux_arm64.lsl", "_platform_linux_riscv64.lsl", "_platform_linux_x86_64.lsl", "_platform_macos_arm64.lsl", "_platform_macos_x86_64.lsl", "_platform_wasi_wasm32.lsl", "_platform_windows_arm64.lsl", "_platform_windows_x86_64.lsl", "_plugin_baremetal_x86_64.lsl", "_plugin_linux_x86_64.lsl", "_plugin_macos_x86_64.lsl", "_plugin_platform.lsl", "_plugin_wasi_x86_64.lsl", "_plugin_windows_x86_64.lsl", "_random_baremetal_x86_64.lsl", "_random_hash.lsl", "_random_linux_x86_64.lsl", "_random_macos_x86_64.lsl", "_random_platform.lsl", "_random_wasi_x86_64.lsl", "_random_windows_x86_64.lsl", "_sandbox_baremetal_x86_64.lsl", "_sandbox_linux_x86_64.lsl", "_sandbox_macos_x86_64.lsl", "_sandbox_platform.lsl", "_sandbox_wasi_x86_64.lsl", "_sandbox_windows_x86_64.lsl", "_system_baremetal_x86_64.lsl", "_system_linux_x86_64.lsl", "_system_macos_x86_64.lsl", "_system_platform.lsl", "_system_wasi_x86_64.lsl", "_system_windows_x86_64.lsl", "_tui_baremetal_x86_64.lsl", "_tui_linux_x86_64.lsl", "_tui_macos_x86_64.lsl", "_tui_platform.lsl", "_tui_wasi_x86_64.lsl", "_tui_windows_x86_64.lsl", "_unixsock_baremetal_x86_64.lsl", "_unixsock_linux_x86_64.lsl", "_unixsock_macos_x86_64.lsl", "_unixsock_platform.lsl", "_unixsock_wasi_x86_64.lsl", "_unixsock_windows_x86_64.lsl", "ai.lsl", "bigint.lsl", "config.lsl", "configure.lsl", "cuda.lsl", "env.lsl", "fd.lsl", "http.lsl", "httpserver.lsl", "json.lsl", "lconf.lsl", "lux.lsl", "luxos.lsl", "math.lsl", "native.lsl", "os.lsl", "plugin.lsl", "process.lsl", "random.lsl", "requests.lsl", "sandbox.lsl", "system.lsl", "tensor.lsl", "time.lsl", "tui.lsl", "unixsock.lsl"]
-manual_pages = ["README", "01-getting-started", "02-language-basics", "03-functions-and-classes", "04-collections", "05-error-handling", "06-modules-and-imports", "07-files-io-and-processes", "08-configuration-system", "09-gui-programming", "10-ai-applications", "11-performance-and-optimization", "12-compiler-internals", "13-server-and-origin", "14-sandbox-and-safety", "15-cuda", "16-random", "17-cli-and-packages", "env", "requests", "http", "httpserver", "json", "os", "process", "time", "math", "random", "system", "ai", "bigint", "config", "configure", "lconf", "lux", "luxos", "fd", "native", "plugin", "sandbox", "tensor", "tui", "unixsock", "cuda", "reference", "security", "CHANGELOG"]
+target_files = ["compiler/qbe/runtime-linux-arm64.o", "compiler/qbe/runtime-linux-riscv64.o", "compiler/qbe/runtime-windows-x86_64.o", "compiler/qbe/runtime-windows-arm64.o", "compiler/qbe/runtime-macos-x86_64.o", "compiler/qbe/runtime-macos-arm64.o", "compiler/qbe/runtime-wasm32-wasi.lir", "compiler/qbe/runtime-baremetal-riscv64.o", "compiler/qbe/libSystem.tbd", "compiler/qbe/windows-arm64/libkernel32.a", "compiler/qbe/windows-arm64/libsynchronization.a", "compiler/qbe/windows-arm64/libbcrypt.a", "compiler/qbe/windows-arm64/libws2_32.a", "runtime/arch/wasi_wasm32.wat", "runtime/arch/wasi_wasm32_threads.wat", "runtime/arch/baremetal_riscv64.ld", "tools/wasi_run.mjs", "tools/baremetal_run.py"]
+manual_pages = ["README", "01-getting-started", "02-language-basics", "03-functions-and-classes", "04-collections", "05-error-handling", "06-modules-and-imports", "07-files-io-and-processes", "08-configuration-system", "09-gui-programming", "10-ai-applications", "11-performance-and-optimization", "12-compiler-internals", "13-server-and-origin", "14-sandbox-and-safety", "15-cuda", "16-random", "17-cli-and-packages", "18-platforms", "env", "requests", "http", "httpserver", "json", "os", "process", "time", "math", "random", "system", "ai", "bigint", "config", "configure", "lconf", "lux", "luxos", "fd", "native", "plugin", "sandbox", "tensor", "tui", "unixsock", "cuda", "reference", "security", "CHANGELOG"]
 call mkdir(prefix + "/lib/lsl/docs")
 call mkdir(prefix + "/lib/lsl/docs/developer_guides")
 
@@ -256,6 +257,17 @@ end
 call copy_executable(runtime_source, prefix + "/lib/lsl/compiler/qbe/runtime.o")
 done += 1
 call report_progress(done, total)
+# Runtime a vrstvy architektury dalších cílů (lsl compile --target):
+# zkopíruje se, co balík obsahuje.
+call mkdir(prefix + "/lib/lsl/compiler/qbe/windows-arm64")
+call mkdir(prefix + "/lib/lsl/runtime")
+call mkdir(prefix + "/lib/lsl/runtime/arch")
+call mkdir(prefix + "/lib/lsl/tools")
+for name in target_files:
+    if exists(source_path(name)):
+        call copy_executable(source_path(name), prefix + "/lib/lsl/" + name)
+    end
+end
 for name in sources:
     call copy_text(source_path("compiler/pure/" + name), prefix + "/lib/lsl/compiler/pure/" + name)
     done += 1
@@ -277,4 +289,4 @@ end
 call copy_text(source_path("docs/developer_guides/SOURCE.json"), prefix + "/lib/lsl/docs/developer_guides/SOURCE.json")
 done += 1
 call report_progress(done, total)
-print "installed LSL 0.9.2 into", prefix
+print "installed LSL 0.10.0 into", prefix

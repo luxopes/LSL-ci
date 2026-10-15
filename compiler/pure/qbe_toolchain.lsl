@@ -16,6 +16,46 @@ RUNTIME_OBJECTS = {"linux-x86_64":"runtime.o","linux-arm64":"runtime-linux-arm64
 # (tools/runtime/build.py) vedle objektu runtime.
 WINDOWS_LIBRARIES = "/usr/x86_64-w64-mingw32/lib"
 
+# Křížové binutils pro cíle ELF (prefix GNU triple).
+CROSS_PREFIXES = {"linux-x86_64":"x86_64-linux-gnu-","linux-arm64":"aarch64-linux-gnu-","linux-riscv64":"riscv64-linux-gnu-","baremetal-riscv64":"riscv64-linux-gnu-"}
+# Systémový prefix Termuxu (Android); tam jsou nativní binutils místo /usr/bin.
+TERMUX_BIN = "/data/data/com.termux/files/usr/bin/"
+
+# Assembler nebo linker pro cíl. Cíl ELF stejné architektury jako hostitel
+# používá nativní binutils (/usr/bin, /bin, Termux); jiná architektura jen
+# křížové binutils s prefixem, nikdy nativní nástroj jiné architektury.
+# Ostatní cíle mají nástroje nezávislé na hostiteli (tabulka).
+function binutils_tool(name, tool, table, label):
+    if name in CROSS_PREFIXES:
+        prefix = CROSS_PREFIXES[name]
+        native = name == host.target_name() or (name == "baremetal-riscv64" and host.target_name() == "linux-riscv64")
+        if native:
+            for candidate in ["/usr/bin/" + tool, "/bin/" + tool, TERMUX_BIN + tool]:
+                if exists(candidate):
+                    return candidate
+                end
+            end
+        end
+        for candidate in ["/usr/bin/" + prefix + tool, "/usr/local/bin/" + prefix + tool]:
+            if exists(candidate):
+                return candidate
+            end
+        end
+        if name == "baremetal-riscv64":
+            for candidate in ["/usr/bin/riscv64-unknown-elf-" + tool, "/usr/local/bin/riscv64-unknown-elf-" + tool]:
+                if exists(candidate):
+                    return candidate
+                end
+            end
+        end
+        if native:
+            Error(ProcessError: "trusted " + label + " executable is required (GNU binutils: " + tool + ")")
+        end
+        Error(ProcessError: "trusted " + label + " executable is required for target " + name + " (cross binutils: " + prefix + tool + ")")
+    end
+    return host.required_system_tool(table[name][0], table[name][1], label)
+end
+
 function windows_libraries(name):
     if name == "windows-arm64":
         return host.resource_path("compiler/qbe/windows-arm64")
@@ -152,8 +192,8 @@ function image(unit, selected, entry_source="", backend_path=""):
     end
     name = selected["name"]
     runtime = runtime_path(selected)
-    assembler = host.required_system_tool(ASSEMBLERS[name][0], ASSEMBLERS[name][1], "assembler")
-    linker = host.required_system_tool(LINKERS[name][0], LINKERS[name][1], "linker")
+    assembler = binutils_tool(name, "as", ASSEMBLERS, "assembler")
+    linker = binutils_tool(name, "ld", LINKERS, "linker")
     path = host.scratch_program_path()
     failure = None
     result = ByteArray()

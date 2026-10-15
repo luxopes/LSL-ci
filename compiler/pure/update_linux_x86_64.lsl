@@ -112,15 +112,28 @@ function timestamp(value):
     end
 end
 
+# Architektura balíku podle platformy, pro kterou je tento program přeložený
+# (jméno stroje z uname a v URL archivu).
+function release_architecture():
+    if platform.NAME == "linux-arm64":
+        return "aarch64"
+    elif platform.NAME == "linux-riscv64":
+        return "riscv64"
+    end
+    return "x86_64"
+end
+
 function host_platform():
     data = __lsl_byte_zeros(platform.UTSNAME_BYTES)
     if __lsl_syscall(platform.SYS_UNAME, __lsl_data_address(data), 0, 0, 0) < 0:
         call fail("cannot detect host platform")
     end
-    if __lsl_text_from_bytes(data, platform.UTSNAME_SYSNAME, 5) != "Linux" or __lsl_text_from_bytes(data, platform.UTSNAME_MACHINE, 6) != "x86_64" or data[platform.UTSNAME_MACHINE + 6] != 0:
-        call fail("self-update currently supports Linux x86_64 only")
+    architecture = release_architecture()
+    width = __lsl_text_byte_length(architecture)
+    if __lsl_text_from_bytes(data, platform.UTSNAME_SYSNAME, 5) != "Linux" or __lsl_text_from_bytes(data, platform.UTSNAME_MACHINE, width) != architecture or data[platform.UTSNAME_MACHINE + width] != 0:
+        call fail("self-update supports Linux x86_64, aarch64 and riscv64 with the matching LSL build")
     end
-    return "x86_64"
+    return architecture
 end
 
 function manifest_value(text, current, architecture, allow_downgrade):
@@ -145,8 +158,13 @@ function manifest_value(text, current, architecture, allow_downgrade):
     seen = {}
     for artifact in artifacts:
         call fields(artifact, ["os", "architecture", "format", "url", "size", "sha256", "archive_root", "installer"])
-        if artifact["os"] != "linux" or (artifact["architecture"] != "x86_64" and artifact["architecture"] != "aarch64") or artifact["format"] != "tar.gz":
-            call fail("unsupported artifact platform or format")
+        # Platformy, které tento klient nezná, přeskočí: podepsaný manifest
+        # pak smí přidat další architektury bez rozbití starších klientů.
+        if artifact["os"] != "linux" or (artifact["architecture"] != "x86_64" and artifact["architecture"] != "aarch64" and artifact["architecture"] != "riscv64"):
+            continue
+        end
+        if artifact["format"] != "tar.gz":
+            call fail("unsupported artifact format")
         end
         arch = artifact["architecture"]
         if arch in seen:
@@ -429,8 +447,8 @@ function installer_entry(buffer, entries, root):
             if entry["kind"] == 53 or entry["size"] < 176 or (entry["mode"] & 73) == 0:
                 call fail("expected installer is not an executable regular file")
             end
-            if data[start] != 127 or __lsl_text_from_bytes(data, start + 1, 3) != "ELF" or data[start + 4] != 2 or data[start + 5] != 1 or update_install.little(data, start + 16, 2) != 3 or update_install.little(data, start + 18, 2) != 62:
-                call fail("expected installer is not a Linux x86_64 PIE ELF")
+            if data[start] != 127 or __lsl_text_from_bytes(data, start + 1, 3) != "ELF" or data[start + 4] != 2 or data[start + 5] != 1 or update_install.little(data, start + 16, 2) != 3 or update_install.little(data, start + 18, 2) != platform.ELF_MACHINE:
+                call fail("expected installer is not a Linux PIE ELF for this architecture")
             end
             return entry
         end
@@ -524,7 +542,7 @@ function execute(current, settings, work, prefix):
     end
     store = prefix + "/lib/lsl-updates"
     artifact = manifest["artifact"]
-    call console.heading("Downloading verified LSL " + manifest["version"] + " for Linux x86_64.")
+    call console.heading("Downloading verified LSL " + manifest["version"] + " for Linux " + release_architecture() + ".")
     call download_progress(artifact["url"], work + "/release.tar.gz", artifact["size"])
     installer = extract_archive(work, artifact)
     generation = update_install.private_work(store + "/generations")

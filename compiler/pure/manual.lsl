@@ -22,6 +22,7 @@ function pages():
         ["15-cuda", "15. CUDA a GPU tenzory"],
         ["16-random", "16. Random"],
         ["17-cli-and-packages", "17. CLI, balicky a terminalovy manual"],
+        ["18-platforms", "18. Platformy a cile prekladu"],
         ["env", "Knihovna env — promenne prostredi"],
         ["requests", "Knihovna requests — HTTP klient"],
         ["http", "Knihovna http — HTTP transport"],
