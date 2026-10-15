@@ -869,3 +869,16 @@ end
 function tgkill(process, thread, signal):
     return 0 - ENOSYS
 end
+
+# Výpis adresáře (__lsl_list_directory) zatím není.
+function directory_open(path):
+    return 0 - ENOSYS
+end
+
+function directory_next(state, buffer, size):
+    return 0
+end
+
+function directory_close(state):
+    return 0
+end

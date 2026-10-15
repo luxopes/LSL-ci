@@ -68,6 +68,7 @@ WASI_SKIP = {
     'automatic_gc_conformance.lsl': 'memory from /proc/self/status',
     'automatic_gc_threads_conformance.lsl': 'processes (run, capture)',
     'call_statement_conformance.lsl': 'writes /dev/null',
+    'list_directory_conformance.lsl': 'directory listing (WASI preview1 fd_readdir not used)',
     'gc_bigheap_threads_conformance.lsl': 'Linux syscall (setitimer)',
     'gc_stream_worker_conformance.lsl': '/bin/sh',
     'language_safety_features.lsl': 'processes (system)',
@@ -84,6 +85,7 @@ WASI_SKIP = {
 # /proc by četl stav qemu na hostiteli.
 BAREMETAL_SKIP = {
     'automatic_gc_conformance.lsl': 'memory from /proc/self/status',
+    'list_directory_conformance.lsl': 'no directories without an OS',
     'automatic_gc_threads_conformance.lsl': 'processes (run, capture)',
     'gc_bigheap_threads_conformance.lsl': 'Linux syscall (setitimer)',
     'gc_stream_worker_conformance.lsl': '/bin/sh',

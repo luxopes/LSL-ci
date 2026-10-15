@@ -11,7 +11,7 @@ exports:
   - targets:         [ x86_64-macos, arm64-macos ]
     symbols:         [ __NSGetExecutablePath, ___error, ___ulock_wait,
                        ___ulock_wake, __exit, _accept, _access,
-                       _arc4random_buf, _bind, _chmod, _chown, _clock_gettime, _close,
+                       _arc4random_buf, _bind, _chmod, _chown, _clock_gettime, _close, _closedir,
                        _connect, _fcntl, _fstat, _ftruncate, _getpid, _getsockname,
                        _getsockopt, _ioctl, _isatty, _kill, _listen, _lseek,
                        _mkdir, _mkostemp, _mmap, _mprotect, _munmap,
@@ -30,6 +30,8 @@ exports:
                        _read, _recv, _recvmsg, _rmdir, _sandbox_init, _sched_yield, _send, _sendmsg, _setrlimit,
                        _setsockopt, _shutdown, _sigaction, _socket, _sysconf, _sys_icache_invalidate,
                        _unlink, _waitid, _waitpid, _write, dyld_stub_binder ]
+  - targets:         [ arm64-macos ]
+    symbols:         [ _opendir, _readdir ]
   - targets:         [ x86_64-macos ]
-    symbols:         [ '_fstat$INODE64' ]
+    symbols:         [ '_fstat$INODE64', '_opendir$INODE64', '_readdir$INODE64' ]
 ...

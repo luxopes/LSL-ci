@@ -1283,3 +1283,55 @@ end
 function thread_run_pending(entry):
     return 0
 end
+
+# Výpis adresáře (__lsl_list_directory): FindFirstFileW("cesta\\*").
+# Blok stavu: +0 HANDLE, +8 první položka ještě nevrácená, od +16
+# WIN32_FIND_DATAW (cFileName na +44).
+DIRECTORY_STATE = 4096
+FIND_NAME = 44
+
+function directory_open(path):
+    wide = __lsl_qbe_alloc(WIDE_PATH_BYTES)
+    if not wide_path(path, wide):
+        return 0 - platform.ENOENT
+    end
+    length = wide_length(wide)
+    if length + 3 >= WIDE_PATH_CHARS:
+        return 0 - platform.ENAMETOOLONG
+    end
+    __lsl_qbe_store16(wide + __lsl_qbe_shl(length, 1), 92)
+    __lsl_qbe_store16(wide + __lsl_qbe_shl(length + 1, 1), 42)
+    __lsl_qbe_store16(wide + __lsl_qbe_shl(length + 2, 1), 0)
+    state = map_anonymous(DIRECTORY_STATE, 0)
+    if state < 0:
+        return state
+    end
+    handle = __lsl_qbe_call2(__lsl_symbol("FindFirstFileW"), wide, state + 16)
+    if handle == INVALID_HANDLE or handle == 4294967295:
+        error = last_errno()
+        call unmap(state, DIRECTORY_STATE)
+        return error
+    end
+    __lsl_qbe_store64(state, handle)
+    __lsl_qbe_store64(state + 8, 1)
+    return state
+end
+
+function directory_next(state, buffer, size):
+    if __lsl_qbe_load64(state + 8) != 0:
+        __lsl_qbe_store64(state + 8, 0)
+    elif dword(__lsl_qbe_call2(__lsl_symbol("FindNextFileW"), __lsl_qbe_load64(state), state + 16)) == 0:
+        return 0
+    end
+    bytes = dword(__lsl_qbe_call8(__lsl_symbol("WideCharToMultiByte"), CP_UTF8, 0, state + 16 + FIND_NAME, -1, buffer, size, 0, 0))
+    if bytes <= 1:
+        return 0 - platform.ENAMETOOLONG
+    end
+    return bytes - 1
+end
+
+function directory_close(state):
+    call __lsl_qbe_call1(__lsl_symbol("FindClose"), __lsl_qbe_load64(state))
+    call unmap(state, DIRECTORY_STATE)
+    return 0
+end

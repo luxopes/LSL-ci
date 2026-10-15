@@ -1,8 +1,6 @@
 # Katalog knihoven na Windows a macOS: stejné rozhraní jako
-# catalog_linux_x86_64.lsl. Adresář se vypíše systémovým nástrojem
-# (/bin/ls, na Windows cmd /c dir /b); přijímají se jen ověřená jména
-# knihoven (ASCII), ostatní položky se zahodí.
-load _platform as platform
+# catalog_linux_x86_64.lsl. Adresář vypíše runtime (__lsl_list_directory:
+# FindFirstFileW, readdir); přijímají se jen ověřená jména knihoven.
 load console
 load package
 
@@ -10,33 +8,28 @@ function fail(message):
     Error(PackageError: message)
 end
 
-function windows():
-    return platform.NAME.startswith("windows-")
-end
-
-# Běžný soubor (ne adresář).
+# Běžný soubor (ne adresář): výpis adresáře na souboru selže. Trik
+# "cesta/." Windows nepoužije (cestu normalizuje).
 function library_file(path):
     if not exists(path):
         return False
     end
-    return not exists(String(path) + "/.")
+    directory = False
+    safe:
+        call __lsl_list_directory(String(path))
+        directory = True
+    end
+    return not directory
 end
 
 function listing(directory):
-    if windows():
-        root = __lsl_getenv("SystemRoot")
-        if root == None or root == "":
-            root = "C:/Windows"
-        end
-        shell = String(root).replace(chr(92), "/") + "/System32/cmd.exe"
-        output = capture_clean(shell, ["/d", "/c", "dir", "/b", "/a-d", String(directory).replace("/", chr(92))])
+    names = []
+    try:
+        names = __lsl_list_directory(String(directory))
     else:
-        output = capture_clean("/bin/ls", ["-1a", String(directory)])
-    end
-    if capture_status() != 0:
         call fail("cannot list library directory")
     end
-    return output.replace(chr(13), "").split(chr(10))
+    return names
 end
 
 function directory_names(directory):

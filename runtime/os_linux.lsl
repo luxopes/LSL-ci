@@ -526,3 +526,57 @@ end
 function thread_run_pending(entry):
     return 0
 end
+
+# Výpis adresáře (__lsl_list_directory): handle je blok stavu (+0 fd,
+# +8 pozice, +16 počet bajtů, od +64 výsledek getdents64).
+DIRECTORY_STATE = 65536
+
+function directory_open(path):
+    fd = open(path, platform.O_DIRECTORY | platform.O_CLOEXEC, 0)
+    if fd < 0:
+        return fd
+    end
+    state = map_anonymous(DIRECTORY_STATE, 0)
+    if state < 0:
+        call close(fd)
+        return state
+    end
+    __lsl_qbe_store64(state, fd)
+    __lsl_qbe_store64(state + 8, 0)
+    __lsl_qbe_store64(state + 16, 0)
+    return state
+end
+
+# Další jméno do buffer (bez NUL): délka, 0 konec, záporné errno.
+function directory_next(state, buffer, size):
+    while True:
+        position = __lsl_qbe_load64(state + 8)
+        if position >= __lsl_qbe_load64(state + 16):
+            count = syscall6(platform.SYS_GETDENTS64, __lsl_qbe_load64(state), state + 64, DIRECTORY_STATE - 64, 0, 0, 0)
+            if count <= 0:
+                return count
+            end
+            __lsl_qbe_store64(state + 8, 0)
+            __lsl_qbe_store64(state + 16, count)
+            position = 0
+        end
+        record = state + 64 + position
+        __lsl_qbe_store64(state + 8, position + __lsl_qbe_load16(record + 16))
+        name = record + 19
+        length = 0
+        while __lsl_qbe_load8(name + length) != 0 and length < size:
+            __lsl_qbe_store8(buffer + length, __lsl_qbe_load8(name + length))
+            length += 1
+        end
+        if length > 0:
+            return length
+        end
+    end
+    return 0
+end
+
+function directory_close(state):
+    call close(__lsl_qbe_load64(state))
+    call unmap(state, DIRECTORY_STATE)
+    return 0
+end

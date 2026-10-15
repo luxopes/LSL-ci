@@ -1,0 +1,5 @@
+['alpha.lsl', 'beta.txt', 'sub', 'čeština s mezerou.txt']
+0
+FileError: cannot list directory
+True
+False

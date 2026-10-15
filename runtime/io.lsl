@@ -484,6 +484,39 @@ function rt_runtime_mkdir_private(path):
     return os.make_directory(path + 16, 448)
 end
 
+# __lsl_list_directory(cesta): List jmen položek bez "." a "..", v pořadí,
+# jak je vrací systém; chyba FileError.
+function rt_runtime_list_directory(path):
+    if not rt_runtime_path_valid(path):
+        return file_error("FileError: cannot list directory")
+    end
+    handle = os.directory_open(path + 16)
+    if handle < 0:
+        return file_error("FileError: cannot list directory")
+    end
+    result = __lsl_qbe_call2(__lsl_symbol("rt_runtime_list_new"), 0, 0)
+    buffer = __lsl_qbe_alloc(1024)
+    failed = 0
+    while True:
+        length = os.directory_next(handle, buffer, 1023)
+        if length < 0:
+            failed = 1
+            break
+        elif length == 0:
+            break
+        end
+        dot = __lsl_qbe_load8(buffer) == 46
+        if not (dot and (length == 1 or (length == 2 and __lsl_qbe_load8(buffer + 1) == 46))):
+            call __lsl_qbe_call2(__lsl_symbol("rt_runtime_list_append"), result, text.string_from(buffer, length))
+        end
+    end
+    call os.directory_close(handle)
+    if failed:
+        return file_error("FileError: cannot list directory")
+    end
+    return result
+end
+
 function rt_runtime_unlink(path):
     if not rt_runtime_path_valid(path):
         return -EINVAL

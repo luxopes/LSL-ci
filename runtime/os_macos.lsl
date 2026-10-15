@@ -801,3 +801,36 @@ end
 function thread_run_pending(entry):
     return 0
 end
+
+# Výpis adresáře (__lsl_list_directory): opendir/readdir z libSystem
+# (most lsl_arch_* kvůli symbolům $INODE64 na x86_64). struct dirent:
+# +18 délka jména, +21 jméno. Handle je DIR*.
+function directory_open(path):
+    directory = __lsl_qbe_call1(__lsl_symbol("lsl_arch_opendir"), path)
+    if directory == 0:
+        return last_errno()
+    end
+    return directory
+end
+
+function directory_next(directory, buffer, size):
+    entry = __lsl_qbe_call1(__lsl_symbol("lsl_arch_readdir"), directory)
+    if entry == 0:
+        return 0
+    end
+    length = __lsl_qbe_load16(entry + 18)
+    if length > size:
+        return 0 - platform.ENAMETOOLONG
+    end
+    index = 0
+    while index < length:
+        __lsl_qbe_store8(buffer + index, __lsl_qbe_load8(entry + 21 + index))
+        index += 1
+    end
+    return length
+end
+
+function directory_close(directory):
+    call __lsl_qbe_call1(__lsl_symbol("closedir"), directory)
+    return 0
+end

@@ -211,6 +211,17 @@ _lsl_arch_ioctl:
 _lsl_arch_fstat:
 	jmp _fstat$INODE64
 
+# opendir/readdir s 64bitovým inode (struct dirent s d_namlen na +18).
+	.globl _lsl_arch_opendir
+	.p2align 4
+_lsl_arch_opendir:
+	jmp _opendir$INODE64
+
+	.globl _lsl_arch_readdir
+	.p2align 4
+_lsl_arch_readdir:
+	jmp _readdir$INODE64
+
 # Adresa stavu runtime, TSD slot bloku vlákna a argumenty z main.
 	.zerofill __DATA,__bss,_lsl_state,8,3
 	.globl _lsl_state

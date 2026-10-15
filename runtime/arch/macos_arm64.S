@@ -257,6 +257,17 @@ _lsl_arch_ioctl:
 _lsl_arch_fstat:
 	b _fstat
 
+// opendir/readdir (arm64 má jen 64bitový inode).
+	.globl _lsl_arch_opendir
+	.p2align 2
+_lsl_arch_opendir:
+	b _opendir
+
+	.globl _lsl_arch_readdir
+	.p2align 2
+_lsl_arch_readdir:
+	b _readdir
+
 // Adresa stavu runtime, TSD slot bloku vlákna a argumenty z main.
 	.zerofill __DATA,__bss,_lsl_state,8,3
 	.globl _lsl_state
