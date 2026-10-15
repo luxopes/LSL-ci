@@ -510,7 +510,10 @@ function installation():
     if prefix.find("/lib/lsl-updates/") >= 0:
         call fail("self-update cannot run from a stored or staged version")
     end
-    if not exists(prefix + "/lib/lsl/" + MARKER) and not exists(prefix + "/lib/lsl-updates/journal"):
+    # Spravovaná je instalace z lsl-install (značka) a prefix, který už
+    # updater spravuje (rozpracovaná výměna, uložená předchozí verze).
+    managed = exists(prefix + "/lib/lsl-updates/journal") or exists(prefix + "/lib/lsl-updates/previous/version")
+    if not exists(prefix + "/lib/lsl/" + MARKER) and not managed:
         call fail("self-update works on installations made by lsl-install; install this package with lsl-install first")
     end
     return prefix
