@@ -50,6 +50,13 @@ jobs:
             curl -sSfL -o llvm-$arch/LICENSE-LLVM.txt https://raw.githubusercontent.com/llvm/llvm-project/llvmorg-20.1.8/llvm/LICENSE.TXT
             curl -sSfL -o llvm-$arch/LICENSE-lld.txt https://raw.githubusercontent.com/llvm/llvm-project/llvmorg-20.1.8/lld/LICENSE.TXT
           done
+      - name: Manual for the native packages (published manual archive)
+        run: |
+          curl -sSfL -o manual.zip https://lsl.lux-ai.cz/downloads/lsl-0.10.0-manual.zip
+          mkdir -p build/manual-source
+          unzip -q -j manual.zip '*.md' -d build/manual-source
+          rm -f build/manual-source/RELEASE_NOTES.md
+          printf '{"repository": "ci", "note": "manual from lsl-0.10.0-manual.zip for CI packages"}\n' > build/manual-source/SOURCE.json
       - name: Native compiler packages (Windows, macOS)
         run: |
           for spec in windows-x86_64:x86_64 windows-arm64:aarch64 macos-x86_64: macos-arm64:; do

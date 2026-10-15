@@ -162,6 +162,9 @@ def native(a):
     prefix = work / 'prefix'
     status, out, error = run([str(package / 'bin' / ('lsl-install' + suffix)), str(prefix)], 600)
     print('lsl-install:', status, out.decode(errors='replace').strip()[:300], error.decode(errors='replace').strip()[:300], flush=True)
+    if status != 0:
+        print('FAIL    lsl-install', flush=True)
+        return 1
     hello = work / 'hello.lsl'
     hello.write_text('x = [3, 1, 2]\nx.sort()\nprint "installed", x\n')
     program = work / ('hello' + suffix)

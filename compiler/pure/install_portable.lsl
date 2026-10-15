@@ -133,7 +133,7 @@ for name in tools:
 end
 # Windows: assembler a linker LLVM dodané v balíku.
 if windows():
-    for name in ["llvm-mc.exe", "ld.lld.exe"]:
+    for name in ["llvm-mc.exe", "lld.exe"]:
         if exists(binary_directory + "/" + name):
             call copy_file(binary_directory + "/" + name, prefix + "/bin/" + name)
         end
