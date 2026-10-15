@@ -104,14 +104,22 @@ def native(a):
     work.mkdir(exist_ok=True)
     failures = 0
 
+    extensions = {path.stem for path in (ROOT / 'extensions').glob('*.lsl')}
+
     def one(test):
         source = ROOT / 'tests' / test['name']
+        loads = {line.split()[1] for line in source.read_text(encoding='utf-8').splitlines()
+                 if line.startswith('load ') and len(line.split()) > 1}
+        if loads & extensions:
+            # Nainstalovaný překladač rozšíření z extensions/ repozitáře nehledá.
+            return test['name'], 'skip', b'needs repository extensions/'
         binary = work / (source.stem + suffix)
         status, _, error = run([str(compiler), '--unsafe', str(source), str(binary)], 900)
         if status != 0:
             return test['name'], 'compile', error
         status, out, error = run([str(binary)], a.timeout)
-        expected = source.with_suffix('.out').read_bytes()
+        # Očekávaný výstup z balíku (checkout na Windows mívá CRLF).
+        expected = (a.directory.resolve() / test['expected']).read_bytes()
         if status == 0 and out == expected:
             return test['name'], 'ok', b''
         return test['name'], f'status {status}', error + b' stdout: ' + out[:300]
@@ -120,14 +128,17 @@ def native(a):
         for name, result, detail in pool.map(one, manifest['tests']):
             if result == 'ok':
                 print(f'ok      {name}', flush=True)
+            elif result == 'skip':
+                print(f'skip    {name}: {detail.decode()}', flush=True)
             else:
                 failures += 1
                 print(f'FAIL    {name}: {result}: {detail.decode(errors="replace").strip()[:400]}', flush=True)
-    print(f'native {manifest["target"]}: {len(manifest["tests"]) - failures} of {len(manifest["tests"])} passed', flush=True)
+    print(f'native {manifest["target"]}: {failures} failed of {len(manifest["tests"])}', flush=True)
     # Fixed point: lslc z balíku -> stupeň 2 -> stupeň 3 (z lib/lsl, relativní cesta).
     library = package / 'lib' / 'lsl'
-    stage2 = work / ('lslc-stage2' + suffix)
-    stage3 = work / ('lslc-stage3' + suffix)
+    # Stupně leží v bin/ balíku, aby našly sousední luxir.
+    stage2 = package / 'bin' / ('lslc-stage2' + suffix)
+    stage3 = package / 'bin' / ('lslc-stage3' + suffix)
     for compiler_path, output in ((compiler, stage2), (stage2, stage3)):
         r = subprocess.run([str(compiler_path), 'compiler/pure/lslc_qbe.lsl', str(output)], cwd=library, capture_output=True, timeout=1800)
         if r.returncode != 0:
