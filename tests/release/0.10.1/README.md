@@ -25,8 +25,18 @@
   emulaci; na skutečném ARM64 v CI prochází.
 - Wine: `lslc.exe` pro Windows x64 se přeloží sám (stupeň 2 = 3),
   `lsl-install.exe` zkopíruje nástroje LLVM bajtově shodně.
-- CI `targets` na commitu vydání: `native` na Windows Server 2025 x64,
-  Windows 11 ARM64, macOS 15 arm64 a macOS 15 Intel (CLI, všechny
-  samostatné testy přeložené nativně, fixed point, `lsl-install`), a
-  `run` pro všechny cíle. Balíky v CI sestavuje CI z téhož commitu
-  stejným deterministickým postupem.
+- CI `targets`: `native` a `run` pro všechny cíle na balících, které CI
+  sestaví ze zdroje (binutils a llvm-dlltool z Ubuntu, proto se v bajtech
+  liší od archivů vydání). Přesné archivy vydání otestovala úloha
+  `release-native` (běh 38747104262, archivy z draft release v LSL-ci,
+  kontrola SHA256SUMS): nativní překlad a spuštění všech samostatných
+  testů, fixed point stupeň 2 = 3, `lsl-install` a nainstalovaný překladač:
+  - Windows Server 2025 x64 (`windows-x86_64.zip`): 0 selhání z 92,
+  - Windows 11 ARM64 (`windows-arm64.zip`): 0 z 92,
+  - macOS 15 Apple Silicon (`macos-arm64.tar.gz`): 0 z 98,
+  - macOS 15 Intel (`macos-x86_64.tar.gz`): 0 z 98,
+  - Ubuntu 24.04 ARM64 (`linux-aarch64.tar.gz`): 0 z 103,
+  - Ubuntu 24.04 x86_64 (`linux-x86_64.tar.gz`): 0 z 103.
+  Archiv pro riscv64 je ověřený jen v emulaci (viz výše).
+- Zdrojový archiv se offline sestaví (`build_release.py`) na bajtově
+  shodné `lslc`, `luxir` a `lsl`.
