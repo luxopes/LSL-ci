@@ -270,12 +270,15 @@ end
 function rt_runtime_add_any_raw(left, right):
     left_tag = heap_tag(left)
     right_tag = heap_tag(right)
-    if (left_tag == 2 or left_tag == 7) and (right_tag == 2 or right_tag == 7):
-        # List/Tuple + List/Tuple (vnitřní kód s typem Any) spojí prvky.
-        return __lsl_qbe_call2(__lsl_symbol("rt_runtime_list_concat_any"), left, right)
+    if left_tag == core.TAG_STRING and right_tag == core.TAG_STRING:
+        return __lsl_qbe_call2(__lsl_symbol("rt_runtime_string_concat"), left, right)
     elif left_tag == core.TAG_FLOAT or right_tag == core.TAG_FLOAT:
         return floats.rt_runtime_float_new(__lsl_raw_fadd(tagged_bits(left, left_tag), tagged_bits(right, right_tag)))
     elif left_tag != 0 and left_tag != core.TAG_INT and right_tag != 0 and right_tag != core.TAG_INT:
+        if (left_tag == 2 or left_tag == 7) and (right_tag == 2 or right_tag == 7):
+            # List/Tuple + List/Tuple (vnitřní kód s typem Any) spojí prvky.
+            return __lsl_qbe_call2(__lsl_symbol("rt_runtime_list_concat_any"), left, right)
+        end
         return __lsl_qbe_call2(__lsl_symbol("rt_runtime_string_concat"), left, right)
     end
     return tagged_int(left, left_tag) + tagged_int(right, right_tag)
@@ -284,10 +287,7 @@ end
 function rt_runtime_add_any(left, right):
     left_tag = heap_tag(left)
     right_tag = heap_tag(right)
-    if (left_tag == 2 or left_tag == 7) and (right_tag == 2 or right_tag == 7):
-        # List/Tuple + List/Tuple (vnitřní kód s typem Any) spojí prvky.
-        return __lsl_qbe_call2(__lsl_symbol("rt_runtime_list_concat_any"), left, right)
-    elif left_tag == core.TAG_FLOAT or right_tag == core.TAG_FLOAT:
+    if left_tag == core.TAG_FLOAT or right_tag == core.TAG_FLOAT:
         return floats.rt_runtime_float_new(__lsl_raw_fadd(tagged_bits(left, left_tag), tagged_bits(right, right_tag)))
     elif left_tag != 0 and left_tag != core.TAG_INT and right_tag != 0 and right_tag != core.TAG_INT:
         return __lsl_qbe_call2(__lsl_symbol("rt_runtime_string_concat"), left, right)
