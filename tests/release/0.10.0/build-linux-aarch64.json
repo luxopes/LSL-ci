@@ -1,0 +1,13 @@
+{
+  "target": "linux-arm64",
+  "compiler_sha256": "16d05e4519a24aded44fd79b04b2427aa75ef3a9f86605a4cdc37aa2a895d874",
+  "backend_sha256": "f2d625bedd7f227559e734290edc60bd501eed502fd7a0c369bb757ce87801b2",
+  "artifacts": {
+    "lslc": "47890c42812cb378f78acd2e7e02a36dad3e2d580698cc869128db14c2b2bdc9",
+    "luxir": "6a953a372f4a48c23159436bea7b272b9edc3b12c9c434e908714af99866bc5c",
+    "lsl": "f1b569945fd736ba8b895a320fb212451afb448a9ce3d620dadbcd238e621f34",
+    "lsl-install": "614ace0bdfac9a39df9f3a9315f98c295b170919c38017704b3a894d06d740a5",
+    "lsl-configure": "d044e4662593f7ad03c753b0bb76b7374637f63ca95351d70a83ef96252c8e99",
+    "lsl-test": "f046140af6366ddb64a8fee2a36605f9feeef20adfac7fe3b8bed95200dea7a8"
+  }
+}

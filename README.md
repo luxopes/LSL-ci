@@ -1,15 +1,18 @@
 # Lux Simple Lang (LSL)
 
-**LSL 0.9.2** je stabilní self-hostované vydání pro **Linux x86_64**. Frontend,
-backend LuxIR i host runtime jsou napsané v LSL. Výchozí překlad vede přes
-analyzovaný AST a LuxIR do assembleru; **GNU `as` a `ld` z balíku binutils**
-vytvoří statický PIE ELF. Výsledné programy používají přímé syscalls a nepotřebují
-libc ani dynamický loader. Binutils jsou potřeba také pro `lsl program.lsl`,
-protože CLI zdroj nejprve přeloží. Už zkompilovaný program je nepotřebuje.
+**LSL 0.10.0** je stabilní self-hostované vydání. Překladač běží na
+**Linuxu x86_64, ARM64 a RISC-V 64** a překládá programy pro Linux (x86_64,
+arm64, riscv64, také Android a Raspberry Pi), Windows (x86_64, arm64),
+macOS (Intel, Apple Silicon), WebAssembly (WASI, s vlákny i bez) a bare
+metal RISC-V. Frontend, backend LuxIR i runtime jsou napsané v LSL. Výchozí
+překlad vede přes analyzovaný AST a LuxIR do assembleru cíle; systémový
+assembler a linker (GNU binutils, pro Windows arm64 a macOS LLVM, pro
+WebAssembly WABT) vytvoří výsledný program bez libc. Nástroje pro každý cíl
+popisuje `docs/binary-distribution.md`. Spuštění už přeloženého programu je
+nepotřebuje.
 
 Volitelný NVIDIA worker `cuda/lsl-cuda-worker` je samostatný proces napsaný
-v CUDA C++; bez něj Tensor používá CPU fallback. Podpora dalších architektur
-nebo OS není součástí tohoto vydání.
+v CUDA C++ (jen Linux x86_64); bez něj Tensor používá CPU fallback.
 
 ## Self-hosted vydání
 
@@ -27,26 +30,26 @@ v `time`, streamovaný `httpserver` a běhové chyby ve formátu diagnostiky.
 0.9.2 opravuje všech 34 nálezů auditu 0.9.1: správně zaokrouhlený převod
 textu na Float, numerické hranice v `math`, ochranu protokolu v `httpserver`
 (a nový worker pool), čistotu a lexer konfigurace a lineární práci se Stringy.
-Podrobnosti jsou v `docs/release-0.9.2.md`.
 
-**Známé omezení:** překlad velkého společného zdroje compileru
-v měření na stejném stroji trval **11,399 s proti 8,062 s u 0.8.9**, tedy
-**o 41,4 % déle**. Rychlejší výsledné programy v osmi měřených úlohách tuto
-regresi času překladu neodstraňují. Podrobnosti a reprodukovatelná data jsou
-v [benchmarku LuxIR proti 0.8.9](tools/qbe/LUXIR_BENCHMARK_20261011.md).
+0.10.0 přináší přenositelný runtime napsaný v LSL, backend LuxIR 0.2.0,
+nové cíle (`--target`) a překladač pro ARM64 a RISC-V 64. Volání funkce jako
+samostatný příkaz vyžaduje `call`. Překlad je o 42–44 % rychlejší než v 0.9.2,
+překlad samotného překladače o 49 %; žádný měřený program neběží pomaleji.
+Podrobnosti jsou v `docs/release-0.10.0.md` a `tests/release/0.10.0/`.
 
 Vydání si ponechává `.env` vedle skriptu, `requests` a offline manuály
 standardních knihoven. Proměnné prostředí mají před `.env` přednost;
 hodnoty ze souboru se čtou za běhu a nevkládají se do binárky.
 
-Strojový výstup `lsl version` je `0.9.2`. Příkaz `lsl update` sleduje
-podepsaný stabilní kanál.
+Strojový výstup `lsl version` je `0.10.0`. Příkaz `lsl update` sleduje
+podepsaný stabilní kanál (Linux x86_64 a aarch64).
 Web a manuály mají samostatný projekt
 [LSL-Web](https://git.lux-ai.cz/LuxAI/LSL-Web); veřejná dokumentace je na
 [lsl.lux-ai.cz](https://lsl.lux-ai.cz/).
 Starší manuály jsou v [historii vydání](https://lsl.lux-ai.cz/releases/):
 
-- LSL 0.9.2 — opravy všech nálezů auditu 0.9.1, přesný převod Float, worker pool pro httpserver;
+- LSL 0.10.0 — přenositelný runtime v LSL, Windows, macOS, Linux ARM64/RISC-V, Android, WebAssembly a bare metal RISC-V;
+- [LSL 0.9.2](https://git.lux-ai.cz/LuxAI/LSL/releases/tag/v0.9.2) — opravy všech nálezů auditu 0.9.1, přesný převod Float, worker pool pro httpserver;
 - [LSL 0.9.1](https://git.lux-ai.cz/LuxAI/LSL/releases/tag/v0.9.1) — stabilní vydání LuxIR pipeline, nové jazykové konstrukce, streamovaný HTTP server a čitelné běhové chyby;
 - [LSL 0.9.0 BETA](https://git.lux-ai.cz/LuxAI/LSL/releases/tag/v0.9.0-beta.1) — nový nativní backend LuxIR v LSL, oddělený frontend a ověřený self-host; Linux x86_64;
 - LSL 0.8.9 — `.env`, `requests` a manuály knihoven;

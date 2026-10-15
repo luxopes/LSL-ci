@@ -1,7 +1,9 @@
-# LSL 0.9.2 pro Linux x86_64
+# LSL 0.10.0 pro Linux (x86_64, aarch64, riscv64)
 
-Spustitelné nástroje jsou v `bin/`, standardní knihovna, zdroj frontendu a
-připnuté offline manuály v `lib/lsl/`. Instalace není nutná:
+Archiv obsahuje překladač pro jednu architekturu hostitele. Spustitelné
+nástroje jsou v `bin/`. V `lib/lsl/` je standardní knihovna, zdroj
+frontendu, runtime všech cílů a připnuté offline manuály. Instalace není
+nutná:
 
 ```text
 ./bin/lsl version
@@ -10,15 +12,51 @@ připnuté offline manuály v `lib/lsl/`. Instalace není nutná:
 ./bin/lsl-install /absolutni/cesta/k/prefixu
 ```
 
-Výchozí frontend a backend `bin/luxir` jsou napsané v LSL. Překlad vyžaduje
-**GNU `as` a `ld` z binutils**, také při přímém spuštění zdrojového skriptu.
-Výsledné programy jsou statické Linux x86_64 PIE ELF s ASLR a neproveditelným
-stackem, bez libc a dynamického interpreteru. Spuštění už přeloženého programu
-binutils nepotřebuje. C QBE se automaticky nepoužívá.
+Výchozí frontend a backend `bin/luxir` jsou napsané v LSL. Výchozí cíl je
+architektura balíku. Pro program stejné architektury potřebujete **GNU
+`as` a `ld` z binutils**:
 
-Stabilní vydání; `lsl version` vypisuje `0.9.2`. Podepsaný `lsl update`
-sleduje stabilní kanál. Instalátor zachovává předchozí spravovanou generaci
-pro `lsl update --rollback`. Další OS a architektury nejsou součástí vydání.
+- Debian a Ubuntu: `sudo apt install binutils`
+- Raspberry Pi OS (64bitový): `sudo apt install binutils`
+- Android v Termuxu: `pkg install binutils`
+
+Výsledné programy jsou statické PIE ELF s ASLR a neproveditelným stackem,
+bez libc a bez dynamického loaderu. Spuštění už přeloženého programu
+binutils nepotřebuje.
+
+## Další cíle
+
+```text
+./bin/lsl compile --target windows-x86_64 app.lsl app.exe
+./bin/lsl compile --target macos-arm64 app.lsl app
+./bin/lsl compile --target wasm32-wasi-threads app.lsl app.wasm
+./bin/lsl compile --target baremetal-riscv64 app.lsl app.elf
+```
+
+| Cíl | Nástroje na hostiteli (Debian/Ubuntu) |
+|---|---|
+| `linux-x86_64`, `linux-arm64`, `linux-riscv64` | `binutils`, pro jinou architekturu `binutils-x86-64-linux-gnu`, `binutils-aarch64-linux-gnu`, `binutils-riscv64-linux-gnu` |
+| `windows-x86_64` | `binutils-mingw-w64-x86-64`, `mingw-w64-x86-64-dev` |
+| `windows-arm64` | `clang`, `lld` |
+| `macos-x86_64`, `macos-arm64` | `clang`, `lld` (`ld64.lld`) |
+| `wasm32-wasi`, `wasm32-wasi-threads` | `wabt` |
+| `baremetal-riscv64` | `binutils-riscv64-linux-gnu` |
+
+Spuštění na hostiteli bez cílového systému:
+
+- WebAssembly: `wasmtime run -W threads=y -S threads=y -S inherit-env=y --dir . app.wasm`
+  (vlákna; pro hlubokou rekurzi `-W max-wasm-stack=8388608`), nebo
+  `node lib/lsl/tools/wasi_run.mjs app.wasm` (Node 24, také s vlákny).
+- Bare metal RISC-V: `python3 lib/lsl/tools/baremetal_run.py app.elf`
+  (qemu-system-riscv64, deska `virt`, 4 jádra; vstup a výstup přes
+  semihosting).
+- Linux arm64 a riscv64 na PC: qemu-user (`binfmt`).
+
+Stabilní vydání; `lsl version` vypisuje `0.10.0`. Podepsaný `lsl update`
+sleduje stabilní kanál na Linuxu x86_64 a aarch64. Na riscv64 se
+aktualizuje ručně z archivu. Instalátor zachovává předchozí spravovanou
+generaci pro `lsl update --rollback`. Překladač zatím běží jen na Linuxu.
+Na Windows ho spusťte ve WSL 2, na macOS v linuxovém kontejneru.
 
 ## Self-host
 
@@ -46,8 +84,10 @@ reprodukujete offline přímo:
 
 ```text
 python3 tools/release/build_release.py
+python3 tools/release/build_target_tools.py --target linux-arm64 --output /tmp/arm64
 ```
 
+Runtime ostatních cílů sestaví `tools/runtime/build.py --target NAME`.
 `tools/release/verify_release.py` pak spustí úplné release kontroly.
 Jeho migrační gate navíc potřebuje předem dostupný funkční balík 0.8.9
 s instalátorem a sousedními nástroji; předejte jej pomocí
@@ -56,17 +96,10 @@ s instalátorem a sousedními nástroji; předejte jej pomocí
 běžný self-host starší instalaci nepotřebuje. `bin/lsl-test` potřebuje
 `tests/` ze zdrojového archivu.
 
-## Známé omezení
-
-Překlad i běh nejsou pomalejší než 0.9.1. Překlad velkého zdroje compileru
-zůstává pomalejší než v 0.8.9 (backend LuxIR, viz
-`tools/qbe/LUXIR_BENCHMARK_20261011.md` ve zdrojovém archivu); výsledné
-programy jsou rychlejší.
-
 ## Volitelné CUDA
 
-CUDA worker je `bin/lsl-cuda-worker`. Host programy zůstávají statické
-a při nedostupnosti GPU mohou používat CPU:
+CUDA worker `bin/lsl-cuda-worker` je jen v balíku pro x86_64. Host
+programy zůstávají statické a při nedostupnosti GPU mohou používat CPU:
 
 ```text
 ./bin/lsl compile examples/cuda_session.lsl bin/cuda-example

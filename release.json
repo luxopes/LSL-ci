@@ -1,24 +1,38 @@
 {
-  "version": "0.9.2",
+  "version": "0.10.0",
   "status": "STABLE",
-  "tag": "v0.9.2",
+  "tag": "v0.10.0",
   "platforms": [
-    "linux-x86_64"
+    "linux-x86_64",
+    "linux-aarch64",
+    "linux-riscv64"
   ],
   "backend": {
     "name": "LuxIR",
     "repository": "https://git.lux-ai.cz/LuxAI/LuxIR.git",
-    "commit": "bca0a52ef631f2c040f77a080b38d53345c6284b",
+    "commit": "787359ece7cb00d978fa3488efe9e1b45006903a",
     "directory": "build/dependencies/LuxIR"
   },
   "manual": {
     "repository": "https://git.lux-ai.cz/LuxAI/LSL-Web.git",
-    "commit": "0b99780a130c2a88db58400b538395c03146e7be",
+    "commit": "b5989aaea50c8c7f04226c9443146478719f3568",
     "path": "public",
     "directory": "build/dependencies/LSL-Web"
   },
   "integration_source": {
     "repository": "https://git.lux-ai.cz/LuxAI/LSL-Frontend-Backend-Test.git",
     "commit": "404608255c41f2856089a4f634a27fe25dd85916"
-  }
+  },
+  "targets": [
+    "linux-x86_64",
+    "linux-arm64",
+    "linux-riscv64",
+    "windows-x86_64",
+    "windows-arm64",
+    "macos-x86_64",
+    "macos-arm64",
+    "wasm32-wasi",
+    "wasm32-wasi-threads",
+    "baremetal-riscv64"
+  ]
 }
