@@ -9,6 +9,11 @@ on:
   push:
     branches: ['main', 'work/**']
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Draft release v LSL-ci s archivy vydání: release-native je otestuje na skutečných strojích'
+        required: false
+        default: ''
 
 jobs:
   build:
@@ -75,6 +80,7 @@ jobs:
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target windows-x86_64 --output bundle/windows-x86_64
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target windows-arm64 --output bundle/windows-arm64
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target linux-arm64 --output bundle/linux-arm64
+          python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target linux-x86_64 --output bundle/linux-x86_64
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target macos-x86_64 --output bundle/macos-x86_64
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target macos-arm64 --output bundle/macos-arm64
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target wasm32-wasi --output bundle/wasm32-wasi
@@ -123,6 +129,52 @@ jobs:
         run: |
           chmod +x native/${{ matrix.target }}/bin/* || true
           python tools/ci/target_tests.py native native/${{ matrix.target }} bundle/${{ matrix.target }}
+
+  # Přesné archivy vydání (ne balíky sestavené v CI s binutils Ubuntu):
+  # stáhne je z draft release a spustí tytéž nativní testy.
+  release-native:
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.release_tag != ''
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {runner: windows-2025, target: windows-x86_64, archive: windows-x86_64.zip}
+          - {runner: windows-11-arm, target: windows-arm64, archive: windows-arm64.zip}
+          - {runner: macos-15, target: macos-arm64, archive: macos-arm64.tar.gz}
+          - {runner: macos-15-intel, target: macos-x86_64, archive: macos-x86_64.tar.gz}
+          - {runner: ubuntu-24.04-arm, target: linux-arm64, archive: linux-aarch64.tar.gz}
+          - {runner: ubuntu-24.04, target: linux-x86_64, archive: linux-x86_64.tar.gz}
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: bundles
+          path: bundle
+      - name: Release archive
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p release
+          gh release download "${{ inputs.release_tag }}" -R "${{ github.repository }}" -D release -p '*-${{ matrix.archive }}' -p '*-SHA256SUMS'
+          cd release
+          grep -- '-${{ matrix.archive }}$' *-SHA256SUMS > check.txt
+          test "$(wc -l < check.txt)" = 1
+          python -c "import hashlib,sys;h,n=open('check.txt').read().split();d=hashlib.sha256(open(n,'rb').read()).hexdigest();print(n,d);sys.exit(d!=h)"
+          python -c "import sys,tarfile,zipfile;n=sys.argv[1];(zipfile.ZipFile(n) if n.endswith('.zip') else tarfile.open(n)).extractall('x')" *-${{ matrix.archive }}
+          ls x
+      - name: Release compiler on ${{ matrix.target }}
+        shell: bash
+        run: |
+          package=$(ls -d release/x/lsl-*)
+          python tools/ci/target_tests.py native "$package" bundle/${{ matrix.target }}
 
   run:
     needs: build
