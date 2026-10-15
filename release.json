@@ -1,7 +1,7 @@
 {
-  "version": "0.10.1",
+  "version": "0.10.2",
   "status": "STABLE",
-  "tag": "v0.10.1",
+  "tag": "v0.10.2",
   "platforms": [
     "linux-x86_64",
     "linux-aarch64",

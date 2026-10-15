@@ -26,9 +26,9 @@ function reinstall_managed(prefix):
             call update_install.health(active, previous_version, work)
         end
         generation = update_install.private_work(store + "/generations")
-        call update_install.install_stage(executable_path(), generation, "0.10.1", work)
+        call update_install.install_stage(executable_path(), generation, "0.10.2", work)
         call update_install.prepare(prefix, prefix + "/bin/lsl", previous_version, work)
-        call update_install.activate(store, generation, "0.10.1", work)
+        call update_install.activate(store, generation, "0.10.2", work)
     else:
         failure = last_error()
     end
@@ -44,7 +44,7 @@ function reinstall_managed(prefix):
     elif cleanup_failure != None:
         Error(InstallError: String(cleanup_failure))
     end
-    print "Installed LSL 0.10.1 atomically; previous version retained for rollback."
+    print "Installed LSL 0.10.2 atomically; previous version retained for rollback."
 end
 
 function dirname(path):
@@ -219,4 +219,4 @@ end
 call copy_text(source_path("docs/developer_guides/SOURCE.json"), prefix + "/lib/lsl/docs/developer_guides/SOURCE.json")
 done += 1
 call report_progress(done, total)
-print "installed LSL 0.10.1 into", prefix
+print "installed LSL 0.10.2 into", prefix
