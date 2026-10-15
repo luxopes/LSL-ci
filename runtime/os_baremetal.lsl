@@ -20,6 +20,9 @@
 # výpadek stránky zásobníku vlákna je obslouží, aniž by čekal na zámek,
 # který vlákno drží.
 load _platform as platform
+
+# Krok procházení kořenů GC (zásobníky, registry): 64bitová slova.
+ROOT_WORD_BYTES = 8
 load _runtime_board as board
 load core
 

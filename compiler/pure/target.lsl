@@ -55,6 +55,22 @@ function describe(name):
         architecture = "riscv64"
         backend = "rv64"
         available = True
+    elif name == "linux-arm":
+        # 32bitový ARM (armv7-a, EABI, hard-float): LuxIR vypíše C (c32),
+        # které přeloží clang; hodnoty LSL zůstávají 64bitové, adresy
+        # 32bitové (jako u wasm32).
+        os = "linux"
+        format = "elf32-linux"
+        architecture = "arm"
+        backend = "c32"
+        available = True
+    elif name == "linux-x86":
+        # 32bitový x86 (i686 se SSE2): stejně jako linux-arm přes C (c32).
+        os = "linux"
+        format = "elf32-linux"
+        architecture = "x86"
+        backend = "c32"
+        available = True
     elif name == "windows-x86_64":
         os = "windows"
         format = "pe32plus-windows"
@@ -97,7 +113,7 @@ function describe(name):
     end
     selected = {"name": name, "abi": "lsl-" + architecture + "-v1", "backend": backend, "runtime": "lsl-runtime-" + name + "-v1", "platform_module": "_platform_" + os + "_" + architecture, "os": os, "architecture": architecture, "pointer_bytes": 8, "byte_order": "little", "image_format": format, "available": available, "modules": provider_modules(os, architecture)}
     if os == "linux":
-        selected["elf_machine"] = {"x86_64": 62, "arm64": 183, "riscv64": 243}[architecture]
+        selected["elf_machine"] = {"x86_64": 62, "arm64": 183, "riscv64": 243, "arm": 40, "x86": 3}[architecture]
         selected["segment_alignment"] = 4096
     end
     return selected
@@ -112,7 +128,7 @@ function resolve(name):
 end
 
 function modules_for_platform(platform_module):
-    for name in ["linux-x86_64", "linux-arm64", "linux-riscv64", "windows-x86_64", "windows-arm64", "macos-x86_64", "macos-arm64", "wasm32-wasi", "wasm32-wasi-threads", "baremetal-riscv64"]:
+    for name in ["linux-x86_64", "linux-arm64", "linux-riscv64", "linux-arm", "linux-x86", "windows-x86_64", "windows-arm64", "macos-x86_64", "macos-arm64", "wasm32-wasi", "wasm32-wasi-threads", "baremetal-riscv64"]:
         selected = describe(name)
         if selected["platform_module"] == platform_module:
             return selected["modules"]
@@ -123,7 +139,7 @@ end
 
 function builtin_provider(name):
     for os in ["linux", "windows", "macos", "wasi", "baremetal"]:
-        for architecture in ["x86_64", "arm64", "riscv64", "wasm32"]:
+        for architecture in ["x86_64", "arm64", "riscv64", "arm", "x86", "wasm32"]:
             modules = provider_modules(os, architecture)
             for alias in modules:
                 module = modules[alias]

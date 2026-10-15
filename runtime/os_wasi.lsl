@@ -10,6 +10,9 @@
 #   sekvenčně (thread_run_pending); žádné procesy ani sockety (WASI
 #   preview1 je nemá): tyto funkce vrací -ENOSYS.
 load _platform as platform
+
+# Krok procházení kořenů GC (zásobníky, registry): 64bitová slova.
+ROOT_WORD_BYTES = 8
 load core
 
 THREAD_SELF_PUBLISH = 0

@@ -9,6 +9,9 @@
 # BOOL, DWORD a UINT vrací Win32 jen ve spodních 32 bitech rax: výsledky se
 # maskují (dword) před porovnáním.
 load _platform as platform
+
+# Krok procházení kořenů GC (zásobníky, registry): 64bitová slova.
+ROOT_WORD_BYTES = 8
 load core
 
 THREAD_SELF_PUBLISH = 1

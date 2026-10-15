@@ -12,6 +12,9 @@
 # volá přes můstky vrstvy architektury (na arm64 jdou variabilní argumenty
 # přes zásobník). int výsledky libSystem mají jen 32 bitů (int32).
 load _platform as platform
+
+# Krok procházení kořenů GC (zásobníky, registry): 64bitová slova.
+ROOT_WORD_BYTES = 8
 load core
 
 THREAD_SELF_PUBLISH = 1

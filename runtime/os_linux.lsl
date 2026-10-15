@@ -2,8 +2,24 @@
 # Vrstva OS pro Linux: jediné místo runtime se systémovými voláními Linuxu.
 # Používá jen volání, která mají x86_64, arm64 i rv64 (openat místo open,
 # pipe2, dup3, clone místo fork…); čísla dodá modul platformy cíle.
-# Výsledek je surový výsledek jádra (záporné errno při chybě).
+# Výsledek je surový výsledek jádra (záporné errno při chybě). Na 32bitových
+# cílech (WORD_BYTES 4) se ukazatele ve strukturách jádra zapisují jako
+# 32bitová slova a blok argumentů procesu se převede na 64bitová slova.
 load _platform as platform
+
+# Krok procházení kořenů GC (zásobníky, registry): kód pro 32bitový cíl
+# smí uložit jen dolní půlku ukazatele, proto se tam čte po 4 bajtech.
+ROOT_WORD_BYTES = platform.WORD_BYTES
+
+# Slovo ukazatele ve struktuře jádra (šířka podle cíle).
+function store_word(address, value):
+    if platform.WORD_BYTES == 4:
+        __lsl_qbe_store32(address, value)
+    else:
+        __lsl_qbe_store64(address, value)
+    end
+    return 0
+end
 
 function syscall6(number, a, b, c, d, e, f):
     return __lsl_qbe_call7(__lsl_symbol("lsl_arch_syscall6"), number, a, b, c, d, e, f)
@@ -30,8 +46,9 @@ function close(descriptor):
     return syscall3(platform.SYS_CLOSE, descriptor, 0, 0)
 end
 
+# 32bitový ARM: mmap2 bere posun ve 4KiB stránkách.
 function mmap(address, length, protection, flags, descriptor, offset):
-    return syscall6(platform.SYS_MMAP, address, length, protection, flags, descriptor, offset)
+    return syscall6(platform.SYS_MMAP, address, length, protection, flags, descriptor, __lsl_qbe_lshr(offset, platform.MMAP_OFFSET_SHIFT))
 end
 
 function mprotect(address, length, protection):
@@ -94,7 +111,14 @@ function write(fd, buffer, count):
     return syscall3(platform.SYS_WRITE, fd, buffer, count)
 end
 
+# 32bitové cíle: 64bitový posun jako dvojice slov (1 = ARM EABI s výplní,
+# pár r4:r5; 2 = i386, esi:edi bez výplně).
 function pread(fd, buffer, count, offset):
+    if platform.PREAD64_PAIR == 1:
+        return syscall6(platform.SYS_PREAD64, fd, buffer, count, 0, offset & 4294967295, __lsl_qbe_lshr(offset, 32))
+    elif platform.PREAD64_PAIR == 2:
+        return syscall6(platform.SYS_PREAD64, fd, buffer, count, offset & 4294967295, __lsl_qbe_lshr(offset, 32), 0)
+    end
     return syscall4(platform.SYS_PREAD64, fd, buffer, count, offset)
 end
 
@@ -154,7 +178,7 @@ end
 
 # Paměť: adresa, nebo záporné errno.
 function map_shared(fd, length, offset):
-    return syscall6(platform.SYS_MMAP, 0, length, platform.PROT_READ | platform.PROT_WRITE, platform.MAP_SHARED, fd, offset)
+    return mmap(0, length, platform.PROT_READ | platform.PROT_WRITE, platform.MAP_SHARED, fd, offset)
 end
 
 function unmap(address, length):
@@ -251,7 +275,11 @@ function os_clock_gettime(clock, timespec):
     return syscall3(platform.SYS_CLOCK_GETTIME, clock, timespec, 0)
 end
 
+# 32bitové cíle bez nanosleep s 64bitovým časem: clock_nanosleep_time64.
 function os_nanosleep(request, remaining):
+    if platform.NANOSLEEP_CLOCK:
+        return syscall6(platform.SYS_NANOSLEEP, platform.CLOCK_MONOTONIC, 0, request, remaining, 0, 0)
+    end
     return syscall3(platform.SYS_NANOSLEEP, request, remaining, 0)
 end
 
@@ -349,9 +377,31 @@ function os_spawn(path, argv, clean, input, output, error, parent_end):
     else:
         environment = os_environment()
     end
-    call syscall3(platform.SYS_EXECVE, path, argv, environment)
+    call syscall3(platform.SYS_EXECVE, path, narrow_vector(argv), narrow_vector(environment))
     call syscall1(platform.SYS_EXIT, 127)
     return 0
+end
+
+# Pole ukazatelů pro jádro (argv, prostředí): na 32bitovém cíli z 64bitových
+# slov runtime na 32bitová (nové mapování v potomkovi před execve).
+function narrow_vector(vector):
+    if platform.WORD_BYTES == 8 or vector == 0:
+        return vector
+    end
+    count = 0
+    while __lsl_qbe_load64(vector + __lsl_qbe_shl(count, 3)) != 0:
+        count += 1
+    end
+    result = map_anonymous((__lsl_qbe_shl(count + 1, 2) + 4095) & -4096, 0)
+    if result < 0:
+        return vector
+    end
+    index = 0
+    while index <= count:
+        __lsl_qbe_store32(result + __lsl_qbe_shl(index, 2), __lsl_qbe_load64(vector + __lsl_qbe_shl(index, 3)))
+        index += 1
+    end
+    return result
 end
 
 # Limit zdroje v potomkovi: value >= 0 nastaví oba limity, -1 jen sníží oba
@@ -443,19 +493,40 @@ THREAD_REGISTER_BYTES = 0
 SIGUSR1 = 10
 
 # Blok argumentů (argc, argv, 0, prostředí, 0) předalo jádro na zásobníku.
+# Na 32bitovém cíli jsou to 32bitová slova: převedou se do nového bloku
+# 64bitových slov (stejný tvar jako na 64bitových cílech).
 function process_arguments(stack):
-    return stack
+    if platform.WORD_BYTES == 8:
+        return stack
+    end
+    count = __lsl_qbe_load32(stack)
+    words = count + 2
+    while __lsl_qbe_load32(stack + __lsl_qbe_shl(words, 2)) != 0:
+        words += 1
+    end
+    words += 1
+    block = map_anonymous((__lsl_qbe_shl(words, 3) + 4095) & -4096, 0)
+    if block < 0:
+        return 0
+    end
+    index = 0
+    while index < words:
+        __lsl_qbe_store64(block + __lsl_qbe_shl(index, 3), __lsl_qbe_load32(stack + __lsl_qbe_shl(index, 2)))
+        index += 1
+    end
+    return block
 end
 
 # Obsluha SIGUSR1 pro zastavení světa; SA_RESTART: vnitřní GC nesmí vracet
 # EINTR z I/O ani čekání na procesy. Záporné = chyba.
 function install_thread_suspend():
     action = __lsl_qbe_alloc(32)
-    __lsl_qbe_store64(action + platform.SIGACTION_HANDLER, __lsl_symbol("lsl_thread_signal"))
-    __lsl_qbe_store64(action + platform.SIGACTION_FLAGS, platform.SA_RESTORER | platform.SA_RESTART)
+    __lsl_qbe_zero(action, 32)
+    call store_word(action + platform.SIGACTION_HANDLER, __lsl_symbol("lsl_thread_signal"))
+    call store_word(action + platform.SIGACTION_FLAGS, platform.SA_RESTORER | platform.SA_RESTART)
     # Bez pole restorer (riscv64) jádro vrací ze signálu přes vDSO.
     if platform.SIGACTION_RESTORER >= 0:
-        __lsl_qbe_store64(action + platform.SIGACTION_RESTORER, __lsl_symbol("lsl_arch_signal_restorer"))
+        call store_word(action + platform.SIGACTION_RESTORER, __lsl_symbol("lsl_arch_signal_restorer"))
     end
     __lsl_qbe_store64(action + platform.SIGACTION_MASK, 0)
     return syscall6(platform.SYS_RT_SIGACTION, SIGUSR1, action, 0, platform.SIGSET_BYTES, 0, 0)

@@ -1,6 +1,7 @@
 # Restricted fork-isolated CPU ET_DYN ABI. Libraries must be self-contained
 # PIC, have no relocations/external dependencies, and map st_value to file
 # offsets. Calls execute in a short-lived strict-seccomp child process.
+load _platform as platform
 
 function u8(library, offset):
     return native_u64(library, offset) % 256
@@ -17,6 +18,10 @@ end
 function open(path):
     if type(path) != "String" or len(path) == 0 or __lsl_text_byte_length(String(path)) > 4095 or chr(0) in path:
         Error(NativeError: "native library path must contain 1..4095 bytes without NUL")
+    end
+    # 32bitový Linux: zavaděč a volací konvence jsou jen 64bitové (ELF64).
+    if platform.WORD_BYTES == 4:
+        Error(NativeError: "native libraries are not available on 32-bit Linux targets yet")
     end
     library = native_open(path)
     if library == None:

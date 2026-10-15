@@ -106,8 +106,17 @@ BAREMETAL_SKIP = {
 }
 
 
+# 32bitový Linux (přes C): nativní knihovny (vlastní zavaděč ELF64 a volací
+# konvence 64bitových CPU) zatím nejsou.
+LINUX32_SKIP = {
+    'native_portable_conformance.lsl': 'native libraries are 64-bit only',
+}
+
+
 def skip_reason(target, name):
     """Důvod, proč test na cíli nemá smysl, nebo None."""
+    if target in ('linux-arm', 'linux-x86'):
+        return LINUX32_SKIP.get(name)
     if target.startswith('windows-'):
         return WINDOWS_SKIP.get(name)
     if target.startswith('macos-'):
@@ -126,7 +135,7 @@ EMULATED_SKIP = {'native_portable_conformance.lsl': 'no seccomp in qemu-user'}
 
 def check(compiler, target, source, scratch, timeout, adb=False):
     reason = skip_reason(target, source.name)
-    if not reason and target in ('linux-arm64', 'linux-riscv64') and not adb:
+    if not reason and target in ('linux-arm64', 'linux-riscv64', 'linux-arm') and not adb:
         reason = EMULATED_SKIP.get(source.name)
     if reason:
         return 'skip', source.name, reason

@@ -71,6 +71,22 @@ function u_get64(buffer, offset):
     return u_get32(buffer, offset) + u_get32(buffer, offset + 4) * 4294967296
 end
 
+# Slovo ukazatele nebo délky ve struktuře jádra (iovec, msghdr, cmsg_len):
+# 32bitové cíle mají 4 bajty, ostatní 8.
+function u_put_word(buffer, offset, value):
+    if platform.WORD_BYTES == 4:
+        return u_put32(buffer, offset, Int(value) % 4294967296)
+    end
+    return u_put64(buffer, offset, value)
+end
+
+function u_get_word(buffer, offset):
+    if platform.WORD_BYTES == 4:
+        return u_get32(buffer, offset)
+    end
+    return u_get64(buffer, offset)
+end
+
 function u_address(buffer):
     return Int(__lsl_data_address(buffer))
 end
@@ -230,18 +246,18 @@ function send_fd(handle, payload, count, descriptor):
     iov = __lsl_byte_zeros(platform.IOVEC_BYTES)
     ctrl = __lsl_byte_zeros(platform.CMSG_FD_SPACE)
     msg = __lsl_byte_zeros(platform.MSGHDR_BYTES)
-    call u_put64(iov, platform.IOVEC_BASE, u_address(payload))
-    call u_put64(iov, platform.IOVEC_LENGTH, amount)
-    call u_put64(msg, platform.MSGHDR_IOV, u_address(iov))
-    call u_put64(msg, platform.MSGHDR_IOVLEN, 1)
+    call u_put_word(iov, platform.IOVEC_BASE, u_address(payload))
+    call u_put_word(iov, platform.IOVEC_LENGTH, amount)
+    call u_put_word(msg, platform.MSGHDR_IOV, u_address(iov))
+    call u_put_word(msg, platform.MSGHDR_IOVLEN, 1)
     if Int(descriptor) >= 0:
         # cmsghdr: len 20 (header 16 + one int), SOL_SOCKET/SCM_RIGHTS.
-        call u_put64(ctrl, platform.CMSG_LENGTH, platform.CMSG_FD_BYTES)
+        call u_put_word(ctrl, platform.CMSG_LENGTH, platform.CMSG_FD_BYTES)
         call u_put32(ctrl, platform.CMSG_LEVEL, SOL_SOCKET)
         call u_put32(ctrl, platform.CMSG_TYPE, SCM_RIGHTS)
         call u_put32(ctrl, platform.CMSG_DATA, Int(descriptor))
-        call u_put64(msg, platform.MSGHDR_CONTROL, u_address(ctrl))
-        call u_put64(msg, platform.MSGHDR_CONTROLLEN, platform.CMSG_FD_SPACE)
+        call u_put_word(msg, platform.MSGHDR_CONTROL, u_address(ctrl))
+        call u_put_word(msg, platform.MSGHDR_CONTROLLEN, platform.CMSG_FD_SPACE)
     end
     return __lsl_syscall(SYS_SENDMSG, Int(handle), u_address(msg), 0, 0)
 end
@@ -266,17 +282,17 @@ function send_from_fd(handle, payload, offset, count, descriptor):
     iov = __lsl_byte_zeros(platform.IOVEC_BYTES)
     ctrl = __lsl_byte_zeros(platform.CMSG_FD_SPACE)
     msg = __lsl_byte_zeros(platform.MSGHDR_BYTES)
-    call u_put64(iov, platform.IOVEC_BASE, u_address(payload) + start)
-    call u_put64(iov, platform.IOVEC_LENGTH, amount)
-    call u_put64(msg, platform.MSGHDR_IOV, u_address(iov))
-    call u_put64(msg, platform.MSGHDR_IOVLEN, 1)
+    call u_put_word(iov, platform.IOVEC_BASE, u_address(payload) + start)
+    call u_put_word(iov, platform.IOVEC_LENGTH, amount)
+    call u_put_word(msg, platform.MSGHDR_IOV, u_address(iov))
+    call u_put_word(msg, platform.MSGHDR_IOVLEN, 1)
     if Int(descriptor) >= 0:
-        call u_put64(ctrl, platform.CMSG_LENGTH, platform.CMSG_FD_BYTES)
+        call u_put_word(ctrl, platform.CMSG_LENGTH, platform.CMSG_FD_BYTES)
         call u_put32(ctrl, platform.CMSG_LEVEL, SOL_SOCKET)
         call u_put32(ctrl, platform.CMSG_TYPE, SCM_RIGHTS)
         call u_put32(ctrl, platform.CMSG_DATA, Int(descriptor))
-        call u_put64(msg, platform.MSGHDR_CONTROL, u_address(ctrl))
-        call u_put64(msg, platform.MSGHDR_CONTROLLEN, platform.CMSG_FD_SPACE)
+        call u_put_word(msg, platform.MSGHDR_CONTROL, u_address(ctrl))
+        call u_put_word(msg, platform.MSGHDR_CONTROLLEN, platform.CMSG_FD_SPACE)
     end
     return __lsl_syscall(SYS_SENDMSG, Int(handle), u_address(msg), 0, 0)
 end
@@ -322,18 +338,18 @@ function recv_fds(handle, payload, count, fds):
     iov = __lsl_byte_zeros(platform.IOVEC_BYTES)
     ctrl = __lsl_byte_zeros(256)
     msg = __lsl_byte_zeros(platform.MSGHDR_BYTES)
-    call u_put64(iov, platform.IOVEC_BASE, u_address(payload))
-    call u_put64(iov, platform.IOVEC_LENGTH, amount)
-    call u_put64(msg, platform.MSGHDR_IOV, u_address(iov))
-    call u_put64(msg, platform.MSGHDR_IOVLEN, 1)
-    call u_put64(msg, platform.MSGHDR_CONTROL, u_address(ctrl))
-    call u_put64(msg, platform.MSGHDR_CONTROLLEN, 256)
+    call u_put_word(iov, platform.IOVEC_BASE, u_address(payload))
+    call u_put_word(iov, platform.IOVEC_LENGTH, amount)
+    call u_put_word(msg, platform.MSGHDR_IOV, u_address(iov))
+    call u_put_word(msg, platform.MSGHDR_IOVLEN, 1)
+    call u_put_word(msg, platform.MSGHDR_CONTROL, u_address(ctrl))
+    call u_put_word(msg, platform.MSGHDR_CONTROLLEN, 256)
     n = __lsl_syscall(SYS_RECVMSG, Int(handle), u_address(msg), MSG_DONTWAIT + MSG_CMSG_CLOEXEC, 0)
     if n < 0:
         return n
     end
-    # Walk the control messages: each cmsghdr is 8-byte aligned.
-    total = Int(u_get64(msg, platform.MSGHDR_CONTROLLEN))
+    # Walk the control messages: each cmsghdr is CMSG_ALIGNMENT aligned.
+    total = Int(u_get_word(msg, platform.MSGHDR_CONTROLLEN))
     if total < 0:
         return -platform.EINVAL
     elif total > 256:
@@ -341,7 +357,7 @@ function recv_fds(handle, payload, count, fds):
     end
     off = 0
     while off <= total - platform.CMSG_HEADER_BYTES:
-        clen = Int(u_get64(ctrl, off))
+        clen = Int(u_get_word(ctrl, off + platform.CMSG_LENGTH))
         if clen < platform.CMSG_HEADER_BYTES or clen > total - off:
             off = total
         else:

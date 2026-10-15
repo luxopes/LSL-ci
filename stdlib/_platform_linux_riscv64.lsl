@@ -239,3 +239,8 @@ PR_SET_SECCOMP = 22
 SECCOMP_MODE_STRICT = 1
 # Stroj ELF obrazů nativních knihoven tohoto cíle (EM_X86_64).
 ELF_MACHINE = 243
+
+# 32bitové rozdíly volání (os_linux.lsl); 64bitový Linux je nemá.
+MMAP_OFFSET_SHIFT = 0
+PREAD64_PAIR = 0
+NANOSLEEP_CLOCK = 0

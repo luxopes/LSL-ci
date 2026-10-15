@@ -3,14 +3,19 @@ load qbe_emit
 load host
 
 # Cíl backendu podle platformy LSL.
-BACKEND_TARGETS = {"linux-x86_64":"amd64_sysv","linux-arm64":"arm64","linux-riscv64":"rv64","windows-x86_64":"amd64_win","windows-arm64":"arm64_win","macos-x86_64":"amd64_apple","macos-arm64":"arm64_apple","wasm32-wasi":"wasm32","wasm32-wasi-threads":"wasm32","baremetal-riscv64":"rv64"}
+BACKEND_TARGETS = {"linux-x86_64":"amd64_sysv","linux-arm64":"arm64","linux-riscv64":"rv64","windows-x86_64":"amd64_win","windows-arm64":"arm64_win","macos-x86_64":"amd64_apple","macos-arm64":"arm64_apple","wasm32-wasi":"wasm32","wasm32-wasi-threads":"wasm32","baremetal-riscv64":"rv64","linux-arm":"c32","linux-x86":"c32"}
 # Nástroje a příznaky cíle: cross assembler a linker, jinak nativní. rv64:
 # adresy symbolů relativně k PC (-p) a bez relaxace linkeru (runtime
 # nenastavuje gp).
-BACKEND_FLAGS = {"linux-x86_64":[],"linux-arm64":[],"linux-riscv64":["-p"],"windows-x86_64":[],"windows-arm64":[],"macos-x86_64":[],"macos-arm64":[],"wasm32-wasi":[],"wasm32-wasi-threads":["-g"],"baremetal-riscv64":["-p"]}
+BACKEND_FLAGS = {"linux-x86_64":[],"linux-arm64":[],"linux-riscv64":["-p"],"windows-x86_64":[],"windows-arm64":[],"macos-x86_64":[],"macos-arm64":[],"wasm32-wasi":[],"wasm32-wasi-threads":["-g"],"baremetal-riscv64":["-p"],"linux-arm":[],"linux-x86":[]}
 ASSEMBLERS = {"linux-x86_64":["/usr/bin/as","/bin/as",["--64"]],"linux-arm64":["/usr/bin/aarch64-linux-gnu-as","/usr/bin/as",[]],"linux-riscv64":["/usr/bin/riscv64-linux-gnu-as","/usr/bin/as",["-march=rv64gc"]],"windows-x86_64":["/usr/bin/x86_64-w64-mingw32-as","/usr/bin/x86_64-w64-mingw32-as",[]],"windows-arm64":["/usr/bin/clang","/usr/local/bin/clang",["--target=aarch64-windows-gnu","-c","-x","assembler"]],"macos-x86_64":["/usr/bin/clang","/usr/local/bin/clang",["-target","x86_64-apple-macos11","-c","-x","assembler"]],"macos-arm64":["/usr/bin/clang","/usr/local/bin/clang",["-target","arm64-apple-macos11","-c","-x","assembler"]],"baremetal-riscv64":["/usr/bin/riscv64-linux-gnu-as","/usr/bin/riscv64-unknown-elf-as",["-march=rv64gc"]]}
-LINKERS = {"linux-x86_64":["/usr/bin/ld","/bin/ld",[]],"linux-arm64":["/usr/bin/aarch64-linux-gnu-ld","/usr/bin/ld",[]],"linux-riscv64":["/usr/bin/riscv64-linux-gnu-ld","/usr/bin/ld",["--no-relax"]],"windows-x86_64":["/usr/bin/x86_64-w64-mingw32-ld","/usr/bin/x86_64-w64-mingw32-ld",["-nostdlib"]],"windows-arm64":["/usr/bin/ld.lld","/usr/local/bin/ld.lld",["-m","arm64pe"]],"macos-x86_64":["/usr/bin/ld64.lld","/usr/local/bin/ld64.lld",["-arch","x86_64","-platform_version","macos","11.0","11.0"]],"macos-arm64":["/usr/bin/ld64.lld","/usr/local/bin/ld64.lld",["-arch","arm64","-platform_version","macos","11.0","11.0"]],"baremetal-riscv64":["/usr/bin/riscv64-linux-gnu-ld","/usr/bin/riscv64-unknown-elf-ld",["--no-relax"]]}
-RUNTIME_OBJECTS = {"linux-x86_64":"runtime.o","linux-arm64":"runtime-linux-arm64.o","linux-riscv64":"runtime-linux-riscv64.o","windows-x86_64":"runtime-windows-x86_64.o","windows-arm64":"runtime-windows-arm64.o","macos-x86_64":"runtime-macos-x86_64.o","macos-arm64":"runtime-macos-arm64.o","wasm32-wasi":"runtime-wasm32-wasi.lir","wasm32-wasi-threads":"runtime-wasm32-wasi.lir","baremetal-riscv64":"runtime-baremetal-riscv64.o"}
+LINKERS = {"linux-x86_64":["/usr/bin/ld","/bin/ld",[]],"linux-arm64":["/usr/bin/aarch64-linux-gnu-ld","/usr/bin/ld",[]],"linux-riscv64":["/usr/bin/riscv64-linux-gnu-ld","/usr/bin/ld",["--no-relax"]],"windows-x86_64":["/usr/bin/x86_64-w64-mingw32-ld","/usr/bin/x86_64-w64-mingw32-ld",["-nostdlib"]],"windows-arm64":["/usr/bin/ld.lld","/usr/local/bin/ld.lld",["-m","arm64pe"]],"macos-x86_64":["/usr/bin/ld64.lld","/usr/local/bin/ld64.lld",["-arch","x86_64","-platform_version","macos","11.0","11.0"]],"macos-arm64":["/usr/bin/ld64.lld","/usr/local/bin/ld64.lld",["-arch","arm64","-platform_version","macos","11.0","11.0"]],"baremetal-riscv64":["/usr/bin/riscv64-linux-gnu-ld","/usr/bin/riscv64-unknown-elf-ld",["--no-relax"]],"linux-arm":["/usr/bin/ld.lld","/usr/local/bin/ld.lld",["-m","armelf_linux_eabi"]],"linux-x86":["/usr/bin/ld.lld","/usr/local/bin/ld.lld",["-m","elf_i386"]]}
+RUNTIME_OBJECTS = {"linux-x86_64":"runtime.o","linux-arm64":"runtime-linux-arm64.o","linux-riscv64":"runtime-linux-riscv64.o","windows-x86_64":"runtime-windows-x86_64.o","windows-arm64":"runtime-windows-arm64.o","macos-x86_64":"runtime-macos-x86_64.o","macos-arm64":"runtime-macos-arm64.o","wasm32-wasi":"runtime-wasm32-wasi.lir","wasm32-wasi-threads":"runtime-wasm32-wasi.lir","baremetal-riscv64":"runtime-baremetal-riscv64.o","linux-arm":"runtime-linux-arm.o","linux-x86":"runtime-linux-x86.o"}
+# 32bitové cíle přes C (LuxIR c32): příznaky clang podle cíle a společné
+# příznaky (bez libc a vestavěných funkcí, bez PIC; runtime/arch dodá
+# pomocné funkce překladače).
+C_TARGET_FLAGS = {"linux-arm":["--target=armv7a-unknown-linux-gnueabihf","-march=armv7-a","-mfloat-abi=hard","-mfpu=vfpv3-d16","-marm"],"linux-x86":["--target=i686-unknown-linux-gnu","-march=pentium4","-msse2","-mfpmath=sse"]}
+C_FLAGS = ["-O2","-ffreestanding","-fno-builtin","-fno-strict-aliasing","-fno-math-errno","-fno-pic","-w","-c"]
 # Windows: importní knihovny Win32 (kernel32, WaitOnAddress, BCryptGenRandom,
 # Winsock): x86_64 z mingw-w64, arm64 vyrobené při sestavení runtime
 # (tools/runtime/build.py) vedle objektu runtime.
@@ -62,6 +67,10 @@ TRIPLES = {"linux-x86_64":"x86_64-linux-gnu","linux-arm64":"aarch64-linux-gnu","
 WINDOWS_TOOLS = ["llvm-mc.exe", "lld.exe"]
 # Hostitel macOS: LLVM z Homebrew pro cíle mimo macOS (volitelné).
 HOMEBREW_LLVM = ["/opt/homebrew/opt/llvm/bin/", "/usr/local/opt/llvm/bin/"]
+
+function c_compiler():
+    return host.required_system_tool("/usr/bin/clang", "/usr/local/bin/clang", "C compiler (clang)")
+end
 
 function host_os():
     name = host.target_name()
@@ -227,6 +236,8 @@ function tool_arguments(prefix, flags, suffix):
 end
 
 function cleanup(path):
+    call unlink(path + ".c")
+    call unlink(path + ".c.body")
     call unlink(path + ".lir.phase")
     call unlink(path + ".lir")
     call unlink(path + ".s")
@@ -292,7 +303,13 @@ function image(unit, selected, entry_source="", backend_path=""):
     end
     name = selected["name"]
     runtime = runtime_path(selected)
-    assembling = assembler_command(name)
+    via_c = BACKEND_TARGETS[name] == "c32"
+    assembling = ["", []]
+    if via_c:
+        assembling = [c_compiler(), C_TARGET_FLAGS[name]]
+    else:
+        assembling = assembler_command(name)
+    end
     assembler = assembling[0]
     linking = linker_command(name)
     linker = linking[0]
@@ -301,14 +318,20 @@ function image(unit, selected, entry_source="", backend_path=""):
     result = ByteArray()
     try:
         call qbe_emit.generate(unit, path + ".lir", entry_source)
-        call invoke(backend, tool_arguments(["-t", BACKEND_TARGETS[name]], BACKEND_FLAGS[name], ["-o", path + ".s", path + ".lir"]), "LuxIR backend")
-        # No private scratch filename is embedded in the resulting image.
-        call appendfile(path + ".s", chr(10) + ".file \"luxir\"" + chr(10))
-        if selected["os"] == "macos":
-            # Každý symbol ve vlastní podsekci: -dead_strip zahodí nepoužité.
-            call appendfile(path + ".s", ".subsections_via_symbols" + chr(10))
+        if via_c:
+            # 32bitový cíl: LuxIR vypíše C a clang ho přeloží pro cíl.
+            call invoke(backend, ["-t", "c32", "-o", path + ".c", path + ".lir"], "LuxIR backend")
+            call invoke(assembler, tool_arguments(assembling[1], C_FLAGS, ["-o", path + ".o", path + ".c"]), "C compiler")
+        else:
+            call invoke(backend, tool_arguments(["-t", BACKEND_TARGETS[name]], BACKEND_FLAGS[name], ["-o", path + ".s", path + ".lir"]), "LuxIR backend")
+            # No private scratch filename is embedded in the resulting image.
+            call appendfile(path + ".s", chr(10) + ".file \"luxir\"" + chr(10))
+            if selected["os"] == "macos":
+                # Každý symbol ve vlastní podsekci: -dead_strip zahodí nepoužité.
+                call appendfile(path + ".s", ".subsections_via_symbols" + chr(10))
+            end
+            call invoke(assembler, tool_arguments([], assembling[1], ["-o", path + ".o", path + ".s"]), "assembler")
         end
-        call invoke(assembler, tool_arguments([], assembling[1], ["-o", path + ".o", path + ".s"]), "assembler")
         if selected["os"] == "macos":
             # Mach-O spustitelný soubor (PIE, na arm64 s ad-hoc podpisem od
             # ld64.lld) dynamicky linkovaný s libSystem: macOS nepodporuje
@@ -325,6 +348,9 @@ function image(unit, selected, entry_source="", backend_path=""):
             # Statický obraz ELF bez OS podle linker skriptu desky (adresy,
             # zásobník, konec obrazu pro haldu).
             call invoke(linker, tool_arguments(linking[1], ["-nostdlib", "-static", "-T", host.resource_path("runtime/arch/baremetal_riscv64.ld"), "--build-id=none", "--gc-sections", "-s"], ["-o", path, path + ".o", runtime]), "linker")
+        elif via_c:
+            # Statický obraz ELF bez PIE (kód z C používá absolutní adresy).
+            call invoke(linker, tool_arguments(linking[1], ["-nostdlib", "-static", "-z", "noexecstack", "--build-id=none", "--gc-sections", "-s"], ["-o", path, path + ".o", runtime]), "linker")
         else:
             # All runtime/code references are PC relative. -z text makes absolute
             # relocations in executable pages a hard error instead of weakening PIE.
