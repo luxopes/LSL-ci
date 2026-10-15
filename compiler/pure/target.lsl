@@ -15,6 +15,8 @@ function provider_modules(os, architecture="x86_64"):
     # Vrstvy OS runtime (runtime/os_<os>.lsl, runtime/ffi_<os>.lsl).
     result["_runtime_os"] = "os_" + os
     result["_runtime_ffi"] = "ffi_" + os
+    # Deska bare metal (runtime/board_baremetal_<arch>.lsl): CPU a zařízení.
+    result["_runtime_board"] = "board_" + os + "_" + architecture
     result["_compiler_host_platform"] = "host_" + suffix
     result["_host_platform"] = "_host_" + suffix
     for name in ["update", "update_install", "catalog", "package", "install"]:

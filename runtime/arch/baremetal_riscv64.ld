@@ -1,5 +1,7 @@
-/* Rozložení obrazu bare metal riscv64 (deska qemu virt: RAM od 0x80000000).
-   Za obrazem 8 MiB zásobníku a 16 KiB zásobníku pasti; od lsl_image_end
+/* Rozložení obrazu bare metal riscv64 (RAM od 0x80000000, qemu virt).
+   Sekce začínají na stránce kvůli oprávněním stránkování (kód R+X, data
+   jen pro čtení R, ostatní RW). Pod hlavním zásobníkem (8 MiB) a pod
+   zásobníky pastí hartů je nenamapovaná strážní stránka. Od lsl_image_end
    spravuje paměť runtime (os_baremetal.lsl). */
 OUTPUT_ARCH(riscv)
 ENTRY(_start)
@@ -7,17 +9,26 @@ SECTIONS
 {
   . = 0x80000000;
   .text : { KEEP(*(.text.start)) *(.text .text.*) }
-  .rodata : ALIGN(16) { *(.rodata .rodata.* .srodata .srodata.*) }
-  .data : ALIGN(16) { *(.data .data.* .sdata .sdata.*) }
+  . = ALIGN(4096);
+  lsl_text_end = .;
+  .rodata : { *(.rodata .rodata.* .srodata .srodata.*) }
+  . = ALIGN(4096);
+  lsl_rodata_end = .;
+  .data : { *(.data .data.* .sdata .sdata.*) }
   .bss (NOLOAD) : ALIGN(16) {
     __bss_start = .;
     *(.bss .bss.* .sbss .sbss.* COMMON)
     . = ALIGN(16);
     __bss_end = .;
   }
+  /* Zásobníky pastí: 8 hartů po 20 KiB (4 KiB stráž + 16 KiB). */
+  .trapstacks (NOLOAD) : ALIGN(4096) {
+    lsl_trap_stacks = .;
+    . += 8 * 20480;
+  }
   .stack (NOLOAD) : ALIGN(4096) {
-    . += 0x4000;
-    lsl_trap_stack_top = .;
+    lsl_stack_guard = .;
+    . += 4096;
     . += 0x800000;
     lsl_stack_top = .;
   }

@@ -22,7 +22,8 @@ def main():
         # Čárka odděluje volby qemu; zdvojená je doslovná.
         config += ',arg=' + argument.replace(',', ',,')
     # CPU s Zkr (CSR seed jako zdroj entropie).
-    command = [QEMU, '-M', 'virt', '-cpu', 'rv64,zkr=true', '-m', os.environ.get('LSL_QEMU_MEMORY', '1G'), '-bios', 'none',
+    # 4 harty: vlákna běží paralelně (preemptivní plánovač runtime).
+    command = [QEMU, '-M', 'virt', '-smp', os.environ.get('LSL_QEMU_SMP', '4'), '-cpu', 'rv64,zkr=true', '-m', os.environ.get('LSL_QEMU_MEMORY', '1G'), '-bios', 'none',
                '-display', 'none', '-serial', 'null', '-monitor', 'none',
                '-semihosting-config', config, '-kernel', program]
     os.execvp(command[0], command)
