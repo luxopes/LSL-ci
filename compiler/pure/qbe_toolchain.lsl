@@ -56,9 +56,109 @@ function binutils_tool(name, tool, table, label):
     return host.required_system_tool(table[name][0], table[name][1], label)
 end
 
+# Triple pro llvm-mc a clang (assembler na Windows a macOS).
+TRIPLES = {"linux-x86_64":"x86_64-linux-gnu","linux-arm64":"aarch64-linux-gnu","linux-riscv64":"riscv64-linux-gnu","baremetal-riscv64":"riscv64-unknown-elf","windows-x86_64":"x86_64-w64-windows-gnu","windows-arm64":"aarch64-w64-windows-gnu","macos-x86_64":"x86_64-apple-macos11","macos-arm64":"arm64-apple-macos11"}
+# Hostitel Windows: assembler a linker LLVM dodané v balíku vedle překladače.
+WINDOWS_TOOLS = ["llvm-mc.exe", "lld.exe"]
+# Hostitel macOS: LLVM z Homebrew pro cíle mimo macOS (volitelné).
+HOMEBREW_LLVM = ["/opt/homebrew/opt/llvm/bin/", "/usr/local/opt/llvm/bin/"]
+
+function host_os():
+    name = host.target_name()
+    if name.startswith("windows-"):
+        return "windows"
+    elif name.startswith("macos-"):
+        return "macos"
+    end
+    return "linux"
+end
+
+# Nástroj LLVM dodaný vedle překladače (hostitel Windows).
+function bundled_tool(name):
+    path = host.tool_path(host.resource_path("bin/" + name), name)
+    if not exists(path):
+        Error(ProcessError: "LLVM tool is missing beside the compiler: " + name + " (reinstall the LSL package)")
+    end
+    return path
+end
+
+function homebrew_tool(name, label):
+    for directory in HOMEBREW_LLVM:
+        if exists(directory + name):
+            return directory + name
+        end
+    end
+    Error(ProcessError: "trusted " + label + " executable is required (install LLVM: brew install llvm)")
+end
+
+# Příznaky linkeru LLVM lld (hostitel Windows nebo LLVM na macOS): flavor
+# podle formátu obrazu a stroj PE.
+function lld_flavor(name):
+    if name.startswith("macos-"):
+        return ["-flavor", "darwin"]
+    elif name == "windows-x86_64":
+        return ["-flavor", "gnu", "-m", "i386pep"]
+    elif name == "windows-arm64":
+        return ["-flavor", "gnu", "-m", "arm64pe"]
+    end
+    return ["-flavor", "gnu"]
+end
+
+# [assembler, příznaky před -o]: podle hostitele (viz binutils_tool).
+function assembler_command(name):
+    system = host_os()
+    riscv = name == "linux-riscv64" or name == "baremetal-riscv64"
+    if system == "windows":
+        flags = ["-filetype=obj", "-triple=" + TRIPLES[name]]
+        if riscv:
+            # RV64GC s ABI lp64d jako runtime (GNU as -march=rv64gc).
+            flags = ["-filetype=obj", "-triple=" + TRIPLES[name], "-mattr=+m,+a,+f,+d,+c,+zicsr,+zifencei", "-target-abi=lp64d"]
+        end
+        return [bundled_tool("llvm-mc.exe"), flags]
+    elif system == "macos":
+        flags = ["-target", TRIPLES[name], "-c", "-x", "assembler"]
+        if riscv:
+            flags = ["-target", TRIPLES[name], "-march=rv64gc", "-mabi=lp64d", "-c", "-x", "assembler"]
+        end
+        return [host.required_system_tool("/usr/bin/clang", "/Library/Developer/CommandLineTools/usr/bin/clang", "assembler (xcode-select --install)"), flags]
+    end
+    return [binutils_tool(name, "as", ASSEMBLERS, "assembler"), ASSEMBLERS[name][2]]
+end
+
+# [linker, příznaky cíle]: Linux binutils/lld podle tabulky, Windows lld
+# z balíku, macOS ld (Xcode) pro macOS, jinak lld z Homebrew. Příznaky jdou
+# na začátek příkazu (lld vyžaduje -flavor jako první argument).
+function linker_command(name):
+    system = host_os()
+    if system == "windows":
+        return [bundled_tool("lld.exe"), tool_arguments(lld_flavor(name), linker_target_flags(name), [])]
+    elif system == "macos":
+        if name.startswith("macos-"):
+            return [host.required_system_tool("/usr/bin/ld", "/Library/Developer/CommandLineTools/usr/bin/ld", "linker (xcode-select --install)"), LINKERS[name][2]]
+        end
+        lld = homebrew_tool("lld", "linker")
+        return [lld, tool_arguments(lld_flavor(name), linker_target_flags(name), [])]
+    end
+    return [binutils_tool(name, "ld", LINKERS, "linker"), LINKERS[name][2]]
+end
+
+# Příznaky cíle bez příznaků, které patří jen GNU ld nebo ld.lld v tabulce
+# (stroj PE dodá lld_flavor).
+function linker_target_flags(name):
+    if name.startswith("windows-"):
+        return []
+    end
+    return LINKERS[name][2]
+end
+
 function windows_libraries(name):
     if name == "windows-arm64":
         return host.resource_path("compiler/qbe/windows-arm64")
+    end
+    # Importní knihovny z balíku (vždy na Windows; na Linuxu bez MinGW).
+    bundled = host.resource_path("compiler/qbe/windows-x86_64")
+    if host_os() != "linux" or not exists(WINDOWS_LIBRARIES + "/libkernel32.a"):
+        return bundled
     end
     return WINDOWS_LIBRARIES
 end
@@ -192,8 +292,10 @@ function image(unit, selected, entry_source="", backend_path=""):
     end
     name = selected["name"]
     runtime = runtime_path(selected)
-    assembler = binutils_tool(name, "as", ASSEMBLERS, "assembler")
-    linker = binutils_tool(name, "ld", LINKERS, "linker")
+    assembling = assembler_command(name)
+    assembler = assembling[0]
+    linking = linker_command(name)
+    linker = linking[0]
     path = host.scratch_program_path()
     failure = None
     result = ByteArray()
@@ -206,27 +308,27 @@ function image(unit, selected, entry_source="", backend_path=""):
             # Každý symbol ve vlastní podsekci: -dead_strip zahodí nepoužité.
             call appendfile(path + ".s", ".subsections_via_symbols" + chr(10))
         end
-        call invoke(assembler, tool_arguments([], ASSEMBLERS[name][2], ["-o", path + ".o", path + ".s"]), "assembler")
+        call invoke(assembler, tool_arguments([], assembling[1], ["-o", path + ".o", path + ".s"]), "assembler")
         if selected["os"] == "macos":
             # Mach-O spustitelný soubor (PIE, na arm64 s ad-hoc podpisem od
             # ld64.lld) dynamicky linkovaný s libSystem: macOS nepodporuje
             # statické programy ani přímá systémová volání. libSystem.tbd je
             # textový stub, takže se linkuje bez SDK.
-            call invoke(linker, tool_arguments([], LINKERS[name][2], ["-dead_strip", "-x", "-o", path, path + ".o", runtime, host.resource_path("compiler/qbe/libSystem.tbd")]), "linker")
+            call invoke(linker, tool_arguments(linking[1], [], ["-dead_strip", "-x", "-o", path, path + ".o", runtime, host.resource_path("compiler/qbe/libSystem.tbd")]), "linker")
         elif selected["os"] == "windows":
             # PE konzolový program s ASLR a DEP. Zásobník hlavního vlákna je
             # celý zpřístupněný (8 MiB jako na Linuxu): LuxIR na Windows
             # nesonduje zásobník po stránkách. Bez časového razítka, aby
             # obraz byl reprodukovatelný.
-            call invoke(linker, tool_arguments(["-e", "_start", "--subsystem", "console", "--dynamicbase", "--high-entropy-va", "--nxcompat", "--stack", "8388608,8388608", "--no-insert-timestamp", "--gc-sections", "-s"], LINKERS[name][2], ["-o", path, path + ".o", runtime, "-L" + windows_libraries(name), "-lkernel32", "-lsynchronization", "-lbcrypt", "-lws2_32"]), "linker")
+            call invoke(linker, tool_arguments(linking[1], ["-e", "_start", "--subsystem", "console", "--dynamicbase", "--high-entropy-va", "--nxcompat", "--stack", "8388608,8388608", "--no-insert-timestamp", "--gc-sections", "-s"], ["-o", path, path + ".o", runtime, "-L" + windows_libraries(name), "-lkernel32", "-lsynchronization", "-lbcrypt", "-lws2_32"]), "linker")
         elif selected["os"] == "baremetal":
             # Statický obraz ELF bez OS podle linker skriptu desky (adresy,
             # zásobník, konec obrazu pro haldu).
-            call invoke(linker, tool_arguments(["-nostdlib", "-static", "-T", host.resource_path("runtime/arch/baremetal_riscv64.ld"), "--build-id=none", "--gc-sections", "-s"], LINKERS[name][2], ["-o", path, path + ".o", runtime]), "linker")
+            call invoke(linker, tool_arguments(linking[1], ["-nostdlib", "-static", "-T", host.resource_path("runtime/arch/baremetal_riscv64.ld"), "--build-id=none", "--gc-sections", "-s"], ["-o", path, path + ".o", runtime]), "linker")
         else:
             # All runtime/code references are PC relative. -z text makes absolute
             # relocations in executable pages a hard error instead of weakening PIE.
-            call invoke(linker, tool_arguments(["-nostdlib", "-static", "-pie", "--no-dynamic-linker", "-z", "text", "-z", "noexecstack", "--build-id=none", "--gc-sections", "-s"], LINKERS[name][2], ["-o", path, path + ".o", runtime]), "linker")
+            call invoke(linker, tool_arguments(linking[1], ["-nostdlib", "-static", "-pie", "--no-dynamic-linker", "-z", "text", "-z", "noexecstack", "--build-id=none", "--gc-sections", "-s"], ["-o", path, path + ".o", runtime]), "linker")
         end
         result = readbytes(path)
     else:

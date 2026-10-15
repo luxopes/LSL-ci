@@ -10,7 +10,7 @@
   "backend": {
     "name": "LuxIR",
     "repository": "https://git.lux-ai.cz/LuxAI/LuxIR.git",
-    "commit": "787359ece7cb00d978fa3488efe9e1b45006903a",
+    "commit": "b21ec5d66bbff087dd71b2dc7cd7f7a56f34084d",
     "directory": "build/dependencies/LuxIR"
   },
   "manual": {

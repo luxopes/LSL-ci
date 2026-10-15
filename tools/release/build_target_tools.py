@@ -1,58 +1,113 @@
 #!/usr/bin/env python3
-"""Build the release tools for another Linux architecture.
+"""Build the release tools for another host platform.
 
 The released x86_64 compiler (compiler/lslc with compiler/pure/luxir, after
 build_release.py) translates the same sources as build_release.py with
---target, so the tools for linux-arm64 and linux-riscv64 come from the
-compiler that passed the fixed points. The output directory receives bin/
-with lslc, luxir, lsl, lsl-install, lsl-configure and lsl-test.
+--target, so the tools for every host come from the compiler that passed the
+fixed points. The output directory receives bin/ with lslc, luxir, lsl,
+lsl-install and lsl-configure (plus lsl-test on Linux; .exe on Windows).
+
+--layout also assembles lib/lsl like an installed package: compiler sources,
+standard library, the runtimes of all targets, the wasm and bare metal
+runners and the pinned manual. Windows packages need --llvm DIR with
+llvm-mc.exe, lld.exe and the LLVM licence texts for that architecture:
+programs are assembled and linked with them on Windows.
 """
 import argparse
 import hashlib
 import json
 from pathlib import Path
+import shutil
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
-TARGETS = ('linux-arm64', 'linux-riscv64')
+TARGETS = ('linux-arm64', 'linux-riscv64', 'windows-x86_64', 'windows-arm64', 'macos-x86_64', 'macos-arm64')
+RUNTIMES = ['runtime.o', 'runtime-linux-arm64.o', 'runtime-linux-riscv64.o', 'runtime-windows-x86_64.o',
+            'runtime-windows-arm64.o', 'runtime-macos-x86_64.o', 'runtime-macos-arm64.o',
+            'runtime-wasm32-wasi.lir', 'runtime-baremetal-riscv64.o', 'libSystem.tbd']
+IMPORTS = ['libkernel32.a', 'libsynchronization.a', 'libbcrypt.a', 'libws2_32.a']
 
 
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def layout(output, llvm, windows):
+    library = output / 'lib' / 'lsl'
+    copies = [(ROOT / 'compiler/pure', library / 'compiler/pure', '*.lsl'),
+              (ROOT / 'stdlib', library / 'stdlib', '*.lsl'),
+              (ROOT / 'build/manual-source', library / 'docs/developer_guides', '*')]
+    for source, destination, pattern in copies:
+        if not source.is_dir():
+            # Manuál chybí jen mimo vydání (CI bez prepare_sources).
+            print('skipped missing', source.relative_to(ROOT), flush=True)
+            continue
+        destination.mkdir(parents=True, exist_ok=True)
+        for path in sorted(source.glob(pattern)):
+            if path.is_file() and path.name != 'qbe_emit_diagnostic.lsl':
+                shutil.copy2(path, destination / path.name)
+    (library / 'compiler/qbe').mkdir(parents=True, exist_ok=True)
+    for name in RUNTIMES:
+        shutil.copy2(ROOT / 'compiler/qbe' / name, library / 'compiler/qbe' / name)
+    for machine in ('windows-x86_64', 'windows-arm64'):
+        (library / 'compiler/qbe' / machine).mkdir(parents=True, exist_ok=True)
+        for name in IMPORTS:
+            shutil.copy2(ROOT / 'compiler/qbe' / machine / name, library / 'compiler/qbe' / machine / name)
+    (library / 'runtime/arch').mkdir(parents=True, exist_ok=True)
+    for name in ('wasi_wasm32.wat', 'wasi_wasm32_threads.wat', 'baremetal_riscv64.ld'):
+        shutil.copy2(ROOT / 'runtime/arch' / name, library / 'runtime/arch' / name)
+    (library / 'tools').mkdir(parents=True, exist_ok=True)
+    for name in ('wasi_run.mjs', 'baremetal_run.py'):
+        shutil.copy2(ROOT / 'tools' / name, library / 'tools' / name)
+    if windows:
+        for name in ('llvm-mc.exe', 'lld.exe'):
+            shutil.copy2(llvm / name, output / 'bin' / name)
+        for name in ('LICENSE-LLVM.txt', 'LICENSE-lld.txt'):
+            shutil.copy2(llvm / name, output / name)
+
+
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--target', required=True, choices=TARGETS)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--compiler', type=Path, default=ROOT / 'compiler/lslc')
     parser.add_argument('--backend', type=Path, default=ROOT / 'compiler/pure/luxir')
+    parser.add_argument('--layout', action='store_true', help='also assemble lib/lsl')
+    parser.add_argument('--llvm', type=Path, help='directory with llvm-mc.exe, lld.exe and licences (Windows)')
     args = parser.parse_args()
+    windows = args.target.startswith('windows-')
+    if args.layout and windows and not args.llvm:
+        parser.error('Windows packages need --llvm')
     lock = json.loads((ROOT / 'release.json').read_text())
     backend_source = Path(lock['backend']['directory']) / 'lsl/luxir.lsl'
     if not (ROOT / backend_source).is_file():
         parser.error('run tools/release/prepare_sources.py first')
-    bin_directory = args.output.resolve() / 'bin'
+    output = args.output.resolve()
+    bin_directory = output / 'bin'
     bin_directory.mkdir(parents=True, exist_ok=True)
+    suffix = '.exe' if windows else ''
     tools = [('lslc', [], 'compiler/pure/lslc_qbe.lsl'),
              ('luxir', [], str(backend_source)),
              ('lsl', ['--unsafe'], 'compiler/pure/cli.lsl'),
              ('lsl-install', ['--unsafe'], 'compiler/pure/install.lsl'),
-             ('lsl-configure', ['--unsafe'], 'stdlib/configure.lsl'),
-             ('lsl-test', ['--unsafe'], 'tests/test_runner.lsl')]
+             ('lsl-configure', ['--unsafe'], 'stdlib/configure.lsl')]
+    if args.target.startswith('linux-'):
+        tools.append(('lsl-test', ['--unsafe'], 'tests/test_runner.lsl'))
     report = {'target': args.target, 'compiler_sha256': digest(args.compiler.resolve()),
               'backend_sha256': digest(args.backend.resolve()), 'artifacts': {}}
     for name, flags, source in tools:
-        output = bin_directory / name
+        target_file = bin_directory / (name + suffix)
         command = [str(args.compiler.resolve()), *flags, '--target', args.target, source,
-                   str(output), str(args.backend.resolve())]
-        process = subprocess.run(command, cwd=ROOT, capture_output=True, timeout=600)
+                   str(target_file), str(args.backend.resolve())]
+        process = subprocess.run(command, cwd=ROOT, capture_output=True, timeout=900)
         if process.returncode:
             raise SystemExit(f'{name}: ' + (process.stderr or process.stdout).decode(errors='replace'))
-        output.chmod(0o755)
-        report['artifacts'][name] = digest(output)
-        print(name, report['artifacts'][name], flush=True)
-    (args.output.resolve() / 'build.json').write_text(json.dumps(report, indent=2) + '\n')
+        target_file.chmod(0o755)
+        report['artifacts'][name + suffix] = digest(target_file)
+        print(name + suffix, report['artifacts'][name + suffix], flush=True)
+    if args.layout:
+        layout(output, args.llvm.resolve() if args.llvm else None, windows)
+    (output / 'build.json').write_text(json.dumps(report, indent=2) + '\n')
     return 0
 
 

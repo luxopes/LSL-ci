@@ -131,6 +131,18 @@ function rt_runtime_list_new(count, source):
     return list
 end
 
+# left + right pro dva List nebo Tuple v dynamickém sčítání (anyops): nový
+# List s prvky obou.
+function rt_runtime_list_concat_any(left, right):
+    left_count = __lsl_qbe_load64(left + COUNT)
+    right_count = __lsl_qbe_load64(right + COUNT)
+    result = rt_runtime_list_new(left_count + right_count, 0)
+    data = __lsl_qbe_load64(result + DATA)
+    call copy_words(data, __lsl_qbe_load64(left + DATA), left_count)
+    call copy_words(data + __lsl_qbe_shl(left_count, 3), __lsl_qbe_load64(right + DATA), right_count)
+    return result
+end
+
 # Dvojnásobná kapacita bufferu slov.
 function cold_list_grow(list):
     capacity = __lsl_qbe_load64(list + CAPACITY)

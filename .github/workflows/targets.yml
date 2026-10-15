@@ -31,6 +31,38 @@ jobs:
           for target in windows-x86_64 windows-arm64 linux-arm64 macos-x86_64 macos-arm64 wasm32-wasi baremetal-riscv64; do
             python3 tools/runtime/build.py --compiler build/ci/lslc --target $target --bootstrap-runtime compiler/qbe/runtime.o
           done
+      - name: LuxIR source (veřejný mirror, připnutý commit z release.json)
+        run: |
+          commit=$(python3 -c "import json; print(json.load(open('release.json'))['backend']['commit'])")
+          git clone --quiet https://github.com/luxopes/LuxIR.git build/dependencies/LuxIR
+          git -C build/dependencies/LuxIR checkout --quiet --detach "$commit"
+      - name: LLVM tools for Windows packages
+        run: |
+          set -e
+          for spec in x86_64:f229769f11d6a6edc8ada599c0cda964b7dee6ab1a08c6cf9dd7f513e85b107f aarch64:0df3e81e8fe26370dd2b60b9e009d81cd130d3fdc41b257434aa663c5d9f0c13; do
+            arch=${spec%%:*}; sum=${spec#*:}
+            file=clang+llvm-20.1.8-$arch-pc-windows-msvc.tar.xz
+            curl -sSfL -o $file https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.8/$file
+            echo "$sum  $file" | sha256sum -c -
+            mkdir -p llvm-$arch
+            tar -xJf $file --strip-components=2 -C llvm-$arch --wildcards '*/bin/llvm-mc.exe' '*/bin/lld.exe'
+            rm $file
+            curl -sSfL -o llvm-$arch/LICENSE-LLVM.txt https://raw.githubusercontent.com/llvm/llvm-project/llvmorg-20.1.8/llvm/LICENSE.TXT
+            curl -sSfL -o llvm-$arch/LICENSE-lld.txt https://raw.githubusercontent.com/llvm/llvm-project/llvmorg-20.1.8/lld/LICENSE.TXT
+          done
+      - name: Native compiler packages (Windows, macOS)
+        run: |
+          for spec in windows-x86_64:x86_64 windows-arm64:aarch64 macos-x86_64: macos-arm64:; do
+            name=${spec%%:*}; arch=${spec#*:}
+            extra=""
+            if [ -n "$arch" ]; then extra="--llvm llvm-$arch"; fi
+            python3 tools/release/build_target_tools.py --target $name --output native/$name --compiler build/ci/lslc --backend compiler/pure/luxir --layout $extra
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native
+          path: native/
+          retention-days: 7
       - name: Test bundles
         run: |
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target windows-x86_64 --output bundle/windows-x86_64
@@ -52,6 +84,38 @@ jobs:
           name: bundles
           path: bundle/
           retention-days: 7
+
+  # Překladač přímo na Windows a macOS: přeloží všechny testy nativně, spustí
+  # je a ověří fixed point (stupeň 2 = stupeň 3, oba přeložené na stroji).
+  native:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {runner: windows-2025, target: windows-x86_64}
+          - {runner: windows-11-arm, target: windows-arm64}
+          - {runner: macos-15, target: macos-arm64}
+          - {runner: macos-15-intel, target: macos-x86_64}
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: bundles
+          path: bundle
+      - uses: actions/download-artifact@v4
+        with:
+          name: native
+          path: native
+      - name: Native compiler on ${{ matrix.target }}
+        shell: bash
+        run: |
+          chmod +x native/${{ matrix.target }}/bin/* || true
+          python tools/ci/target_tests.py native native/${{ matrix.target }} bundle/${{ matrix.target }}
 
   run:
     needs: build

@@ -120,6 +120,10 @@ def main():
     shutil.copyfile(build / 'runtime.o', output)
     if a.target == 'windows-arm64':
         windows_import_libraries(output.parent / 'windows-arm64', 'arm64')
+    elif a.target == 'windows-x86_64':
+        # Importní knihovny i pro x86_64: na Windows se linkuje ld.lld bez
+        # MinGW (na Linuxu stačí i knihovny MinGW).
+        windows_import_libraries(output.parent / 'windows-x86_64', 'i386:x86-64')
     print(f'runtime {a.target}: LSL + arch {arch} -> {output}')
 
 

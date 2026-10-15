@@ -22,6 +22,14 @@ function provider_modules(os, architecture="x86_64"):
     for name in ["update", "update_install", "catalog", "package", "install"]:
         result["_" + name + "_platform"] = name + "_" + suffix
     end
+    # Překladač a nástroje na Windows a macOS: přenositelný hostitel
+    # a instalátor; self-update a registr knihoven zatím jen na Linuxu.
+    if os == "windows" or os == "macos":
+        result["_compiler_host_platform"] = "host_portable"
+        for name in ["update", "update_install", "catalog", "package", "install"]:
+            result["_" + name + "_platform"] = name + "_portable"
+        end
+    end
     return result
 end
 

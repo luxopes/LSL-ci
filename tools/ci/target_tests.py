@@ -4,9 +4,14 @@ s tests/X.out pro cíl a pro hostitele; do balíku dá jen testy, které na
 hostiteli bez argumentů dají X.out. run je spustí na cílovém stroji
 (z kořene repozitáře) a porovná výstup a kód ukončení.
 
+native přeloží tytéž testy nativním překladačem z balíku (PACKAGE/bin) přímo
+na cílovém stroji, spustí je a ověří fixed point překladače (stupeň 2 =
+stupeň 3, oba přeložené nativně).
+
 Použití:
   target_tests.py build --compiler LSLC --target windows-x86_64 --output DIR
   target_tests.py run DIR
+  target_tests.py native PACKAGE DIR
 """
 import argparse, concurrent.futures, json, os, pathlib, subprocess, sys
 
@@ -86,6 +91,55 @@ def run_tests(a):
     return 1 if failures else 0
 
 
+def native(a):
+    package = a.package.resolve()
+    suffix = '.exe' if os.name == 'nt' else ''
+    compiler = package / 'bin' / ('lslc' + suffix)
+    status, out, error = run([str(package / 'bin' / ('lsl' + suffix)), 'version'], 60)
+    print('lsl version:', status, out.decode(errors='replace').strip(), error.decode(errors='replace').strip()[:300], flush=True)
+    if status != 0:
+        return 1
+    manifest = json.loads((a.directory.resolve() / 'tests.json').read_text())
+    work = a.directory.resolve() / 'native'
+    work.mkdir(exist_ok=True)
+    failures = 0
+
+    def one(test):
+        source = ROOT / 'tests' / test['name']
+        binary = work / (source.stem + suffix)
+        status, _, error = run([str(compiler), '--unsafe', str(source), str(binary)], 900)
+        if status != 0:
+            return test['name'], 'compile', error
+        status, out, error = run([str(binary)], a.timeout)
+        expected = source.with_suffix('.out').read_bytes()
+        if status == 0 and out == expected:
+            return test['name'], 'ok', b''
+        return test['name'], f'status {status}', error + b' stdout: ' + out[:300]
+
+    with concurrent.futures.ThreadPoolExecutor(max(1, (os.cpu_count() or 2) // 2)) as pool:
+        for name, result, detail in pool.map(one, manifest['tests']):
+            if result == 'ok':
+                print(f'ok      {name}', flush=True)
+            else:
+                failures += 1
+                print(f'FAIL    {name}: {result}: {detail.decode(errors="replace").strip()[:400]}', flush=True)
+    print(f'native {manifest["target"]}: {len(manifest["tests"]) - failures} of {len(manifest["tests"])} passed', flush=True)
+    # Fixed point: lslc z balíku -> stupeň 2 -> stupeň 3 (z lib/lsl, relativní cesta).
+    library = package / 'lib' / 'lsl'
+    stage2 = work / ('lslc-stage2' + suffix)
+    stage3 = work / ('lslc-stage3' + suffix)
+    for compiler_path, output in ((compiler, stage2), (stage2, stage3)):
+        r = subprocess.run([str(compiler_path), 'compiler/pure/lslc_qbe.lsl', str(output)], cwd=library, capture_output=True, timeout=1800)
+        if r.returncode != 0:
+            print('FAIL    self-host:', r.stderr.decode(errors='replace')[:600], flush=True)
+            return 1
+    if stage2.read_bytes() != stage3.read_bytes():
+        print('FAIL    native fixed point: stage 2 and stage 3 differ', flush=True)
+        return 1
+    print(f'native fixed point: stage 2 == stage 3 ({stage2.stat().st_size} bytes)', flush=True)
+    return 1 if failures else 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest='command', required=True)
@@ -97,9 +151,15 @@ def main():
     r = sub.add_parser('run')
     r.add_argument('directory', type=pathlib.Path)
     r.add_argument('--timeout', type=int, default=300)
+    n = sub.add_parser('native')
+    n.add_argument('package', type=pathlib.Path)
+    n.add_argument('directory', type=pathlib.Path)
+    n.add_argument('--timeout', type=int, default=300)
     a = ap.parse_args()
     if a.command == 'build':
         return build(a)
+    if a.command == 'native':
+        return native(a)
     return run_tests(a)
 
 

@@ -1,5 +1,6 @@
 # Pure-LSL installer. Copies trusted native tools/resources using syscalls.
 load fd
+load install_files
 load update_install
 
 # A downloaded installer can repair an older self-updater without writing
@@ -164,81 +165,10 @@ if exists(cuda_worker):
     executables.append(["cuda/lsl-cuda-worker", "lsl-cuda-worker", "lsl-cuda-worker"])
 end
 
-sources = [
-    "_catalog_platform.lsl",
-    "_compiler_host_platform.lsl",
-    "_install_platform.lsl",
-    "_package_platform.lsl",
-    "_update_install_platform.lsl",
-    "_update_platform.lsl",
-    "abi_x86_64.lsl",
-    "assembler.lsl",
-    "assembler_x86_64.lsl",
-    "backend_x86_64.lsl",
-    "browser.lsl",
-    "bytes.lsl",
-    "catalog.lsl",
-    "catalog_linux_x86_64.lsl",
-    "cli.lsl",
-    "codegen.lsl",
-    "compiler_backend.lsl",
-    "console.lsl",
-    "declarations.lsl",
-    "diagnostics.lsl",
-    "dynamic_stdlib.lsl",
-    "editor.lsl",
-    "elf_image.lsl",
-    "flow.lsl",
-    "frontend.lsl",
-    "heap_runtime.lsl",
-    "heap_runtime_linux_x86_64.lsl",
-    "highlight.lsl",
-    "host.lsl",
-    "host_linux_x86_64.lsl",
-    "image_elf64_linux.lsl",
-    "image_writer.lsl",
-    "install.lsl",
-    "install_linux_x86_64.lsl",
-    "io_runtime.lsl",
-    "io_runtime_linux_x86_64.lsl",
-    "lexer.lsl",
-    "linker.lsl",
-    "lslc_qbe.lsl",
-    "qbe_emit.lsl",
-    "qbe_toolchain.lsl",
-    "qbe_runtime_dump.lsl",
-    "lslc_direct.lsl",
-    "manual.lsl",
-    "native_plugin_runtime.lsl",
-    "native_plugin_runtime_linux_x86_64.lsl",
-    "native_runtime.lsl",
-    "native_runtime_linux_x86_64.lsl",
-    "object_code.lsl",
-    "package.lsl",
-    "package_linux_x86_64.lsl",
-    "parser.lsl",
-    "pipeline.lsl",
-    "process_runtime.lsl",
-    "process_runtime_linux_x86_64.lsl",
-    "relocations_x86_64.lsl",
-    "runtime.lsl",
-    "runtime_abi_linux_x86_64.lsl",
-    "runtime_linux_x86_64.lsl",
-    "semantic.lsl",
-    "target.lsl",
-    "thread_runtime.lsl",
-    "thread_runtime_linux_x86_64.lsl",
-    "update.lsl",
-    "update_install.lsl",
-    "update_install_linux_x86_64.lsl",
-    "update_linux_x86_64.lsl",
-    "validation.lsl",
-    "value_abi.lsl",
-    "x86_64.lsl"
-]
-standard_modules = ["_ai_baremetal_x86_64.lsl", "_ai_linux_x86_64.lsl", "_ai_macos_x86_64.lsl", "_ai_platform.lsl", "_ai_wasi_x86_64.lsl", "_ai_windows_x86_64.lsl", "_cuda_baremetal_x86_64.lsl", "_cuda_linux_x86_64.lsl", "_cuda_macos_x86_64.lsl", "_cuda_transport.lsl", "_cuda_wasi_x86_64.lsl", "_cuda_windows_x86_64.lsl", "_fd_baremetal_x86_64.lsl", "_fd_linux_x86_64.lsl", "_fd_macos_x86_64.lsl", "_fd_platform.lsl", "_fd_wasi_x86_64.lsl", "_fd_windows_x86_64.lsl", "_host_baremetal_x86_64.lsl", "_host_linux_x86_64.lsl", "_host_macos_x86_64.lsl", "_host_platform.lsl", "_host_wasi_x86_64.lsl", "_host_windows_x86_64.lsl", "_httpserver_baremetal_x86_64.lsl", "_httpserver_linux_x86_64.lsl", "_httpserver_macos_x86_64.lsl", "_httpserver_transport.lsl", "_httpserver_wasi_x86_64.lsl", "_httpserver_windows_x86_64.lsl", "_luxos_baremetal_x86_64.lsl", "_luxos_linux_x86_64.lsl", "_luxos_macos_x86_64.lsl", "_luxos_platform.lsl", "_luxos_wasi_x86_64.lsl", "_luxos_windows_x86_64.lsl", "_native_baremetal_x86_64.lsl", "_native_linux_x86_64.lsl", "_native_macos_x86_64.lsl", "_native_platform.lsl", "_native_wasi_x86_64.lsl", "_native_windows_x86_64.lsl", "_os_baremetal_x86_64.lsl", "_os_linux_x86_64.lsl", "_os_macos_x86_64.lsl", "_os_platform.lsl", "_os_wasi_x86_64.lsl", "_os_windows_x86_64.lsl", "_platform.lsl", "_platform_baremetal_riscv64.lsl", "_platform_linux_arm64.lsl", "_platform_linux_riscv64.lsl", "_platform_linux_x86_64.lsl", "_platform_macos_arm64.lsl", "_platform_macos_x86_64.lsl", "_platform_wasi_wasm32.lsl", "_platform_windows_arm64.lsl", "_platform_windows_x86_64.lsl", "_plugin_baremetal_x86_64.lsl", "_plugin_linux_x86_64.lsl", "_plugin_macos_x86_64.lsl", "_plugin_platform.lsl", "_plugin_wasi_x86_64.lsl", "_plugin_windows_x86_64.lsl", "_random_baremetal_x86_64.lsl", "_random_hash.lsl", "_random_linux_x86_64.lsl", "_random_macos_x86_64.lsl", "_random_platform.lsl", "_random_wasi_x86_64.lsl", "_random_windows_x86_64.lsl", "_sandbox_baremetal_x86_64.lsl", "_sandbox_linux_x86_64.lsl", "_sandbox_macos_x86_64.lsl", "_sandbox_platform.lsl", "_sandbox_wasi_x86_64.lsl", "_sandbox_windows_x86_64.lsl", "_system_baremetal_x86_64.lsl", "_system_linux_x86_64.lsl", "_system_macos_x86_64.lsl", "_system_platform.lsl", "_system_wasi_x86_64.lsl", "_system_windows_x86_64.lsl", "_tui_baremetal_x86_64.lsl", "_tui_linux_x86_64.lsl", "_tui_macos_x86_64.lsl", "_tui_platform.lsl", "_tui_wasi_x86_64.lsl", "_tui_windows_x86_64.lsl", "_unixsock_baremetal_x86_64.lsl", "_unixsock_linux_x86_64.lsl", "_unixsock_macos_x86_64.lsl", "_unixsock_platform.lsl", "_unixsock_wasi_x86_64.lsl", "_unixsock_windows_x86_64.lsl", "ai.lsl", "bigint.lsl", "config.lsl", "configure.lsl", "cuda.lsl", "env.lsl", "fd.lsl", "http.lsl", "httpserver.lsl", "json.lsl", "lconf.lsl", "lux.lsl", "luxos.lsl", "math.lsl", "native.lsl", "os.lsl", "plugin.lsl", "process.lsl", "random.lsl", "requests.lsl", "sandbox.lsl", "system.lsl", "tensor.lsl", "time.lsl", "tui.lsl", "unixsock.lsl"]
-target_files = ["compiler/qbe/runtime-linux-arm64.o", "compiler/qbe/runtime-linux-riscv64.o", "compiler/qbe/runtime-windows-x86_64.o", "compiler/qbe/runtime-windows-arm64.o", "compiler/qbe/runtime-macos-x86_64.o", "compiler/qbe/runtime-macos-arm64.o", "compiler/qbe/runtime-wasm32-wasi.lir", "compiler/qbe/runtime-baremetal-riscv64.o", "compiler/qbe/libSystem.tbd", "compiler/qbe/windows-arm64/libkernel32.a", "compiler/qbe/windows-arm64/libsynchronization.a", "compiler/qbe/windows-arm64/libbcrypt.a", "compiler/qbe/windows-arm64/libws2_32.a", "runtime/arch/wasi_wasm32.wat", "runtime/arch/wasi_wasm32_threads.wat", "runtime/arch/baremetal_riscv64.ld", "tools/wasi_run.mjs", "tools/baremetal_run.py"]
-manual_pages = ["README", "01-getting-started", "02-language-basics", "03-functions-and-classes", "04-collections", "05-error-handling", "06-modules-and-imports", "07-files-io-and-processes", "08-configuration-system", "09-gui-programming", "10-ai-applications", "11-performance-and-optimization", "12-compiler-internals", "13-server-and-origin", "14-sandbox-and-safety", "15-cuda", "16-random", "17-cli-and-packages", "18-platforms", "env", "requests", "http", "httpserver", "json", "os", "process", "time", "math", "random", "system", "ai", "bigint", "config", "configure", "lconf", "lux", "luxos", "fd", "native", "plugin", "sandbox", "tensor", "tui", "unixsock", "cuda", "reference", "security", "CHANGELOG"]
+sources = install_files.SOURCES
+standard_modules = install_files.STANDARD_MODULES
+target_files = install_files.TARGET_FILES
+manual_pages = install_files.MANUAL_PAGES
 call mkdir(prefix + "/lib/lsl/docs")
 call mkdir(prefix + "/lib/lsl/docs/developer_guides")
 

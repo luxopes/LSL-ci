@@ -86,6 +86,7 @@ def main():
              ROOT / "tests/qbe/dynamic_sequence_load.lsl",
              ROOT / "tests/qbe/atomic_native.lsl",
              ROOT / "tests/qbe/startup_tables.lsl",
+             ROOT / "tests/qbe/internal_list_concat.lsl",
              ROOT / "tests/qbe/string_contiguous_slice.lsl",
              ROOT / "tests/qbe/native_float_arithmetic.lsl",
              ROOT / "tests/qbe/native_float_boundaries.lsl",
