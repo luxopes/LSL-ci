@@ -1,7 +1,7 @@
 # Release LSL 0.10.2
 
 `lsl update` funguje na Windows a macOS. Kanál aktualizací nese balíky
-všech sedmi hostitelů.
+všech sedmi hostitelů. Nové 32bitové cíle `linux-arm` a `linux-x86`.
 
 ## Změny
 
@@ -27,6 +27,24 @@ všech sedmi hostitelů.
 - Oprava: chybová hláška `lsl update` neobsahuje zdvojené
   `UpdateError: UpdateError:`.
 
+- 32bitový Linux: `--target linux-arm` (armv7 hard-float) a
+  `--target linux-x86` (i686, SSE2). LuxIR vypíše C (nový backend `c32`),
+  clang ho přeloží pro cíl a ld.lld slinkuje statický ELF. Hodnoty LSL
+  zůstávají 64bitové, programy se chovají stejně jako na 64bitových cílech.
+  Překladač pro oba cíle přeloží sám sebe bajtově shodně. Nativní knihovny
+  jsou zatím jen 64bitové. `LSL_CC` vybere jiný překladač C.
+- Oprava (všechny cíle): vnitřní ABI (moduly překladače a aktualizace)
+  drží celá čísla v hodnotách `Any` bez boxování a číslo rovné adrese
+  živého objektu se splete s objektem. Halda proto leží nad běžnými čísly:
+  Linux 64bit, macOS a Windows od 2^44 (s náhodným posunem), 32bitový
+  Linux a WebAssembly se značkou bitu 40 v adresách, bare metal v aliasu
+  RAM od 192 GiB. Na macOS se dosud halda nacházela kolem 2^32 a výpočet
+  podpisu aktualizace mohl dát chybný výsledek.
+- 32bitový Linux: časové limity socketů zkusí `SO_*TIMEO_NEW` a na jádrech
+  před 5.1 (nebo starším qemu) použijí původní volbu.
+- README balíku popisuje spuštění nepodepsaných binárek (SmartScreen,
+  karanténa macOS).
+
 ## Ověření
 
 - `tests/update_portable_conformance.lsl` (i ve vnitřním ABI CLI) na
@@ -34,3 +52,6 @@ všech sedmi hostitelů.
 - `tools/ci/update_e2e.py` v CI na Windows Server 2025 x64, Windows 11
   ARM64, macOS 15 arm64 a Intel proti produkčnímu kanálu: kontrola,
   odmítnutí downgradu, aktualizace na vydanou verzi a rollback zpět.
+- 32bitový Linux: celá sada (106 testů) na `linux-x86` nativně a
+  `linux-arm` v qemu, lokálně i v CI; self-host bajtově shodný.
+- `tests/internal_int_heap_alias_conformance.lsl` na všech cílech.

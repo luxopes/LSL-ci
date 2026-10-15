@@ -28,6 +28,19 @@ dalšího se instalovat nemusí (`bin\lsl.exe version`, `bin\lsl-install.exe`
 nainstaluje do `%LOCALAPPDATA%\Programs\LSL`). Na macOS potřebuje překladač
 Xcode Command Line Tools (`xcode-select --install`).
 
+Binárky nejsou podepsané certifikátem vývojáře ani notarizované:
+
+- **Windows:** SmartScreen může při prvním spuštění zobrazit „Systém Windows
+  ochránil váš počítač“; pokračujte přes „Další informace“ → „Přesto
+  spustit“. ZIP stažený prohlížečem lze předem odblokovat v PowerShellu:
+  `Unblock-File lsl-0.10.2-windows-x86_64.zip`. Stažení přes `curl.exe` značku
+  internetu nepřidá.
+- **macOS:** soubor stažený prohlížečem dostane karanténu a Gatekeeper ho
+  odmítne. Před spuštěním ji odstraňte: `xattr -dr com.apple.quarantine
+  lsl-0.10.2`, nebo program jednou povolte v Nastavení systému → Soukromí
+  a zabezpečení → „Přesto otevřít“. Stažení přes `curl` karanténu nepřidá
+  a `lsl update` také ne.
+
 Výsledné programy na Linuxu jsou statické PIE ELF s ASLR a neproveditelným stackem,
 bez libc a bez dynamického loaderu. Spuštění už přeloženého programu
 binutils nepotřebuje.
@@ -49,6 +62,7 @@ binutils nepotřebuje.
 | `macos-x86_64`, `macos-arm64` | `clang`, `lld` (`ld64.lld`) |
 | `wasm32-wasi`, `wasm32-wasi-threads` | `wabt` |
 | `baremetal-riscv64` | `binutils-riscv64-linux-gnu` |
+| `linux-arm`, `linux-x86` | `clang`, `lld` (LSL_CC vybere jiný překladač C) |
 
 Spuštění na hostiteli bez cílového systému:
 
@@ -59,6 +73,11 @@ Spuštění na hostiteli bez cílového systému:
   (qemu-system-riscv64, deska `virt`, 4 jádra; vstup a výstup přes
   semihosting).
 - Linux arm64 a riscv64 na PC: qemu-user (`binfmt`).
+- 32bitový Linux `linux-arm` (armv7, hard-float: Raspberry Pi OS 32bit,
+  Android armv7) a `linux-x86` (i686 se SSE2): program se přeloží přes C
+  (LuxIR `c32`), potřebuje `clang` a `ld.lld`; `linux-x86` běží přímo na
+  64bitovém jádře x86_64, `linux-arm` v qemu-user. Nativní knihovny
+  (`native`) jsou zatím jen 64bitové.
 
 Stabilní vydání; `lsl version` vypisuje `0.10.2`. Podepsaný `lsl update`
 sleduje stabilní kanál na všech hostitelích (Linux x86_64, aarch64 a
