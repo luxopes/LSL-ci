@@ -205,6 +205,8 @@ function module_path(name, owner_path, home, builtin):
 end
 
 function module_path_base(name, owner_path, home, builtin):
+    # Cesta zdroje na Windows může mít "\\" (sousední moduly se hledají podle "/").
+    owner_path = String(owner_path).replace(chr(92), "/")
     relative_name = name.replace(".", "/") + ".lsl"
     standard_path = "stdlib/" + relative_name
     executable = program_path()
