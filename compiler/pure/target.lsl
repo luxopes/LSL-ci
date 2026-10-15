@@ -57,9 +57,10 @@ function describe(name):
         architecture = "arm64"
         backend = "arm64"
         available = True
-    elif name == "wasm32-wasi":
+    elif name == "wasm32-wasi" or name == "wasm32-wasi-threads":
         # WebAssembly s WASI: hodnoty LSL zůstávají 64bitové, adresy do
-        # lineární paměti 32bitové.
+        # lineární paměti 32bitové. -threads: skutečná vlákna (wasi-threads,
+        # sdílená paměť); bez přípony běží v každém hostiteli WASI.
         os = "wasi"
         format = "wasm"
         architecture = "wasm32"
@@ -103,7 +104,7 @@ function resolve(name):
 end
 
 function modules_for_platform(platform_module):
-    for name in ["linux-x86_64", "linux-arm64", "linux-riscv64", "windows-x86_64", "windows-arm64", "macos-x86_64", "macos-arm64", "wasm32-wasi", "baremetal-riscv64"]:
+    for name in ["linux-x86_64", "linux-arm64", "linux-riscv64", "windows-x86_64", "windows-arm64", "macos-x86_64", "macos-arm64", "wasm32-wasi", "wasm32-wasi-threads", "baremetal-riscv64"]:
         selected = describe(name)
         if selected["platform_module"] == platform_module:
             return selected["modules"]

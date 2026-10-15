@@ -3,14 +3,14 @@ load qbe_emit
 load host
 
 # Cíl backendu podle platformy LSL.
-BACKEND_TARGETS = {"linux-x86_64":"amd64_sysv","linux-arm64":"arm64","linux-riscv64":"rv64","windows-x86_64":"amd64_win","windows-arm64":"arm64_win","macos-x86_64":"amd64_apple","macos-arm64":"arm64_apple","wasm32-wasi":"wasm32","baremetal-riscv64":"rv64"}
+BACKEND_TARGETS = {"linux-x86_64":"amd64_sysv","linux-arm64":"arm64","linux-riscv64":"rv64","windows-x86_64":"amd64_win","windows-arm64":"arm64_win","macos-x86_64":"amd64_apple","macos-arm64":"arm64_apple","wasm32-wasi":"wasm32","wasm32-wasi-threads":"wasm32","baremetal-riscv64":"rv64"}
 # Nástroje a příznaky cíle: cross assembler a linker, jinak nativní. rv64:
 # adresy symbolů relativně k PC (-p) a bez relaxace linkeru (runtime
 # nenastavuje gp).
-BACKEND_FLAGS = {"linux-x86_64":[],"linux-arm64":[],"linux-riscv64":["-p"],"windows-x86_64":[],"windows-arm64":[],"macos-x86_64":[],"macos-arm64":[],"wasm32-wasi":[],"baremetal-riscv64":["-p"]}
+BACKEND_FLAGS = {"linux-x86_64":[],"linux-arm64":[],"linux-riscv64":["-p"],"windows-x86_64":[],"windows-arm64":[],"macos-x86_64":[],"macos-arm64":[],"wasm32-wasi":[],"wasm32-wasi-threads":["-g"],"baremetal-riscv64":["-p"]}
 ASSEMBLERS = {"linux-x86_64":["/usr/bin/as","/bin/as",["--64"]],"linux-arm64":["/usr/bin/aarch64-linux-gnu-as","/usr/bin/as",[]],"linux-riscv64":["/usr/bin/riscv64-linux-gnu-as","/usr/bin/as",["-march=rv64gc"]],"windows-x86_64":["/usr/bin/x86_64-w64-mingw32-as","/usr/bin/x86_64-w64-mingw32-as",[]],"windows-arm64":["/usr/bin/clang","/usr/local/bin/clang",["--target=aarch64-windows-gnu","-c","-x","assembler"]],"macos-x86_64":["/usr/bin/clang","/usr/local/bin/clang",["-target","x86_64-apple-macos11","-c","-x","assembler"]],"macos-arm64":["/usr/bin/clang","/usr/local/bin/clang",["-target","arm64-apple-macos11","-c","-x","assembler"]],"baremetal-riscv64":["/usr/bin/riscv64-linux-gnu-as","/usr/bin/riscv64-unknown-elf-as",["-march=rv64gc"]]}
 LINKERS = {"linux-x86_64":["/usr/bin/ld","/bin/ld",[]],"linux-arm64":["/usr/bin/aarch64-linux-gnu-ld","/usr/bin/ld",[]],"linux-riscv64":["/usr/bin/riscv64-linux-gnu-ld","/usr/bin/ld",["--no-relax"]],"windows-x86_64":["/usr/bin/x86_64-w64-mingw32-ld","/usr/bin/x86_64-w64-mingw32-ld",["-nostdlib"]],"windows-arm64":["/usr/bin/ld.lld","/usr/local/bin/ld.lld",["-m","arm64pe"]],"macos-x86_64":["/usr/bin/ld64.lld","/usr/local/bin/ld64.lld",["-arch","x86_64","-platform_version","macos","11.0","11.0"]],"macos-arm64":["/usr/bin/ld64.lld","/usr/local/bin/ld64.lld",["-arch","arm64","-platform_version","macos","11.0","11.0"]],"baremetal-riscv64":["/usr/bin/riscv64-linux-gnu-ld","/usr/bin/riscv64-unknown-elf-ld",["--no-relax"]]}
-RUNTIME_OBJECTS = {"linux-x86_64":"runtime.o","linux-arm64":"runtime-linux-arm64.o","linux-riscv64":"runtime-linux-riscv64.o","windows-x86_64":"runtime-windows-x86_64.o","windows-arm64":"runtime-windows-arm64.o","macos-x86_64":"runtime-macos-x86_64.o","macos-arm64":"runtime-macos-arm64.o","wasm32-wasi":"runtime-wasm32-wasi.lir","baremetal-riscv64":"runtime-baremetal-riscv64.o"}
+RUNTIME_OBJECTS = {"linux-x86_64":"runtime.o","linux-arm64":"runtime-linux-arm64.o","linux-riscv64":"runtime-linux-riscv64.o","windows-x86_64":"runtime-windows-x86_64.o","windows-arm64":"runtime-windows-arm64.o","macos-x86_64":"runtime-macos-x86_64.o","macos-arm64":"runtime-macos-arm64.o","wasm32-wasi":"runtime-wasm32-wasi.lir","wasm32-wasi-threads":"runtime-wasm32-wasi.lir","baremetal-riscv64":"runtime-baremetal-riscv64.o"}
 # Windows: importní knihovny Win32 (kernel32, WaitOnAddress, BCryptGenRandom,
 # Winsock): x86_64 z mingw-w64, arm64 vyrobené při sestavení runtime
 # (tools/runtime/build.py) vedle objektu runtime.
@@ -95,12 +95,16 @@ function cleanup(path):
 end
 
 # WebAssembly: runtime (LIR) a program se přeloží spolu do jednoho modulu
-# (luxir -t wasm32), vrstva architektury je text WAT a binární modul vyrobí
+# (luxir -t wasm32, s vlákny -g), vrstva architektury je text WAT (s vlákny
+# wasi_wasm32_threads.wat) a binární modul vyrobí
 # wat2wasm (WABT). Linker ani assembler se nepoužijí.
 function wasm_image(unit, selected, entry_source, backend):
     converter = host.required_system_tool("/usr/bin/wat2wasm", "/usr/local/bin/wat2wasm", "WebAssembly text converter (wat2wasm)")
     runtime = runtime_path(selected)
     layer = host.resource_path("runtime/arch/wasi_wasm32.wat")
+    if selected["name"] == "wasm32-wasi-threads":
+        layer = host.resource_path("runtime/arch/wasi_wasm32_threads.wat")
+    end
     if not exists(layer):
         Error(CompileError: "WebAssembly architecture layer is missing: " + layer)
     end
@@ -110,9 +114,13 @@ function wasm_image(unit, selected, entry_source, backend):
     try:
         call qbe_emit.generate(unit, path + ".lir", entry_source)
         call writefile(path + ".all.lir", readfile(runtime) + chr(10) + readfile(path + ".lir"))
-        call invoke(backend, ["-t", "wasm32", "-o", path + ".body", path + ".all.lir"], "LuxIR backend")
+        call invoke(backend, tool_arguments(["-t", "wasm32"], BACKEND_FLAGS[selected["name"]], ["-o", path + ".body", path + ".all.lir"]), "LuxIR backend")
         call writefile(path + ".wat", "(module" + chr(10) + readfile(layer) + chr(10) + readfile(path + ".body") + ")" + chr(10))
-        call invoke(converter, ["-o", path, path + ".wat"], "wat2wasm")
+        features = []
+        if selected["name"] == "wasm32-wasi-threads":
+            features = ["--enable-threads"]
+        end
+        call invoke(converter, tool_arguments(features, [], ["-o", path, path + ".wat"]), "wat2wasm")
         result = readbytes(path)
     else:
         failure = last_error()

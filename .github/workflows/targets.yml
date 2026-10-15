@@ -39,6 +39,7 @@ jobs:
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target macos-x86_64 --output bundle/macos-x86_64
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target macos-arm64 --output bundle/macos-arm64
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target wasm32-wasi --output bundle/wasm32-wasi
+          python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target wasm32-wasi-threads --output bundle/wasm32-wasi-threads
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target baremetal-riscv64 --output bundle/baremetal-riscv64
           for target in macos-x86_64 macos-arm64; do
             build/ci/lslc --target $target tools/ci/tls_serve.lsl bundle/$target/tls-serve
@@ -67,6 +68,8 @@ jobs:
           - {runner: macos-15-intel, bundle: macos-x86_64}
           # WebAssembly v Node (WASI preview1).
           - {runner: ubuntu-24.04, bundle: wasm32-wasi}
+          # WebAssembly s vlákny (wasi-threads): Node a wasmtime.
+          - {runner: ubuntu-24.04, bundle: wasm32-wasi-threads}
           # Bare metal RISC-V v qemu-system (deska virt, semihosting).
           - {runner: ubuntu-24.04, bundle: baremetal-riscv64}
     runs-on: ${{ matrix.runner }}
@@ -76,7 +79,7 @@ jobs:
         with:
           python-version: '3.12'
       - uses: actions/setup-node@v4
-        if: matrix.bundle == 'wasm32-wasi'
+        if: startsWith(matrix.bundle, 'wasm32-')
         with:
           node-version: '24'
       - name: Install qemu-system-riscv64
@@ -88,6 +91,13 @@ jobs:
           path: bundle
       - name: Run ${{ matrix.bundle }} tests
         run: python tools/ci/target_tests.py run bundle/${{ matrix.bundle }}
+      - name: Run ${{ matrix.bundle }} tests in wasmtime
+        if: matrix.bundle == 'wasm32-wasi-threads'
+        shell: bash
+        run: |
+          curl -sSfL https://github.com/bytecodealliance/wasmtime/releases/download/v26.0.1/wasmtime-v26.0.1-x86_64-linux.tar.xz | tar -xJ
+          export PATH="$PWD/wasmtime-v26.0.1-x86_64-linux:$PATH"
+          LSL_WASM_RUNNER=wasmtime python tools/ci/target_tests.py run bundle/${{ matrix.bundle }}
       - name: Process sandbox
         if: startsWith(matrix.bundle, 'macos')
         run: |

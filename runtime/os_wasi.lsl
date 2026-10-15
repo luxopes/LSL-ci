@@ -6,21 +6,27 @@
 #   prefixu; relativní cesty vůči ".", jinak "/"),
 # - paměť: lineární paměť wasm; halda leží od HEAP_START, ostatní mapování
 #   pod ní (map_anonymous ukrajuje od konce dat programu); nic se neuvolňuje,
-# - vlákna běží sekvenčně (thread_run_pending), žádné procesy ani sockety
-#   (WASI preview1 je nemá): tyto funkce vrací -ENOSYS.
+# - vlákna: s wasi-threads skutečná (cíl wasm32-wasi-threads), jinak
+#   sekvenčně (thread_run_pending); žádné procesy ani sockety (WASI
+#   preview1 je nemá): tyto funkce vrací -ENOSYS.
 load _platform as platform
 load core
 
 THREAD_SELF_PUBLISH = 0
-THREAD_RESUME = 0
+THREAD_RESUME = 1
 ENV_IGNORE_CASE = 0
 THREAD_REGISTER_BYTES = 0
 
 MAIN_STACK_TOP = 120
+THREAD_TABLE = 112
+MAIN_THREAD_BLOCK = 160
+GC_GATE = 128
+THREAD_SHADOW_BYTES = 4194304
 HEAP_START = 1073741824
 # Stav vrstvy (data vrstvy architektury nad lsl_state): +0 další volná
 # adresa pod haldou, +8 tabulka předotevřených adresářů (0 = nenačtená),
-# +16 počet spuštěných vláken.
+# +16 počet spuštěných vláken (bez vláken), +24 příznaky blokujících oblastí
+# vláken.
 WASI_STATE = 1088
 
 ENOSYS = 38
@@ -97,19 +103,21 @@ function syscall6(number, a, b, c, d, e, f):
     return 0 - ENOSYS
 end
 
-# Paměť pod haldou: ukrajuje se od konce dat a stínového zásobníku programu.
+# Paměť pod haldou: ukrajuje se od konce dat a stínového zásobníku
+# programu (atomicky: volají ji i vlákna).
 function map_anonymous(size, extra_flags):
-    next = __lsl_qbe_load64(WASI_STATE)
-    if next == 0:
-        next = __lsl_qbe_call0(__lsl_symbol("lsl_wasm_memory_size"))
+    while True:
+        next = __lsl_qbe_load64(WASI_STATE)
+        start = (next + 65535) & -65536
+        finish = start + ((size + 65535) & -65536)
+        if finish > HEAP_START or not __lsl_qbe_call1(__lsl_symbol("lsl_wasm_memory_reserve"), finish):
+            return -12
+        end
+        if __lsl_qbe_call3(__lsl_symbol("lsl_arch_cas64"), WASI_STATE, next, finish) == next:
+            return start
+        end
     end
-    start = (next + 65535) & -65536
-    finish = start + ((size + 65535) & -65536)
-    if finish > HEAP_START or not __lsl_qbe_call1(__lsl_symbol("lsl_wasm_memory_reserve"), finish):
-        return -12
-    end
-    __lsl_qbe_store64(WASI_STATE, finish)
-    return start
+    return -12
 end
 
 function map_at(address, size):
@@ -120,10 +128,10 @@ function map_at(address, size):
 end
 
 # Volá se při startu před prvním mapováním: oblast pod haldou začíná za
-# daty a stínovým zásobníkem (počáteční velikost paměti).
+# daty a stínovým zásobníkem hlavního vlákna.
 function heap_base(hint):
     if __lsl_qbe_load64(WASI_STATE) == 0:
-        __lsl_qbe_store64(WASI_STATE, __lsl_qbe_call0(__lsl_symbol("lsl_wasm_memory_size")))
+        __lsl_qbe_store64(WASI_STATE, __lsl_qbe_call0(__lsl_symbol("lsl_wasm_data_end")))
     end
     return HEAP_START
 end
@@ -168,7 +176,11 @@ function read(fd, buffer, count):
     __lsl_qbe_store32(vector + 4, count)
     done = __lsl_qbe_alloc(8)
     __lsl_qbe_store64(done, 0)
-    result = checked(__lsl_qbe_call4(__lsl_symbol("lsl_wasi_fd_read"), fd, vector, 1, done))
+    # Čtení může čekat (stdin, roura): GC zatím vlákno nepotřebuje zastavit.
+    call enter_blocking()
+    code = __lsl_qbe_call4(__lsl_symbol("lsl_wasi_fd_read"), fd, vector, 1, done)
+    call leave_blocking()
+    result = checked(code)
     if result < 0:
         return result
     end
@@ -443,17 +455,47 @@ function exit_process(status):
     return 0
 end
 
-# Jedno vlákno: na zámky ani bránu GC nikdo nečeká.
+# Futex (vlákna: memory.atomic.wait32; bez vláken na nic nikdo nečeká).
 function futex_wait(address, expected):
+    return futex_wait_ns(address, expected, -1)
+end
+
+function futex_wait_ns(address, expected, timeout):
+    if not threads():
+        return 0
+    end
+    call enter_blocking()
+    result = __lsl_qbe_call3(__lsl_symbol("lsl_wasm_wait32"), address, expected & 4294967295, timeout)
+    call leave_blocking()
+    if result == 1:
+        return -11
+    elif result == 2:
+        return -110
+    end
     return 0
 end
 
 function futex_wait_timeout(address, expected, timespec):
-    return 0
+    seconds = __lsl_qbe_load64(timespec)
+    nanoseconds = __lsl_qbe_load64(timespec + 8)
+    if seconds < 0 or nanoseconds < 0:
+        return -110
+    end
+    if seconds > 9000000000:
+        return futex_wait_ns(address, expected, -1)
+    end
+    return futex_wait_ns(address, expected, seconds * 1000000000 + nanoseconds)
 end
 
 function futex_wake(address, count):
-    return 0
+    if not threads():
+        return 0
+    end
+    limit = count
+    if limit > 2147483647:
+        limit = 2147483647
+    end
+    return __lsl_qbe_call2(__lsl_symbol("lsl_wasm_notify"), address, limit)
 end
 
 function getpid():
@@ -517,12 +559,21 @@ function os_nanosleep(request, remaining):
     __lsl_qbe_store64(subscription + 24, total)
     event = __lsl_qbe_alloc(32)
     count = __lsl_qbe_alloc(8)
-    return checked(__lsl_qbe_call4(__lsl_symbol("lsl_wasi_poll_oneoff"), subscription, event, 1, count))
+    call enter_blocking()
+    code = __lsl_qbe_call4(__lsl_symbol("lsl_wasi_poll_oneoff"), subscription, event, 1, count)
+    call leave_blocking()
+    return checked(code)
 end
 
 # Blok argumentů jako na zásobníku Linuxu (argc, argv[], 0, prostředí, 0,
 # řetězce) z args_get a environ_get. WASI dává pole 32bitových ukazatelů.
 function process_arguments(stack):
+    call preopens()
+    flags = map_anonymous(1024, 0)
+    if flags < 0:
+        return 0
+    end
+    __lsl_qbe_store64(WASI_STATE + 24, flags)
     sizes = __lsl_qbe_alloc(16)
     __lsl_qbe_zero(sizes, 16)
     if __lsl_qbe_call2(__lsl_symbol("lsl_wasi_args_sizes_get"), sizes, sizes + 4) != 0:
@@ -657,22 +708,114 @@ function process_deadline_cancel(watch):
     return 0
 end
 
-# Vlákna WASI preview1 nemá. Vlákno proto doběhne celé hned po spawnu
-# (thread_run_pending, mimo zámek tabulky) na stejném stínovém zásobníku:
+# Vlákna. Cíl wasm32-wasi-threads (vrstva wasi_wasm32_threads.wat): každé
+# vlákno je instance modulu nad sdílenou pamětí spuštěná přes thread-spawn
+# s vlastním stínovým zásobníkem (THREAD_SHADOW_BYTES, mez hlídá LuxIR).
+# Zastavení pro GC je kooperativní: vlákno ve stavu 4 se zastaví v
+# nejbližším bezpečném bodě LuxIR (lsl_wasm_safepoint); vlákno, které čeká
+# ve vrstvě OS (futex, spánek, čtení), je v blokující oblasti a GC ho
+# podrží, aniž by se probudilo (příznak blokující oblasti 1 -> 2).
+# Cíl wasm32-wasi (bez vláken): vlákno doběhne celé hned po spawnu
+# (thread_run_pending, mimo zámek tabulky) na stejném stínovém zásobníku;
 # platné sekvenční pořadí pro programy, kde vlákno nečeká na hlavní vlákno.
-# Blok vlákna má vrchol zásobníku hlavního vlákna, takže GC smí běžet i ve
-# vlákně a prohledá celý zásobník. tid je pořadové číslo spawnu.
-function thread_stack(top, size, guard):
+function threads():
+    return __lsl_qbe_call0(__lsl_symbol("lsl_wasm_threads"))
+end
+
+# Příznak blokující oblasti vlákna (tabulka WASI_STATE +24, slovo na
+# položku tabulky vláken): 0 běží, 1 čeká ve vrstvě OS, 2 čeká a drží ho GC.
+function blocking_word(entry):
+    index = __lsl_qbe_lshr(entry - __lsl_qbe_load64(core.state() + THREAD_TABLE) - 8, 6)
+    return __lsl_qbe_load64(WASI_STATE + 24) + __lsl_qbe_shl(index, 3)
+end
+
+# Položka tabulky vláken aktuálního pracovního vlákna, nebo 0 (hlavní).
+function current_entry():
+    if not threads():
+        return 0
+    end
+    block = __lsl_qbe_call0(__lsl_symbol("lsl_arch_thread_pointer"))
+    if block == core.state() + MAIN_THREAD_BLOCK:
+        return 0
+    end
+    return block - 32
+end
+
+function enter_blocking():
+    entry = current_entry()
+    if entry == 0:
+        return 0
+    end
+    __lsl_qbe_store64(entry + 24, __lsl_qbe_call0(__lsl_symbol("lsl_wasm_sp")))
+    word = blocking_word(entry)
+    call __lsl_qbe_call2(__lsl_symbol("lsl_arch_xchg64"), word, 1)
+    # Zastavení vyžádané dřív, než se vlákno přihlásilo: podržet se samo.
+    if __lsl_qbe_load64(entry + 16) == 4 and __lsl_qbe_call3(__lsl_symbol("lsl_arch_cas64"), word, 1, 2) == 1:
+        __lsl_qbe_store64(entry + 16, 2)
+    end
     return 0
 end
 
+function leave_blocking():
+    entry = current_entry()
+    if entry == 0:
+        return 0
+    end
+    word = blocking_word(entry)
+    while __lsl_qbe_call3(__lsl_symbol("lsl_arch_cas64"), word, 1, 0) != 1:
+        call __lsl_qbe_call3(__lsl_symbol("lsl_wasm_wait32"), word, 2, -1)
+    end
+    return 0
+end
+
+# Bezpečný bod (LuxIR volá $__safepoint, když je brána GC nenulová):
+# vlákno ve stavu 4 zveřejní stínový zásobník, přejde do stavu 2 a čeká
+# na bráně.
+function lsl_wasm_safepoint():
+    entry = current_entry()
+    if entry == 0 or __lsl_qbe_load64(entry + 16) != 4:
+        return 0
+    end
+    __lsl_qbe_store64(entry + 24, __lsl_qbe_call0(__lsl_symbol("lsl_wasm_sp")))
+    __lsl_qbe_store64(entry + 16, 2)
+    gate = core.state() + GC_GATE
+    while __lsl_qbe_load64(gate) == 1:
+        call __lsl_qbe_call3(__lsl_symbol("lsl_wasm_wait32"), gate, 1, -1)
+    end
+    return 0
+end
+
+function thread_stack(top, size, guard):
+    if not threads():
+        return 0
+    end
+    if top != 0:
+        return top
+    end
+    stack = map_anonymous(THREAD_SHADOW_BYTES, 0)
+    if stack < 0:
+        return -1
+    end
+    return stack + THREAD_SHADOW_BYTES
+end
+
 function thread_start(entry, top, function):
+    if threads():
+        tid = __lsl_qbe_call1(__lsl_symbol("lsl_wasm_thread_spawn"), entry)
+        if tid <= 0:
+            return -1
+        end
+        return tid
+    end
     count = __lsl_qbe_load64(WASI_STATE + 16) + 1
     __lsl_qbe_store64(WASI_STATE + 16, count)
     return count
 end
 
 function thread_run_pending(entry):
+    if threads():
+        return 0
+    end
     main = __lsl_qbe_call0(__lsl_symbol("lsl_arch_thread_pointer"))
     __lsl_qbe_store64(entry + 48, __lsl_qbe_load64(main + 16))
     call __lsl_qbe_call1(__lsl_symbol("lsl_arch_set_thread_pointer"), entry + 32)
@@ -682,16 +825,36 @@ function thread_run_pending(entry):
     return 0
 end
 
-# Konec funkce vlákna: návrat do thread_run_pending.
+# Konec funkce vlákna. S vlákny: stav 1 -> 0 (během zastavování pro GC se
+# vlákno nejdřív zastaví), probudit join a návrat z wasi_thread_start.
+# Po vynulování stavu se stínový zásobník už nečte (LuxIR rámce jen
+# zapisuje), nové vlákno ho tedy smí hned převzít.
 function thread_exit(entry):
+    if not threads():
+        return 0
+    end
+    while __lsl_qbe_call3(__lsl_symbol("lsl_arch_cas64"), entry + 16, 1, 0) != 1:
+        call lsl_wasm_safepoint()
+    end
+    call __lsl_qbe_call2(__lsl_symbol("lsl_wasm_notify"), entry + 16, 2147483647)
     return 0
 end
 
+# Zastavení pro GC (stav 4): vlákno v blokující oblasti GC podrží hned
+# (zásobník zveřejnilo při vstupu), běžící vlákno se zastaví samo.
 function thread_suspend(process, entry):
+    if __lsl_qbe_call3(__lsl_symbol("lsl_arch_cas64"), blocking_word(entry), 1, 2) == 1:
+        __lsl_qbe_store64(entry + 16, 2)
+    end
     return 0
 end
 
 function thread_resume(entry):
+    word = blocking_word(entry)
+    __lsl_qbe_store64(entry + 16, 1)
+    if __lsl_qbe_call3(__lsl_symbol("lsl_arch_cas64"), word, 2, 1) == 2:
+        call __lsl_qbe_call2(__lsl_symbol("lsl_wasm_notify"), word, 1)
+    end
     return 0
 end
 

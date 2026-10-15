@@ -63,7 +63,12 @@ def run_tests(a):
         if os.name != 'nt':
             binary.chmod(0o755)
         command = [str(binary)]
-        if manifest['target'].startswith('wasm32-'):
+        if manifest['target'].startswith('wasm32-') and os.environ.get('LSL_WASM_RUNNER') == 'wasmtime':
+            # wasmtime s wasi-threads; nativní zásobník wasm 8 MiB jako
+            # zásobník nativního programu.
+            command = ['wasmtime', 'run', '-W', 'threads=y', '-S', 'threads=y', '-S', 'inherit-env=y',
+                       '-W', 'max-wasm-stack=8388608', '--dir', '/', '--dir', '.', str(binary)]
+        elif manifest['target'].startswith('wasm32-'):
             command = ['node', '--no-warnings', str(ROOT / 'tools/wasi_run.mjs'), str(binary)]
         elif manifest['target'].startswith('baremetal-'):
             command = [sys.executable, str(ROOT / 'tools/baremetal_run.py'), str(binary)]

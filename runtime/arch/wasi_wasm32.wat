@@ -82,10 +82,28 @@
 	(call $wasi_proc_exit (i32.wrap_i64 (local.get 0)))
 	(unreachable))
 
+;; Přetečení stínového zásobníku (LuxIR, prolog funkce): zpráva jako
+;; u nativního runtime a stav 70. Text se skládá v oblasti vrstvy (3072..)
+;; bez zásobníku.
+(func $__stack_overflow
+	(i64.store (i32.const 3088) (i64.const 0x746e7572204c534c))
+	(i64.store (i32.const 3096) (i64.const 0x7361726320656d69))
+	(i64.store (i32.const 3104) (i64.const 0x6b63617473203a68))
+	(i64.store (i32.const 3112) (i64.const 0x6f6c667265766f20))
+	(i64.store (i32.const 3120) (i64.const 0x0000000000000a77))
+	(i32.store (i32.const 3072) (i32.const 3088))
+	(i32.store (i32.const 3076) (i32.const 34))
+	(drop (call $wasi_fd_write (i32.const 2) (i32.const 3072) (i32.const 1) (i32.const 3080)))
+	(call $wasi_proc_exit (i32.const 70))
+	(unreachable))
+
 ;; Paměť: velikost lineární paměti v bajtech a její zvětšení na aspoň
 ;; limit bajtů; 1, nebo 0 (paměť nejde zvětšit).
 (func $lsl_wasm_memory_size (result i64)
 	(i64.shl (i64.extend_i32_u (memory.size)) (i64.const 16)))
+;; Konec dat a stínového zásobníku hlavního vlákna (od LuxIR).
+(func $lsl_wasm_data_end (result i64)
+	(i64.extend_i32_u (global.get $__stack_top)))
 (func $lsl_wasm_memory_reserve (param i64) (result i64)
 	(local $pages i32)
 	(local.set $pages (i32.wrap_i64 (i64.shr_u (i64.add (local.get 0) (i64.const 65535)) (i64.const 16))))
@@ -115,6 +133,14 @@
 (func $lsl_arch_sync_code (param i64 i64) (result i64) (i64.const 0))
 (func $lsl_arch_sqrt (param i64) (result i64)
 	(i64.reinterpret_f64 (f64.sqrt (f64.reinterpret_i64 (local.get 0)))))
+
+;; Vlákna: tato vrstva je jednovláknová (cíl wasm32-wasi). Vlákna běží
+;; sekvenčně (os_wasi); skutečná vlákna má wasi_wasm32_threads.wat.
+(func $lsl_wasm_threads (result i64) (i64.const 0))
+(func $lsl_wasm_thread_spawn (param i64) (result i64) (i64.const -1))
+(func $lsl_wasm_wait32 (param i64 i64 i64) (result i64) (i64.const 1))
+(func $lsl_wasm_notify (param i64 i64) (result i64) (i64.const 0))
+(func $lsl_wasm_sp (result i64) (i64.extend_i32_u (global.get $sp)))
 
 ;; Ukazatel stínového zásobníku: GC prohledá [sp, vrchol). Registry nejsou,
 ;; hodnoty Kl ukládá LuxIR do rámců.
