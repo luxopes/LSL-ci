@@ -184,7 +184,10 @@ for name in install_files.MANUAL_PAGES:
     call copy_file(source_path("docs/developer_guides/" + name + ".md"), library + "/docs/developer_guides/" + name + ".md")
 end
 call copy_file(source_path("docs/developer_guides/SOURCE.json"), library + "/docs/developer_guides/SOURCE.json")
-print "installed LSL 0.10.1 into", prefix
+# Značka pro lsl update: aktualizuje se jen instalace z lsl-install, ne
+# rozbalený archiv ani zdrojový checkout.
+call writefile(library + "/INSTALLATION", "lsl-install" + chr(10))
+print "installed LSL 0.10.2 into", prefix
 if windows():
     print "Add " + prefix.replace("/", chr(92)) + chr(92) + "bin to PATH to use lsl in new terminals."
 else:

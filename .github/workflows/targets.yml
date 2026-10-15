@@ -129,6 +129,9 @@ jobs:
         run: |
           chmod +x native/${{ matrix.target }}/bin/* || true
           python tools/ci/target_tests.py native native/${{ matrix.target }} bundle/${{ matrix.target }}
+      - name: Self-update on ${{ matrix.target }} (production stable-v2 channel)
+        shell: bash
+        run: python tools/ci/update_e2e.py native/${{ matrix.target }}
 
   # Přesné archivy vydání (ne balíky sestavené v CI s binutils Ubuntu):
   # stáhne je z draft release a spustí tytéž nativní testy.

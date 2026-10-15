@@ -1,0 +1,37 @@
+move running program True True
+swapped new new old 0.0.1 True
+recovered Recovered the previous LSL installation after an interrupted update.
+True
+after recovery old old new new False False
+partial recovered Recovered the previous LSL installation after an interrupted update.
+True
+partial state True old False
+no journal False
+outgoing refused True
+zip ['lsl-9.9.9', 'lsl-9.9.9/bin/lsl-install.exe', 'lsl-9.9.9/lib/lsl/README.md']
+zip traversal True
+zip link True
+zip root True
+zip encrypted True
+zip garbage True
+select https://lsl.lux-ai.cz/updates/releases/0.10.2/lsl-0.10.2-windows-x86_64.zip
+select https://lsl.lux-ai.cz/updates/releases/0.10.2/lsl-0.10.2-windows-arm64.zip
+select https://lsl.lux-ai.cz/updates/releases/0.10.2/lsl-0.10.2-macos-arm64.tar.gz
+select https://lsl.lux-ai.cz/updates/releases/0.10.2/lsl-0.10.2-macos-x86_64.tar.gz
+linux 3000003
+linux archive limit True
+windows at limit 67108864
+windows archive limit True
+windows tar.gz True
+macos exe installer True
+unknown platform True
+signed manifest 966
+changed manifest True
+zero signature True
+short signature True
+rfc8032 True True
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1
+cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0
+removed False
