@@ -28,7 +28,7 @@ jobs:
           build/ci/lslc1 compiler/pure/lslc_qbe.lsl build/ci/lslc
       - name: Target runtimes
         run: |
-          for target in windows-x86_64 windows-arm64 linux-arm64 macos-x86_64 macos-arm64 wasm32-wasi baremetal-riscv64; do
+          for target in windows-x86_64 windows-arm64 linux-arm64 linux-riscv64 macos-x86_64 macos-arm64 wasm32-wasi baremetal-riscv64; do
             python3 tools/runtime/build.py --compiler build/ci/lslc --target $target --bootstrap-runtime compiler/qbe/runtime.o
           done
       - name: LuxIR source (veřejný mirror, připnutý commit z release.json)
