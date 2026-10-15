@@ -11,6 +11,13 @@ load _platform as platform
 # smí uložit jen dolní půlku ukazatele, proto se tam čte po 4 bajtech.
 ROOT_WORD_BYTES = platform.WORD_BYTES
 
+# Značka adres haldy na 32bitových cílech: objekty mají v LSL adresu
+# s bitem 40 (paměť i jádro vidí jen dolních 32 bitů), takže se celé číslo
+# nespletete s adresou objektu ani v rozsahu 2^31..2^32 (32bitová slova
+# SHA-256, mezivýsledky aritmetiky). 64bitové cíle mají haldu tak vysoko
+# samy.
+HEAP_ADDRESS_TAG = platform.HEAP_ADDRESS_TAG
+
 # Slovo ukazatele ve struktuře jádra (šířka podle cíle).
 function store_word(address, value):
     if platform.WORD_BYTES == 4:
@@ -195,6 +202,9 @@ end
 # NOREPLACE neznají a berou adresu jen jako nápovědu, proto se výsledek
 # vždy porovná a jinde vytvořené mapování se vrátí.
 function map_at(address, size):
+    if platform.WORD_BYTES == 4:
+        address = address & 4294967295
+    end
     result = syscall6(platform.SYS_MMAP, address, size, platform.PROT_READ | platform.PROT_WRITE, platform.MAP_PRIVATE | platform.MAP_ANONYMOUS | platform.MAP_FIXED_NOREPLACE, -1, 0)
     if result == address:
         return 1

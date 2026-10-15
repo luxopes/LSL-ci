@@ -161,11 +161,12 @@ function rt_runtime_trace(object):
 end
 
 # Označí každé slovo v rozsahu [begin, end) jako kořen.
-# 32bitové cíle (os.ROOT_WORD_BYTES 4): po 4 bajtech, slovo rozšířené nulami.
+# 32bitové cíle (os.ROOT_WORD_BYTES 4): po 4 bajtech; slovo doplněné
+# o značku adres haldy (kód z C smí uložit jen dolní půlku ukazatele).
 function mark_range(begin, finish):
     if os.ROOT_WORD_BYTES == 4:
         while __lsl_qbe_ult(begin, finish):
-            call mark_root(__lsl_qbe_load32(begin))
+            call mark_root(__lsl_qbe_load32(begin) | os.HEAP_ADDRESS_TAG)
             begin += 4
         end
         return 0

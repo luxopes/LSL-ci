@@ -23,6 +23,8 @@ load _platform as platform
 
 # Krok procházení kořenů GC (zásobníky, registry): 64bitová slova.
 ROOT_WORD_BYTES = 8
+# Značka adres haldy (jen 32bitový Linux, viz os_linux.lsl).
+HEAP_ADDRESS_TAG = 0
 load _runtime_board as board
 load core
 

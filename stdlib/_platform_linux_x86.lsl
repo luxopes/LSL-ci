@@ -250,3 +250,5 @@ ELF_MACHINE = 3
 MMAP_OFFSET_SHIFT = 12
 PREAD64_PAIR = 2
 NANOSLEEP_CLOCK = 1
+# Značka adres haldy (os_linux.lsl): 32bitové cíle 2^40, jinak 0.
+HEAP_ADDRESS_TAG = 1099511627776

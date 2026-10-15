@@ -51,6 +51,8 @@ function lsl_runtime_start(stack):
         end
         base += HEAP_GAP
     end
+    # 32bitové cíle: adresy haldy se značkou (os_linux.HEAP_ADDRESS_TAG).
+    base = base | os.HEAP_ADDRESS_TAG
     __lsl_qbe_store64(__lsl_symbol("lsl_state"), base)
     __lsl_qbe_store64(base + heap.HEAP_RESERVED, base + heap.COMMIT_GRAIN)
     __lsl_qbe_store64(base + heap.HEAP_BUMP, base + STATE_BYTES)
