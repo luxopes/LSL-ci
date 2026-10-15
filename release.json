@@ -1,16 +1,20 @@
 {
-  "version": "0.10.0",
+  "version": "0.10.1",
   "status": "STABLE",
-  "tag": "v0.10.0",
+  "tag": "v0.10.1",
   "platforms": [
     "linux-x86_64",
     "linux-aarch64",
-    "linux-riscv64"
+    "linux-riscv64",
+    "windows-x86_64",
+    "windows-arm64",
+    "macos-x86_64",
+    "macos-arm64"
   ],
   "backend": {
     "name": "LuxIR",
     "repository": "https://git.lux-ai.cz/LuxAI/LuxIR.git",
-    "commit": "b21ec5d66bbff087dd71b2dc7cd7f7a56f34084d",
+    "commit": "7332f55d91c2f3060b7ce65be6acbd45203a224e",
     "directory": "build/dependencies/LuxIR"
   },
   "manual": {

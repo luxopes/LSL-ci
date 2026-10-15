@@ -99,6 +99,12 @@ def native(a):
     print('lsl version:', status, out.decode(errors='replace').strip(), error.decode(errors='replace').strip()[:300], flush=True)
     if status != 0:
         return 1
+    lsl = str(package / 'bin' / ('lsl' + suffix))
+    for command in (['about'], ['help'], ['man', '--plain', '18-platforms'], ['list'], ['about', 'json']):
+        status, out, error = run([lsl, *command], 120)
+        print('lsl', ' '.join(command) + ':', status, len(out), 'bytes', error.decode(errors='replace').strip()[:200], flush=True)
+        if status != 0 or len(out) == 0:
+            return 1
     manifest = json.loads((a.directory.resolve() / 'tests.json').read_text())
     work = a.directory.resolve() / 'native'
     work.mkdir(exist_ok=True)
@@ -148,6 +154,20 @@ def native(a):
         print('FAIL    native fixed point: stage 2 and stage 3 differ', flush=True)
         return 1
     print(f'native fixed point: stage 2 == stage 3 ({stage2.stat().st_size} bytes)', flush=True)
+    # Instalace do prefixu a překlad z ní.
+    prefix = work / 'prefix'
+    status, out, error = run([str(package / 'bin' / ('lsl-install' + suffix)), str(prefix)], 600)
+    print('lsl-install:', status, out.decode(errors='replace').strip()[:300], error.decode(errors='replace').strip()[:300], flush=True)
+    hello = work / 'hello.lsl'
+    hello.write_text('x = [3, 1, 2]\nx.sort()\nprint "installed", x\n')
+    program = work / ('hello' + suffix)
+    status, out, error = run([str(prefix / 'bin' / ('lsl' + suffix)), 'compile', str(hello), str(program)], 600)
+    if status == 0:
+        status, out, error = run([str(program)], 60)
+    if status != 0 or out.replace(b'\r', b'') != b'installed [1, 2, 3]\n':
+        print('FAIL    installed compiler:', status, out[:200], error.decode(errors='replace')[:400], flush=True)
+        return 1
+    print('installed compiler: ok', flush=True)
     return 1 if failures else 0
 
 

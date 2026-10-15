@@ -17,7 +17,7 @@ load sandbox
 load tui
 load update
 
-VERSION = "0.10.0"
+VERSION = "0.10.1"
 # Prázdné u stabilního vydání, jinak např. " BETA".
 RELEASE_LABEL = ""
 

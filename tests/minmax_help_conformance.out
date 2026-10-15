@@ -5,6 +5,6 @@
 5
 6 3 1
 survived empty min
-Lux Simple Lang (LSL) 0.10.0
+Lux Simple Lang (LSL) 0.10.1
 Use help("TOPIC") for details; lsl man opens the full offline manual.
 topics: Bool ByteArray Dictionary Error Float FloatArray Int IntArray List RealArray String Tuple about abs ai appendfile arg arg_count bigint break capture check chr class clock compile config continue ctype cuda dedup del exit fd for function gc global help httpserver if input install json last_error len list load lock loop man math max min monotonic ord origin os print printl printr process random rang range readbytes readfile requests return run safe sandbox search server set sorted sqrt sum system tensor time try tui type unsafe update version while writebytes writefile
