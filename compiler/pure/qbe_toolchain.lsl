@@ -68,7 +68,20 @@ WINDOWS_TOOLS = ["llvm-mc.exe", "lld.exe"]
 # Hostitel macOS: LLVM z Homebrew pro cíle mimo macOS (volitelné).
 HOMEBREW_LLVM = ["/opt/homebrew/opt/llvm/bin/", "/usr/local/opt/llvm/bin/"]
 
+# Překladač C pro cíle přes C: LSL_CC (absolutní cesta, clang nebo gcc
+# pro cíl), jinak systémový clang.
 function c_compiler():
+    configured = __lsl_getenv("LSL_CC")
+    if configured != None and String(configured) != "":
+        path = String(configured)
+        if not path.startswith("/"):
+            Error(CompileError: "LSL_CC must be an absolute path: " + path)
+        end
+        if not exists(path):
+            Error(CompileError: "LSL_CC does not exist: " + path)
+        end
+        return path
+    end
     return host.required_system_tool("/usr/bin/clang", "/usr/local/bin/clang", "C compiler (clang)")
 end
 

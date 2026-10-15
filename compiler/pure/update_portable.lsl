@@ -192,10 +192,22 @@ function unique_directory(parent, prefix):
     call fail("cannot create private update directory in " + parent)
 end
 
+# Na Windows mohou antivir nebo indexování krátce držet právě přesunuté
+# soubory; přejmenování se proto chvíli opakuje.
 function move(source, destination):
-    if __lsl_rename(source, destination) != 0:
-        call fail("cannot move " + source + " to " + destination)
+    attempts = 1
+    if windows():
+        attempts = 50
     end
+    for attempt in rang(attempts):
+        if __lsl_rename(source, destination) == 0:
+            return None
+        end
+        if attempt + 1 < attempts:
+            call __lsl_sleep(0.1)
+        end
+    end
+    call fail("cannot move " + source + " to " + destination)
 end
 
 # Smaže strom, který updater sám vytvořil. Nejdřív zkusí soubor: unlink na
