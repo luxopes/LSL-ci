@@ -531,6 +531,15 @@ function rt_runtime_rmdir(path):
     return os.remove_directory(path + 16)
 end
 
+# __lsl_rename(zdroj, cíl): 0, nebo záporné errno; existující cíl se
+# nepřepíše (atomické přejmenování v rámci jednoho svazku).
+function rt_runtime_rename(source, destination):
+    if not rt_runtime_path_valid(source) or not rt_runtime_path_valid(destination):
+        return -EINVAL
+    end
+    return os.rename_path(source + 16, destination + 16)
+end
+
 function rt_runtime_exists(path):
     if not rt_runtime_path_valid(path):
         return 0

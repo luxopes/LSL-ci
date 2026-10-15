@@ -134,6 +134,11 @@ function remove_directory(path):
     return syscall3(platform.SYS_UNLINKAT, platform.AT_FDCWD, path, platform.AT_REMOVEDIR)
 end
 
+# Přejmenování bez přepsání cíle (renameat2, RENAME_NOREPLACE).
+function rename_path(source, destination):
+    return syscall6(platform.SYS_RENAMEAT2, platform.AT_FDCWD, source, platform.AT_FDCWD, destination, 1, 0)
+end
+
 # 0, když cesta existuje (F_OK).
 function access(path):
     return syscall4(platform.SYS_FACCESSAT, platform.AT_FDCWD, path, 0, 0)

@@ -272,6 +272,11 @@ function remove_directory(path):
     return checked(__lsl_qbe_call1(__lsl_symbol("rmdir"), path))
 end
 
+# Přejmenování bez přepsání cíle (renamex_np, RENAME_EXCL; macOS 10.12+).
+function rename_path(source, destination):
+    return checked(__lsl_qbe_call3(__lsl_symbol("renamex_np"), source, destination, 4))
+end
+
 function access(path):
     return checked(__lsl_qbe_call2(__lsl_symbol("access"), path, 0))
 end

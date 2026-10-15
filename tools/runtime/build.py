@@ -44,7 +44,7 @@ WINDOWS_IMPORTS = {
         GetFileAttributesW GetFileInformationByHandle GetFileType GetFinalPathNameByHandleW
         GetHandleInformation GetLastError GetModuleFileNameW GetProcessAffinityMask GetStdHandle
         GetSystemTimePreciseAsFileTime GetTempFileNameW GetTempPathW GetThreadContext
-        InitializeProcThreadAttributeList MapViewOfFile MultiByteToWideChar PeekConsoleInputW PeekNamedPipe
+        InitializeProcThreadAttributeList MapViewOfFile MoveFileExW MultiByteToWideChar PeekConsoleInputW PeekNamedPipe
         QueryPerformanceCounter QueryPerformanceFrequency ReadConsoleInputW ReadConsoleW ReadFile
         RemoveDirectoryW ResumeThread SetConsoleCP SetConsoleMode SetFilePointerEx SetHandleInformation SetInformationJobObject
         SetUnhandledExceptionFilter Sleep SuspendThread SwitchToThread TerminateProcess TlsAlloc

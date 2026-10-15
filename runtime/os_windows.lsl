@@ -440,6 +440,20 @@ function remove_directory(path):
     return 0
 end
 
+# Přejmenování bez přepsání cíle (MoveFileExW bez MOVEFILE_REPLACE_EXISTING,
+# s MOVEFILE_WRITE_THROUGH). Přesune i spuštěný .exe v rámci svazku.
+function rename_path(source, destination):
+    first = __lsl_qbe_alloc(WIDE_PATH_BYTES)
+    second = __lsl_qbe_alloc(WIDE_PATH_BYTES)
+    if not wide_path(source, first) or not wide_path(destination, second):
+        return 0 - platform.ENOENT
+    end
+    if dword(__lsl_qbe_call3(__lsl_symbol("MoveFileExW"), first, second, 8)) == 0:
+        return last_errno()
+    end
+    return 0
+end
+
 # 0, když cesta existuje.
 function access(path):
     wide = __lsl_qbe_alloc(WIDE_PATH_BYTES)
@@ -950,9 +964,79 @@ function os_kill(pid):
     return 0
 end
 
+# Znak "SystemRoot=" na pozici index (UTF-16, malými písmeny), jinak -1.
+function system_root_char(index):
+    if index == 0:
+        return 115
+    elif index == 1:
+        return 121
+    elif index == 2:
+        return 115
+    elif index == 3:
+        return 116
+    elif index == 4:
+        return 101
+    elif index == 5:
+        return 109
+    elif index == 6:
+        return 114
+    elif index == 7:
+        return 111
+    elif index == 8:
+        return 111
+    elif index == 9:
+        return 116
+    elif index == 10:
+        return 61
+    end
+    return -1
+end
+
+# Čisté prostředí potomka: jen SystemRoot z rodiče. Bez něj Winsock
+# v potomkovi nenaběhne (curl.exe a jiné síťové nástroje selžou s
+# WSAEPROVIDERFAILEDINIT). Blok UTF-16 "SystemRoot=...", NUL, NUL.
+function clean_environment():
+    block = __lsl_qbe_alloc(WIDE_PATH_BYTES)
+    __lsl_qbe_store64(block, 0)
+    environment = __lsl_qbe_call0(__lsl_symbol("GetEnvironmentStringsW"))
+    if environment == 0:
+        return block
+    end
+    entry = environment
+    while __lsl_qbe_load16(entry) != 0:
+        length = wide_length(entry)
+        matches = length > 11 and length < WIDE_PATH_CHARS - 2
+        index = 0
+        while matches and index < 11:
+            character = __lsl_qbe_load16(entry + __lsl_qbe_shl(index, 1))
+            if character >= 65 and character <= 90:
+                character += 32
+            end
+            if character != system_root_char(index):
+                matches = 0
+            end
+            index += 1
+        end
+        if matches:
+            index = 0
+            while index < length:
+                __lsl_qbe_store16(block + __lsl_qbe_shl(index, 1), __lsl_qbe_load16(entry + __lsl_qbe_shl(index, 1)))
+                index += 1
+            end
+            __lsl_qbe_store16(block + __lsl_qbe_shl(length, 1), 0)
+            __lsl_qbe_store16(block + __lsl_qbe_shl(length + 1, 1), 0)
+            break
+        end
+        entry += __lsl_qbe_shl(length + 1, 1)
+    end
+    call __lsl_qbe_call1(__lsl_symbol("FreeEnvironmentStringsW"), environment)
+    return block
+end
+
 # Spustí program bez shellu (CreateProcessW, bez hledání v PATH). argv je
-# pole ukazatelů na C řetězce zakončené nulou, clean vybere prázdné
-# prostředí. output < 0: potomek dostane standardní proudy rodiče (run),
+# pole ukazatelů na C řetězce zakončené nulou, clean vybere čisté
+# prostředí (jen SystemRoot, viz clean_environment). output < 0: potomek
+# dostane standardní proudy rodiče (run),
 # jinak input (< 0 stdin rodiče), output a error (capture). Potomek zdědí
 # jen tyto tři handle (PROC_THREAD_ATTRIBUTE_HANDLE_LIST), ne ostatní
 # handle rodiče. Vrací HANDLE procesu, SPAWN_FAILED (program nejde spustit),
@@ -1039,10 +1123,8 @@ function os_spawn(path, argv, clean, input, output, error, parent_end):
         inherit = 1
     end
     environment = 0
-    empty = __lsl_qbe_alloc(8)
     if clean:
-        __lsl_qbe_store64(empty, 0)
-        environment = empty
+        environment = clean_environment()
         creation = creation | CREATE_UNICODE_ENVIRONMENT
     end
     information = __lsl_qbe_alloc(24)

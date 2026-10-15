@@ -870,6 +870,11 @@ function tgkill(process, thread, signal):
     return 0 - ENOSYS
 end
 
+# Přejmenování (__lsl_rename) zatím není.
+function rename_path(source, destination):
+    return 0 - platform.ENOSYS
+end
+
 # Výpis adresáře (__lsl_list_directory) zatím není.
 function directory_open(path):
     return 0 - ENOSYS
