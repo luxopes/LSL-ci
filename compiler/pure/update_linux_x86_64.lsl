@@ -316,8 +316,8 @@ function main(current):
         print "Could not remove private update scratch: " + work
     end
     if failure != None:
-        call fail(String(failure))
+        call fail(String(failure).replace("UpdateError: ", ""))
     elif cleanup_failure != None:
-        call fail(String(cleanup_failure))
+        call fail(String(cleanup_failure).replace("UpdateError: ", ""))
     end
 end

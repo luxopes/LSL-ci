@@ -1,4 +1,4 @@
-# LSL 0.10.1 pro Linux, Windows a macOS
+# LSL 0.10.2 pro Linux, Windows a macOS
 
 Archiv obsahuje překladač pro jeden systém a architekturu hostitele
 (Linux x86_64/aarch64/riscv64, Windows x64/ARM64, macOS Apple
@@ -60,12 +60,14 @@ Spuštění na hostiteli bez cílového systému:
   semihosting).
 - Linux arm64 a riscv64 na PC: qemu-user (`binfmt`).
 
-Stabilní vydání; `lsl version` vypisuje `0.10.1`. Podepsaný `lsl update`
-sleduje stabilní kanál na Linuxu x86_64 a aarch64; na riscv64, Windows a
-macOS se aktualizuje ručně novým balíkem. Instalátor na Linuxu zachovává
-předchozí spravovanou generaci pro `lsl update --rollback`; na Windows a
-macOS kopíruje balík do prefixu. Knihovny z registru (`lsl install NÁZEV`)
-jsou zatím jen na Linuxu.
+Stabilní vydání; `lsl version` vypisuje `0.10.2`. Podepsaný `lsl update`
+sleduje stabilní kanál na všech hostitelích (Linux x86_64, aarch64 a
+riscv64, Windows x64 a ARM64, macOS arm64 a x86_64). Podpis Ed25519 i
+SHA-256 archivu ověřuje sám překladač; na Windows a macOS stahuje systémový
+`curl` a rozbaluje systémový `tar` (Windows 10 1803 a novější je mají).
+Aktualizuje se instalace z `lsl-install`, ne rozbalený archiv. Předchozí
+verze zůstává pro `lsl update --rollback`. Knihovny z registru
+(`lsl install NÁZEV`) jsou zatím jen na Linuxu.
 
 ## Self-host
 
