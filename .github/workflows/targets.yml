@@ -166,7 +166,7 @@ jobs:
           gh release download "${{ inputs.release_tag }}" -R "${{ github.repository }}" -D release -p '*-${{ matrix.archive }}' -p '*-SHA256SUMS'
           cd release
           grep -- '-${{ matrix.archive }}$' *-SHA256SUMS > check.txt
-          test "$(wc -l < check.txt)" = 1
+          test $(wc -l < check.txt) -eq 1
           python -c "import hashlib,sys;h,n=open('check.txt').read().split();d=hashlib.sha256(open(n,'rb').read()).hexdigest();print(n,d);sys.exit(d!=h)"
           python -c "import sys,tarfile,zipfile;n=sys.argv[1];(zipfile.ZipFile(n) if n.endswith('.zip') else tarfile.open(n)).extractall('x')" *-${{ matrix.archive }}
           ls x
