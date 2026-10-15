@@ -166,10 +166,22 @@ function set_socket_option(handle, option, value):
     return __lsl_syscall6(SYS_SETSOCKOPT, Int(handle), SOL_SOCKET, Int(option), data_address(payload), platform.INT_BYTES, 0)
 end
 
+# 32bitové cíle: SO_*TIMEO_NEW (64bitový timeval); jádra před 5.1 a starší
+# qemu-user ho neznají (ENOPROTOOPT), pak původní volba s 32bitovým timeval.
 function set_socket_timeout(handle, option, seconds):
     timeout = __lsl_byte_zeros(platform.TIMEVAL_BYTES)
     call put_u64(timeout, platform.TIMEVAL_SECONDS, seconds)
-    return __lsl_syscall6(SYS_SETSOCKOPT, Int(handle), SOL_SOCKET, Int(option), data_address(timeout), platform.TIMEVAL_BYTES, 0)
+    result = __lsl_syscall6(SYS_SETSOCKOPT, Int(handle), SOL_SOCKET, Int(option), data_address(timeout), platform.TIMEVAL_BYTES, 0)
+    if result == -92 and platform.WORD_BYTES == 4:
+        legacy = platform.SO_RCVTIMEO_OLD
+        if option == platform.SO_SNDTIMEO:
+            legacy = platform.SO_SNDTIMEO_OLD
+        end
+        timeout = __lsl_byte_zeros(8)
+        call put_u32(timeout, 0, seconds)
+        result = __lsl_syscall6(SYS_SETSOCKOPT, Int(handle), SOL_SOCKET, legacy, data_address(timeout), 8, 0)
+    end
+    return result
 end
 
 function listen_ipv4(address, port, backlog):

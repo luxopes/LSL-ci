@@ -246,3 +246,7 @@ PREAD64_PAIR = 0
 NANOSLEEP_CLOCK = 0
 # Značka adres haldy (os_linux.lsl): 32bitové cíle 2^40, jinak 0.
 HEAP_ADDRESS_TAG = 0
+# Původní SO_RCVTIMEO/SO_SNDTIMEO (timeval se slovy cíle): záloha na 32bitových
+# cílech pro jádra a emulátory bez *_NEW (64bitový čas).
+SO_RCVTIMEO_OLD = 20
+SO_SNDTIMEO_OLD = 21

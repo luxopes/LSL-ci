@@ -19,9 +19,11 @@ REGISTRY_MASK = 65535
 OBJECT_BITMAP = 1328
 OBJECT_BITMAP_CAPACITY = 1336
 BITMAP_INITIAL = 4194304
-# Začátek haldy: 1 GiB za koncem obrazu programu (tam, kde by byl brk),
-# daleko od mapování jádra, která rostou shora dolů; obsazené místo ->
-# o 1 GiB dál, nejvýš 64 pokusů.
+# Začátek haldy: vrstva OS navrhne adresu (64bitové systémy 2^44: adresy
+# objektů tak nesplynou s běžnými celými čísly, která vnitřní ABI drží
+# v hodnotách Any bez boxování). Když místo nejde zabrat (např. jádro
+# s 39bitovým adresním prostorem), 1 GiB za koncem obrazu programu (tam,
+# kde by byl brk); obsazené místo -> o 1 GiB dál, nejvýš 64 pokusů.
 HEAP_GAP = 1073741824
 HEAP_ATTEMPTS = 64
 THREAD_TABLE = 112
@@ -42,14 +44,18 @@ end
 
 # Volá _start s vrcholem zásobníku hlavního vlákna (Linux: ukazatel na argc).
 function lsl_runtime_start(stack):
-    base = os.heap_base((__lsl_symbol("lsl_state") + HEAP_GAP) & -heap.COMMIT_GRAIN)
-    attempt = 0
-    while os.map_at(base, heap.COMMIT_GRAIN) == 0:
-        attempt += 1
-        if attempt >= HEAP_ATTEMPTS:
-            call heap.fatal_allocation()
+    hint = (__lsl_symbol("lsl_state") + HEAP_GAP) & -heap.COMMIT_GRAIN
+    base = os.heap_base(hint)
+    if os.map_at(base, heap.COMMIT_GRAIN) == 0:
+        base = hint
+        attempt = 0
+        while os.map_at(base, heap.COMMIT_GRAIN) == 0:
+            attempt += 1
+            if attempt >= HEAP_ATTEMPTS:
+                call heap.fatal_allocation()
+            end
+            base += HEAP_GAP
         end
-        base += HEAP_GAP
     end
     # 32bitové cíle: adresy haldy se značkou (os_linux.HEAP_ADDRESS_TAG).
     base = base | os.HEAP_ADDRESS_TAG

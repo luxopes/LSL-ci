@@ -49,6 +49,16 @@ GIGA = 1073741824
 # Identita pokrývá prvních 256 GiB (kladná polovina Sv39); oblast zásobníků
 # vláken leží od 128 GiB, kde RAM ani zařízení nejsou.
 IDENTITY_GIGAS = 128
+# Alias RAM nad obrazem programu pro haldu objektů (os_baremetal.heap_base):
+# adresy objektů od 192 GiB leží mimo rozsah běžných celých čísel, která
+# vnitřní ABI drží v hodnotách Any bez boxování (viz entry.lsl). Kladná
+# polovina Sv39 končí na 256 GiB.
+HEAP_ALIAS = 206158430208
+
+# Posun alias haldy proti fyzické adrese.
+function heap_delta():
+    return HEAP_ALIAS - (ram_start() & -GIGA)
+end
 
 function board_word(offset):
     return __lsl_qbe_load64(__lsl_symbol("lsl_baremetal_state") + BOARD + offset)
@@ -421,6 +431,25 @@ function build_tables(allocate):
             end
         end
         giga += 1
+    end
+    # Alias haldy: RAM od konce obrazu (po 2 MiB, jen čtení a zápis) od
+    # HEAP_ALIAS; kód obrazu v aliasu není, W^X platí dál.
+    address = image_end
+    while address < finish:
+        virtual = address + heap_delta()
+        slot = root + __lsl_qbe_shl(__lsl_qbe_lshr(virtual, 30) & 511, 3)
+        entry = __lsl_qbe_load64(slot)
+        if entry == 0:
+            middle = __lsl_qbe_call1(allocate, PAGE)
+            if middle <= 0:
+                return 0
+            end
+            __lsl_qbe_store64(slot, table_entry(middle))
+        else:
+            middle = entry_address(entry)
+        end
+        __lsl_qbe_store64(middle + __lsl_qbe_shl(__lsl_qbe_lshr(virtual, 21) & 511, 3), leaf(address, PTE_READ | PTE_WRITE))
+        address += MEGA
     end
     call set_board_word(40, root)
     return root

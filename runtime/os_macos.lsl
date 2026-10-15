@@ -154,8 +154,10 @@ end
 HEAP_RESERVE = 68719476736
 HEAP_ALIGN = 65536
 
+# Rezervace haldy s nápovědou 2^44 (nad běžnými celými čísly, viz
+# entry.lsl); jádro ji jinak umístí těsně nad obraz (kolem 2^32).
 function heap_base(hint):
-    reserved = mmap(0, HEAP_RESERVE + HEAP_ALIGN, 0, MAC_MAP_PRIVATE | MAC_MAP_ANON, -1, 0)
+    reserved = mmap(17592186044416 + (hint & 8796093022207), HEAP_RESERVE + HEAP_ALIGN, 0, MAC_MAP_PRIVATE | MAC_MAP_ANON, -1, 0)
     if reserved < 0:
         return hint
     end

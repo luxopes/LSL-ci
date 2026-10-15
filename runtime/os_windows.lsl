@@ -1315,8 +1315,11 @@ function tgkill(process, thread, signal):
 end
 
 # Začátek haldy: navržená adresa (1 GiB za obrazem programu).
+# Začátek haldy: od 2^44 (nad běžnými celými čísly, viz entry.lsl), posun
+# z dolních bitů nápovědy (ASLR obrazu); obsazené místo -> navržená adresa
+# za obrazem.
 function heap_base(hint):
-    return hint
+    return 17592186044416 + (hint & 8796093022207)
 end
 
 # Časový limit potomka capture: časovač z thread poolu (CreateTimerQueueTimer)

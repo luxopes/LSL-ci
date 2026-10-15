@@ -13,8 +13,10 @@ load _platform as platform
 
 # Krok procházení kořenů GC (zásobníky, registry): 64bitová slova.
 ROOT_WORD_BYTES = 8
-# Značka adres haldy (jen 32bitový Linux, viz os_linux.lsl).
-HEAP_ADDRESS_TAG = 0
+# Značka adres haldy: lineární paměť má 32bitové adresy; objekty mají
+# v LSL bit 40 (backend wasm32 adresy před přístupem zkrátí), takže se
+# celé číslo nespletete s adresou objektu (viz os_linux.lsl).
+HEAP_ADDRESS_TAG = 1099511627776
 load core
 
 THREAD_SELF_PUBLISH = 0
@@ -126,6 +128,7 @@ function map_anonymous(size, extra_flags):
 end
 
 function map_at(address, size):
+    address = address & 4294967295
     if address < HEAP_START:
         return 0
     end

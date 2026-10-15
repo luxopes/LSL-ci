@@ -205,6 +205,9 @@ end
 
 # Zpřístupnění haldy (souvislá oblast pod rámci; nová část se nuluje).
 function commit(address, size):
+    if address >= board.HEAP_ALIAS:
+        address -= board.heap_delta()
+    end
     finish = address + size
     if address < __lsl_qbe_load64(layer_state() + 48):
         return 0
@@ -281,9 +284,12 @@ end
 
 # Start (z lsl_runtime_start jako první volání vrstvy OS): zařízení,
 # stránkování, plánovač s hlavním vláknem (TCB 0), další harty.
+# Halda objektů začíná za obrazem (zarovnaná na 2 MiB jako alias v tabulkách
+# stránek); program ji vidí v aliasu od board.HEAP_ALIAS, vrstva OS si drží
+# fyzické adresy (commit převádí).
 function heap_base(hint):
     call board.discover()
-    base = (__lsl_symbol("lsl_image_end") + 65535) & -65536
+    base = (__lsl_symbol("lsl_image_end") + 2097151) & -2097152
     __lsl_qbe_store64(layer_state(), board.ram_end() & -4096)
     __lsl_qbe_store64(layer_state() + 8, base)
     __lsl_qbe_store64(layer_state() + 48, base)
@@ -301,7 +307,7 @@ function heap_base(hint):
     call board.set_timer(board.time() + slice())
     call board.enable_paging(root)
     __lsl_qbe_store64(__lsl_symbol("lsl_harts_go"), 1)
-    return base
+    return base + board.heap_delta()
 end
 
 # Další hart (z lsl_s_secondary, přerušení vypnutá): TCB nečinnosti.

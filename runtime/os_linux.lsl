@@ -587,8 +587,17 @@ function thread_registers(entry):
     return 0
 end
 
-# Začátek haldy: navržená adresa (1 GiB za obrazem programu).
+# Začátek haldy: 64bitové cíle od 2^44 (nad běžnými celými čísly, viz
+# entry.lsl), posunutý o dolní bity nápovědy (ASLR obrazu), takže halda
+# zůstává náhodně umístěná; 32bitové navržená adresa za obrazem (značku
+# dodá HEAP_ADDRESS_TAG).
+HIGH_HEAP = 17592186044416
+HIGH_HEAP_SPREAD = 8796093022207
+
 function heap_base(hint):
+    if platform.WORD_BYTES == 8:
+        return HIGH_HEAP + (hint & HIGH_HEAP_SPREAD)
+    end
     return hint
 end
 
