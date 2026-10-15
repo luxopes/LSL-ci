@@ -1,0 +1,12 @@
+{
+  "target": "macos-x86_64",
+  "compiler_sha256": "67c3b7b4aee6d90b926b2c7c5509e0c920bb76b9bae3af0d0796ae62c15153f1",
+  "backend_sha256": "3f16da5e951c40d7f4e4e0aa25ba6deb9e01666973407cfd4697c45958fe5d27",
+  "artifacts": {
+    "lslc": "15efcc5dd27671798044eab6116ceeabef5dc4f8db0272dc2ff399f2e5d59234",
+    "luxir": "d603876f9549f5bbe4b18b8d9c58a5897f07101caf6634a12b7d146c1c5af71a",
+    "lsl": "3fb532570c0577a583f6a35ad408856bd98199d4943ce3cba054e4bb63d6be51",
+    "lsl-install": "5e0e8f38f7965c4e5179b2be93b21b692c3ae7017f2cf611a51ccd32d952728b",
+    "lsl-configure": "3a5ffa7f1e7649775084de7d48e42f0c52a0466d620b7ca97093d2ad89438704"
+  }
+}

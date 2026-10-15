@@ -1,7 +1,8 @@
 # Lux Simple Lang (LSL)
 
-**LSL 0.10.0** je stabilní self-hostované vydání. Překladač běží na
-**Linuxu x86_64, ARM64 a RISC-V 64** a překládá programy pro Linux (x86_64,
+**LSL 0.10.1** je stabilní self-hostované vydání. Překladač běží na
+**Linuxu (x86_64, ARM64, RISC-V 64), Windows (x64, ARM64) a macOS (Apple
+Silicon, Intel)** a překládá programy pro Linux (x86_64,
 arm64, riscv64, také Android a Raspberry Pi), Windows (x86_64, arm64),
 macOS (Intel, Apple Silicon), WebAssembly (WASI, s vlákny i bez) a bare
 metal RISC-V. Frontend, backend LuxIR i runtime jsou napsané v LSL. Výchozí
@@ -41,14 +42,19 @@ Vydání si ponechává `.env` vedle skriptu, `requests` a offline manuály
 standardních knihoven. Proměnné prostředí mají před `.env` přednost;
 hodnoty ze souboru se čtou za běhu a nevkládají se do binárky.
 
-Strojový výstup `lsl version` je `0.10.0`. Příkaz `lsl update` sleduje
+0.10.1 přidává nativní překladač pro Windows (s přibaleným LLVM `llvm-mc`
+a `lld`) a macOS (Xcode Command Line Tools). Podrobnosti jsou
+v `docs/release-0.10.1.md`.
+
+Strojový výstup `lsl version` je `0.10.1`. Příkaz `lsl update` sleduje
 podepsaný stabilní kanál (Linux x86_64 a aarch64).
 Web a manuály mají samostatný projekt
 [LSL-Web](https://git.lux-ai.cz/LuxAI/LSL-Web); veřejná dokumentace je na
 [lsl.lux-ai.cz](https://lsl.lux-ai.cz/).
 Starší manuály jsou v [historii vydání](https://lsl.lux-ai.cz/releases/):
 
-- LSL 0.10.0 — přenositelný runtime v LSL, Windows, macOS, Linux ARM64/RISC-V, Android, WebAssembly a bare metal RISC-V;
+- LSL 0.10.1 — překladač nativně na Windows a macOS;
+- [LSL 0.10.0](https://git.lux-ai.cz/LuxAI/LSL/releases/tag/v0.10.0) — přenositelný runtime v LSL, Windows, macOS, Linux ARM64/RISC-V, Android, WebAssembly a bare metal RISC-V;
 - [LSL 0.9.2](https://git.lux-ai.cz/LuxAI/LSL/releases/tag/v0.9.2) — opravy všech nálezů auditu 0.9.1, přesný převod Float, worker pool pro httpserver;
 - [LSL 0.9.1](https://git.lux-ai.cz/LuxAI/LSL/releases/tag/v0.9.1) — stabilní vydání LuxIR pipeline, nové jazykové konstrukce, streamovaný HTTP server a čitelné běhové chyby;
 - [LSL 0.9.0 BETA](https://git.lux-ai.cz/LuxAI/LSL/releases/tag/v0.9.0-beta.1) — nový nativní backend LuxIR v LSL, oddělený frontend a ověřený self-host; Linux x86_64;

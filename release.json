@@ -19,7 +19,7 @@
   },
   "manual": {
     "repository": "https://git.lux-ai.cz/LuxAI/LSL-Web.git",
-    "commit": "b5989aaea50c8c7f04226c9443146478719f3568",
+    "commit": "4786b43b1a4aabc31e871211b06a6b0379e92f7d",
     "path": "public",
     "directory": "build/dependencies/LSL-Web"
   },

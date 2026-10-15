@@ -1,6 +1,8 @@
-# LSL 0.10.0 pro Linux (x86_64, aarch64, riscv64)
+# LSL 0.10.1 pro Linux, Windows a macOS
 
-Archiv obsahuje překladač pro jednu architekturu hostitele. Spustitelné
+Archiv obsahuje překladač pro jeden systém a architekturu hostitele
+(Linux x86_64/aarch64/riscv64, Windows x64/ARM64, macOS Apple
+Silicon/Intel). Spustitelné
 nástroje jsou v `bin/`. V `lib/lsl/` je standardní knihovna, zdroj
 frontendu, runtime všech cílů a připnuté offline manuály. Instalace není
 nutná:
@@ -20,7 +22,13 @@ architektura balíku. Pro program stejné architektury potřebujete **GNU
 - Raspberry Pi OS (64bitový): `sudo apt install binutils`
 - Android v Termuxu: `pkg install binutils`
 
-Výsledné programy jsou statické PIE ELF s ASLR a neproveditelným stackem,
+Na Windows obsahuje balík assembler a linker LLVM (`bin/llvm-mc.exe`,
+`bin/lld.exe`, licence v `LICENSE-LLVM.txt` a `LICENSE-lld.txt`); nic
+dalšího se instalovat nemusí (`bin\lsl.exe version`, `bin\lsl-install.exe`
+nainstaluje do `%LOCALAPPDATA%\Programs\LSL`). Na macOS potřebuje překladač
+Xcode Command Line Tools (`xcode-select --install`).
+
+Výsledné programy na Linuxu jsou statické PIE ELF s ASLR a neproveditelným stackem,
 bez libc a bez dynamického loaderu. Spuštění už přeloženého programu
 binutils nepotřebuje.
 
@@ -52,11 +60,12 @@ Spuštění na hostiteli bez cílového systému:
   semihosting).
 - Linux arm64 a riscv64 na PC: qemu-user (`binfmt`).
 
-Stabilní vydání; `lsl version` vypisuje `0.10.0`. Podepsaný `lsl update`
-sleduje stabilní kanál na Linuxu x86_64 a aarch64. Na riscv64 se
-aktualizuje ručně z archivu. Instalátor zachovává předchozí spravovanou
-generaci pro `lsl update --rollback`. Překladač zatím běží jen na Linuxu.
-Na Windows ho spusťte ve WSL 2, na macOS v linuxovém kontejneru.
+Stabilní vydání; `lsl version` vypisuje `0.10.1`. Podepsaný `lsl update`
+sleduje stabilní kanál na Linuxu x86_64 a aarch64; na riscv64, Windows a
+macOS se aktualizuje ručně novým balíkem. Instalátor na Linuxu zachovává
+předchozí spravovanou generaci pro `lsl update --rollback`; na Windows a
+macOS kopíruje balík do prefixu. Knihovny z registru (`lsl install NÁZEV`)
+jsou zatím jen na Linuxu.
 
 ## Self-host
 
@@ -84,7 +93,8 @@ reprodukujete offline přímo:
 
 ```text
 python3 tools/release/build_release.py
-python3 tools/release/build_target_tools.py --target linux-arm64 --output /tmp/arm64
+python3 tools/release/build_target_tools.py --target linux-arm64 --output /tmp/arm64 --layout
+python3 tools/release/build_target_tools.py --target windows-x86_64 --output /tmp/win --layout --llvm DIR
 ```
 
 Runtime ostatních cílů sestaví `tools/runtime/build.py --target NAME`.
