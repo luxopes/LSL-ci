@@ -87,6 +87,14 @@ def run_tests(a):
             if out != expected:
                 print(f'        stdout: {out[:300]!r}', flush=True)
                 print(f'        expected: {expected[:300]!r}', flush=True)
+                # První lišící se řádek (dlouhé výstupy se liší až za ořezem).
+                got_lines, want_lines = out.split(b'\n'), expected.split(b'\n')
+                for number, (got, want) in enumerate(zip(got_lines, want_lines), 1):
+                    if got != want:
+                        print(f'        line {number}: {got[:300]!r} != {want[:300]!r}', flush=True)
+                        break
+                else:
+                    print(f'        lines: {len(got_lines)} != {len(want_lines)}', flush=True)
     print(f'{manifest["target"]}: {len(manifest["tests"]) - failures} of {len(manifest["tests"])} passed')
     return 1 if failures else 0
 

@@ -20,7 +20,9 @@ function open(path):
         Error(NativeError: "native library path must contain 1..4095 bytes without NUL")
     end
     # 32bitový Linux: zavaděč a volací konvence jsou jen 64bitové (ELF64).
-    if platform.WORD_BYTES == 4:
+    # Modul používají i Windows a macOS, proto NAME (WORD_BYTES mají jen
+    # moduly platformy Linuxu).
+    if platform.NAME == "linux-arm" or platform.NAME == "linux-x86":
         Error(NativeError: "native libraries are not available on 32-bit Linux targets yet")
     end
     library = native_open(path)
