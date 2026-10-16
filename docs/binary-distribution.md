@@ -56,13 +56,14 @@ binutils nepotřebuje.
 
 | Cíl | Nástroje na hostiteli (Debian/Ubuntu) |
 |---|---|
-| `linux-x86_64`, `linux-arm64`, `linux-riscv64` | `binutils`, pro jinou architekturu `binutils-x86-64-linux-gnu`, `binutils-aarch64-linux-gnu`, `binutils-riscv64-linux-gnu` |
+| `linux-x86_64` | `ld` z `binutils` (assembler je vestavěný v LuxIR) |
+| `linux-arm64`, `linux-riscv64` | `binutils`, pro jinou architekturu `binutils-aarch64-linux-gnu`, `binutils-riscv64-linux-gnu` |
 | `windows-x86_64` | `binutils-mingw-w64-x86-64`, `mingw-w64-x86-64-dev` |
 | `windows-arm64` | `clang`, `lld` |
 | `macos-x86_64`, `macos-arm64` | `clang`, `lld` (`ld64.lld`) |
 | `wasm32-wasi`, `wasm32-wasi-threads` | `wabt` |
 | `baremetal-riscv64` | `binutils-riscv64-linux-gnu` |
-| `linux-x86` | `binutils` (na x86_64 stačí systémové, jinak `binutils-i686-linux-gnu`) |
+| `linux-x86` | `ld` z `binutils` (na x86_64 stačí systémové, jinak `binutils-i686-linux-gnu`; assembler je vestavěný) |
 | `linux-arm` | `binutils-arm-linux-gnueabihf` |
 
 Spuštění na hostiteli bez cílového systému:

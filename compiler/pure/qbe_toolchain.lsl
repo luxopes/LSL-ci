@@ -105,8 +105,15 @@ function lld_flavor(name):
     return ["-flavor", "gnu"]
 end
 
-# [assembler, příznaky před -o]: podle hostitele (viz binutils_tool).
-function assembler_command(name):
+# Cíle, jejichž assembler sestaví LuxIR sám (luxir -a): ELF x86-64 a i386.
+BUILTIN_ASSEMBLER = {"linux-x86_64":"amd64_sysv","linux-x86":"i386"}
+
+# [assembler, příznaky před -o]: vestavěný assembler LuxIR pro ELF x86,
+# jinak podle hostitele (viz binutils_tool).
+function assembler_command(name, backend):
+    if name in BUILTIN_ASSEMBLER:
+        return [backend, ["-a", "-t", BUILTIN_ASSEMBLER[name]]]
+    end
     system = host_os()
     riscv = name == "linux-riscv64" or name == "baremetal-riscv64"
     if system == "windows":
@@ -295,7 +302,7 @@ function image(unit, selected, entry_source="", backend_path=""):
     end
     name = selected["name"]
     runtime = runtime_path(selected)
-    assembling = assembler_command(name)
+    assembling = assembler_command(name, backend)
     assembler = assembling[0]
     linking = linker_command(name)
     linker = linking[0]
