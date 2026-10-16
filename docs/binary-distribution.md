@@ -62,7 +62,8 @@ binutils nepotřebuje.
 | `macos-x86_64`, `macos-arm64` | `clang`, `lld` (`ld64.lld`) |
 | `wasm32-wasi`, `wasm32-wasi-threads` | `wabt` |
 | `baremetal-riscv64` | `binutils-riscv64-linux-gnu` |
-| `linux-arm`, `linux-x86` | `clang`, `lld` (LSL_CC vybere jiný překladač C) |
+| `linux-x86` | `binutils` (na x86_64 stačí systémové, jinak `binutils-i686-linux-gnu`) |
+| `linux-arm` | `binutils-arm-linux-gnueabihf` |
 
 Spuštění na hostiteli bez cílového systému:
 
@@ -74,8 +75,8 @@ Spuštění na hostiteli bez cílového systému:
   semihosting).
 - Linux arm64 a riscv64 na PC: qemu-user (`binfmt`).
 - 32bitový Linux `linux-arm` (armv7, hard-float: Raspberry Pi OS 32bit,
-  Android armv7) a `linux-x86` (i686 se SSE2): program se přeloží přes C
-  (LuxIR `c32`), potřebuje `clang` a `ld.lld`; `linux-x86` běží přímo na
+  Android armv7) a `linux-x86` (i686 se SSE2): LuxIR vypíše assembler
+  (backendy `arm` a `i386`), stačí binutils; `linux-x86` běží přímo na
   64bitovém jádře x86_64, `linux-arm` v qemu-user. Nativní knihovny
   (`native`) jsou zatím jen 64bitové.
 

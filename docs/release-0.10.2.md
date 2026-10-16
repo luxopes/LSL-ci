@@ -28,11 +28,12 @@ všech sedmi hostitelů. Nové 32bitové cíle `linux-arm` a `linux-x86`.
   `UpdateError: UpdateError:`.
 
 - 32bitový Linux: `--target linux-arm` (armv7 hard-float) a
-  `--target linux-x86` (i686, SSE2). LuxIR vypíše C (nový backend `c32`),
-  clang ho přeloží pro cíl a ld.lld slinkuje statický ELF. Hodnoty LSL
-  zůstávají 64bitové, programy se chovají stejně jako na 64bitových cílech.
-  Překladač pro oba cíle přeloží sám sebe bajtově shodně. Nativní knihovny
-  jsou zatím jen 64bitové. `LSL_CC` vybere jiný překladač C.
+  `--target linux-x86` (i686, SSE2). LuxIR má pro oba vlastní generátor
+  assembleru (backendy `arm` a `i386`), stačí GNU binutils jako u ostatních
+  cílů Linuxu; C překladač není potřeba. Hodnoty LSL zůstávají 64bitové
+  (LuxIR je rozloží na dvojice 32bitových slov), programy se chovají stejně
+  jako na 64bitových cílech. Překladač pro oba cíle přeloží sám sebe
+  bajtově shodně. Nativní knihovny jsou zatím jen 64bitové.
 - Oprava (všechny cíle): vnitřní ABI (moduly překladače a aktualizace)
   drží celá čísla v hodnotách `Any` bez boxování a číslo rovné adrese
   živého objektu se splete s objektem. Halda proto leží nad běžnými čísly:

@@ -30,13 +30,11 @@ TARGETS = {
     # architektury a runtime spojí už jako assembler (linker None).
     'macos-x86_64': ('amd64_apple', [], 'clang', ['-target', 'x86_64-apple-macos11', '-c', '-x', 'assembler'], None, 'macos_x86_64', 'runtime-macos-x86_64.o'),
     'macos-arm64': ('arm64_apple', [], 'clang', ['-target', 'arm64-apple-macos11', '-c', '-x', 'assembler'], None, 'macos_arm64', 'runtime-macos-arm64.o'),
-    # 32bitové cíle: LuxIR vypíše C (c32), clang ho přeloží spolu s vrstvou
-    # architektury v C (runtime/arch/<arch>.c) a pomocnými funkcemi
-    # překladače (runtime/arch/c32_builtins.c).
-    'linux-arm': ('c32', [], 'clang', ['--target=armv7a-unknown-linux-gnueabihf', '-march=armv7-a', '-mfloat-abi=hard', '-mfpu=vfpv3-d16', '-marm'], 'ld.lld', 'linux_arm', 'runtime-linux-arm.o'),
-    'linux-x86': ('c32', [], 'clang', ['--target=i686-unknown-linux-gnu', '-march=pentium4', '-msse2', '-mfpmath=sse'], 'ld.lld', 'linux_x86', 'runtime-linux-x86.o'),
+    # 32bitové cíle: backend LuxIR arm/i386, k runtime pomocné funkce
+    # 64bitového dělení a převodů (runtime/arch/w32_helpers.lir).
+    'linux-arm': ('arm', [], 'arm-linux-gnueabihf-as', ['-march=armv7-a', '-mfpu=vfpv3-d16', '-mfloat-abi=hard'], 'arm-linux-gnueabihf-ld', 'linux_arm', 'runtime-linux-arm.o'),
+    'linux-x86': ('i386', [], 'as', ['--32'], ['ld', '-m', 'elf_i386'], 'linux_x86', 'runtime-linux-x86.o'),
 }
-C_FLAGS = ['-O2', '-ffreestanding', '-fno-builtin', '-fno-strict-aliasing', '-fno-math-errno', '-fno-pic', '-w', '-c']
 
 
 # Funkce Win32, které volá runtime a knihovny (stdlib/_*_windows_*.lsl),
@@ -109,16 +107,6 @@ def main():
         shutil.copyfile(build / 'lslrt.lir', output)
         print(f'runtime {a.target}: LSL -> {output}')
         return
-    if luxir_target == 'c32':
-        run(backend, '-t', 'c32', '-o', build / 'lslrt.c', build / 'lslrt.lir')
-        parts = []
-        for source, name in [(build / 'lslrt.c', 'lslrt.o'), (ROOT / f'runtime/arch/{arch}.c', 'arch.o'), (ROOT / 'runtime/arch/c32_builtins.c', 'builtins.o')]:
-            run(assembler, *as_flags, *C_FLAGS, '-o', build / name, source)
-            parts.append(build / name)
-        run(linker, '-r', '-o', build / 'runtime.o', *parts)
-        shutil.copyfile(build / 'runtime.o', output)
-        print(f'runtime {a.target}: LSL + arch {arch} via C -> {output}')
-        return
     run(backend, '-t', luxir_target, *luxir_flags, '-o', build / 'lslrt.s', build / 'lslrt.lir')
     if linker is None:
         combined = (ROOT / f'runtime/arch/{arch}.S').read_text() + '\n' + (build / 'lslrt.s').read_text()
@@ -131,8 +119,12 @@ def main():
         run(assembler, *as_flags, '-o', build / 'lslrt.o', build / 'lslrt.s')
         run(assembler, *as_flags, '-o', build / 'arch.o', f'runtime/arch/{arch}.S')
         parts = [build / 'lslrt.o', build / 'arch.o']
+        if luxir_target in ('arm', 'i386'):
+            run(backend, '-t', luxir_target, '-o', build / 'helpers.s', ROOT / 'runtime/arch/w32_helpers.lir')
+            run(assembler, *as_flags, '-o', build / 'helpers.o', build / 'helpers.s')
+            parts.append(build / 'helpers.o')
         # 2. Jeden relokovatelný objekt pro linker.
-        run(linker, '-r', '-o', build / 'runtime.o', *parts)
+        run(*(linker if isinstance(linker, list) else [linker]), '-r', '-o', build / 'runtime.o', *parts)
     shutil.copyfile(build / 'runtime.o', output)
     if a.target == 'windows-arm64':
         windows_import_libraries(output.parent / 'windows-arm64', 'arm64')

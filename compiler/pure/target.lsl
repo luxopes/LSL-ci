@@ -56,20 +56,20 @@ function describe(name):
         backend = "rv64"
         available = True
     elif name == "linux-arm":
-        # 32bitový ARM (armv7-a, EABI, hard-float): LuxIR vypíše C (c32),
-        # které přeloží clang; hodnoty LSL zůstávají 64bitové, adresy
-        # 32bitové (jako u wasm32).
+        # 32bitový ARM (armv7-a, EABI, hard-float): backend LuxIR arm;
+        # hodnoty LSL zůstávají 64bitové (LuxIR je rozloží na dvojice
+        # slov), adresy 32bitové (jako u wasm32).
         os = "linux"
         format = "elf32-linux"
         architecture = "arm"
-        backend = "c32"
+        backend = "arm"
         available = True
     elif name == "linux-x86":
-        # 32bitový x86 (i686 se SSE2): stejně jako linux-arm přes C (c32).
+        # 32bitový x86 (i686 se SSE2): stejně jako linux-arm, backend i386.
         os = "linux"
         format = "elf32-linux"
         architecture = "x86"
-        backend = "c32"
+        backend = "i386"
         available = True
     elif name == "windows-x86_64":
         os = "windows"

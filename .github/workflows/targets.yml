@@ -23,7 +23,7 @@ jobs:
       - name: Cross binutils
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq binutils-mingw-w64-x86-64 mingw-w64-x86-64-dev binutils-aarch64-linux-gnu binutils-riscv64-linux-gnu clang lld wabt
+          sudo apt-get install -y -qq binutils-mingw-w64-x86-64 mingw-w64-x86-64-dev binutils-aarch64-linux-gnu binutils-riscv64-linux-gnu binutils-arm-linux-gnueabihf clang lld wabt
           # Linker Mach-O (macOS) z LLVM pod jménem, které hledá kompilátor.
           sudo ln -sf $(ls /usr/lib/llvm-*/bin/ld64.lld | sort -V | tail -1) /usr/bin/ld64.lld
       - name: Compiler from the bootstrap
@@ -36,14 +36,14 @@ jobs:
           commit=$(python3 -c "import json; print(json.load(open('release.json'))['backend']['commit'])")
           git clone --quiet https://github.com/luxopes/LuxIR.git build/dependencies/LuxIR
           git -C build/dependencies/LuxIR checkout --quiet --detach "$commit"
-      - name: LuxIR backend from the pinned source (C target for 32-bit)
+      - name: LuxIR backend from the pinned source (32-bit arm and i386)
         run: build/ci/lslc build/dependencies/LuxIR/lsl/luxir.lsl build/ci/luxir
       - name: Target runtimes
         run: |
           for target in windows-x86_64 windows-arm64 linux-arm64 linux-riscv64 macos-x86_64 macos-arm64 wasm32-wasi baremetal-riscv64; do
             python3 tools/runtime/build.py --compiler build/ci/lslc --target $target --bootstrap-runtime compiler/qbe/runtime.o
           done
-          # 32bitové cíle přes C (LuxIR c32, clang).
+          # 32bitové cíle: backendy LuxIR arm a i386 (binutils, bez C).
           for target in linux-arm linux-x86; do
             python3 tools/runtime/build.py --compiler build/ci/lslc --target $target --backend build/ci/luxir --bootstrap-runtime compiler/qbe/runtime.o
           done
