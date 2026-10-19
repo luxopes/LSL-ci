@@ -31,9 +31,22 @@
   i riscv64 se přeloží sám bajtově shodně a shodně s binárkou balíku.
 - Wine: `lslc.exe` pro Windows x64 se přeloží sám (stupeň 2 = 3), `lsl.exe`
   přeloží a spustí program, `lsl version` hlásí 0.10.2.
-- CI `targets` (běh na commitu vydání): `native` a `run` pro všechny cíle na
-  balících, které CI sestaví ze zdroje. Přesné archivy vydání testuje úloha
-  `release-native` (draft release v LSL-ci, kontrola SHA256SUMS) — výsledek
-  doplněn níže.
+- Emulace (qemu-user): `target_tests.py native` na archivu riscv64: 106 ze
+  107 (selže jen `native_portable_conformance.lsl`, izolované nativní
+  volání v qemu-user, stejně jako u 0.10.0 a 0.10.1), fixed point stupeň
+  2 = 3, `lsl-install` a nainstalovaný překladač v pořádku.
+- CI `targets` (běh 39280155301 na commitu vydání 0919989): `native` a
+  `run` pro všechny cíle na balících, které CI sestaví ze zdroje. Přesné
+  archivy vydání otestovala úloha `release-native` (draft release v LSL-ci,
+  kontrola SHA256SUMS): nativní překlad a spuštění všech samostatných
+  testů, fixed point stupeň 2 = 3, `lsl-install` a nainstalovaný
+  překladač:
+  - Ubuntu 24.04 x86_64 (`linux-x86_64.tar.gz`): 0 selhání ze 107,
+  - Ubuntu 24.04 ARM64 (`linux-aarch64.tar.gz`): 0 ze 107,
+  - Windows Server 2025 x64 (`windows-x86_64.zip`): 0 z 96,
+  - Windows 11 ARM64 (`windows-arm64.zip`): 0 z 96,
+  - macOS 15 Apple Silicon (`macos-arm64.tar.gz`): 0 ze 102,
+  - macOS 15 Intel (`macos-x86_64.tar.gz`): 0 ze 102.
+  Archiv pro riscv64 je ověřený jen v emulaci (viz výše).
 - Zdrojový archiv se offline sestaví (`build_release.py`) na bajtově
   shodné `lslc`, `luxir` a `lsl`.
