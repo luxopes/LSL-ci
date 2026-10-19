@@ -66,7 +66,7 @@ SIGNED_MANIFEST = "7b0a202022736368656d61223a20312c0a20202270726f64756374223a202
 SIGNATURE = "520a4110966eb445996e60e5e07f04da7c892bcda7d7bfbee860719726a5f6306ce4659407549f0e37f8fe1888e4f7e0cebddeaf10bc34dedc3cd92513397c0b"
 
 stamp = String(Int(monotonic() * 1000000.0))
-root = "lsl-update-portable-" + stamp
+root = "lsl-update-internal-" + stamp
 unsafe:
     check(__lsl_mkdir_private(root) == 0, "create test directory")
 
