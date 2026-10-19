@@ -315,48 +315,53 @@ function image(unit, selected, entry_source="", backend_path=""):
     result = ByteArray()
     try:
         call qbe_emit.generate(unit, path + ".lir", entry_source)
-        call invoke(backend, tool_arguments(["-t", BACKEND_TARGETS[name]], BACKEND_FLAGS[name], ["-o", path + ".s", path + ".lir"]), "LuxIR backend")
-        # No private scratch filename is embedded in the resulting image.
-        call appendfile(path + ".s", chr(10) + ".file \"luxir\"" + chr(10))
-        if selected["os"] == "macos":
-            # Každý symbol ve vlastní podsekci: -dead_strip zahodí nepoužité.
-            call appendfile(path + ".s", ".subsections_via_symbols" + chr(10))
-        end
-        call invoke(assembler, tool_arguments([], assembling[1], ["-o", path + ".o", path + ".s"]), "assembler")
-        if selected["os"] == "macos":
-            # Mach-O spustitelný soubor (PIE, na arm64 s ad-hoc podpisem od
-            # ld64.lld) dynamicky linkovaný s libSystem: macOS nepodporuje
-            # statické programy ani přímá systémová volání. libSystem.tbd je
-            # textový stub, takže se linkuje bez SDK.
-            call invoke(linker, tool_arguments(linking[1], [], ["-dead_strip", "-x", "-o", path, path + ".o", runtime, host.resource_path("compiler/qbe/libSystem.tbd")]), "linker")
-        elif selected["os"] == "windows":
-            # PE konzolový program s ASLR a DEP. Zásobník hlavního vlákna je
-            # celý zpřístupněný (8 MiB jako na Linuxu): LuxIR na Windows
-            # nesonduje zásobník po stránkách. Bez časového razítka, aby
-            # obraz byl reprodukovatelný.
-            call invoke(linker, tool_arguments(linking[1], ["-e", "_start", "--subsystem", "console", "--dynamicbase", "--high-entropy-va", "--nxcompat", "--stack", "8388608,8388608", "--no-insert-timestamp", "--gc-sections", "-s"], ["-o", path, path + ".o", runtime, "-L" + windows_libraries(name), "-lkernel32", "-lsynchronization", "-lbcrypt", "-lws2_32"]), "linker")
-        elif selected["os"] == "baremetal":
-            # Statický obraz ELF bez OS podle linker skriptu desky (adresy,
-            # zásobník, konec obrazu pro haldu).
-            call invoke(linker, tool_arguments(linking[1], ["-nostdlib", "-static", "-T", host.resource_path("runtime/arch/baremetal_riscv64.ld"), "--build-id=none", "--gc-sections", "-s"], ["-o", path, path + ".o", runtime]), "linker")
-        elif name in BUILTIN_ASSEMBLER:
-            # Vestavěný linker LuxIR: statický ELF bez tabulky symbolů,
-            # nepoužité sekce vypuštěné; x86_64, arm64 a riscv64 jako PIE
-            # bez absolutních relokací (jádro volí náhodnou bázi), i386
-            # a arm bez PIE (kód adresuje symboly absolutně, movw/movt).
-            flags = ["-l", "-t", BUILTIN_ASSEMBLER[name]]
+        if name in BUILTIN_ASSEMBLER:
+            # Vestavěný assembler a linker LuxIR v jednom běhu (-a -l):
+            # překlad LIR, sestavení a slinkování bez dalších procesů.
+            # Statický ELF bez tabulky symbolů, nepoužité sekce vypuštěné;
+            # x86_64, arm64 a riscv64 jako PIE (-p) bez absolutních relokací
+            # (jádro volí náhodnou bázi), i386 a arm bez PIE (kód adresuje
+            # symboly absolutně, movw/movt). Jméno dočasného souboru se do
+            # obrazu nedostane (LuxIR připojí .file "luxir").
+            flags = ["-a", "-l", "-t", BUILTIN_ASSEMBLER[name]]
             if name != "linux-x86" and name != "linux-arm":
-                flags = ["-l", "-p", "-t", BUILTIN_ASSEMBLER[name]]
+                flags = ["-a", "-l", "-p", "-t", BUILTIN_ASSEMBLER[name]]
             end
-            call invoke(backend, tool_arguments(flags, [], ["-o", path, path + ".o", runtime]), "linker")
-        elif selected["image_format"] == "elf32-linux":
-            # 32bitový cíl: statický obraz ELF bez PIE (arm adresuje
-            # symboly absolutně, movw/movt).
-            call invoke(linker, tool_arguments(linking[1], ["-nostdlib", "-static", "-z", "noexecstack", "--build-id=none", "--gc-sections", "-s"], ["-o", path, path + ".o", runtime]), "linker")
+            call invoke(backend, tool_arguments(flags, [], ["-o", path, path + ".lir", runtime]), "LuxIR backend")
         else:
-            # All runtime/code references are PC relative. -z text makes absolute
-            # relocations in executable pages a hard error instead of weakening PIE.
-            call invoke(linker, tool_arguments(linking[1], ["-nostdlib", "-static", "-pie", "--no-dynamic-linker", "-z", "text", "-z", "noexecstack", "--build-id=none", "--gc-sections", "-s"], ["-o", path, path + ".o", runtime]), "linker")
+            call invoke(backend, tool_arguments(["-t", BACKEND_TARGETS[name]], BACKEND_FLAGS[name], ["-o", path + ".s", path + ".lir"]), "LuxIR backend")
+            # No private scratch filename is embedded in the resulting image.
+            call appendfile(path + ".s", chr(10) + ".file \"luxir\"" + chr(10))
+            if selected["os"] == "macos":
+                # Každý symbol ve vlastní podsekci: -dead_strip zahodí nepoužité.
+                call appendfile(path + ".s", ".subsections_via_symbols" + chr(10))
+            end
+            call invoke(assembler, tool_arguments([], assembling[1], ["-o", path + ".o", path + ".s"]), "assembler")
+            if selected["os"] == "macos":
+                # Mach-O spustitelný soubor (PIE, na arm64 s ad-hoc podpisem od
+                # ld64.lld) dynamicky linkovaný s libSystem: macOS nepodporuje
+                # statické programy ani přímá systémová volání. libSystem.tbd je
+                # textový stub, takže se linkuje bez SDK.
+                call invoke(linker, tool_arguments(linking[1], [], ["-dead_strip", "-x", "-o", path, path + ".o", runtime, host.resource_path("compiler/qbe/libSystem.tbd")]), "linker")
+            elif selected["os"] == "windows":
+                # PE konzolový program s ASLR a DEP. Zásobník hlavního vlákna je
+                # celý zpřístupněný (8 MiB jako na Linuxu): LuxIR na Windows
+                # nesonduje zásobník po stránkách. Bez časového razítka, aby
+                # obraz byl reprodukovatelný.
+                call invoke(linker, tool_arguments(linking[1], ["-e", "_start", "--subsystem", "console", "--dynamicbase", "--high-entropy-va", "--nxcompat", "--stack", "8388608,8388608", "--no-insert-timestamp", "--gc-sections", "-s"], ["-o", path, path + ".o", runtime, "-L" + windows_libraries(name), "-lkernel32", "-lsynchronization", "-lbcrypt", "-lws2_32"]), "linker")
+            elif selected["os"] == "baremetal":
+                # Statický obraz ELF bez OS podle linker skriptu desky (adresy,
+                # zásobník, konec obrazu pro haldu).
+                call invoke(linker, tool_arguments(linking[1], ["-nostdlib", "-static", "-T", host.resource_path("runtime/arch/baremetal_riscv64.ld"), "--build-id=none", "--gc-sections", "-s"], ["-o", path, path + ".o", runtime]), "linker")
+            elif selected["image_format"] == "elf32-linux":
+                # 32bitový cíl: statický obraz ELF bez PIE (arm adresuje
+                # symboly absolutně, movw/movt).
+                call invoke(linker, tool_arguments(linking[1], ["-nostdlib", "-static", "-z", "noexecstack", "--build-id=none", "--gc-sections", "-s"], ["-o", path, path + ".o", runtime]), "linker")
+            else:
+                # All runtime/code references are PC relative. -z text makes absolute
+                # relocations in executable pages a hard error instead of weakening PIE.
+                call invoke(linker, tool_arguments(linking[1], ["-nostdlib", "-static", "-pie", "--no-dynamic-linker", "-z", "text", "-z", "noexecstack", "--build-id=none", "--gc-sections", "-s"], ["-o", path, path + ".o", runtime]), "linker")
+            end
         end
         result = readbytes(path)
     else:

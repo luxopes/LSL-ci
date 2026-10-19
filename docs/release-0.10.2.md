@@ -31,9 +31,11 @@ všech sedmi hostitelů. Nové 32bitové cíle `linux-arm` a `linux-x86`.
 - Knihovna `ai` je na úrovni `aikit` 1.2.0: reasoning v samostatném kanálu
   (`reasoning`, `reasoning_effort`, `on_reasoning`, `ai.reasoning(response)`,
   `stream` vrací i `reasoning` a `reasoning_events`).
-- Linux x86-64, x86, arm, arm64 a riscv64 bez binutils: LuxIR 0.3.0 má
+- Linux x86-64, x86, arm, arm64 a riscv64 bez binutils: LuxIR 0.3.1 má
   vestavěný assembler a linker (`luxir -a`, `luxir -l`); překlad programu
-  spouští jen `lslc` a `luxir`. Objekty jsou bajtově shodné s GNU as a
+  spouští jen `lslc` a jeden běh `luxir -a -l` (překlad LIR, sestavení
+  a slinkování najednou), takže překlad malých programů je o 10–20 %
+  rychlejší než v 0.10.1. Objekty jsou bajtově shodné s GNU as a
   spustitelné soubory stejně bezpečné jako dřív (statický PIE bez
   absolutních relokací, nespustitelný zásobník, bez tabulky symbolů);
   překladač se jimi přeloží sám bajtově shodně. Na arm64 mají segmenty
