@@ -33,7 +33,7 @@ TARGETS = {
     'macos-arm64': ('arm64_apple', [], 'clang', ['-target', 'arm64-apple-macos11', '-c', '-x', 'assembler'], None, 'macos_arm64', 'runtime-macos-arm64.o'),
     # 32bitové cíle: backend LuxIR arm/i386, k runtime pomocné funkce
     # 64bitového dělení a převodů (runtime/arch/w32_helpers.lir).
-    'linux-arm': ('arm', [], 'arm-linux-gnueabihf-as', ['-march=armv7-a', '-mfpu=vfpv3-d16', '-mfloat-abi=hard'], 'arm-linux-gnueabihf-ld', 'linux_arm', 'runtime-linux-arm.o'),
+    'linux-arm': ('arm', [], 'luxir', [], None, 'linux_arm', 'runtime-linux-arm.o'),
     'linux-x86': ('i386', [], 'luxir', [], None, 'linux_x86', 'runtime-linux-x86.o'),
 }
 

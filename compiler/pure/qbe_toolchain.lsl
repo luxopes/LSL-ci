@@ -107,7 +107,7 @@ end
 
 # Cíle, které LuxIR sestaví i slinkuje sám (luxir -a, luxir -l): ELF
 # x86-64, i386 a arm64. Nepotřebují binutils.
-BUILTIN_ASSEMBLER = {"linux-x86_64":"amd64_sysv","linux-x86":"i386","linux-arm64":"arm64","linux-riscv64":"rv64"}
+BUILTIN_ASSEMBLER = {"linux-x86_64":"amd64_sysv","linux-x86":"i386","linux-arm64":"arm64","linux-riscv64":"rv64","linux-arm":"arm"}
 
 # [assembler, příznaky před -o]: vestavěný assembler LuxIR pro ELF x86,
 # jinak podle hostitele (viz binutils_tool).
@@ -343,9 +343,9 @@ function image(unit, selected, entry_source="", backend_path=""):
             # Vestavěný linker LuxIR: statický ELF bez tabulky symbolů,
             # nepoužité sekce vypuštěné; x86_64, arm64 a riscv64 jako PIE
             # bez absolutních relokací (jádro volí náhodnou bázi), i386
-            # bez PIE (kód adresuje symboly absolutně).
+            # a arm bez PIE (kód adresuje symboly absolutně, movw/movt).
             flags = ["-l", "-t", BUILTIN_ASSEMBLER[name]]
-            if name != "linux-x86":
+            if name != "linux-x86" and name != "linux-arm":
                 flags = ["-l", "-p", "-t", BUILTIN_ASSEMBLER[name]]
             end
             call invoke(backend, tool_arguments(flags, [], ["-o", path, path + ".o", runtime]), "linker")

@@ -65,7 +65,7 @@ binutils nepotřebuje.
 | `wasm32-wasi`, `wasm32-wasi-threads` | `wabt` |
 | `baremetal-riscv64` | `binutils-riscv64-linux-gnu` |
 | `linux-x86` | žádné (assembler i linker jsou vestavěné v LuxIR) |
-| `linux-arm` | `binutils-arm-linux-gnueabihf` |
+| `linux-arm` | žádné (assembler i linker jsou vestavěné v LuxIR) |
 
 Spuštění na hostiteli bez cílového systému:
 
