@@ -27,6 +27,10 @@ všech sedmi hostitelů. Nové 32bitové cíle `linux-arm` a `linux-x86`.
 - Oprava: chybová hláška `lsl update` neobsahuje zdvojené
   `UpdateError: UpdateError:`.
 
+- `env.get(name)` bez druhého argumentu vrací `None`, když proměnná chybí.
+- Knihovna `ai` je na úrovni `aikit` 1.2.0: reasoning v samostatném kanálu
+  (`reasoning`, `reasoning_effort`, `on_reasoning`, `ai.reasoning(response)`,
+  `stream` vrací i `reasoning` a `reasoning_events`).
 - Linux x86-64, x86, arm, arm64 a riscv64 bez binutils: LuxIR má vestavěný assembler a linker
   (`luxir -a`, `luxir -l`); překlad programu spouští jen `lslc` a `luxir`.
   Objekty a spustitelné soubory vycházejí stejně bezpečné jako dřív

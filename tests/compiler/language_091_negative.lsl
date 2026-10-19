@@ -121,7 +121,7 @@ for ai_case in [["# AI 9.1.0: newer", "9.1.0"], ["# AI 0.0.1: older", "builtin"]
     ai_output = capture(root + "/language-091-ai", [])
     ai_expected = "9.1.0 [1]" + newline
     if ai_case[1] == "builtin":
-        ai_expected = "1.1.0 [1]" + newline
+        ai_expected = "1.2.0 [1]" + newline
     end
     if ai_output != ai_expected:
         Error(TestFailure: "ai library precedence for " + ai_case[0] + ": " + ai_output)

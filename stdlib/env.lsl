@@ -154,7 +154,7 @@ function checked_name(name):
     return name
 end
 
-function get(name, default_value):
+function get(name, default_value=None):
     name = checked_name(name)
     value = __lsl_getenv(name)
     if value == None:

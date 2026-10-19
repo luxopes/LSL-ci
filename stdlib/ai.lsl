@@ -1,4 +1,4 @@
-# AI 1.1.0: chat, nástroje a průběžné SSE; samostatný balíček: lsl install aikit.
+# AI 1.2.0: chat, nástroje, reasoning a průběžné SSE; samostatný balíček: lsl install aikit.
 load _ai_platform as platform
 # Od LSL 0.9.1: lsl update ai stáhne aikit; load ai pak použije novější verzi; dokumentace: https://lsl.lux-ai.cz/#ai
 
@@ -6,14 +6,14 @@ load http
 load json
 load time
 
-version = "1.1.0"
+version = "1.2.0"
 _MAX_EVENT_BYTES = 1048576
 _contexts = {}
 _context_lock = IntArray()
 _context_lock.append(0)
 
 function help():
-    return "AI " + version + "\nload aikit as ai\n\nrequest(endpoint, token, model, messages, options) -> Dictionary\ncontent(response) -> String | None\nstream(endpoint, token, model, messages, options, on_event) -> Dictionary {events, tool_calls}\nstream_text(text, on_event, cancel=None) -> Int\ntool_calls(response) -> List {id, name, arguments}\ntool_message(id, name, result) -> Dictionary (role \"tool\")\n\non_event(text) dostává neprázdné části odpovědi už během HTTP přenosu.\nOptions: temperature (0..2), max_tokens (>0), timeout (1..3600 s, výchozí 60),\nretries (0..10, výchozí 0), cancel (Function | None), transport_chunk (Function | None),\ntools (List definic), tool_choice (auto | none | required | {type, function}),\non_tool_call (Function | None): po dokončení streamovaného volání nástroje dostává {id, name, arguments},\nstream_reliability (live | transactional, jen při streamu; provider musí volbu podporovat).\nPo prvním textovém callbacku se požadavek neopakuje. Živý stream vyžaduje [DONE].\nPro výpis bez newline použijte tui.Terminal().emit(text) a flush().\nAktualizace pouze knihovny: lsl update aikit\nÚplný manuál a chatbot: https://lsl.lux-ai.cz/#ai"
+    return "AI " + version + "\nload aikit as ai\n\nrequest(endpoint, token, model, messages, options) -> Dictionary\ncontent(response) -> String | None\nstream(endpoint, token, model, messages, options, on_event) -> Dictionary {events, tool_calls}\nstream_text(text, on_event, cancel=None) -> Int\ntool_calls(response) -> List {id, name, arguments}\ntool_message(id, name, result) -> Dictionary (role \"tool\")\n\non_event(text) dostává neprázdné části odpovědi už během HTTP přenosu.\nReasoning: reasoning ({effort, exclude} | String | Bool), reasoning_effort (String), on_reasoning (Function | None).\nreasoning(response) čte reasoning/reasoning_content; stream vrací také reasoning a reasoning_events.\nOptions: temperature (0..2), max_tokens (>0), timeout (1..3600 s, výchozí 60),\nretries (0..10, výchozí 0), cancel (Function | None), transport_chunk (Function | None),\ntools (List definic), tool_choice (auto | none | required | {type, function}),\non_tool_call (Function | None): po dokončení streamovaného volání nástroje dostává {id, name, arguments},\nstream_reliability (live | transactional, jen při streamu; provider musí volbu podporovat).\nPo prvním textovém callbacku se požadavek neopakuje. Živý stream vyžaduje [DONE].\nPro výpis bez newline použijte tui.Terminal().emit(text) a flush().\nAktualizace pouze knihovny: lsl update aikit\nÚplný manuál a chatbot: https://lsl.lux-ai.cz/#ai"
 end
 
 function _byte_length(text):
@@ -44,7 +44,7 @@ function checked_request(endpoint, token, model, messages, options):
         Error(AIProviderError: "AI options must be a bounded Dictionary")
     end
     for key in options:
-        if type(key) != "String" or key not in ["temperature", "max_tokens", "timeout", "retries", "cancel", "transport_chunk", "tools", "tool_choice", "on_tool_call", "stream_reliability"]:
+        if type(key) != "String" or key not in ["temperature", "max_tokens", "timeout", "retries", "cancel", "transport_chunk", "tools", "tool_choice", "on_tool_call", "stream_reliability", "reasoning", "reasoning_effort", "on_reasoning"]:
             Error(AIProviderError: "unknown AI request option: " + String(key))
         end
     end
@@ -63,6 +63,29 @@ function checked_request(endpoint, token, model, messages, options):
             Error(AIProviderError: "temperature must be a finite number between 0 and 2")
         end
     end
+    if "reasoning_effort" in options and (type(options["reasoning_effort"]) != "String" or len(options["reasoning_effort"]) == 0):
+        Error(AIProviderError: "reasoning_effort must be a non-empty String")
+    end
+    if "reasoning" in options:
+        value = options["reasoning"]
+        if type(value) not in ["Dictionary", "String", "Bool"]:
+            Error(AIProviderError: "reasoning must be a Dictionary, String or Bool")
+        end
+        if type(value) == "Dictionary":
+            for key in value:
+                if key not in ["effort", "exclude"]:
+                    Error(AIProviderError: "unknown reasoning option: " + String(key))
+                end
+            end
+            if "effort" in value and (type(value["effort"]) != "String" or len(value["effort"]) == 0):
+                Error(AIProviderError: "reasoning.effort must be a non-empty String")
+            end
+            if "exclude" in value and type(value["exclude"]) != "Bool":
+                Error(AIProviderError: "reasoning.exclude must be a Bool")
+            end
+        end
+    end
+    call _checked_callback(options.get("on_reasoning", None), "on_reasoning", True)
     call _checked_callback(options.get("cancel", None), "cancel", True)
     call _checked_callback(options.get("transport_chunk", None), "transport_chunk", True)
     call _checked_callback(options.get("on_tool_call", None), "on_tool_call", True)
@@ -186,7 +209,7 @@ end
 
 function _payload(model, messages, options, streaming):
     payload = {"model": model, "messages": messages}
-    for name in ["temperature", "max_tokens", "tools", "tool_choice"]:
+    for name in ["temperature", "max_tokens", "tools", "tool_choice", "reasoning", "reasoning_effort"]:
         if name in options:
             payload[name] = options[name]
         end
@@ -232,7 +255,7 @@ function request(endpoint, token, model, messages, options):
 end
 
 function _decoder(on_event, cancel, raw):
-    return {"line": ByteArray(), "data": [], "bytes": 0, "skip_lf": False, "first": True, "done": False, "delivered": 0, "on_event": on_event, "cancel": cancel, "raw": raw, "tool_parts": {}, "tool_calls": [], "on_tool_call": None}
+    return {"line": ByteArray(), "data": [], "bytes": 0, "skip_lf": False, "first": True, "done": False, "delivered": 0, "on_event": on_event, "cancel": cancel, "raw": raw, "tool_parts": {}, "tool_calls": [], "on_tool_call": None, "on_reasoning": None, "reasoning_parts": [], "reasoning_events": 0}
 end
 
 function _dispatch(state):
@@ -272,6 +295,15 @@ function _dispatch(state):
     delta = choice.get("delta", {})
     if type(delta) != "Dictionary":
         Error(AIProviderError: "stream delta must be a Dictionary")
+    end
+    thought = _reasoning_text(delta)
+    if thought != None and thought != "":
+        state["reasoning_parts"].append(thought)
+        state["reasoning_events"] += 1
+        thought_callback = state["on_reasoning"]
+        if thought_callback != None:
+            call thought_callback(thought)
+        end
     end
     call _collect_tool_delta(state, delta)
     text = delta.get("content", None)
@@ -509,6 +541,7 @@ function stream(endpoint, token, model, messages, options, on_event):
         call _cancelled(cancel)
         state = _decoder(on_event, cancel, raw)
         state["on_tool_call"] = on_tool_call
+        state["on_reasoning"] = options.get("on_reasoning", None)
         key = _thread()
         call _push_context(key, state)
         response = None
@@ -526,8 +559,8 @@ function stream(endpoint, token, model, messages, options, on_event):
         if response["ok"]:
             call _finish(state, True)
             call _finish_tools(state)
-            return {"events": state["delivered"], "tool_calls": state["tool_calls"]}
-        elif state["delivered"] > 0 or not _retryable(response) or attempt >= retries:
+            return {"events": state["delivered"], "tool_calls": state["tool_calls"], "reasoning": "".join(state["reasoning_parts"]), "reasoning_events": state["reasoning_events"]}
+        elif state["delivered"] > 0 or state["reasoning_events"] > 0 or not _retryable(response) or attempt >= retries:
             return decode_response(response)
         end
         attempt += 1
@@ -605,4 +638,30 @@ function tool_message(id, name, result):
         Error(AIProviderError: "tool message result exceeds 1 MiB")
     end
     return {"role": "tool", "tool_call_id": id, "name": name, "content": result}
+end
+
+# Reasoning má samostatný kanál; nikdy jej nepřimícháváme do content.
+function _reasoning_text(message):
+    for key in ["reasoning", "reasoning_content"]:
+        text = message.get(key, None)
+        if text != None:
+            if type(text) != "String":
+                Error(AIProviderError: "provider " + key + " must be a String or null")
+            end
+            return text
+        end
+    end
+    return None
+end
+
+function reasoning(response):
+    choices = response.get("choices", [])
+    if type(choices) != "List" or len(choices) == 0 or type(choices[0]) != "Dictionary":
+        Error(AIProviderError: "provider response has no choices")
+    end
+    message = choices[0].get("message", None)
+    if type(message) != "Dictionary":
+        Error(AIProviderError: "provider response has no message")
+    end
+    return _reasoning_text(message)
 end

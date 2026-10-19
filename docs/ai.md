@@ -1,12 +1,17 @@
 # AI aplikace v LSL
 
-Samostatná AI knihovna `aikit` 1.1.0 funguje s LSL 0.8.9 a novějšími.
+Samostatná AI knihovna `aikit` 1.2.0 funguje s LSL 0.8.9 a novějšími.
 Instalace: `lsl install aikit`, další aktualizace: `lsl update aikit`.
 Ve skriptu použijte `load aikit as ai`; vestavěný název `ai` má v LSL 0.8.9
 přednost před uživatelskými balíčky, proto se tímto importem vybírá nová kopie.
 
 `ai.request` vrací JSON Dictionary. `ai.stream` předává textové části
-callbacku už během HTTP přenosu a vrací Dictionary `{events, tool_calls}`.
+callbacku už během HTTP přenosu a vrací Dictionary `{events, tool_calls,
+reasoning, reasoning_events}`. Reasoning (přemýšlení modelu) má samostatný
+kanál: volby `reasoning` (`{effort, exclude}`, String nebo Bool),
+`reasoning_effort` (String) a `on_reasoning` (callback pro průběžné části);
+`ai.reasoning(response)` čte `reasoning` nebo `reasoning_content` ze zprávy
+a do `content` se nikdy nepřimíchá.
 Podporuje timeout, cancel, surový transportní callback a omezené retry
 před prvním textem. `temperature`, `max_tokens`, `tools` a `tool_choice`
 se posílají i ve streamovací variantě. Parser zpracovává rozdělené

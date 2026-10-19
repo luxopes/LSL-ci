@@ -45,6 +45,7 @@ end
 call require(caught.startswith("EnvironmentError:") and env.require("LSL_ENV_EXPLICIT_089") == "loaded", "invalid dotenv load is atomic")
 call require(not env.load_dotenv(path + ".missing"), "missing dotenv is optional")
 call require(not env.has("LSL_ENV_ABSENT_089") and env.get("LSL_ENV_ABSENT_089", 42) == 42, "missing dotenv default keeps type")
+call require(env.get("LSL_ENV_ABSENT_089") == None, "missing variable without a default is None")
 caught = ""
 try:
     call env.require("LSL_ENV_ABSENT_089")

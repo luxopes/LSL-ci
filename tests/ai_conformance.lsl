@@ -38,3 +38,13 @@ else:
     caught = last_error()
 end
 print caught
+
+reasoned = {"status": 200, "text": "{\"choices\":[{\"message\":{\"content\":\"answer\",\"reasoning_content\":\"thinking\"}}]}", "ok": True}
+data = ai.decode_response(reasoned)
+print ai.reasoning(data), ai.content(data), ai.reasoning(ai.decode_response(success))
+try:
+    call ai.checked_request("https://example.invalid/v1", "token", "model", [{"role": "user", "content": "hi"}], {"reasoning": {"depth": 1}})
+else:
+    caught = last_error()
+end
+print caught

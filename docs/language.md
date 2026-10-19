@@ -464,7 +464,7 @@ Vestavěný modul `lux` exportuje `version`, `language` a `l` (alias `type`). Da
 - soubory UTF-8: `readfile(path)`, `writefile(path, value)`, `appendfile(path, value)`, `exists(path)`
 - Linux/POSIX filesystem: `cwd()`, `chdir(path)`, `mkdir(path)`, `remove_path(path)`
 - proces: globální `args`, `arg(index)`, `arg_count()`, `run(program, arguments)`; modul `os` přidává bezpečné command String/List API a PATH lookup; dále `capture(program, arguments)`, `capture_stream(program, arguments, callback)`, `capture_input(program, arguments, input_text)`, `capture_status()`, `exit(status)`; `process.capture_result`/`process.capture_input_result` vrací `{stdout, stderr, status, ok}` a `process.check`/`process.check_input` vyvolá `ProcessError`; status je exit code, pro signál `128 + signal`, při selhání fork/wait 126 a při selhání exec 127
-- environment: pouze přes modul `env` — `env.get(name, default)`, `env.has(name)`, `env.require(name)`; v pure config režimu není dostupný
+- environment: pouze přes modul `env` — `env.get(name, default=None)`, `env.has(name)`, `env.require(name)`; v pure config režimu není dostupný
 - chyby: `last_error()` vrátí poslední chybu zachycenou `safe` nebo `try`
 - nápověda: `help()` / `help("TOPIC")`; téma může být runtime String,
   návratová hodnota je None, neznámé téma vyvolá HelpError
