@@ -58,7 +58,7 @@ binutils nepotřebuje.
 |---|---|
 | `linux-x86_64` | žádné (assembler i linker jsou vestavěné v LuxIR) |
 | `linux-arm64` | žádné (assembler i linker jsou vestavěné v LuxIR) |
-| `linux-riscv64` | `binutils`, pro jinou architekturu `binutils-riscv64-linux-gnu` |
+| `linux-riscv64` | žádné (assembler i linker jsou vestavěné v LuxIR) |
 | `windows-x86_64` | `binutils-mingw-w64-x86-64`, `mingw-w64-x86-64-dev` |
 | `windows-arm64` | `clang`, `lld` |
 | `macos-x86_64`, `macos-arm64` | `clang`, `lld` (`ld64.lld`) |

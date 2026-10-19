@@ -105,8 +105,8 @@ end
 function tokenize(path, source):
     text = String(source)
     count = __lsl_text_byte_length(text)
-    if count > 4194304:
-        Error(CompileError: "source exceeds the 4 MiB compiler limit: " + path)
+    if count > 16777216:
+        Error(CompileError: "source exceeds the 16 MiB compiler limit: " + path)
     end
     result = []
     scratch = ByteArray()

@@ -10,7 +10,7 @@ load tui
 
 TERMINAL = tui.Terminal()
 UNDO_LIMIT = 200
-FILE_LIMIT = 4194304
+FILE_LIMIT = 16777216
 
 function clamp(value, low, high):
     return max(low, min(high, __lsl_typed_int(value)))

@@ -344,8 +344,8 @@ function read_interactive_source(stty):
                 history.append(line)
             end
             total += __lsl_text_byte_length(String(line)) + 1
-            if total > 4194304:
-                Error(CompileError: "stdin source exceeds the 4 MiB compiler limit")
+            if total > 16777216:
+                Error(CompileError: "stdin source exceeds the 16 MiB compiler limit")
             end
             lines.append(line)
             depth = max(0, depth + block_delta(line))
@@ -390,8 +390,8 @@ function read_stdin_source():
             break
         end
         total += __lsl_text_byte_length(String(line)) + 1
-        if total > 4194304:
-            Error(CompileError: "stdin source exceeds the 4 MiB compiler limit")
+        if total > 16777216:
+            Error(CompileError: "stdin source exceeds the 16 MiB compiler limit")
         end
         lines.append(line)
         if eof:
