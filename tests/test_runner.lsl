@@ -560,15 +560,15 @@ if sandbox_supported:
 end
 
 # Compiler limits are byte budgets, not Unicode code-point budgets. Four-byte
-# UTF-8 input must be rejected at 4 MiB before character/token materialization.
+# UTF-8 input must be rejected at 16 MiB before character/token materialization.
 oversized_utf8_path = test_path("oversized-utf8-source.lsl")
 oversized_utf8_output = test_path("oversized-utf8-program")
-oversized_utf8_source = chr(1114111) * 1048577
+oversized_utf8_source = chr(1114111) * 4194305
 call writefile(oversized_utf8_path, oversized_utf8_source)
 oversized_utf8_source = ""
 call gc()
 call capture_compiler([oversized_utf8_path, oversized_utf8_output])
-if capture_status() == 0 or capture_stderr().find("source exceeds the 4 MiB compiler limit") < 0:
+if capture_status() == 0 or capture_stderr().find("source exceeds the 16 MiB compiler limit") < 0:
     Error(TestFailure: "compiler source limit counted characters instead of UTF-8 bytes")
 end
 call unlink(oversized_utf8_path)
