@@ -105,7 +105,8 @@ function lld_flavor(name):
     return ["-flavor", "gnu"]
 end
 
-# Cíle, jejichž assembler sestaví LuxIR sám (luxir -a): ELF x86-64 a i386.
+# Cíle, které LuxIR sestaví i slinkuje sám (luxir -a, luxir -l): ELF
+# x86-64 a i386. Nepotřebují binutils.
 BUILTIN_ASSEMBLER = {"linux-x86_64":"amd64_sysv","linux-x86":"i386"}
 
 # [assembler, příznaky před -o]: vestavěný assembler LuxIR pro ELF x86,
@@ -304,7 +305,10 @@ function image(unit, selected, entry_source="", backend_path=""):
     runtime = runtime_path(selected)
     assembling = assembler_command(name, backend)
     assembler = assembling[0]
-    linking = linker_command(name)
+    linking = ["", []]
+    if name not in BUILTIN_ASSEMBLER:
+        linking = linker_command(name)
+    end
     linker = linking[0]
     path = host.scratch_program_path()
     failure = None
@@ -335,9 +339,19 @@ function image(unit, selected, entry_source="", backend_path=""):
             # Statický obraz ELF bez OS podle linker skriptu desky (adresy,
             # zásobník, konec obrazu pro haldu).
             call invoke(linker, tool_arguments(linking[1], ["-nostdlib", "-static", "-T", host.resource_path("runtime/arch/baremetal_riscv64.ld"), "--build-id=none", "--gc-sections", "-s"], ["-o", path, path + ".o", runtime]), "linker")
+        elif name in BUILTIN_ASSEMBLER:
+            # Vestavěný linker LuxIR: statický ELF bez tabulky symbolů,
+            # nepoužité sekce vypuštěné; x86_64 jako PIE bez absolutních
+            # relokací (jádro volí náhodnou bázi), i386 bez PIE (kód
+            # adresuje symboly absolutně).
+            flags = ["-l", "-t", BUILTIN_ASSEMBLER[name]]
+            if name == "linux-x86_64":
+                flags = ["-l", "-p", "-t", BUILTIN_ASSEMBLER[name]]
+            end
+            call invoke(backend, tool_arguments(flags, [], ["-o", path, path + ".o", runtime]), "linker")
         elif selected["image_format"] == "elf32-linux":
-            # 32bitový cíl: statický obraz ELF bez PIE (arm i i386 adresují
-            # symboly absolutně, movw/movt a $symbol).
+            # 32bitový cíl: statický obraz ELF bez PIE (arm adresuje
+            # symboly absolutně, movw/movt).
             call invoke(linker, tool_arguments(linking[1], ["-nostdlib", "-static", "-z", "noexecstack", "--build-id=none", "--gc-sections", "-s"], ["-o", path, path + ".o", runtime]), "linker")
         else:
             # All runtime/code references are PC relative. -z text makes absolute

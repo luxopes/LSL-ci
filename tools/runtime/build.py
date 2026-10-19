@@ -16,7 +16,7 @@ def run(*command, **kw):
 # Cíl -> (cíl LuxIR, příznaky LuxIR, assembler, příznaky as, linker, arch, objekt)
 TARGETS = {
     # 'luxir' jako assembler: vestavěný assembler LuxIR (luxir -a -t cíl).
-    'linux-x86_64': ('amd64_sysv', [], 'luxir', [], 'ld', 'linux_x86_64', 'runtime.o'),
+    'linux-x86_64': ('amd64_sysv', [], 'luxir', [], None, 'linux_x86_64', 'runtime.o'),
     'linux-arm64': ('arm64', [], 'aarch64-linux-gnu-as', [], 'aarch64-linux-gnu-ld', 'linux_arm64', 'runtime-linux-arm64.o'),
     'linux-riscv64': ('rv64', ['-p'], 'riscv64-linux-gnu-as', ['-march=rv64gc'], 'riscv64-linux-gnu-ld', 'linux_riscv64', 'runtime-linux-riscv64.o'),
     'baremetal-riscv64': ('rv64', ['-p'], 'riscv64-linux-gnu-as', ['-march=rv64gc'], 'riscv64-linux-gnu-ld', 'baremetal_riscv64', 'runtime-baremetal-riscv64.o'),
@@ -34,7 +34,7 @@ TARGETS = {
     # 32bitové cíle: backend LuxIR arm/i386, k runtime pomocné funkce
     # 64bitového dělení a převodů (runtime/arch/w32_helpers.lir).
     'linux-arm': ('arm', [], 'arm-linux-gnueabihf-as', ['-march=armv7-a', '-mfpu=vfpv3-d16', '-mfloat-abi=hard'], 'arm-linux-gnueabihf-ld', 'linux_arm', 'runtime-linux-arm.o'),
-    'linux-x86': ('i386', [], 'luxir', [], ['ld', '-m', 'elf_i386'], 'linux_x86', 'runtime-linux-x86.o'),
+    'linux-x86': ('i386', [], 'luxir', [], None, 'linux_x86', 'runtime-linux-x86.o'),
 }
 
 
@@ -112,6 +112,17 @@ def main():
         print(f'runtime {a.target}: LSL -> {output}')
         return
     run(backend, '-t', luxir_target, *luxir_flags, '-o', build / 'lslrt.s', build / 'lslrt.lir')
+    if assembler == a.backend.resolve():
+        # Vestavěný assembler: runtime, vrstva architektury a pomocné funkce
+        # v jednom objektu (jeden běh místo ld -r).
+        sources = [build / 'lslrt.s', ROOT / f'runtime/arch/{arch}.S']
+        if luxir_target in ('arm', 'i386'):
+            run(backend, '-t', luxir_target, '-o', build / 'helpers.s', ROOT / 'runtime/arch/w32_helpers.lir')
+            sources.append(build / 'helpers.s')
+        run(assembler, *as_flags, '-o', build / 'runtime.o', *sources)
+        shutil.copyfile(build / 'runtime.o', output)
+        print(f'runtime {a.target}: LSL + arch {arch} -> {output}')
+        return
     if linker is None:
         combined = (ROOT / f'runtime/arch/{arch}.S').read_text() + '\n' + (build / 'lslrt.s').read_text()
         if a.target.startswith('macos-'):

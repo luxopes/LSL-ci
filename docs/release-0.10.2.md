@@ -27,6 +27,12 @@ všech sedmi hostitelů. Nové 32bitové cíle `linux-arm` a `linux-x86`.
 - Oprava: chybová hláška `lsl update` neobsahuje zdvojené
   `UpdateError: UpdateError:`.
 
+- Linux x86-64 a x86 bez binutils: LuxIR má vestavěný assembler a linker
+  (`luxir -a`, `luxir -l`); překlad programu spouští jen `lslc` a `luxir`.
+  Objekty a spustitelné soubory vycházejí stejně bezpečné jako dřív
+  (statický PIE bez absolutních relokací, nespustitelný zásobník, bez
+  tabulky symbolů) a překladač se jimi přeloží sám bajtově shodně.
+  Ostatní cíle zatím binutils, LLVM nebo nástroje Xcode potřebují.
 - 32bitový Linux: `--target linux-arm` (armv7 hard-float) a
   `--target linux-x86` (i686, SSE2). LuxIR má pro oba vlastní generátor
   assembleru (backendy `arm` a `i386`), stačí GNU binutils jako u ostatních
