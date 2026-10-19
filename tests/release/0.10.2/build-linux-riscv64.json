@@ -1,0 +1,13 @@
+{
+  "target": "linux-riscv64",
+  "compiler_sha256": "234578bc84743e6a0f23ea7d1915a79e410ebbd9b3d7d4b4cd6c18d4dec0902d",
+  "backend_sha256": "05acc8a5392d267e4c079656c794f3ba33592c584be6c91209a80df98c7c5b1b",
+  "artifacts": {
+    "lslc": "c55665e651ee841caca3c833473533877200a42523160bc1f78b1e9e05e13a52",
+    "luxir": "fda32973697995f7a4b9c890b2d159826e1c402d3099c361afab8417199d1f91",
+    "lsl": "746c7840d685ac724b658f1e61b177b5a871d26ee3fc590d2f53b1ae27e1c7ec",
+    "lsl-install": "da25a379f9b0ee7a9ea7ca16c76aaef5f2a832731161e391593c81bab31ff8d8",
+    "lsl-configure": "8142e85cd2d0ae9d17d150a31724b748d4c0c9d1144eeada310a260b7941cba1",
+    "lsl-test": "cedf33f58b192d4ea1a9df3f88dbfedf59ea41b08c145e6bf150d487fcb7b254"
+  }
+}

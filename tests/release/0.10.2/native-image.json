@@ -1,0 +1,207 @@
+{
+  "compiler_sha256": "234578bc84743e6a0f23ea7d1915a79e410ebbd9b3d7d4b4cd6c18d4dec0902d",
+  "backend_sha256": "05acc8a5392d267e4c079656c794f3ba33592c584be6c91209a80df98c7c5b1b",
+  "runtime_sha256": "0c24eef33fcd1b0bae47bbbf08320745cf9c54cb29d3b13a75ce63e6fca56730",
+  "scope": "real frontend -> native LSL QBE -> system as/ld; no C codegen; serialized scratch cleanup check",
+  "source_sha256": {
+    "compiler/pure/qbe_toolchain.lsl": "5eef57d7f956ab120decfba681436a3216e672c4af6c0e6eb1004a11899355aa",
+    "compiler/pure/qbe_emit.lsl": "6c385add3b7a8b68bbc0c1c2e5da2f5097261af81165ca9216d479130813b05e",
+    "tests/qbe_port/native_image_toolchain.lsl": "ccfecb087a97a7e26cedccf3c66b3872a26d62215df278409fead629336f1fca"
+  },
+  "checks": [
+    {
+      "command": [
+        "/home/antonin/lsl-0.9.1/compiler/pure/lslc-qbe",
+        "tests/qbe_port/native_image_toolchain.lsl",
+        "/home/antonin/lsl-0.9.1/build/release-preflight/image/image-api-probe",
+        "/home/antonin/lsl-0.9.1/build/luxir/luxir"
+      ],
+      "seconds": 4.4846714769955724,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/lsl-0.9.1/build/release-preflight/image/image-api-probe",
+        "/home/antonin/lsl-0.9.1/build/release-preflight/image/entry.lsl",
+        "/home/antonin/lsl-0.9.1/build/release-preflight/image/first",
+        "/home/antonin/lsl-0.9.1/build/luxir/luxir",
+        "/source/entry/program.lsl"
+      ],
+      "seconds": 0.30202649999409914,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/lsl-0.9.1/build/release-preflight/image/image-api-probe",
+        "/home/antonin/lsl-0.9.1/build/release-preflight/image/entry.lsl",
+        "/home/antonin/lsl-0.9.1/build/release-preflight/image/second",
+        "/home/antonin/lsl-0.9.1/build/luxir/luxir",
+        "/source/entry/program.lsl"
+      ],
+      "seconds": 0.2941743600094924,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/lsl-0.9.1/build/release-preflight/image/first"
+      ],
+      "seconds": 0.0046380480052903295,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "/source/entry/.env\n11\nready\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/lsl-0.9.1/build/release-preflight/image/first"
+      ],
+      "seconds": 0.002306901995325461,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "/source/entry/.env\n11\nready\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/lsl-0.9.1/build/release-preflight/image/first"
+      ],
+      "seconds": 0.0024191420088754967,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "/source/entry/.env\n11\nready\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/lsl-0.9.1/build/release-preflight/image/first"
+      ],
+      "seconds": 0.0033411089971195906,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "/source/entry/.env\n11\nready\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/lsl-0.9.1/build/release-preflight/image/first"
+      ],
+      "seconds": 0.0036182479962008074,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "/source/entry/.env\n11\nready\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/lsl-0.9.1/build/release-preflight/image/image-api-probe",
+        "/home/antonin/lsl-0.9.1/build/release-preflight/image/entry.lsl",
+        "/home/antonin/lsl-0.9.1/build/release-preflight/image/blank-entry",
+        "/home/antonin/lsl-0.9.1/build/luxir/luxir",
+        ""
+      ],
+      "seconds": 0.32858895100071095,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/lsl-0.9.1/build/release-preflight/image/blank-entry"
+      ],
+      "seconds": 0.0036636229924624786,
+      "returncode": 0,
+      "timed_out": false,
+      "stdout": "/home/antonin/lsl-0.9.1/build/release-preflight/image/.env\n11\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/lsl-0.9.1/build/release-preflight/image/image-api-probe",
+        "/home/antonin/lsl-0.9.1/build/release-preflight/image/entry.lsl",
+        "/home/antonin/lsl-0.9.1/build/release-preflight/image/failure",
+        "/bin/false",
+        ""
+      ],
+      "seconds": 0.21556421600689646,
+      "returncode": 1,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "error[CompileError]: CompileError: LuxIR backend failed (status 1): \n help: handle expected errors with try: ... else: ... end or safe: ... end\n"
+    }
+  ],
+  "complete": true,
+  "all_pass": true,
+  "image_sha256": "739837c5e52a526ba052dc79dc94ceeb61d3fdf0cc74412f66a914d57662bee5",
+  "elf": {
+    "bytes": 112776,
+    "type": "ET_DYN",
+    "machine": "x86_64",
+    "segments": [
+      {
+        "type": 1,
+        "flags": 4,
+        "offset": 0,
+        "vaddr": 0,
+        "file_bytes": 344,
+        "memory_bytes": 344,
+        "alignment": 4096
+      },
+      {
+        "type": 1,
+        "flags": 5,
+        "offset": 4096,
+        "vaddr": 4096,
+        "file_bytes": 89032,
+        "memory_bytes": 89032,
+        "alignment": 4096
+      },
+      {
+        "type": 1,
+        "flags": 4,
+        "offset": 94208,
+        "vaddr": 94208,
+        "file_bytes": 14144,
+        "memory_bytes": 14144,
+        "alignment": 4096
+      },
+      {
+        "type": 1,
+        "flags": 6,
+        "offset": 108352,
+        "vaddr": 112448,
+        "file_bytes": 3997,
+        "memory_bytes": 4928,
+        "alignment": 4096
+      },
+      {
+        "type": 1685382481,
+        "flags": 6,
+        "offset": 0,
+        "vaddr": 0,
+        "file_bytes": 0,
+        "memory_bytes": 0,
+        "alignment": 16
+      }
+    ],
+    "dynamic": [],
+    "all_pass": true
+  },
+  "aslr_bases": [
+    140600689164288,
+    140485837066240,
+    139959623958528,
+    140607258554368,
+    139859328114688
+  ],
+  "binaries_unchanged": true
+}
