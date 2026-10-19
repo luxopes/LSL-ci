@@ -82,35 +82,22 @@ class Terminal(True):
     end
 
     # Queue a string for output; nothing is sent until flush(). Batching a whole
-    # frame into one write avoids flicker. Code points above ASCII are UTF-8
-    # encoded — ByteArray.append rejects values over 255, so a frame containing
-    # "↑" used to abort the caller's render loop mid-frame.
+    # frame into one write avoids flicker. The String already holds UTF-8, so
+    # its bytes are copied as they are (__lsl_text_byte is O(1)); indexing
+    # text[i] by code point scans from the start and made emit quadratic in the
+    # length of the text (a 20 KB frame cost tens of milliseconds).
     function emit(self, text):
         if type(text) != "String":
             Error(TypeError: "terminal output must be a String")
-        elif __lsl_text_byte_length(String(text)) > 16777216 - len(ByteArray(self.out)):
+        end
+        count = __lsl_text_byte_length(text)
+        if count > 16777216 - len(ByteArray(self.out)):
             Error(TUIError: "queued terminal output exceeds 16 MiB")
         end
         buffer = ByteArray(self.out)
         i = 0
-        limit = len(text)
-        while i < limit:
-            cp = ord(text[i])
-            if cp < 128:
-                call buffer.append(cp)
-            elif cp < 2048:
-                call buffer.append(192 + cp // 64)
-                call buffer.append(128 + cp % 64)
-            elif cp < 65536:
-                call buffer.append(224 + cp // 4096)
-                call buffer.append(128 + cp // 64 % 64)
-                call buffer.append(128 + cp % 64)
-            else:
-                call buffer.append(240 + cp // 262144)
-                call buffer.append(128 + cp // 4096 % 64)
-                call buffer.append(128 + cp // 64 % 64)
-                call buffer.append(128 + cp % 64)
-            end
+        while i < count:
+            call buffer.append(__lsl_text_byte(text, i))
             i = i + 1
         end
         self.out = buffer
