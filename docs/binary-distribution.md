@@ -57,7 +57,8 @@ binutils nepotřebuje.
 | Cíl | Nástroje na hostiteli (Debian/Ubuntu) |
 |---|---|
 | `linux-x86_64` | žádné (assembler i linker jsou vestavěné v LuxIR) |
-| `linux-arm64`, `linux-riscv64` | `binutils`, pro jinou architekturu `binutils-aarch64-linux-gnu`, `binutils-riscv64-linux-gnu` |
+| `linux-arm64` | žádné (assembler i linker jsou vestavěné v LuxIR) |
+| `linux-riscv64` | `binutils`, pro jinou architekturu `binutils-riscv64-linux-gnu` |
 | `windows-x86_64` | `binutils-mingw-w64-x86-64`, `mingw-w64-x86-64-dev` |
 | `windows-arm64` | `clang`, `lld` |
 | `macos-x86_64`, `macos-arm64` | `clang`, `lld` (`ld64.lld`) |

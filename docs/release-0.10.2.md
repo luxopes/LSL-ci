@@ -27,7 +27,7 @@ všech sedmi hostitelů. Nové 32bitové cíle `linux-arm` a `linux-x86`.
 - Oprava: chybová hláška `lsl update` neobsahuje zdvojené
   `UpdateError: UpdateError:`.
 
-- Linux x86-64 a x86 bez binutils: LuxIR má vestavěný assembler a linker
+- Linux x86-64, x86 a arm64 bez binutils: LuxIR má vestavěný assembler a linker
   (`luxir -a`, `luxir -l`); překlad programu spouští jen `lslc` a `luxir`.
   Objekty a spustitelné soubory vycházejí stejně bezpečné jako dřív
   (statický PIE bez absolutních relokací, nespustitelný zásobník, bez
