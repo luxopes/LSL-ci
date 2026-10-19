@@ -31,16 +31,19 @@ všech sedmi hostitelů. Nové 32bitové cíle `linux-arm` a `linux-x86`.
 - Knihovna `ai` je na úrovni `aikit` 1.2.0: reasoning v samostatném kanálu
   (`reasoning`, `reasoning_effort`, `on_reasoning`, `ai.reasoning(response)`,
   `stream` vrací i `reasoning` a `reasoning_events`).
-- Linux x86-64, x86, arm, arm64 a riscv64 bez binutils: LuxIR má vestavěný assembler a linker
-  (`luxir -a`, `luxir -l`); překlad programu spouští jen `lslc` a `luxir`.
-  Objekty a spustitelné soubory vycházejí stejně bezpečné jako dřív
-  (statický PIE bez absolutních relokací, nespustitelný zásobník, bez
-  tabulky symbolů) a překladač se jimi přeloží sám bajtově shodně.
-  Ostatní cíle zatím binutils, LLVM nebo nástroje Xcode potřebují.
+- Linux x86-64, x86, arm, arm64 a riscv64 bez binutils: LuxIR 0.3.0 má
+  vestavěný assembler a linker (`luxir -a`, `luxir -l`); překlad programu
+  spouští jen `lslc` a `luxir`. Objekty jsou bajtově shodné s GNU as a
+  spustitelné soubory stejně bezpečné jako dřív (statický PIE bez
+  absolutních relokací, nespustitelný zásobník, bez tabulky symbolů);
+  překladač se jimi přeloží sám bajtově shodně. Na arm64 mají segmenty
+  zarovnání 64 KiB, takže programy běží i na jádrech se stránkou 16 nebo
+  64 KiB. Bare metal RISC-V, Windows, macOS a WebAssembly zatím binutils,
+  LLVM, nástroje Xcode nebo wabt potřebují.
 - 32bitový Linux: `--target linux-arm` (armv7 hard-float) a
   `--target linux-x86` (i686, SSE2). LuxIR má pro oba vlastní generátor
-  assembleru (backendy `arm` a `i386`), stačí GNU binutils jako u ostatních
-  cílů Linuxu; C překladač není potřeba. Hodnoty LSL zůstávají 64bitové
+  assembleru (backendy `arm` a `i386`); C překladač ani binutils nejsou
+  potřeba. Hodnoty LSL zůstávají 64bitové
   (LuxIR je rozloží na dvojice 32bitových slov), programy se chovají stejně
   jako na 64bitových cílech. Překladač pro oba cíle přeloží sám sebe
   bajtově shodně. Nativní knihovny jsou zatím jen 64bitové.
