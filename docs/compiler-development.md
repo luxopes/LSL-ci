@@ -6,10 +6,10 @@ jazyková specifikace v [language.md](language.md).
 
 ## Rozsah 0.9.0 BETA a požadavky
 
-Výchozí produkční cesta je **LSL frontend → LuxIR → GNU assembler/linker →
-statický Linux x86_64 PIE**. Frontend, samostatný LuxIR backend i host runtime
-jsou napsané v LSL. Překlad vyžaduje GNU `as` a `ld` z binutils, včetně
-spuštění zdroje přes veřejné CLI. Hotový program používá syscalls, bez libc
+Výchozí produkční cesta je **LSL frontend → LuxIR (vestavěný assembler
+a linker) → statický Linux x86_64 PIE**. Frontend, samostatný LuxIR backend
+i host runtime jsou napsané v LSL. Překlad ani spuštění zdroje přes veřejné
+CLI nepotřebují binutils. Hotový program používá syscalls, bez libc
 nebo dynamického interpreteru. Automatický fallback na C QBE není součástí
 produkční cesty. Další OS a architektury tato BETA neslibuje.
 

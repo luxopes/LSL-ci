@@ -15,12 +15,9 @@ nutná:
 ```
 
 Výchozí frontend a backend `bin/luxir` jsou napsané v LSL. Výchozí cíl je
-architektura balíku. Pro program stejné architektury potřebujete **GNU
-`as` a `ld` z binutils**:
-
-- Debian a Ubuntu: `sudo apt install binutils`
-- Raspberry Pi OS (64bitový): `sudo apt install binutils`
-- Android v Termuxu: `pkg install binutils`
+architektura balíku. Na Linuxu nepotřebuje překladač žádné další nástroje:
+assembler i linker jsou vestavěné v LuxIR (Linux x86_64, x86, arm, arm64,
+riscv64, bare metal RISC-V i moduly WebAssembly).
 
 Na Windows obsahuje balík assembler a linker LLVM (`bin/llvm-mc.exe`,
 `bin/lld.exe`, licence v `LICENSE-LLVM.txt` a `LICENSE-lld.txt`); nic
@@ -42,8 +39,7 @@ Binárky nejsou podepsané certifikátem vývojáře ani notarizované:
   a `lsl update` také ne.
 
 Výsledné programy na Linuxu jsou statické PIE ELF s ASLR a neproveditelným stackem,
-bez libc a bez dynamického loaderu. Spuštění už přeloženého programu
-binutils nepotřebuje.
+bez libc a bez dynamického loaderu.
 
 ## Další cíle
 
@@ -62,7 +58,7 @@ binutils nepotřebuje.
 | `windows-x86_64` | `binutils-mingw-w64-x86-64`, `mingw-w64-x86-64-dev` |
 | `windows-arm64` | `clang`, `lld` |
 | `macos-x86_64`, `macos-arm64` | `clang`, `lld` (`ld64.lld`) |
-| `wasm32-wasi`, `wasm32-wasi-threads` | `wabt` |
+| `wasm32-wasi`, `wasm32-wasi-threads` | žádné (modul sestaví LuxIR) |
 | `baremetal-riscv64` | žádné (assembler i linker jsou vestavěné v LuxIR) |
 | `linux-x86` | žádné (assembler i linker jsou vestavěné v LuxIR) |
 | `linux-arm` | žádné (assembler i linker jsou vestavěné v LuxIR) |
@@ -78,7 +74,7 @@ Spuštění na hostiteli bez cílového systému:
 - Linux arm64 a riscv64 na PC: qemu-user (`binfmt`).
 - 32bitový Linux `linux-arm` (armv7, hard-float: Raspberry Pi OS 32bit,
   Android armv7) a `linux-x86` (i686 se SSE2): LuxIR vypíše assembler
-  (backendy `arm` a `i386`), stačí binutils; `linux-x86` běží přímo na
+  (backendy `arm` a `i386`) a sám ho sestaví a slinkuje; `linux-x86` běží přímo na
   64bitovém jádře x86_64, `linux-arm` v qemu-user. Nativní knihovny
   (`native`) jsou zatím jen 64bitové.
 
@@ -93,8 +89,7 @@ verze zůstává pro `lsl update --rollback`. Knihovny z registru
 
 ## Self-host
 
-Frontend v balíku lze ověřit pomocí dodaného nativního LuxIR a systémových
-binutils:
+Frontend v balíku lze ověřit pomocí dodaného nativního LuxIR:
 
 ```text
 (cd lib/lsl && ../../bin/lslc compiler/pure/lslc_qbe.lsl /tmp/lslc-next)

@@ -240,11 +240,11 @@ function cleanup(path):
 end
 
 # WebAssembly: runtime (LIR) a program se přeloží spolu do jednoho modulu
-# (luxir -t wasm32, s vlákny -g), vrstva architektury je text WAT (s vlákny
-# wasi_wasm32_threads.wat) a binární modul vyrobí
-# wat2wasm (WABT). Linker ani assembler se nepoužijí.
+# (s vlákny -g), vrstva architektury je text WAT (s vlákny
+# wasi_wasm32_threads.wat). Binární modul vyrobí LuxIR v jednom běhu
+# (luxir -a -t wasm32 vrstva.wat program.lir): překlad LIR a vestavěný
+# assembler WAT, bajtově shodný s wat2wasm. Linker se nepoužije.
 function wasm_image(unit, selected, entry_source, backend):
-    converter = host.required_system_tool("/usr/bin/wat2wasm", "/usr/local/bin/wat2wasm", "WebAssembly text converter (wat2wasm)")
     runtime = runtime_path(selected)
     layer = host.resource_path("runtime/arch/wasi_wasm32.wat")
     if selected["name"] == "wasm32-wasi-threads":
@@ -259,19 +259,12 @@ function wasm_image(unit, selected, entry_source, backend):
     try:
         call qbe_emit.generate(unit, path + ".lir", entry_source)
         call writefile(path + ".all.lir", readfile(runtime) + chr(10) + readfile(path + ".lir"))
-        call invoke(backend, tool_arguments(["-t", "wasm32"], BACKEND_FLAGS[selected["name"]], ["-o", path + ".body", path + ".all.lir"]), "LuxIR backend")
-        call writefile(path + ".wat", "(module" + chr(10) + readfile(layer) + chr(10) + readfile(path + ".body") + ")" + chr(10))
-        features = []
-        if selected["name"] == "wasm32-wasi-threads":
-            features = ["--enable-threads"]
-        end
-        call invoke(converter, tool_arguments(features, [], ["-o", path, path + ".wat"]), "wat2wasm")
+        call invoke(backend, tool_arguments(["-a", "-t", "wasm32"], BACKEND_FLAGS[selected["name"]], ["-o", path, layer, path + ".all.lir"]), "LuxIR backend")
         result = readbytes(path)
     else:
         failure = last_error()
     end
     call unlink(path + ".all.lir")
-    call unlink(path + ".body")
     call unlink(path + ".wat")
     call cleanup(path)
     if failure != None:
