@@ -20,3 +20,5 @@ compiler/qbe/runtime-wasm32-wasi.lir
 
 # Runtime pro bare metal (objekt) vzniká v tools/runtime/build.py.
 compiler/qbe/runtime-baremetal-riscv64.o
+# Importy Win32 pro linker LuxIR (tools/runtime/build.py)
+compiler/qbe/windows-*/*.def
