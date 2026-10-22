@@ -27,6 +27,8 @@ nejsou potřeba nástroje Xcode.
   ld).
 - Překlad pro libovolný cíl spouští jen `lslc` a jeden běh `luxir -a -l`
   na každém hostiteli; hledání binutils, LLVM, Xcode a Homebrew zmizelo.
+  Assembler a linker LuxIR mají symboly v hašovací tabulce, sestavení
+  a slinkování programu je o ~5 % rychlejší než v 0.10.2.
 - Oprava: `tui.emit` kopíruje text po bajtech v lineárním čase; dlouhé
   snímky obrazovky se dříve skládaly kvadraticky (20 KB trvalo ~80 ms).
 

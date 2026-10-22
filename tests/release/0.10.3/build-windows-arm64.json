@@ -1,0 +1,12 @@
+{
+  "target": "windows-arm64",
+  "compiler_sha256": "a28c6db622fbf79c06c1efe2b9d85ddaf30d4b340133694dae68d095584cf45f",
+  "backend_sha256": "5dca0d1dd37916ddb267839fdca8e3412ccb8649435eb5423b985ef7d141975a",
+  "artifacts": {
+    "lslc.exe": "f6a4cd77076e773402d9c65ee141d6f3217a7f64377dfbf2fc9766b5ef0ce92e",
+    "luxir.exe": "df4c7f26014000736fb7f6437462112cacad7c0667b2ca0eaffd1e985d17ecc6",
+    "lsl.exe": "0cea80e42b03addbcc5d1feb448479960b6c9531b6850111271f9dec74af78f4",
+    "lsl-install.exe": "c0b90772df29b3e5b6b0f2f7673ca5a6548a79e6f9a81b3ffb04bb9c993b98c2",
+    "lsl-configure.exe": "6413ce2f312116b25a8e19603ec6396d323650ef9b40ee70e34228b403d641f8"
+  }
+}
