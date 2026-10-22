@@ -3,10 +3,10 @@ load qbe_emit
 load host
 
 # Cíl backendu podle platformy LSL.
-BACKEND_TARGETS = {"linux-x86_64":"amd64_sysv","linux-arm64":"arm64","linux-riscv64":"rv64","windows-x86_64":"amd64_win","windows-arm64":"arm64_win","macos-x86_64":"amd64_apple","macos-arm64":"arm64_apple","wasm32-wasi":"wasm32","wasm32-wasi-threads":"wasm32","baremetal-riscv64":"rv64","linux-arm":"arm","linux-x86":"i386"}
+BACKEND_TARGETS = {"linux-x86_64":"amd64_sysv","linux-x86_64-gnu":"amd64_sysv","linux-arm64":"arm64","linux-riscv64":"rv64","windows-x86_64":"amd64_win","windows-arm64":"arm64_win","macos-x86_64":"amd64_apple","macos-arm64":"arm64_apple","wasm32-wasi":"wasm32","wasm32-wasi-threads":"wasm32","baremetal-riscv64":"rv64","linux-arm":"arm","linux-x86":"i386"}
 # Příznaky backendu pro cíl (WebAssembly s vlákny: -g).
-BACKEND_FLAGS = {"linux-x86_64":[],"linux-arm64":[],"linux-riscv64":["-p"],"windows-x86_64":[],"windows-arm64":[],"macos-x86_64":[],"macos-arm64":[],"wasm32-wasi":[],"wasm32-wasi-threads":["-g"],"baremetal-riscv64":["-p"],"linux-arm":[],"linux-x86":[]}
-RUNTIME_OBJECTS = {"linux-x86_64":"runtime.o","linux-arm64":"runtime-linux-arm64.o","linux-riscv64":"runtime-linux-riscv64.o","windows-x86_64":"runtime-windows-x86_64.o","windows-arm64":"runtime-windows-arm64.o","macos-x86_64":"runtime-macos-x86_64.o","macos-arm64":"runtime-macos-arm64.o","wasm32-wasi":"runtime-wasm32-wasi.lir","wasm32-wasi-threads":"runtime-wasm32-wasi.lir","baremetal-riscv64":"runtime-baremetal-riscv64.o","linux-arm":"runtime-linux-arm.o","linux-x86":"runtime-linux-x86.o"}
+BACKEND_FLAGS = {"linux-x86_64":[],"linux-x86_64-gnu":[],"linux-arm64":[],"linux-riscv64":["-p"],"windows-x86_64":[],"windows-arm64":[],"macos-x86_64":[],"macos-arm64":[],"wasm32-wasi":[],"wasm32-wasi-threads":["-g"],"baremetal-riscv64":["-p"],"linux-arm":[],"linux-x86":[]}
+RUNTIME_OBJECTS = {"linux-x86_64":"runtime.o","linux-x86_64-gnu":"runtime-linux-x86_64-gnu.o","linux-arm64":"runtime-linux-arm64.o","linux-riscv64":"runtime-linux-riscv64.o","windows-x86_64":"runtime-windows-x86_64.o","windows-arm64":"runtime-windows-arm64.o","macos-x86_64":"runtime-macos-x86_64.o","macos-arm64":"runtime-macos-arm64.o","wasm32-wasi":"runtime-wasm32-wasi.lir","wasm32-wasi-threads":"runtime-wasm32-wasi.lir","baremetal-riscv64":"runtime-baremetal-riscv64.o","linux-arm":"runtime-linux-arm.o","linux-x86":"runtime-linux-x86.o"}
 # Windows: importy Win32 (kernel32, WaitOnAddress, BCryptGenRandom, Winsock)
 # jako soubory .def vedle objektu runtime (tools/runtime/build.py); linker
 # LuxIR z nich vytvoří tabulky importů.
@@ -17,7 +17,7 @@ WINDOWS_IMPORTS = ["kernel32", "synchronization", "bcrypt", "ws2_32"]
 # Linux x86-64, i386, arm, arm64, riscv64, obraz bare metal RISC-V, PE32+
 # pro Windows x86-64 a arm64 a Mach-O pro macOS x86-64 a arm64. Žádný cíl
 # nepotřebuje binutils, LLVM ani Xcode.
-BUILTIN_ASSEMBLER = {"linux-x86_64":"amd64_sysv","linux-x86":"i386","linux-arm64":"arm64","linux-riscv64":"rv64","linux-arm":"arm","baremetal-riscv64":"rv64","windows-x86_64":"amd64_win","windows-arm64":"arm64_win","macos-x86_64":"amd64_apple","macos-arm64":"arm64_apple"}
+BUILTIN_ASSEMBLER = {"linux-x86_64":"amd64_sysv","linux-x86_64-gnu":"amd64_sysv","linux-x86":"i386","linux-arm64":"arm64","linux-riscv64":"rv64","linux-arm":"arm","baremetal-riscv64":"rv64","windows-x86_64":"amd64_win","windows-arm64":"arm64_win","macos-x86_64":"amd64_apple","macos-arm64":"arm64_apple"}
 
 # Textový stub libSystem pro linker LuxIR (macOS).
 function library_stub():
@@ -105,6 +105,7 @@ function tool_arguments(prefix, flags, suffix):
 end
 
 function cleanup(path):
+    call unlink(path + ".libs")
     call unlink(path + ".c")
     call unlink(path + ".c.body")
     call unlink(path + ".lir.phase")
@@ -190,6 +191,16 @@ function image(unit, selected, entry_source="", backend_path=""):
             # s adresami relativně k PC (-p), zásobníky a konec obrazu
             # pro haldu.
             flags = ["-a", "-l", "-b", "-p", "-t", BUILTIN_ASSEMBLER[name]]
+        elif selected["image_format"] == "elf-dynamic-linux":
+            # Dynamicky linkovaný PIE: ld.so, libc a knihovny z hlaviček
+            # `# lsl: link` (soubor .libs vedle programu).
+            libraries = "libc.so.6" + chr(10)
+            for library in unit["libraries"]:
+                libraries += library + chr(10)
+            end
+            call writefile(path + ".libs", libraries)
+            inputs.append(path + ".libs")
+            flags = ["-a", "-l", "-p", "-t", BUILTIN_ASSEMBLER[name]]
         elif name != "linux-x86" and name != "linux-arm":
             # Statický ELF bez tabulky symbolů, nepoužité sekce vypuštěné;
             # x86_64, arm64 a riscv64 jako PIE (-p) bez absolutních relokací

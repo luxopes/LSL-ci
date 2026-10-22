@@ -22,7 +22,7 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
 TARGETS = ('linux-arm64', 'linux-riscv64', 'linux-arm', 'linux-x86', 'windows-x86_64', 'windows-arm64', 'macos-x86_64', 'macos-arm64')
-RUNTIMES = ['runtime.o', 'runtime-linux-arm64.o', 'runtime-linux-riscv64.o', 'runtime-linux-arm.o', 'runtime-linux-x86.o', 'runtime-windows-x86_64.o',
+RUNTIMES = ['runtime.o', 'runtime-linux-x86_64-gnu.o', 'runtime-linux-arm64.o', 'runtime-linux-riscv64.o', 'runtime-linux-arm.o', 'runtime-linux-x86.o', 'runtime-windows-x86_64.o',
             'runtime-windows-arm64.o', 'runtime-macos-x86_64.o', 'runtime-macos-arm64.o',
             'runtime-wasm32-wasi.lir', 'runtime-baremetal-riscv64.o', 'libSystem.tbd']
 IMPORTS = ['kernel32.def', 'synchronization.def', 'bcrypt.def', 'ws2_32.def']

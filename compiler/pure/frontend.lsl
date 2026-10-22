@@ -43,5 +43,7 @@ function prepare(path, source, stdlib_source, safety_mode, internal_abi, platfor
     # stejnou nebo nižší paměťovou špičkou.
     unit = validation.prepare(semantic.analyze(path, source, program, internal_abi, library_functions))
     unit["platform_module"] = platform_module
+    # Knihovny systému z hlaviček `# lsl: link` (cíl linux-x86_64-gnu).
+    unit["libraries"] = List(linker.linked_libraries)
     return unit
 end

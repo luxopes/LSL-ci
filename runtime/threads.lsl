@@ -97,12 +97,12 @@ function rt_runtime_thread_spawn(function):
     end
     # Vrchol zásobníku a stav zveřejnit pod zámkem tabulky: gc() nesmí
     # vidět běžící vlákno s neplatným rozsahem zásobníku. Vlákno, jehož
-    # zásobník zná až ono samo (os.THREAD_SELF_PUBLISH), zůstane ve stavu 3
+    # zásobník zná až ono samo (os.thread_self_publish()), zůstane ve stavu 3
     # a zveřejní se v lsl_thread_begin; funkci do té doby drží +24 (GC ji
     # ve stavu 3 označí).
     call sync.rt_runtime_table_lock()
     __lsl_qbe_store64(entry + 8, top)
-    if not os.THREAD_SELF_PUBLISH:
+    if not os.thread_self_publish():
         __lsl_qbe_store64(entry + 16, 1)
     end
     __lsl_qbe_store64(entry + 24, function)

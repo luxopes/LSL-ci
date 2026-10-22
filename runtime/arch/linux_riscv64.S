@@ -192,4 +192,24 @@ _start:
 lsl_state:
 	.zero 8
 
-	.section .note.GNU-stack,"",@progbits
+		.text
+# Cesta vláken přes pthread (jen vrstva x86_64 s glibc); zde nevolaná.
+	.globl lsl_arch_thread_create
+	.p2align 2
+lsl_arch_thread_create:
+	li a0, -1
+	ret
+
+	.globl lsl_arch_thread_exit
+	.p2align 2
+lsl_arch_thread_exit:
+	ebreak
+
+	.data
+	.p2align 3
+	.globl lsl_arch_threads
+lsl_arch_threads:
+	.dword 0
+	.text
+
+.section .note.GNU-stack,"",@progbits

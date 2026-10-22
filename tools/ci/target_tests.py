@@ -32,14 +32,17 @@ def build_one(compiler, target, source, output):
     if skip_reason(target, source.name):
         return None
     expected = source.with_suffix('.out').read_bytes()
-    host = output / 'host' / source.stem
-    status, _, _ = run([str(compiler), '--unsafe', str(source), str(host)], 600)
-    if status != 0:
-        return None
-    status, out, _ = run([str(host)], 300)
-    host.unlink()
-    if status != 0 or out != expected:
-        return None
+    if source.parent.name != 'gnu':
+        # Hostitelský (statický) překlad ověří, že test na stroji sestavení
+        # platí; testy tests/gnu jsou jen pro cíl linux-x86_64-gnu.
+        host = output / 'host' / source.stem
+        status, _, _ = run([str(compiler), '--unsafe', str(source), str(host)], 600)
+        if status != 0:
+            return None
+        status, out, _ = run([str(host)], 300)
+        host.unlink()
+        if status != 0 or out != expected:
+            return None
     name = source.stem + ('.exe' if target.startswith('windows-') else '.wasm' if target.startswith('wasm32-') else '')
     status, _, error = run([str(compiler), '--unsafe', '--target', target, str(source), str(output / name)], 600)
     if status != 0:
@@ -52,6 +55,9 @@ def build(a):
     output = a.output.resolve()
     (output / 'host').mkdir(parents=True, exist_ok=True)
     sources = sorted(p for p in (ROOT / 'tests').glob('*.lsl') if p.with_suffix('.out').exists())
+    if a.target == 'linux-x86_64-gnu':
+        # Moduly glib, gio a gtk jsou jen pro dynamicky linkovaný cíl.
+        sources += sorted(p for p in (ROOT / 'tests/gnu').glob('*.lsl') if p.with_suffix('.out').exists())
     with concurrent.futures.ThreadPoolExecutor(a.j) as pool:
         tests = [t for t in pool.map(lambda s: build_one(a.compiler.resolve(), a.target, s, output), sources) if t]
     (output / 'host').rmdir()
@@ -82,7 +88,10 @@ def run_tests(a):
             command = [os.environ['LSL_WINDOWS_RUNNER'], str(binary)]
         status, out, error = run(command, a.timeout)
         expected = (directory / test['expected']).read_bytes()
-        if status == 0 and out == expected:
+        if status == 0 and out.startswith(b'SKIP: '):
+            # Test sám zjistil, že mu na stroji chybí prostředí (Xvfb, D-Bus).
+            print(f'skip    {test["name"]}: {out[6:].decode(errors="replace").strip()}', flush=True)
+        elif status == 0 and out == expected:
             print(f'ok      {test["name"]}', flush=True)
         else:
             failures += 1

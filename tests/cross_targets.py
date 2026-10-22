@@ -141,8 +141,15 @@ def check(compiler, target, source, scratch, timeout, adb=False):
         return 'skip', source.name, reason
     expected = source.with_suffix('.out').read_bytes()
     results = {}
-    # Jako test_runner v režimu qbe: korpus používá i surové služby runtime.
-    for name, extra in (('host', ['--unsafe']), (target, ['--unsafe', '--target', target])):
+    # tests/gnu: moduly glib, gio a gtk jen pro linux-x86_64-gnu; hostitelský
+    # překlad (statický) by nespojil knihovny, porovnává se přímo s .out.
+    gnu_only = source.parent.name == 'gnu'
+    if gnu_only and target != 'linux-x86_64-gnu':
+        return 'skip', source.name, 'needs linux-x86_64-gnu'
+    builds = (('host', ['--unsafe']), (target, ['--unsafe', '--target', target]))
+    if gnu_only:
+        builds = builds[1:]
+    for name, extra in builds:
         binary = scratch / f'{source.stem}-{name}'
         launcher = []
         if name.startswith('windows-'):
@@ -162,7 +169,16 @@ def check(compiler, target, source, scratch, timeout, adb=False):
         else:
             status, out, error = run([*launcher, str(binary)], timeout)
         results[name] = (status, out, error)
-    host, cross = results['host'], results[target]
+    cross = results[target]
+    if gnu_only:
+        if cross[0] == 'compile':
+            return 'FAIL', source.name, 'compile: ' + ' | '.join(cross[1])
+        if cross[0] == 0 and cross[1].startswith(b'SKIP: '):
+            return 'skip', source.name, cross[1][6:].decode(errors='replace').strip()
+        if cross[0] != 0 or cross[1] != expected:
+            return 'FAIL', source.name, f'status {cross[0]}; stderr: ' + cross[2].decode(errors='replace').strip()[:200]
+        return 'ok', source.name, ''
+    host = results['host']
     if host[0] == 'compile' or host[1] != expected:
         return 'host-only', source.name, ''
     if cross[0] == 'compile':
@@ -183,6 +199,8 @@ def main():
     ap.add_argument('tests', nargs='*')
     a = ap.parse_args()
     sources = [ROOT / t for t in a.tests] if a.tests else sorted(p for p in (ROOT / 'tests').glob('*.lsl') if p.with_suffix('.out').exists())
+    if not a.tests and a.target == 'linux-x86_64-gnu':
+        sources += sorted(p for p in (ROOT / 'tests/gnu').glob('*.lsl') if p.with_suffix('.out').exists())
     counts = {}
     if a.adb:
         run(['adb', 'shell', f'mkdir -p {ADB_DIRECTORY}'], 60)

@@ -1,0 +1,6 @@
+('GTK major:', 3)
+('label:', 'clicked 1')
+('entry:', 'žluťoučký kůň', 13)
+('switch:', True, [1])
+('clicks:', 1, 'drawn:', True)
+done

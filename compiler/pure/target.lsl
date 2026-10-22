@@ -71,6 +71,14 @@ function describe(name):
         architecture = "x86"
         backend = "i386"
         available = True
+    elif name == "linux-x86_64-gnu":
+        # Linux x86_64 s glibc: dynamicky linkovaný PIE (ld.so), aby program
+        # mohl volat systémové knihovny (GTK, GLib) přes `# lsl: link`.
+        # Stejné ABI, platforma i knihovny jako linux-x86_64; liší se jen
+        # vrstva architektury runtime (blok vlákna v gs, vlákna pthread).
+        os = "linux"
+        format = "elf-dynamic-linux"
+        available = True
     elif name == "windows-x86_64":
         os = "windows"
         format = "pe32plus-windows"
@@ -128,7 +136,7 @@ function resolve(name):
 end
 
 function modules_for_platform(platform_module):
-    for name in ["linux-x86_64", "linux-arm64", "linux-riscv64", "linux-arm", "linux-x86", "windows-x86_64", "windows-arm64", "macos-x86_64", "macos-arm64", "wasm32-wasi", "wasm32-wasi-threads", "baremetal-riscv64"]:
+    for name in ["linux-x86_64", "linux-x86_64-gnu", "linux-arm64", "linux-riscv64", "linux-arm", "linux-x86", "windows-x86_64", "windows-arm64", "macos-x86_64", "macos-arm64", "wasm32-wasi", "wasm32-wasi-threads", "baremetal-riscv64"]:
         selected = describe(name)
         if selected["platform_module"] == platform_module:
             return selected["modules"]

@@ -48,6 +48,7 @@ bez libc a bez dynamického loaderu.
 | Cíl | Nástroje na hostiteli (Debian/Ubuntu) |
 |---|---|
 | `linux-x86_64` | žádné (assembler i linker jsou vestavěné v LuxIR) |
+| `linux-x86_64-gnu` | žádné; program je dynamicky linkovaný nad glibc stroje (a GTK/GLib, používá-li je, viz docs/gtk.md) |
 | `linux-arm64` | žádné (assembler i linker jsou vestavěné v LuxIR) |
 | `linux-riscv64` | žádné (assembler i linker jsou vestavěné v LuxIR) |
 | `windows-x86_64` | žádné (assembler i linker jsou vestavěné v LuxIR) |

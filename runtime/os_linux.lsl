@@ -493,7 +493,11 @@ end
 # Rozhraní pro start procesu, vlákna a GC (stejná jména v os_windows.lsl).
 
 # Vlákno se zveřejňuje samo (lsl_thread_begin)? Linux: ne, spawn zná zásobník.
-THREAD_SELF_PUBLISH = 0
+# Vlákno se zveřejní samo v lsl_thread_begin (vrchol zásobníku zná až ono):
+# s pthready (vrstva s glibc) ano, s clone ne (zásobník mapuje rodič).
+function thread_self_publish():
+    return pthreads()
+end
 # Spouští GC zastavená vlákna sám (thread_resume)? Linux: ne, probudí je brána.
 THREAD_RESUME = 0
 # Jména proměnných prostředí rozlišují velikost písmen.
@@ -542,9 +546,20 @@ function install_thread_suspend():
     return syscall6(platform.SYS_RT_SIGACTION, SIGUSR1, action, 0, platform.SIGSET_BYTES, 0, 0)
 end
 
+# Vrstva s glibc (linux_gnu_x86_64.S): vlákna vytváří pthread_create se
+# svým zásobníkem a vlákno se zveřejní samo v lsl_thread_begin.
+function pthreads():
+    return __lsl_qbe_load64(__lsl_symbol("lsl_arch_threads")) != 0
+end
+
 # Zásobník vlákna: dosavadní (top != 0) se použije znovu, jinak nové mapování
 # se strážní stránkou na dně. Vrchol, nebo -1.
 function thread_stack(top, size, guard):
+    if pthreads():
+        # Zásobník dá glibc; 0 = vlákno se zveřejní samo v lsl_thread_begin
+        # (do té doby ho GC neprohledává), jako na macOS.
+        return 0
+    end
     if top != 0:
         return top
     end
@@ -563,13 +578,27 @@ end
 # a probudí čekající až po úplném skončení vlákna; CLONE_SETTLS ukáže na
 # blok vlákna. Potomek najde na zásobníku položku a funkci. tid, nebo -errno.
 function thread_start(entry, top, function):
+    if pthreads():
+        # Volá se pod zámkem tabulky: funkce vlákna do položky (+24, čte ji
+        # lsl_thread_begin), tid vrátí arch vrstva po startu vlákna.
+        __lsl_qbe_store64(entry + 24, function)
+        return __lsl_qbe_call1(__lsl_symbol("lsl_arch_thread_create"), entry)
+    end
     __lsl_qbe_store64(top - 16, entry)
     __lsl_qbe_store64(top - 8, function)
     return __lsl_qbe_call4(__lsl_symbol("lsl_arch_clone_thread"), platform.THREAD_CLONE_FLAGS, top - 16, entry + 16, entry + 32)
 end
 
-# Konec vlákna: stav vynuluje jádro (CLONE_CHILD_CLEARTID).
+# Konec vlákna: stav vynuluje jádro (CLONE_CHILD_CLEARTID). Vlákno pthread
+# napřed samo ohlásí konec (stav 1 -> 0, probudit join) jako na macOS.
 function thread_exit(entry):
+    if pthreads():
+        while __lsl_qbe_call3(__lsl_symbol("lsl_arch_cas64"), entry + 16, 1, 0) != 1:
+            call sched_yield()
+        end
+        call futex_wake(entry + 16, 2147483647)
+        return __lsl_qbe_call0(__lsl_symbol("lsl_arch_thread_exit"))
+    end
     return exit_thread(0)
 end
 

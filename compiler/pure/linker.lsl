@@ -24,7 +24,7 @@ function module_prefix(index):
 end
 
 function builtin_module(name):
-    builtins = "|_platform|_platform_linux_arm|_platform_linux_x86|_platform_linux_arm64|_platform_linux_riscv64|_platform_linux_x86_64|_random_hash|ai|bigint|config|configure|cuda|env|fd|http|httpserver|json|lconf|lux|luxos|math|native|os|plugin|process|random|requests|sandbox|system|tensor|time|tui|unixsock|"
+    builtins = "|_platform|_platform_linux_arm|_platform_linux_x86|_platform_linux_arm64|_platform_linux_riscv64|_platform_linux_x86_64|_random_hash|ai|bigint|glib|gio|gtk|config|configure|cuda|env|fd|http|httpserver|json|lconf|lux|luxos|math|native|os|plugin|process|random|requests|sandbox|system|tensor|time|tui|unixsock|"
     return "|" + String(name) + "|" in builtins or target.builtin_provider(name)
 end
 
@@ -545,6 +545,28 @@ end
 # Returns the module entry [prefix, exports]: exports maps every public name
 # of the module to its prefixed form, so a shared alias can pick the module
 # that defines a member.
+# Knihovny systému, které modul potřebuje (dynamicky linkované cíle):
+# hlavička `# lsl: link libgtk-3.so.0 libgobject-2.0.so.0` na začátku
+# zdroje (jen řádky komentářů před prvním příkazem).
+linked_libraries = []
+
+function collect_libraries(source):
+    for line in String(source).split(chr(10)):
+        if line == "" or line.startswith("#"):
+            if line.startswith("# lsl: link "):
+                for name in line[12:].split(" "):
+                    if name != "" and name not in linked_libraries:
+                        linked_libraries.append(name)
+                    end
+                end
+            end
+        else:
+            return None
+        end
+    end
+    return None
+end
+
 function collect_module(name, owner_path, cache, output, source_budget, internal_graph, owner_source, import_statement):
     # Platforma knihoven patří cíli překladu; bootstrap fasáda není host detekce.
     providers = source_budget[1]
@@ -575,6 +597,7 @@ function collect_module(name, owner_path, cache, output, source_budget, internal
         Error(CompileError: "linked source exceeds the 16 MiB compiler limit: " + path)
     end
     counter[0] += source_bytes
+    call collect_libraries(source)
     program = parser.parse(path, source)
     call annotate_statements(program, path)
     call mark_trusted(program, builtin_module(name))
@@ -658,6 +681,10 @@ function link_mode_options(path, source, safety_mode, internal_graph, platform_m
     call annotate_statements(program, path)
     call mark_trusted(program, False)
     call mark_internal_abi(program, internal_graph)
+    while len(linked_libraries) > 0:
+        call linked_libraries.pop()
+    end
+    call collect_libraries(checked_source)
     cache = {}
     linked = []
     namespaces = {}

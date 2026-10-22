@@ -302,4 +302,25 @@ _start:
 	bl lsl_runtime_start
 	udf #0
 
-	.section .note.GNU-stack,"",%progbits
+		.text
+// Cesta vláken přes pthread (jen vrstva x86_64 s glibc); zde nevolaná.
+	.globl lsl_arch_thread_create
+	.p2align 2
+lsl_arch_thread_create:
+	mvn r0, #0
+	mvn r1, #0
+	bx lr
+
+	.globl lsl_arch_thread_exit
+	.p2align 2
+lsl_arch_thread_exit:
+	udf #0
+
+	.data
+	.p2align 3
+	.globl lsl_arch_threads
+lsl_arch_threads:
+	.word 0, 0
+	.text
+
+.section .note.GNU-stack,"",%progbits

@@ -19,7 +19,9 @@ ROOT_WORD_BYTES = 8
 HEAP_ADDRESS_TAG = 0
 load core
 
-THREAD_SELF_PUBLISH = 1
+function thread_self_publish():
+    return 1
+end
 THREAD_RESUME = 0
 ENV_IGNORE_CASE = 0
 # Registry zastaveného vlákna leží na jeho zásobníku (thread_registers 0).

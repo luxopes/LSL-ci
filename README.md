@@ -278,6 +278,7 @@ nenahrazuje budoucí podpisový trust model. Podrobnosti jsou v
 
 - [Praktické programování v LSL](docs/programming.md)
 - [GUI, okna a widgety](docs/gui.md)
+- [GTK, GLib a D-Bus na Linuxu (cíl linux-x86_64-gnu)](docs/gtk.md)
 - [Jazyková specifikace](docs/language.md)
 - [Vývoj compileru a release workflow](docs/compiler-development.md)
 - [Deklarativní konfigurace](docs/configuration.md)

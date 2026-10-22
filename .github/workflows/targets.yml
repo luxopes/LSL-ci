@@ -34,7 +34,7 @@ jobs:
         run: build/ci/lslc build/dependencies/LuxIR/lsl/luxir.lsl build/ci/luxir
       - name: Target runtimes
         run: |
-          for target in windows-x86_64 windows-arm64 linux-arm64 linux-riscv64 macos-x86_64 macos-arm64 wasm32-wasi baremetal-riscv64; do
+          for target in windows-x86_64 windows-arm64 linux-x86_64-gnu linux-arm64 linux-riscv64 macos-x86_64 macos-arm64 wasm32-wasi baremetal-riscv64; do
             python3 tools/runtime/build.py --compiler build/ci/lslc --target $target --bootstrap-runtime compiler/qbe/runtime.o
           done
           # 32bitové cíle: backendy LuxIR arm a i386 z připnutého zdroje.
@@ -66,6 +66,7 @@ jobs:
           LSL_BACKEND=$PWD/build/ci/luxir python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target linux-arm --output bundle/linux-arm
           LSL_BACKEND=$PWD/build/ci/luxir python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target linux-x86 --output bundle/linux-x86
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target linux-x86_64 --output bundle/linux-x86_64
+          python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target linux-x86_64-gnu --output bundle/linux-x86_64-gnu
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target macos-x86_64 --output bundle/macos-x86_64
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target macos-arm64 --output bundle/macos-arm64
           python3 tools/ci/target_tests.py build --compiler build/ci/lslc --target wasm32-wasi --output bundle/wasm32-wasi
@@ -175,6 +176,9 @@ jobs:
           - {runner: windows-11-arm, bundle: windows-arm64}
           - {runner: windows-11-arm, bundle: windows-x86_64}
           - {runner: ubuntu-24.04-arm, bundle: linux-arm64}
+          # Dynamicky linkovaný Linux nad glibc: moduly glib, gio a gtk
+          # (D-Bus pod dbus-run-session, GTK pod Xvfb).
+          - {runner: ubuntu-24.04, bundle: linux-x86_64-gnu}
           # 32bitový Linux: x86 nativně (jádro x86_64), ARM v qemu-user.
           - {runner: ubuntu-24.04, bundle: linux-x86}
           - {runner: ubuntu-24.04, bundle: linux-arm}
@@ -199,6 +203,9 @@ jobs:
       - name: Install qemu-system-riscv64
         if: matrix.bundle == 'baremetal-riscv64'
         run: sudo apt-get update -qq && sudo apt-get install -y -qq qemu-system-misc
+      - name: Install Xvfb, D-Bus and GTK 3
+        if: matrix.bundle == 'linux-x86_64-gnu'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq xvfb dbus libgtk-3-0t64
       - name: qemu-user for 32-bit ARM (binfmt, current static qemu)
         if: matrix.bundle == 'linux-arm'
         # qemu 8.2 z Ubuntu 24.04 vrací u accept4 EINVAL; statické qemu

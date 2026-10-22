@@ -19,7 +19,9 @@ ROOT_WORD_BYTES = 8
 HEAP_ADDRESS_TAG = 1099511627776
 load core
 
-THREAD_SELF_PUBLISH = 0
+function thread_self_publish():
+    return 0
+end
 THREAD_RESUME = 1
 ENV_IGNORE_CASE = 0
 THREAD_REGISTER_BYTES = 0

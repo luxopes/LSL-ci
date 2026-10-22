@@ -17,6 +17,8 @@ def run(*command, **kw):
 TARGETS = {
     # 'luxir' jako assembler: vestavěný assembler LuxIR (luxir -a -t cíl).
     'linux-x86_64': ('amd64_sysv', [], 'luxir', [], None, 'linux_x86_64', 'runtime.o'),
+    # Linux s glibc (dynamicky linkované programy): jiná vrstva architektury.
+    'linux-x86_64-gnu': ('amd64_sysv', [], 'luxir', [], None, 'linux_gnu_x86_64', 'runtime-linux-x86_64-gnu.o'),
     'linux-arm64': ('arm64', [], 'luxir', [], None, 'linux_arm64', 'runtime-linux-arm64.o'),
     'linux-riscv64': ('rv64', ['-p'], 'luxir', [], None, 'linux_riscv64', 'runtime-linux-riscv64.o'),
     'baremetal-riscv64': ('rv64', ['-p'], 'luxir', [], None, 'baremetal_riscv64', 'runtime-baremetal-riscv64.o'),

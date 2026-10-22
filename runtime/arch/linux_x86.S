@@ -345,4 +345,25 @@ _start:
 	call lsl_runtime_start
 	ud2
 
-	.section .note.GNU-stack,"",@progbits
+		.text
+# Cesta vláken přes pthread (jen vrstva x86_64 s glibc); zde nevolaná.
+	.globl lsl_arch_thread_create
+	.p2align 4
+lsl_arch_thread_create:
+	mov $-1, %eax
+	mov $-1, %edx
+	ret
+
+	.globl lsl_arch_thread_exit
+	.p2align 4
+lsl_arch_thread_exit:
+	ud2
+
+	.data
+	.p2align 3
+	.globl lsl_arch_threads
+lsl_arch_threads:
+	.long 0, 0
+	.text
+
+.section .note.GNU-stack,"",@progbits

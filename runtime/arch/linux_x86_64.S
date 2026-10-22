@@ -121,6 +121,19 @@ lsl_arch_clone_thread:
 	call lsl_thread_main
 	ud2
 
+# Cesta vláken přes pthread (vrstva s glibc); statická vrstva ji nevolá
+# (lsl_arch_threads = 0), symboly jen existují kvůli linkeru.
+	.globl lsl_arch_thread_create
+	.p2align 4
+lsl_arch_thread_create:
+	mov $-1, %rax
+	ret
+
+	.globl lsl_arch_thread_exit
+	.p2align 4
+lsl_arch_thread_exit:
+	ud2
+
 # Návrat z obsluhy signálu (sa_restorer).
 	.globl lsl_arch_signal_restorer
 	.p2align 4
@@ -194,6 +207,15 @@ qbe_error_clear:
 	.globl lsl_state
 lsl_state:
 	.zero 8
+	.text
+
+# Vlákna přes clone (0); vrstva s glibc (linux_gnu_x86_64.S) má 1 a vlákna
+# vytváří pthread_create.
+	.data
+	.p2align 3
+	.globl lsl_arch_threads
+lsl_arch_threads:
+	.quad 0
 	.text
 
 	.section .note.GNU-stack,"",@progbits
