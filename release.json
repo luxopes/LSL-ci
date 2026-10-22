@@ -14,12 +14,12 @@
   "backend": {
     "name": "LuxIR",
     "repository": "https://git.lux-ai.cz/LuxAI/LuxIR.git",
-    "commit": "59825b55b57bf5a319b88e14fabd324d6b3e7cfe",
+    "commit": "2d38de646a4867943b086f49225221fd08974041",
     "directory": "build/dependencies/LuxIR"
   },
   "manual": {
     "repository": "https://git.lux-ai.cz/LuxAI/LSL-Web.git",
-    "commit": "a4be31f10388dbc793651472e582ba86dcecc5b1",
+    "commit": "1af489734575f581657d67959ab352667ec2c8bd",
     "path": "public",
     "directory": "build/dependencies/LSL-Web"
   },
