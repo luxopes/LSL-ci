@@ -23,7 +23,7 @@ jobs:
       - name: Cross binutils
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq binutils-mingw-w64-x86-64 mingw-w64-x86-64-dev binutils-aarch64-linux-gnu binutils-arm-linux-gnueabihf clang lld
+          sudo apt-get install -y -qq binutils-aarch64-linux-gnu binutils-arm-linux-gnueabihf clang lld
           # Linker Mach-O (macOS) z LLVM pod jménem, které hledá kompilátor.
           sudo ln -sf $(ls /usr/lib/llvm-*/bin/ld64.lld | sort -V | tail -1) /usr/bin/ld64.lld
       - name: Compiler from the bootstrap

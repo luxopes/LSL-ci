@@ -77,6 +77,9 @@ def run_tests(a):
             command = ['node', '--no-warnings', str(ROOT / 'tools/wasi_run.mjs'), str(binary)]
         elif manifest['target'].startswith('baremetal-'):
             command = [sys.executable, str(ROOT / 'tools/baremetal_run.py'), str(binary)]
+        elif manifest['target'].startswith('windows-') and os.environ.get('LSL_WINDOWS_RUNNER'):
+            # Program pro Windows na jiném hostiteli (např. wine na Linuxu).
+            command = [os.environ['LSL_WINDOWS_RUNNER'], str(binary)]
         status, out, error = run(command, a.timeout)
         expected = (directory / test['expected']).read_bytes()
         if status == 0 and out == expected:

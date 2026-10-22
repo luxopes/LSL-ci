@@ -143,7 +143,7 @@ for component in prefix.split("/"):
 end
 
 library = prefix + "/lib/lsl"
-for directory in [prefix + "/bin", library + "/compiler/pure", library + "/compiler/qbe/windows-arm64", library + "/stdlib", library + "/runtime/arch", library + "/tools", library + "/docs/developer_guides"]:
+for directory in [prefix + "/bin", library + "/compiler/pure", library + "/compiler/qbe/windows-x86_64", library + "/compiler/qbe/windows-arm64", library + "/stdlib", library + "/runtime/arch", library + "/tools", library + "/docs/developer_guides"]:
     call make_directories(directory)
 end
 
@@ -157,14 +157,6 @@ if windows():
     for name in ["llvm-mc.exe", "lld.exe"]:
         if exists(binary_directory + "/" + name):
             call copy_large(binary_directory + "/" + name, prefix + "/bin/" + name)
-        end
-    end
-    if exists(source_path("compiler/qbe/windows-x86_64")):
-        call make_directories(library + "/compiler/qbe/windows-x86_64")
-        for name in ["libkernel32.a", "libsynchronization.a", "libbcrypt.a", "libws2_32.a"]:
-            if exists(source_path("compiler/qbe/windows-x86_64/" + name)):
-                call copy_file(source_path("compiler/qbe/windows-x86_64/" + name), library + "/compiler/qbe/windows-x86_64/" + name)
-            end
         end
     end
 end

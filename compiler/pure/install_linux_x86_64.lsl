@@ -189,6 +189,7 @@ done += 1
 call report_progress(done, total)
 # Runtime a vrstvy architektury dalších cílů (lsl compile --target):
 # zkopíruje se, co balík obsahuje.
+call mkdir(prefix + "/lib/lsl/compiler/qbe/windows-x86_64")
 call mkdir(prefix + "/lib/lsl/compiler/qbe/windows-arm64")
 call mkdir(prefix + "/lib/lsl/runtime")
 call mkdir(prefix + "/lib/lsl/runtime/arch")

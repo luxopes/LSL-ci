@@ -17,7 +17,7 @@ nutná:
 Výchozí frontend a backend `bin/luxir` jsou napsané v LSL. Výchozí cíl je
 architektura balíku. Na Linuxu nepotřebuje překladač žádné další nástroje:
 assembler i linker jsou vestavěné v LuxIR (Linux x86_64, x86, arm, arm64,
-riscv64, bare metal RISC-V i moduly WebAssembly).
+riscv64, bare metal RISC-V, moduly WebAssembly i programy pro Windows).
 
 Na Windows obsahuje balík assembler a linker LLVM (`bin/llvm-mc.exe`,
 `bin/lld.exe`, licence v `LICENSE-LLVM.txt` a `LICENSE-lld.txt`); nic
@@ -55,8 +55,8 @@ bez libc a bez dynamického loaderu.
 | `linux-x86_64` | žádné (assembler i linker jsou vestavěné v LuxIR) |
 | `linux-arm64` | žádné (assembler i linker jsou vestavěné v LuxIR) |
 | `linux-riscv64` | žádné (assembler i linker jsou vestavěné v LuxIR) |
-| `windows-x86_64` | `binutils-mingw-w64-x86-64`, `mingw-w64-x86-64-dev` |
-| `windows-arm64` | `clang`, `lld` |
+| `windows-x86_64` | žádné (assembler i linker jsou vestavěné v LuxIR) |
+| `windows-arm64` | žádné (assembler i linker jsou vestavěné v LuxIR) |
 | `macos-x86_64`, `macos-arm64` | `clang`, `lld` (`ld64.lld`) |
 | `wasm32-wasi`, `wasm32-wasi-threads` | žádné (modul sestaví LuxIR) |
 | `baremetal-riscv64` | žádné (assembler i linker jsou vestavěné v LuxIR) |

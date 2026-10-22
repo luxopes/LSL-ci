@@ -8,13 +8,13 @@ BACKEND_TARGETS = {"linux-x86_64":"amd64_sysv","linux-arm64":"arm64","linux-risc
 # adresy symbolů relativně k PC (-p) a bez relaxace linkeru (runtime
 # nenastavuje gp).
 BACKEND_FLAGS = {"linux-x86_64":[],"linux-arm64":[],"linux-riscv64":["-p"],"windows-x86_64":[],"windows-arm64":[],"macos-x86_64":[],"macos-arm64":[],"wasm32-wasi":[],"wasm32-wasi-threads":["-g"],"baremetal-riscv64":["-p"],"linux-arm":[],"linux-x86":[]}
-ASSEMBLERS = {"linux-x86_64":["/usr/bin/as","/bin/as",["--64"]],"linux-x86":["/usr/bin/as","/bin/as",["--32"]],"linux-arm":["/usr/bin/arm-linux-gnueabihf-as","/usr/bin/as",["-march=armv7-a","-mfpu=vfpv3-d16","-mfloat-abi=hard"]],"linux-arm64":["/usr/bin/aarch64-linux-gnu-as","/usr/bin/as",[]],"linux-riscv64":["/usr/bin/riscv64-linux-gnu-as","/usr/bin/as",["-march=rv64gc"]],"windows-x86_64":["/usr/bin/x86_64-w64-mingw32-as","/usr/bin/x86_64-w64-mingw32-as",[]],"windows-arm64":["/usr/bin/clang","/usr/local/bin/clang",["--target=aarch64-windows-gnu","-c","-x","assembler"]],"macos-x86_64":["/usr/bin/clang","/usr/local/bin/clang",["-target","x86_64-apple-macos11","-c","-x","assembler"]],"macos-arm64":["/usr/bin/clang","/usr/local/bin/clang",["-target","arm64-apple-macos11","-c","-x","assembler"]]}
-LINKERS = {"linux-x86_64":["/usr/bin/ld","/bin/ld",[]],"linux-arm64":["/usr/bin/aarch64-linux-gnu-ld","/usr/bin/ld",[]],"linux-riscv64":["/usr/bin/riscv64-linux-gnu-ld","/usr/bin/ld",["--no-relax"]],"windows-x86_64":["/usr/bin/x86_64-w64-mingw32-ld","/usr/bin/x86_64-w64-mingw32-ld",["-nostdlib"]],"windows-arm64":["/usr/bin/ld.lld","/usr/local/bin/ld.lld",["-m","arm64pe"]],"macos-x86_64":["/usr/bin/ld64.lld","/usr/local/bin/ld64.lld",["-arch","x86_64","-platform_version","macos","11.0","11.0"]],"macos-arm64":["/usr/bin/ld64.lld","/usr/local/bin/ld64.lld",["-arch","arm64","-platform_version","macos","11.0","11.0"]],"linux-arm":["/usr/bin/arm-linux-gnueabihf-ld","/usr/bin/ld",["-m","armelf_linux_eabi"]],"linux-x86":["/usr/bin/ld","/bin/ld",["-m","elf_i386"]]}
+ASSEMBLERS = {"linux-x86_64":["/usr/bin/as","/bin/as",["--64"]],"linux-x86":["/usr/bin/as","/bin/as",["--32"]],"linux-arm":["/usr/bin/arm-linux-gnueabihf-as","/usr/bin/as",["-march=armv7-a","-mfpu=vfpv3-d16","-mfloat-abi=hard"]],"linux-arm64":["/usr/bin/aarch64-linux-gnu-as","/usr/bin/as",[]],"linux-riscv64":["/usr/bin/riscv64-linux-gnu-as","/usr/bin/as",["-march=rv64gc"]],"macos-x86_64":["/usr/bin/clang","/usr/local/bin/clang",["-target","x86_64-apple-macos11","-c","-x","assembler"]],"macos-arm64":["/usr/bin/clang","/usr/local/bin/clang",["-target","arm64-apple-macos11","-c","-x","assembler"]]}
+LINKERS = {"linux-x86_64":["/usr/bin/ld","/bin/ld",[]],"linux-arm64":["/usr/bin/aarch64-linux-gnu-ld","/usr/bin/ld",[]],"linux-riscv64":["/usr/bin/riscv64-linux-gnu-ld","/usr/bin/ld",["--no-relax"]],"macos-x86_64":["/usr/bin/ld64.lld","/usr/local/bin/ld64.lld",["-arch","x86_64","-platform_version","macos","11.0","11.0"]],"macos-arm64":["/usr/bin/ld64.lld","/usr/local/bin/ld64.lld",["-arch","arm64","-platform_version","macos","11.0","11.0"]],"linux-arm":["/usr/bin/arm-linux-gnueabihf-ld","/usr/bin/ld",["-m","armelf_linux_eabi"]],"linux-x86":["/usr/bin/ld","/bin/ld",["-m","elf_i386"]]}
 RUNTIME_OBJECTS = {"linux-x86_64":"runtime.o","linux-arm64":"runtime-linux-arm64.o","linux-riscv64":"runtime-linux-riscv64.o","windows-x86_64":"runtime-windows-x86_64.o","windows-arm64":"runtime-windows-arm64.o","macos-x86_64":"runtime-macos-x86_64.o","macos-arm64":"runtime-macos-arm64.o","wasm32-wasi":"runtime-wasm32-wasi.lir","wasm32-wasi-threads":"runtime-wasm32-wasi.lir","baremetal-riscv64":"runtime-baremetal-riscv64.o","linux-arm":"runtime-linux-arm.o","linux-x86":"runtime-linux-x86.o"}
-# Windows: importní knihovny Win32 (kernel32, WaitOnAddress, BCryptGenRandom,
-# Winsock): x86_64 z mingw-w64, arm64 vyrobené při sestavení runtime
-# (tools/runtime/build.py) vedle objektu runtime.
-WINDOWS_LIBRARIES = "/usr/x86_64-w64-mingw32/lib"
+# Windows: importy Win32 (kernel32, WaitOnAddress, BCryptGenRandom, Winsock)
+# jako soubory .def vedle objektu runtime (tools/runtime/build.py); linker
+# LuxIR z nich vytvoří tabulky importů.
+WINDOWS_IMPORTS = ["kernel32", "synchronization", "bcrypt", "ws2_32"]
 
 # Křížové binutils pro cíle ELF (prefix GNU triple).
 CROSS_PREFIXES = {"linux-x86_64":"x86_64-linux-gnu-","linux-x86":"i686-linux-gnu-","linux-arm":"arm-linux-gnueabihf-","linux-arm64":"aarch64-linux-gnu-","linux-riscv64":"riscv64-linux-gnu-"}
@@ -99,9 +99,9 @@ function lld_flavor(name):
 end
 
 # Cíle, které LuxIR sestaví i slinkuje sám (luxir -a, luxir -l): ELF
-# x86-64, i386, arm, arm64, riscv64 a obraz bare metal RISC-V. Nepotřebují
-# binutils.
-BUILTIN_ASSEMBLER = {"linux-x86_64":"amd64_sysv","linux-x86":"i386","linux-arm64":"arm64","linux-riscv64":"rv64","linux-arm":"arm","baremetal-riscv64":"rv64"}
+# x86-64, i386, arm, arm64, riscv64, obraz bare metal RISC-V a PE32+ pro
+# Windows x86-64 a arm64. Nepotřebují binutils ani LLVM.
+BUILTIN_ASSEMBLER = {"linux-x86_64":"amd64_sysv","linux-x86":"i386","linux-arm64":"arm64","linux-riscv64":"rv64","linux-arm":"arm","baremetal-riscv64":"rv64","windows-x86_64":"amd64_win","windows-arm64":"arm64_win"}
 
 # [assembler, příznaky před -o]: vestavěný assembler LuxIR pro ELF x86,
 # jinak podle hostitele (viz binutils_tool).
@@ -154,16 +154,17 @@ function linker_target_flags(name):
     return LINKERS[name][2]
 end
 
-function windows_libraries(name):
-    if name == "windows-arm64":
-        return host.resource_path("compiler/qbe/windows-arm64")
+# Soubory .def importů Win32 pro linker LuxIR.
+function windows_imports(name):
+    result = []
+    for library in WINDOWS_IMPORTS:
+        path = host.resource_path("compiler/qbe/" + name + "/" + library + ".def")
+        if not exists(path):
+            Error(CompileError: "Windows import definitions are missing: " + path + " (reinstall the LSL package)")
+        end
+        result.append(path)
     end
-    # Importní knihovny z balíku (vždy na Windows; na Linuxu bez MinGW).
-    bundled = host.resource_path("compiler/qbe/windows-x86_64")
-    if host_os() != "linux" or not exists(WINDOWS_LIBRARIES + "/libkernel32.a"):
-        return bundled
-    end
-    return WINDOWS_LIBRARIES
+    return result
 end
 
 # Backend není napevno zadaný: LSL_BACKEND je absolutní cesta k programu
@@ -311,16 +312,21 @@ function image(unit, selected, entry_source="", backend_path=""):
             # symboly absolutně, movw/movt). Jméno dočasného souboru se do
             # obrazu nedostane (LuxIR připojí .file "luxir").
             flags = ["-a", "-l", "-t", BUILTIN_ASSEMBLER[name]]
-            if selected["os"] == "baremetal":
+            inputs = ["-o", path, path + ".lir", runtime]
+            if selected["os"] == "windows":
+                # Konzolový program PE32+ s ASLR (high-entropy VA), DEP
+                # a zásobníkem 8 MiB, importy Win32 ze souborů .def.
+                inputs.extend(windows_imports(name))
+            elif selected["os"] == "baremetal":
                 # Obraz bez OS v rozložení desky (-b místo linker skriptu
                 # runtime/arch/baremetal_riscv64.ld): ET_EXEC od RAM, kód
                 # s adresami relativně k PC (-p), zásobníky a konec obrazu
                 # pro haldu.
                 flags = ["-a", "-l", "-b", "-p", "-t", BUILTIN_ASSEMBLER[name]]
-            elif name != "linux-x86" and name != "linux-arm":
+            elif selected["os"] == "linux" and name != "linux-x86" and name != "linux-arm":
                 flags = ["-a", "-l", "-p", "-t", BUILTIN_ASSEMBLER[name]]
             end
-            call invoke(backend, tool_arguments(flags, [], ["-o", path, path + ".lir", runtime]), "LuxIR backend")
+            call invoke(backend, tool_arguments(flags, [], inputs), "LuxIR backend")
         else:
             call invoke(backend, tool_arguments(["-t", BACKEND_TARGETS[name]], BACKEND_FLAGS[name], ["-o", path + ".s", path + ".lir"]), "LuxIR backend")
             # No private scratch filename is embedded in the resulting image.
@@ -336,12 +342,6 @@ function image(unit, selected, entry_source="", backend_path=""):
                 # statické programy ani přímá systémová volání. libSystem.tbd je
                 # textový stub, takže se linkuje bez SDK.
                 call invoke(linker, tool_arguments(linking[1], [], ["-dead_strip", "-x", "-o", path, path + ".o", runtime, host.resource_path("compiler/qbe/libSystem.tbd")]), "linker")
-            elif selected["os"] == "windows":
-                # PE konzolový program s ASLR a DEP. Zásobník hlavního vlákna je
-                # celý zpřístupněný (8 MiB jako na Linuxu): LuxIR na Windows
-                # nesonduje zásobník po stránkách. Bez časového razítka, aby
-                # obraz byl reprodukovatelný.
-                call invoke(linker, tool_arguments(linking[1], ["-e", "_start", "--subsystem", "console", "--dynamicbase", "--high-entropy-va", "--nxcompat", "--stack", "8388608,8388608", "--no-insert-timestamp", "--gc-sections", "-s"], ["-o", path, path + ".o", runtime, "-L" + windows_libraries(name), "-lkernel32", "-lsynchronization", "-lbcrypt", "-lws2_32"]), "linker")
             elif selected["image_format"] == "elf32-linux":
                 # 32bitový cíl: statický obraz ELF bez PIE (arm adresuje
                 # symboly absolutně, movw/movt).
