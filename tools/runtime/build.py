@@ -19,7 +19,7 @@ TARGETS = {
     'linux-x86_64': ('amd64_sysv', [], 'luxir', [], None, 'linux_x86_64', 'runtime.o'),
     'linux-arm64': ('arm64', [], 'luxir', [], None, 'linux_arm64', 'runtime-linux-arm64.o'),
     'linux-riscv64': ('rv64', ['-p'], 'luxir', [], None, 'linux_riscv64', 'runtime-linux-riscv64.o'),
-    'baremetal-riscv64': ('rv64', ['-p'], 'riscv64-linux-gnu-as', ['-march=rv64gc'], 'riscv64-linux-gnu-ld', 'baremetal_riscv64', 'runtime-baremetal-riscv64.o'),
+    'baremetal-riscv64': ('rv64', ['-p'], 'luxir', [], None, 'baremetal_riscv64', 'runtime-baremetal-riscv64.o'),
     'windows-x86_64': ('amd64_win', [], 'x86_64-w64-mingw32-as', [], 'x86_64-w64-mingw32-ld', 'windows_x86_64', 'runtime-windows-x86_64.o'),
     # Windows arm64: clang jako assembler COFF; ld.lld (MinGW) neumí -r.
     'windows-arm64': ('arm64_win', [], 'clang', ['--target=aarch64-windows-gnu', '-c', '-x', 'assembler'], None, 'windows_arm64', 'runtime-windows-arm64.o'),

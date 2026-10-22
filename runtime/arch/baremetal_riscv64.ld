@@ -2,7 +2,10 @@
    Sekce začínají na stránce kvůli oprávněním stránkování (kód R+X, data
    jen pro čtení R, ostatní RW). Pod hlavním zásobníkem (8 MiB) a pod
    zásobníky pastí hartů je nenamapovaná strážní stránka. Od lsl_image_end
-   spravuje paměť runtime (os_baremetal.lsl). */
+   spravuje paměť runtime (os_baremetal.lsl).
+   Překladač tento skript nepoužívá: stejné rozložení vytváří vestavěný
+   linker LuxIR (luxir -l -b, src/ld/ld.c), jehož test ho s GNU ld
+   porovnává. Při změně rozložení upravit obojí. */
 OUTPUT_ARCH(riscv)
 ENTRY(_start)
 SECTIONS

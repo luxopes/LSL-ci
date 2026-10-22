@@ -63,7 +63,7 @@ binutils nepotřebuje.
 | `windows-arm64` | `clang`, `lld` |
 | `macos-x86_64`, `macos-arm64` | `clang`, `lld` (`ld64.lld`) |
 | `wasm32-wasi`, `wasm32-wasi-threads` | `wabt` |
-| `baremetal-riscv64` | `binutils-riscv64-linux-gnu` |
+| `baremetal-riscv64` | žádné (assembler i linker jsou vestavěné v LuxIR) |
 | `linux-x86` | žádné (assembler i linker jsou vestavěné v LuxIR) |
 | `linux-arm` | žádné (assembler i linker jsou vestavěné v LuxIR) |
 
