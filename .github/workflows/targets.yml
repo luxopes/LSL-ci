@@ -20,12 +20,6 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Cross binutils
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq binutils-aarch64-linux-gnu binutils-arm-linux-gnueabihf clang lld
-          # Linker Mach-O (macOS) z LLVM pod jménem, které hledá kompilátor.
-          sudo ln -sf $(ls /usr/lib/llvm-*/bin/ld64.lld | sort -V | tail -1) /usr/bin/ld64.lld
       - name: Compiler from the bootstrap
         run: |
           mkdir -p build/ci
@@ -43,23 +37,9 @@ jobs:
           for target in windows-x86_64 windows-arm64 linux-arm64 linux-riscv64 macos-x86_64 macos-arm64 wasm32-wasi baremetal-riscv64; do
             python3 tools/runtime/build.py --compiler build/ci/lslc --target $target --bootstrap-runtime compiler/qbe/runtime.o
           done
-          # 32bitové cíle: backendy LuxIR arm a i386 (binutils, bez C).
+          # 32bitové cíle: backendy LuxIR arm a i386 z připnutého zdroje.
           for target in linux-arm linux-x86; do
             python3 tools/runtime/build.py --compiler build/ci/lslc --target $target --backend build/ci/luxir --bootstrap-runtime compiler/qbe/runtime.o
-          done
-      - name: LLVM tools for Windows packages
-        run: |
-          set -e
-          for spec in x86_64:f229769f11d6a6edc8ada599c0cda964b7dee6ab1a08c6cf9dd7f513e85b107f aarch64:0df3e81e8fe26370dd2b60b9e009d81cd130d3fdc41b257434aa663c5d9f0c13; do
-            arch=${spec%%:*}; sum=${spec#*:}
-            file=clang+llvm-20.1.8-$arch-pc-windows-msvc.tar.xz
-            curl -sSfL -o $file https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.8/$file
-            echo "$sum  $file" | sha256sum -c -
-            mkdir -p llvm-$arch
-            tar -xJf $file --strip-components=2 -C llvm-$arch --wildcards '*/bin/llvm-mc.exe' '*/bin/lld.exe'
-            rm $file
-            curl -sSfL -o llvm-$arch/LICENSE-LLVM.txt https://raw.githubusercontent.com/llvm/llvm-project/llvmorg-20.1.8/llvm/LICENSE.TXT
-            curl -sSfL -o llvm-$arch/LICENSE-lld.txt https://raw.githubusercontent.com/llvm/llvm-project/llvmorg-20.1.8/lld/LICENSE.TXT
           done
       - name: Manual for the native packages (published manual archive)
         run: |
@@ -70,11 +50,8 @@ jobs:
           printf '{"repository": "ci", "note": "manual from lsl-0.10.0-manual.zip for CI packages"}\n' > build/manual-source/SOURCE.json
       - name: Native compiler packages (Windows, macOS)
         run: |
-          for spec in windows-x86_64:x86_64 windows-arm64:aarch64 macos-x86_64: macos-arm64:; do
-            name=${spec%%:*}; arch=${spec#*:}
-            extra=""
-            if [ -n "$arch" ]; then extra="--llvm llvm-$arch"; fi
-            python3 tools/release/build_target_tools.py --target $name --output native/$name --compiler build/ci/lslc --backend compiler/pure/luxir --layout $extra
+          for name in windows-x86_64 windows-arm64 macos-x86_64 macos-arm64; do
+            python3 tools/release/build_target_tools.py --target $name --output native/$name --compiler build/ci/lslc --backend compiler/pure/luxir --layout
           done
       - uses: actions/upload-artifact@v4
         with:

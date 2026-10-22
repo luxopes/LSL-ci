@@ -8,10 +8,10 @@ fixed points. The output directory receives bin/ with lslc, luxir, lsl,
 lsl-install and lsl-configure (plus lsl-test on Linux; .exe on Windows).
 
 --layout also assembles lib/lsl like an installed package: compiler sources,
-standard library, the runtimes of all targets, the wasm and bare metal
-runners and the pinned manual. Windows packages need --llvm DIR with
-llvm-mc.exe, lld.exe and the LLVM licence texts for that architecture:
-programs are assembled and linked with them on Windows.
+standard library, the runtimes of all targets with the Windows import
+definitions, the wasm and bare metal runners and the pinned manual. No
+assembler or linker is bundled: luxir assembles and links programs for
+every target itself.
 """
 import argparse
 import hashlib
@@ -32,7 +32,7 @@ def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def layout(output, llvm, windows):
+def layout(output):
     library = output / 'lib' / 'lsl'
     copies = [(ROOT / 'compiler/pure', library / 'compiler/pure', '*.lsl'),
               (ROOT / 'stdlib', library / 'stdlib', '*.lsl'),
@@ -59,11 +59,6 @@ def layout(output, llvm, windows):
     (library / 'tools').mkdir(parents=True, exist_ok=True)
     for name in ('wasi_run.mjs', 'baremetal_run.py'):
         shutil.copy2(ROOT / 'tools' / name, library / 'tools' / name)
-    if windows:
-        for name in ('llvm-mc.exe', 'lld.exe'):
-            shutil.copy2(llvm / name, output / 'bin' / name)
-        for name in ('LICENSE-LLVM.txt', 'LICENSE-lld.txt'):
-            shutil.copy2(llvm / name, output / name)
 
 
 def main():
@@ -73,11 +68,8 @@ def main():
     parser.add_argument('--compiler', type=Path, default=ROOT / 'compiler/lslc')
     parser.add_argument('--backend', type=Path, default=ROOT / 'compiler/pure/luxir')
     parser.add_argument('--layout', action='store_true', help='also assemble lib/lsl')
-    parser.add_argument('--llvm', type=Path, help='directory with llvm-mc.exe, lld.exe and licences (Windows)')
     args = parser.parse_args()
     windows = args.target.startswith('windows-')
-    if args.layout and windows and not args.llvm:
-        parser.error('Windows packages need --llvm')
     lock = json.loads((ROOT / 'release.json').read_text())
     backend_source = Path(lock['backend']['directory']) / 'lsl/luxir.lsl'
     if not (ROOT / backend_source).is_file():
@@ -106,7 +98,7 @@ def main():
         report['artifacts'][name + suffix] = digest(target_file)
         print(name + suffix, report['artifacts'][name + suffix], flush=True)
     if args.layout:
-        layout(output, args.llvm.resolve() if args.llvm else None, windows)
+        layout(output)
     (output / 'build.json').write_text(json.dumps(report, indent=2) + '\n')
     return 0
 

@@ -3,7 +3,6 @@
 # zatím jen na Linuxu). Výchozí prefix: macOS /usr/local, Windows
 # %LOCALAPPDATA%/Programs/LSL. Cesty používají "/".
 load _platform as platform
-load fd
 load install_files
 
 function windows():
@@ -102,26 +101,6 @@ function copy_file(source, destination):
     call writebytes(destination, readbytes(source))
 end
 
-# Kopie po 1 MiB (nástroje LLVM jsou větší než limit readbytes 64 MiB).
-function copy_large(source, destination):
-    if not exists(source):
-        Error(InstallError: "package file is missing: " + source)
-    end
-    reader = fd.open(source, platform.O_RDONLY)
-    writer = fd.open(destination, platform.O_WRONLY + platform.O_CREAT + platform.O_TRUNC)
-    buffer = __lsl_byte_zeros(1048576)
-    while True:
-        count = fd.read(reader, buffer, len(buffer))
-        if count <= 0:
-            break
-        end
-        # fd.write zapíše celý počet bajtů, jinak hlásí FileError.
-        call fd.write(writer, buffer, count)
-    end
-    call fd.close(reader)
-    call fd.close(writer)
-end
-
 prefix = arg(1)
 if prefix == None:
     prefix = default_prefix()
@@ -151,14 +130,6 @@ binary_directory = dirname(program_path())
 tools = ["lsl", "lslc", "luxir", "lsl-configure", "lsl-install"]
 for name in tools:
     call copy_file(binary_directory + "/" + executable_name(name), prefix + "/bin/" + executable_name(name))
-end
-# Windows: assembler a linker LLVM dodané v balíku.
-if windows():
-    for name in ["llvm-mc.exe", "lld.exe"]:
-        if exists(binary_directory + "/" + name):
-            call copy_large(binary_directory + "/" + name, prefix + "/bin/" + name)
-        end
-    end
 end
 call copy_file(source_path("compiler/qbe/runtime.o"), library + "/compiler/qbe/runtime.o")
 for name in install_files.TARGET_FILES:

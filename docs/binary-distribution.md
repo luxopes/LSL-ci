@@ -15,15 +15,10 @@ nutná:
 ```
 
 Výchozí frontend a backend `bin/luxir` jsou napsané v LSL. Výchozí cíl je
-architektura balíku. Na Linuxu nepotřebuje překladač žádné další nástroje:
-assembler i linker jsou vestavěné v LuxIR (Linux x86_64, x86, arm, arm64,
-riscv64, bare metal RISC-V, moduly WebAssembly i programy pro Windows).
-
-Na Windows obsahuje balík assembler a linker LLVM (`bin/llvm-mc.exe`,
-`bin/lld.exe`, licence v `LICENSE-LLVM.txt` a `LICENSE-lld.txt`); nic
-dalšího se instalovat nemusí (`bin\lsl.exe version`, `bin\lsl-install.exe`
-nainstaluje do `%LOCALAPPDATA%\Programs\LSL`). Na macOS potřebuje překladač
-Xcode Command Line Tools (`xcode-select --install`).
+architektura balíku. Překladač nepotřebuje na žádném systému další
+nástroje: assembler i linker jsou vestavěné v LuxIR pro všechny cíle (Linux,
+Windows, macOS, bare metal RISC-V i WebAssembly), bez binutils, LLVM a Xcode.
+Na Windows `bin\lsl-install.exe` nainstaluje do `%LOCALAPPDATA%\Programs\LSL`.
 
 Binárky nejsou podepsané certifikátem vývojáře ani notarizované:
 
@@ -57,7 +52,7 @@ bez libc a bez dynamického loaderu.
 | `linux-riscv64` | žádné (assembler i linker jsou vestavěné v LuxIR) |
 | `windows-x86_64` | žádné (assembler i linker jsou vestavěné v LuxIR) |
 | `windows-arm64` | žádné (assembler i linker jsou vestavěné v LuxIR) |
-| `macos-x86_64`, `macos-arm64` | `clang`, `lld` (`ld64.lld`) |
+| `macos-x86_64`, `macos-arm64` | žádné (assembler i linker jsou vestavěné v LuxIR) |
 | `wasm32-wasi`, `wasm32-wasi-threads` | žádné (modul sestaví LuxIR) |
 | `baremetal-riscv64` | žádné (assembler i linker jsou vestavěné v LuxIR) |
 | `linux-x86` | žádné (assembler i linker jsou vestavěné v LuxIR) |
@@ -113,7 +108,7 @@ reprodukujete offline přímo:
 ```text
 python3 tools/release/build_release.py
 python3 tools/release/build_target_tools.py --target linux-arm64 --output /tmp/arm64 --layout
-python3 tools/release/build_target_tools.py --target windows-x86_64 --output /tmp/win --layout --llvm DIR
+python3 tools/release/build_target_tools.py --target windows-x86_64 --output /tmp/win --layout
 ```
 
 Runtime ostatních cílů sestaví `tools/runtime/build.py --target NAME`.

@@ -27,10 +27,9 @@ TARGETS = {
     # ho přeloží spolu s programem do jednoho modulu (vrstva architektury
     # runtime/arch/wasi_wasm32.wat).
     'wasm32-wasi': ('wasm32', [], None, [], None, 'wasi_wasm32', 'runtime-wasm32-wasi.lir'),
-    # macOS: clang jako assembler Mach-O; ld64.lld neumí -r, proto se vrstva
-    # architektury a runtime spojí už jako assembler (linker None).
-    'macos-x86_64': ('amd64_apple', [], 'clang', ['-target', 'x86_64-apple-macos11', '-c', '-x', 'assembler'], None, 'macos_x86_64', 'runtime-macos-x86_64.o'),
-    'macos-arm64': ('arm64_apple', [], 'clang', ['-target', 'arm64-apple-macos11', '-c', '-x', 'assembler'], None, 'macos_arm64', 'runtime-macos-arm64.o'),
+    # macOS: vestavěný assembler LuxIR zapisuje objekty Mach-O.
+    'macos-x86_64': ('amd64_apple', [], 'luxir', [], None, 'macos_x86_64', 'runtime-macos-x86_64.o'),
+    'macos-arm64': ('arm64_apple', [], 'luxir', [], None, 'macos_arm64', 'runtime-macos-arm64.o'),
     # 32bitové cíle: backend LuxIR arm/i386, k runtime pomocné funkce
     # 64bitového dělení a převodů (runtime/arch/w32_helpers.lir).
     'linux-arm': ('arm', [], 'luxir', [], None, 'linux_arm', 'runtime-linux-arm.o'),
@@ -115,6 +114,11 @@ def main():
         if luxir_target in ('arm', 'i386'):
             run(backend, '-t', luxir_target, '-o', build / 'helpers.s', ROOT / 'runtime/arch/w32_helpers.lir')
             sources.append(build / 'helpers.s')
+        if a.target.startswith('macos-'):
+            # Mach-O: každý symbol ve vlastní podsekci (linker vypustí
+            # nepoužité funkce).
+            (build / 'subsections.s').write_text('.subsections_via_symbols\n')
+            sources.append(build / 'subsections.s')
         run(assembler, *as_flags, '-o', build / 'runtime.o', *sources)
         shutil.copyfile(build / 'runtime.o', output)
         if a.target.startswith('windows-'):
