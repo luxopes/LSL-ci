@@ -13,11 +13,11 @@ Použití:
   target_tests.py run DIR
   target_tests.py native PACKAGE DIR
 """
-import argparse, concurrent.futures, json, os, pathlib, subprocess, sys
+import argparse, concurrent.futures, json, os, pathlib, platform, subprocess, sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tests'))
-from cross_targets import skip_reason  # noqa: E402
+from cross_targets import skip_reason, EMULATED_SKIP  # noqa: E402
 
 
 def run(command, timeout):
@@ -135,9 +135,15 @@ def native(a):
     failures = 0
 
     extensions = {path.stem for path in (ROOT / 'extensions').glob('*.lsl')}
+    # Balík jiné architektury běží pod qemu-user (binfmt): testy, které tam
+    # nemají smysl (seccomp, RSS samotného qemu), se přeskočí jako v build.
+    machines = {'linux-arm64': {'aarch64', 'arm64'}, 'linux-riscv64': {'riscv64'}, 'linux-arm': {'armv7l', 'armv6l', 'aarch64'}}
+    emulated = manifest['target'] in machines and platform.machine() not in machines[manifest['target']]
 
     def one(test):
         source = ROOT / 'tests' / test['name']
+        if emulated and test['name'] in EMULATED_SKIP:
+            return test['name'], 'skip', EMULATED_SKIP[test['name']].encode()
         loads = {line.split()[1] for line in source.read_text(encoding='utf-8').splitlines()
                  if line.startswith('load ') and len(line.split()) > 1}
         if loads & extensions:

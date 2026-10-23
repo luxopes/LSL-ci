@@ -10,6 +10,7 @@ for index in rang(40):
 end
 call gc()
 # Od 0.10 eviduje objekty bitmapa začátků objektů, tabulka objektů už
-# s počtem objektů neroste; roste tabulka internovaných literálů.
-print __lsl_intern_table_mask() >= 15
+# s počtem objektů neroste; od 0.10.5 se literály při startu kopírují bez
+# internovací tabulky, malé tabulky tedy nesmí vadit ani po úklidu.
+print __lsl_intern_table_mask() >= 7
 print objects[39][0], texts[11], remembered()

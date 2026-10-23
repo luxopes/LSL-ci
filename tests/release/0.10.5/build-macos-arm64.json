@@ -1,0 +1,12 @@
+{
+  "target": "macos-arm64",
+  "compiler_sha256": "2343204b7a3bfd451476d39889cb44791e660360dc5c161355c504e77e5b4aba",
+  "backend_sha256": "8fbf29c215697464f0de7b59bebf57328cb9125dc7ba0e5cfb5715b02c96b3ee",
+  "artifacts": {
+    "lslc": "bb6f3ee7137a6f051b519112c6ff0f0a03e5d78626606758f601d85d291b4248",
+    "luxir": "42ead922f3f25430dcf4f45638315ccc6266cb460cf30a1b7d70bb8ac5cbcad9",
+    "lsl": "92c1ac53a2d803ac63bd0cd8f6ce575b970409646b890237a019740815232caf",
+    "lsl-install": "7be0b82ae4abb4f6b7fe5d213a26c0c1a74ed30f86e1f80e95392214dd2c3b24",
+    "lsl-configure": "261242e61e2fcf671fcb3237ce2496bd1a093bad744780fdf9865de107162844"
+  }
+}
