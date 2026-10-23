@@ -168,6 +168,8 @@ end
 
 # Hledání po bajtech UTF-8: index znaku by se pokaždé počítal od začátku
 # Stringu (kvadratická složitost). Shoda bajtů platného UTF-8 je shodou znaků.
+# Překladač volání této funkce nahradí runtime rt_runtime_text_search (těsná
+# smyčka nad pamětí); tělo zde slouží starším překladačům při sestavení.
 function __lsl_byte_search(text, needle, start_byte):
     text_bytes = __lsl_text_byte_length(text)
     needle_bytes = __lsl_text_byte_length(needle)
@@ -196,6 +198,8 @@ function __lsl_byte_search(text, needle, start_byte):
 end
 
 # Počet znaků v bajtech [start_byte, stop_byte): bajty mimo 10xxxxxx.
+# Počet znaků v bajtech [start_byte, stop_byte): bajty mimo 10xxxxxx.
+# Překladač volání nahradí runtime rt_runtime_text_char_count.
 function __lsl_byte_char_count(text, start_byte, stop_byte):
     count = 0
     position = start_byte
@@ -280,6 +284,32 @@ function __lsl_strip(text):
     return __lsl_rstrip(__lsl_lstrip(text))
 end
 
+# strip(znaky): odstraní ze začátku/konce všechny znaky uvedené v chars
+# (jako Python; prázdné chars nemění nic).
+function __lsl_lstrip_chars(text, chars):
+    text = __lsl_require_string(text)
+    chars = __lsl_require_string_value(chars)
+    start = 0
+    while start < len(text) and __lsl_byte_search(chars, text[start], 0) >= 0:
+        start += 1
+    end
+    return text[start:len(text)]
+end
+
+function __lsl_rstrip_chars(text, chars):
+    text = __lsl_require_string(text)
+    chars = __lsl_require_string_value(chars)
+    stop = len(text)
+    while stop > 0 and __lsl_byte_search(chars, text[stop - 1], 0) >= 0:
+        stop -= 1
+    end
+    return text[0:stop]
+end
+
+function __lsl_strip_chars(text, chars):
+    return __lsl_rstrip_chars(__lsl_lstrip_chars(text, chars), chars)
+end
+
 function __lsl_find(text, needle):
     text = __lsl_require_string(text)
     needle = __lsl_require_string_value(needle)
@@ -358,6 +388,8 @@ function __lsl_help_text(topic):
         "FloatArray": "FloatArray() creates a packed Float64 array; FloatArray(existing) is a checked cast.",
         "ByteArray": "ByteArray() creates a byte array (0..255); ByteArray(existing) is a checked cast.",
         "RealArray": "RealArray(VALUE)\nCreate a fixed-length sequence. Elements can change; the length cannot.\nLiteral: ![1, 2, 3]. See lsl man collections.",
+        "eprint": "eprint(VALUE)\nWrite String(VALUE) and a newline to standard error (usage messages, diagnostics). Pending print output is flushed first.",
+        "listdir": "listdir(PATH) -> List\nNames of directory entries without . and .. in unspecified order (use sorted). FileError when the directory cannot be read.",
         "readfile": "readfile(PATH) -> String\nRead a UTF-8 text file. For bounded reads, load fd and use fd.read_text_limit.",
         "writefile": "writefile(PATH, TEXT)\nWrite text to a file, replacing existing contents.",
         "appendfile": "appendfile(PATH, TEXT)\nAppend text to a file.",
@@ -385,6 +417,8 @@ function __lsl_help_text(topic):
         "gtk": "load gtk\nGTK 3 windows and widgets over the GLib main loop; target linux-x86_64-gnu. See lsl man gtk.",
         "glib": "load glib\nGLib main loop, timers, UNIX signals, spawn and GObject signals; target linux-x86_64-gnu. See lsl man gtk.",
         "gio": "load gio\nD-Bus over GIO: calls, properties, signals and name watching; target linux-x86_64-gnu. See lsl man gtk.",
+        "cairo": "load cairo\nCairo 2D drawing in GTK draw handlers or into image surfaces; target linux-x86_64-gnu. See lsl man gtk.",
+        "pango": "load pango\nPango text layout over cairo: system fonts, wrapping, ellipsis and markup; target linux-x86_64-gnu. See lsl man gtk.",
         "math": "load math\nMathematical constants and numeric functions. See lsl man --plain reference.",
         "bigint": "load bigint\nArbitrary-precision integer arithmetic. Construct bigint.BigInt(VALUE).",
         "ai": "load ai\nAI service client utilities; see lsl man ai.",
@@ -396,7 +430,7 @@ function __lsl_help_text(topic):
     if topic == "":
         names = topics.keys()
         call names.sort()
-        return "Lux Simple Lang (LSL) 0.10.5" + chr(10) + "Use help(\"TOPIC\") for details; lsl man opens the full offline manual." + chr(10) + "topics: " + " ".join(names)
+        return "Lux Simple Lang (LSL) 0.10.6" + chr(10) + "Use help(\"TOPIC\") for details; lsl man opens the full offline manual." + chr(10) + "topics: " + " ".join(names)
     end
     about = __lsl_library_about(topic)
     if topic not in topics:
@@ -435,6 +469,8 @@ function __lsl_about_table():
         "gtk": "gtk: GTK 3 windows, widgets and signal handlers over the GLib main loop (target linux-x86_64-gnu).",
         "glib": "glib: GLib main loop, timers, UNIX signals, process spawning and GObject signals (target linux-x86_64-gnu).",
         "gio": "gio: D-Bus over GIO: method calls, properties, signals, name watching and ownership (target linux-x86_64-gnu).",
+        "cairo": "cairo: 2D drawing with Cairo in GTK draw handlers or into PNG images (target linux-x86_64-gnu).",
+        "pango": "pango: text layout with system fonts, wrapping, ellipsis and markup over cairo (target linux-x86_64-gnu).",
         "env": "env: process environment with automatic runtime .env loading beside the script/executable. Exported values take precedence; get, has, require and load_dotenv.",
         "config": "config: helpers for declarative configuration modules evaluated by lsl config.",
         "configure": "configure: generates the native configuration evaluator wrapper for a module graph (used by lsl-configure).",
@@ -516,7 +552,7 @@ function __lsl_about_text(name):
         Error(TypeError: "about name must be a String")
     end
     if name == "":
-        return "Lux Simple Lang (LSL) 0.10.5" + chr(10) + "A small self-hosted programming language: the compiler runs on Linux, Windows and macOS, translates to LuxIR and builds native programs without libc for Linux (x86_64, arm64, riscv64), Windows, macOS, WebAssembly and bare metal RISC-V. Programs read like scripts, run as native code, and can use declarative configuration, AI clients, GUI packages and optional CUDA tensors." + chr(10) + "Website and manual: https://lsl.lux-ai.cz/  (offline: lsl man)" + chr(10) + "License: MIT"
+        return "Lux Simple Lang (LSL) 0.10.6" + chr(10) + "A small self-hosted programming language: the compiler runs on Linux, Windows and macOS, translates to LuxIR and builds native programs without libc for Linux (x86_64, arm64, riscv64), Windows, macOS, WebAssembly and bare metal RISC-V. Programs read like scripts, run as native code, and can use declarative configuration, AI clients, GUI packages and optional CUDA tensors." + chr(10) + "Website and manual: https://lsl.lux-ai.cz/  (offline: lsl man)" + chr(10) + "License: MIT"
     end
     about = __lsl_library_about(name)
     if about == "":

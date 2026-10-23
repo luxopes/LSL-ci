@@ -333,7 +333,9 @@ lsl_arch_threads:
 # Přípona udává pozici user_data: bez přípony první (G_CONNECT_SWAPPED,
 # GSourceFunc), _u3 třetí (GAsyncReadyCallback, GChildWatchFunc), _u4
 # čtvrtá (GBusNameAppearedCallback), _u7 sedmá (GDBusSignalCallback,
-# na zásobníku). Zarovnání zásobníku při volání drží push/sub.
+# na zásobníku), _u8 osmá s vynecháním prvního argumentu
+# (GDBusInterfaceMethodCallFunc: spojení zná volající). Zarovnání zásobníku
+# při volání drží push/sub.
 	.globl lsl_arch_callback
 	.p2align 4
 lsl_arch_callback:
@@ -392,6 +394,23 @@ lsl_arch_callback_u7:
 	mov %rsi, %rdx
 	mov %rdi, %rsi
 	mov %rax, %rdi
+	mov lsl_arch_callback_slot(%rip), %rax
+	call *%rax
+	mov %rax, %rdi
+	call rt_runtime_unbox_dynamic_int
+	add $16, %rsp
+	pop %rbx
+	ret
+
+	.globl lsl_arch_callback_u8
+	.p2align 4
+lsl_arch_callback_u8:
+	# (a1..a6, a7 a data na zásobníku) -> (data, a2..a6, a7 na zásobníku)
+	push %rbx
+	sub $8, %rsp
+	mov 24(%rsp), %rax
+	push %rax
+	mov 40(%rsp), %rdi
 	mov lsl_arch_callback_slot(%rip), %rax
 	call *%rax
 	mov %rax, %rdi

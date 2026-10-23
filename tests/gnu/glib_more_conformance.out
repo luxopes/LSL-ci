@@ -1,0 +1,14 @@
+True
+8 True True True True True
+True True
+2026-10-23|5|296 True
+True True
+29 28 31 5 7
+True
+0 -1
+True True
+/tmp/a b True file:///tmp/a%20b
+'a b'\''c' True True True
+exec ok 0
+True
+['high', 'seconds']

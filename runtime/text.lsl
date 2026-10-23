@@ -96,6 +96,53 @@ end
 
 # __lsl_text_piece: nový String z bajtů [start, start + count), ořezaný;
 # prázdný mimo rozsah nebo pro jiný typ než String.
+# Hledání bajtů needle v text od bajtu start_byte (String.find, split,
+# replace): index bajtu nálezu, nebo -1. Prázdné needle se najde na start_byte.
+function rt_runtime_text_search(text, needle, start_byte):
+    text_bytes = __lsl_qbe_load64(text + 8)
+    needle_bytes = __lsl_qbe_load64(needle + 8)
+    if start_byte < 0:
+        start_byte = 0
+    end
+    if needle_bytes == 0:
+        if start_byte <= text_bytes:
+            return start_byte
+        end
+        return -1
+    end
+    first = __lsl_qbe_load8(needle + 16)
+    position = text + 16 + start_byte
+    limit = text + 16 + text_bytes - needle_bytes
+    while position <= limit:
+        if __lsl_qbe_load8(position) == first:
+            offset = 1
+            while offset < needle_bytes and __lsl_qbe_load8(position + offset) == __lsl_qbe_load8(needle + 16 + offset):
+                offset += 1
+            end
+            if offset == needle_bytes:
+                return position - (text + 16)
+            end
+        end
+        position += 1
+    end
+    return -1
+end
+
+# Počet znaků UTF-8 v bajtech [start_byte, stop_byte): bajty mimo 10xxxxxx.
+function rt_runtime_text_char_count(text, start_byte, stop_byte):
+    count = 0
+    position = text + 16 + start_byte
+    stop = text + 16 + stop_byte
+    while position < stop:
+        byte = __lsl_qbe_load8(position)
+        if byte < 128 or byte >= 192:
+            count += 1
+        end
+        position += 1
+    end
+    return count
+end
+
 function rt_runtime_text_piece(text, start, count):
     if not rt_runtime_heap_type_valid(text, core.TAG_STRING):
         return string_from(0, 0)

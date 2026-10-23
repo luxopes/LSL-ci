@@ -280,6 +280,17 @@ function rt_runtime_isatty(fd):
     return os.is_terminal(fd)
 end
 
+# eprint: text na stderr; čekající stdout jde ven dřív, aby pořadí zpráv
+# na terminálu odpovídalo programu.
+function rt_runtime_write_stderr(text):
+    call rt_runtime_stdout_flush()
+    call rt_runtime_write_all(2, text + 16, __lsl_qbe_load64(text + 8))
+    newline = __lsl_qbe_alloc(8)
+    __lsl_qbe_store8(newline, 10)
+    call rt_runtime_write_all(2, newline, 1)
+    return 0
+end
+
 # --- Celé soubory ---
 
 # Zavře deskriptor po chybě čtení.
@@ -288,14 +299,19 @@ function read_failed(fd):
     return file_error("FileError: cannot read file")
 end
 
-# Velikost souboru (lseek na konec a zpět), nebo -1 při chybě či nad limitem.
+# Velikost souboru (lseek na konec a zpět), nebo -1 nad limitem. Soubor bez
+# známé velikosti (procfs, sysfs, roura: lseek selže nebo hlásí 0) dá 0 a
+# čte se po blocích až do konce.
 function whole_file_size(fd):
     size = os.lseek(fd, 0, SEEK_END)
-    if size < 0 or size > WHOLE_FILE_LIMIT:
+    if size < 0:
+        return 0
+    end
+    if size > WHOLE_FILE_LIMIT:
         return -1
     end
     if os.lseek(fd, 0, SEEK_SET) < 0:
-        return -1
+        return 0
     end
     return size
 end
@@ -315,6 +331,73 @@ function read_up_to(fd, buffer, size):
     return total
 end
 
+# Soubor s hlášenou velikostí 0 (procfs, sysfs, roury): čte po blocích až
+# do konce a text roste zdvojnásobením kapacity.
+function read_unsized_text(fd):
+    capacity = 4096
+    content = __lsl_qbe_call1(__lsl_symbol("rt_runtime_alloc"), capacity + 17)
+    __lsl_qbe_store64(content, core.TAG_STRING)
+    length = 0
+    reading = 1
+    while reading != 0:
+        if length == capacity:
+            if capacity >= WHOLE_FILE_LIMIT:
+                return read_failed(fd)
+            end
+            capacity = __lsl_qbe_shl(capacity, 1)
+            grown = __lsl_qbe_call1(__lsl_symbol("rt_runtime_alloc"), capacity + 17)
+            __lsl_qbe_store64(grown, core.TAG_STRING)
+            call text.copy_bytes(grown + 16, content + 16, length)
+            content = grown
+        end
+        got = os.read(fd, content + 16 + length, capacity - length)
+        if got < 0:
+            return read_failed(fd)
+        elif got == 0:
+            reading = 0
+        else:
+            length += got
+        end
+    end
+    __lsl_qbe_store64(content + 8, length)
+    __lsl_qbe_store8(content + 16 + length, 0)
+    call os.close(fd)
+    return content
+end
+
+# Totéž pro ByteArray: data v samostatném bloku, který při růstu nahradí větší.
+function read_unsized_bytes(fd):
+    capacity = 4096
+    array = __lsl_qbe_call0(__lsl_symbol("rt_runtime_byte_array_new"))
+    __lsl_qbe_store64(array + text.ARRAY_DATA, __lsl_qbe_call1(__lsl_symbol("rt_runtime_alloc_raw"), capacity))
+    __lsl_qbe_store64(array + 16, capacity)
+    length = 0
+    reading = 1
+    while reading != 0:
+        if length == capacity:
+            if capacity >= WHOLE_FILE_LIMIT:
+                return read_failed(fd)
+            end
+            capacity = __lsl_qbe_shl(capacity, 1)
+            grown = __lsl_qbe_call1(__lsl_symbol("rt_runtime_alloc_raw"), capacity)
+            call text.copy_bytes(grown, __lsl_qbe_load64(array + text.ARRAY_DATA), length)
+            __lsl_qbe_store64(array + text.ARRAY_DATA, grown)
+            __lsl_qbe_store64(array + 16, capacity)
+        end
+        got = os.read(fd, __lsl_qbe_load64(array + text.ARRAY_DATA) + length, capacity - length)
+        if got < 0:
+            return read_failed(fd)
+        elif got == 0:
+            reading = 0
+        else:
+            length += got
+        end
+    end
+    __lsl_qbe_store64(array + text.ARRAY_LENGTH, length)
+    call os.close(fd)
+    return array
+end
+
 function rt_runtime_readfile(path):
     if not rt_runtime_path_valid(path):
         return file_error("FileError: cannot open file")
@@ -326,6 +409,9 @@ function rt_runtime_readfile(path):
     size = whole_file_size(fd)
     if size < 0:
         return read_failed(fd)
+    end
+    if size == 0:
+        return read_unsized_text(fd)
     end
     content = __lsl_qbe_call1(__lsl_symbol("rt_runtime_alloc"), size + 17)
     __lsl_qbe_store64(content, core.TAG_STRING)
@@ -350,6 +436,9 @@ function rt_runtime_readbytes(path):
     size = whole_file_size(fd)
     if size < 0:
         return read_failed(fd)
+    end
+    if size == 0:
+        return read_unsized_bytes(fd)
     end
     array = __lsl_qbe_call0(__lsl_symbol("rt_runtime_byte_array_new"))
     # Nové pole má 64 B dat; větší soubor dostane vlastní blok.

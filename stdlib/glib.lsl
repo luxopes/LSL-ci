@@ -172,6 +172,11 @@ function callback_seventh():
     return __lsl_symbol("lsl_arch_callback_u7")
 end
 
+# user_data osmá, první argument (spojení) se vynechá: GDBusInterfaceMethodCallFunc.
+function callback_eighth():
+    return __lsl_symbol("lsl_arch_callback_u8")
+end
+
 # --- hlavní smyčka ---
 
 # Globální proměnná modulu drží ukazatel zabalený (Any): před voláním C
@@ -181,7 +186,7 @@ function main():
     if main_loop == 0:
         main_loop = __lsl_qbe_call2(__lsl_symbol("g_main_loop_new"), 0, 0)
     end
-    # Výstup démona (roura, journal) musí jít ven hned, ne až při ukončení.
+    # Výstup služby na pozadí (roura, journal) musí jít ven hned, ne až při ukončení.
     call unbuffered()
     return __lsl_qbe_call1(__lsl_symbol("g_main_loop_run"), ptr(main_loop))
 end
@@ -309,7 +314,155 @@ function getpid():
     return __lsl_qbe_call0(__lsl_symbol("getpid"))
 end
 
-# Výstup print bez vyrovnávací paměti (záznamy démona jdou hned do žurnálu).
+# Výstup print bez vyrovnávací paměti (záznamy služby jdou hned do žurnálu).
 function unbuffered():
     return __lsl_qbe_call0(__lsl_symbol("rt_runtime_stdio_direct"))
+end
+
+# --- prostředí, čas a procesy ---
+
+LC_ALL = 6
+# glibc nl_langinfo: položky LC_TIME (_NL_ITEM(LC_TIME = 2, index))
+NL_TIME_WEEK_1STDAY = 131174
+NL_TIME_FIRST_WEEKDAY = 131176
+
+# setlocale(LC_ALL, ""): jazyk, formáty data a překlady podle prostředí
+# (LANG, LC_*). gtk.init() to dělá sama; služba bez GTK (hodiny, strftime)
+# zavolá setlocale() před prvním formátováním. Vrací název nastaveného
+# locale, "" když prostředí žádné platné nemá.
+function setlocale():
+    return from_c(__lsl_qbe_call2(__lsl_symbol("setlocale"), LC_ALL, cstr("")))
+end
+
+# Místní čas teď ve formátu g_date_time_format (%H:%M, %A %-d. %B …; názvy
+# dnů a měsíců podle locale po setlocale()).
+function date_time_format(format):
+    now = __lsl_qbe_call0(__lsl_symbol("g_date_time_new_now_local"))
+    text = take_c(__lsl_qbe_call2(__lsl_symbol("g_date_time_format"), now, cstr(format)))
+    call __lsl_qbe_call1(__lsl_symbol("g_date_time_unref"), now)
+    return text
+end
+
+# Daný den (místní čas) ve formátu g_date_time_format, např. název měsíce
+# nebo dne v týdnu pro kalendář: format_date(2026, 10, 23, "%A").
+function format_date(year, month, day, format):
+    date = __lsl_qbe_call6(__lsl_symbol("g_date_time_new_local"), ptr(year), ptr(month), ptr(day), 0, 0, Float(0))
+    if date == 0:
+        return ""
+    end
+    text = take_c(__lsl_qbe_call2(__lsl_symbol("g_date_time_format"), date, cstr(format)))
+    call __lsl_qbe_call1(__lsl_symbol("g_date_time_unref"), date)
+    return text
+end
+
+# Čas UNIXu (sekundy) v místním čase ve formátu g_date_time_format.
+function format_unix(seconds, format):
+    date = __lsl_qbe_call1(__lsl_symbol("g_date_time_new_from_unix_local"), ptr(seconds))
+    if date == 0:
+        return ""
+    end
+    text = take_c(__lsl_qbe_call2(__lsl_symbol("g_date_time_format"), date, cstr(format)))
+    call __lsl_qbe_call1(__lsl_symbol("g_date_time_unref"), date)
+    return text
+end
+
+# Místní datum a čas teď: [rok, měsíc, den, hodina, minuta, sekunda,
+# den v týdnu 1–7 (pondělí = 1), den v roce].
+function local_date():
+    now = __lsl_qbe_call0(__lsl_symbol("g_date_time_new_now_local"))
+    parts = [__lsl_qbe_call1(__lsl_symbol("g_date_time_get_year"), now), __lsl_qbe_call1(__lsl_symbol("g_date_time_get_month"), now), __lsl_qbe_call1(__lsl_symbol("g_date_time_get_day_of_month"), now), __lsl_qbe_call1(__lsl_symbol("g_date_time_get_hour"), now), __lsl_qbe_call1(__lsl_symbol("g_date_time_get_minute"), now), __lsl_qbe_call1(__lsl_symbol("g_date_time_get_second"), now), __lsl_qbe_call1(__lsl_symbol("g_date_time_get_day_of_week"), now), __lsl_qbe_call1(__lsl_symbol("g_date_time_get_day_of_year"), now)]
+    call __lsl_qbe_call1(__lsl_symbol("g_date_time_unref"), now)
+    return parts
+end
+
+# Počet dnů v měsíci a den v týdnu (1 = pondělí … 7 = neděle) daného data.
+function days_in_month(year, month):
+    return __lsl_qbe_u8(__lsl_qbe_call2(__lsl_symbol("g_date_get_days_in_month"), ptr(month), ptr(year)))
+end
+
+function weekday(year, month, day):
+    date = __lsl_qbe_call3(__lsl_symbol("g_date_new_dmy"), ptr(day), ptr(month), ptr(year))
+    result = __lsl_qbe_call1(__lsl_symbol("g_date_get_weekday"), date)
+    call __lsl_qbe_call1(__lsl_symbol("g_date_free"), date)
+    return result
+end
+
+# První den týdne podle locale (1 = pondělí … 7 = neděle; glibc
+# _NL_TIME_FIRST_WEEKDAY je pořadí vztažené k datu _NL_TIME_WEEK_1STDAY,
+# které nl_langinfo vrací přímo jako hodnotu ukazatele). Volat po setlocale().
+function first_weekday():
+    first = __lsl_qbe_call1(__lsl_symbol("nl_langinfo"), NL_TIME_FIRST_WEEKDAY)
+    base = __lsl_qbe_call1(__lsl_symbol("nl_langinfo"), NL_TIME_WEEK_1STDAY)
+    if first == 0:
+        return 1
+    end
+    offset = __lsl_qbe_load8(first) - 1
+    # 19971130 = neděle, 19971201 = pondělí
+    if base == 19971130:
+        return (offset + 6) % 7 + 1
+    end
+    return offset % 7 + 1
+end
+
+# Signál procesu (SIGTERM = 15, SIGUSR1 = 10, SIGUSR2 = 12): 0 = odesláno,
+# -1 = chyba (proces neběží nebo bez oprávnění).
+function kill(pid, signum):
+    return __lsl_qbe_s32(__lsl_qbe_call2(__lsl_symbol("kill"), ptr(pid), ptr(signum)))
+end
+
+# Nahradí běžící proces programem (execvp, hledání v PATH; argv[0] je jméno
+# programu). Vrací jen při chybě (-1), jinak se nevrátí.
+function exec(argv):
+    array = cstr_array(argv)
+    call __lsl_qbe_call2(__lsl_symbol("execvp"), __lsl_qbe_load64(array_data(array)), array_data(array))
+    return -1
+end
+
+# Spustí program na pozadí s výstupem do /dev/null (notify-send apod.).
+# G_SPAWN_STDOUT_TO_DEV_NULL = 8, G_SPAWN_STDERR_TO_DEV_NULL = 16.
+function spawn_quiet(argv):
+    return spawn_flags(argv, 4 + 8 + 16)
+end
+
+# Časovače s prioritou (PRIORITY_HIGH pro služby, které musí reagovat hned).
+function timeout_add_full(priority, interval, handler):
+    return __lsl_qbe_call5(__lsl_symbol("g_timeout_add_full"), ptr(priority), ptr(interval), callback_first(), record_new(handler, 0), 0)
+end
+
+function timeout_add_seconds_full(priority, interval, handler):
+    return __lsl_qbe_call5(__lsl_symbol("g_timeout_add_seconds_full"), ptr(priority), ptr(interval), callback_first(), record_new(handler, 0), 0)
+end
+
+function unix_signal_add_full(priority, signum, handler):
+    return __lsl_qbe_call5(__lsl_symbol("g_unix_signal_add_full"), ptr(priority), ptr(signum), callback_first(), record_new(handler, 0), 0)
+end
+
+function user_cache_dir():
+    return from_c(__lsl_qbe_call0(__lsl_symbol("g_get_user_cache_dir")))
+end
+
+function user_data_dir():
+    return from_c(__lsl_qbe_call0(__lsl_symbol("g_get_user_data_dir")))
+end
+
+function getenv(name):
+    return from_c(__lsl_qbe_call1(__lsl_symbol("g_getenv"), cstr(name)))
+end
+
+# Cesta z URI file:// ("" když URI není souborové).
+function filename_from_uri(uri):
+    return take_c(__lsl_qbe_call3(__lsl_symbol("g_filename_from_uri"), cstr(uri), 0, 0))
+end
+
+function filename_to_uri(path):
+    return take_c(__lsl_qbe_call3(__lsl_symbol("g_filename_to_uri"), cstr(path), 0, 0))
+end
+
+# Text bezpečně uvozený pro shell a velikost pro uživatele („1,2 MB“).
+function shell_quote(text):
+    return take_c(__lsl_qbe_call1(__lsl_symbol("g_shell_quote"), cstr(text)))
+end
+
+function format_size(size):
+    return take_c(__lsl_qbe_call1(__lsl_symbol("g_format_size"), ptr(size)))
 end

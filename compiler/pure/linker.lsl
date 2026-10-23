@@ -24,7 +24,7 @@ function module_prefix(index):
 end
 
 function builtin_module(name):
-    builtins = "|_platform|_platform_linux_arm|_platform_linux_x86|_platform_linux_arm64|_platform_linux_riscv64|_platform_linux_x86_64|_random_hash|ai|bigint|glib|gio|gtk|config|configure|cuda|env|fd|http|httpserver|json|lconf|lux|luxos|math|native|os|plugin|process|random|requests|sandbox|system|tensor|time|tui|unixsock|"
+    builtins = "|_platform|_platform_linux_arm|_platform_linux_x86|_platform_linux_arm64|_platform_linux_riscv64|_platform_linux_x86_64|_random_hash|ai|bigint|cairo|glib|gio|gtk|pango|config|configure|cuda|env|fd|http|httpserver|json|lconf|lux|luxos|math|native|os|plugin|process|random|requests|sandbox|system|tensor|time|tui|unixsock|"
     return "|" + String(name) + "|" in builtins or target.builtin_provider(name)
 end
 

@@ -5,7 +5,7 @@
 
 KEYWORDS = ["function", "end", "if", "elif", "else", "while", "for", "in", "loop", "break", "continue", "return", "class", "ctype", "try", "safe", "unsafe", "load", "from", "as", "del", "call", "print", "printl", "printr", "input", "and", "or", "not", "Error", "self"]
 CONSTANTS = ["True", "False", "None"]
-BUILTINS = ["len", "type", "String", "Int", "Float", "Bool", "List", "Tuple", "Dictionary", "IntArray", "FloatArray", "ByteArray", "RealArray", "rang", "range", "abs", "sqrt", "sum", "min", "max", "sorted", "chr", "ord", "readfile", "writefile", "exists", "exit", "arg", "help", "gc", "monotonic", "clock", "run", "capture", "system"]
+BUILTINS = ["len", "type", "String", "Int", "Float", "Bool", "List", "Tuple", "Dictionary", "IntArray", "FloatArray", "ByteArray", "RealArray", "rang", "range", "abs", "sqrt", "sum", "min", "max", "sorted", "chr", "ord", "readfile", "writefile", "exists", "listdir", "eprint", "exit", "arg", "help", "gc", "monotonic", "clock", "run", "capture", "system"]
 
 STYLE_KEYWORD = "1;35"
 STYLE_CONSTANT = "35"

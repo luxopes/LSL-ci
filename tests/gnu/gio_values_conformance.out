@@ -1,0 +1,23 @@
+[4, 'text', True, 2.5, [1, 2], {'a': 1, 'b': 'x'}]
+-3 None yes
+['/org/path', 'as', 255, -2, 65535, 42, 3]
+('a', uint32 4)
+['x', 'y'] @as []
+{'b': <true>, 'n': <uint32 5>, 's': <'t'>, 'd': <1.5>, 'i': <int64 7>}
+(1, [('a', 2), ('b', 3)], false)
+@mi nothing @mi 3 <objectpath '/a/b'> int64 -9 byte 0xff
+mismatch: True
+short tuple: True
+['org.freedesktop.DBus']
+True
+True
+True
+[1]
+True
+True
+[['/cz/luxai/Values', 'cz.luxai.Values', 'Echo', ['hello', 41]], ['/cz/luxai/Values', 'cz.luxai.Values', 'Fail', []]]
+[['cz.luxai.Values.Note', ['hi', {'k': 1}]]]
+True ['watched.txt', 3, '']
+True
+0
+done

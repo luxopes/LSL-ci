@@ -240,7 +240,7 @@ function shown_type(value_type):
 end
 
 function builtin_arities():
-    builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "Dictionary": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sqrt": 1, "sum": 1, "float_zeros": 1, "float_fill": 2, "float_sum": 1, "float_dot": 2, "float_axpy": 3, "float_matmul": 5, "type": 1, "exit": 1, "input": 1, "readfile": 1, "readbytes": 1, "__lsl_getenv": 1, "mkdir": 1, "unlink": 1, "rmdir": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "help": 0, "run": 2, "run_clean": 2, "capture": 2, "capture_clean": 2, "capture_stream": 3, "capture_stream_clean": 3, "capture_input": 3, "capture_input_clean": 3, "capture_input_stream": 4, "capture_input_stream_clean": 4, "__lsl_capture_input_timeout": 4, "__lsl_run_timeout": 3, "capture_status": 0, "capture_stderr": 0, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2, "native_open": 1, "native_size": 1, "native_u64": 2, "native_name_equal": 3, "native_function": 2, "native_call": 2, "native_close": 1, "__lsl_test_small_tables": 0, "__lsl_test_fd_fault": 1, "__lsl_object_table_mask": 0, "__lsl_intern_table_mask": 0, "__lsl_wall_time": 0, "__lsl_sleep": 1, "__lsl_isatty": 1, "__lsl_stdin_eof": 0, "__lsl_run": 2, "__lsl_run_clean": 2, "__lsl_capture": 2, "__lsl_capture_clean": 2, "__lsl_fd_open": 2, "__lsl_fd_read": 3, "__lsl_fd_write": 3, "__lsl_fd_seek": 2, "__lsl_fd_close": 1, "__lsl_fd_socket": 2, "__lsl_fd_connect": 3, "__lsl_checked_index": 1, "__lsl_int_zeros": 1, "__lsl_byte_zeros": 1, "__lsl_raster_pack": 5, "__lsl_raster_copy": 5, "__lsl_raster_fill": 4, "__lsl_fd_ioctl": 3, "__lsl_fd_mmap": 3, "__lsl_mem_pack": 5, "__lsl_data_address": 1, "__lsl_syscall": 5, "__lsl_mem_unpack": 4, "__lsl_text_from_bytes": 3, "__lsl_byte_copy": 5, "__lsl_text_byte": 2, "__lsl_text_byte_length": 1, "__lsl_text_piece": 3, "__lsl_text_scan_digits": 2, "__lsl_text_digits": 3, "__lsl_text_split_byte": 2, "__lsl_floatarray_bytes": 1, "__lsl_floatarray_from_bytes": 1, "atomic_add": 3, "atomic_xchg": 3, "atomic_cas": 4, "atomic_pause": 0, "thread_spawn": 1, "thread_join": 1, "cpu_count": 0, "popcount": 1, "trailing_zeros": 1}
+    builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "Dictionary": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sqrt": 1, "sum": 1, "float_zeros": 1, "float_fill": 2, "float_sum": 1, "float_dot": 2, "float_axpy": 3, "float_matmul": 5, "type": 1, "exit": 1, "input": 1, "readfile": 1, "readbytes": 1, "__lsl_getenv": 1, "listdir": 1, "eprint": 1, "mkdir": 1, "unlink": 1, "rmdir": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "help": 0, "run": 2, "run_clean": 2, "capture": 2, "capture_clean": 2, "capture_stream": 3, "capture_stream_clean": 3, "capture_input": 3, "capture_input_clean": 3, "capture_input_stream": 4, "capture_input_stream_clean": 4, "__lsl_capture_input_timeout": 4, "__lsl_run_timeout": 3, "capture_status": 0, "capture_stderr": 0, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2, "native_open": 1, "native_size": 1, "native_u64": 2, "native_name_equal": 3, "native_function": 2, "native_call": 2, "native_close": 1, "__lsl_test_small_tables": 0, "__lsl_test_fd_fault": 1, "__lsl_object_table_mask": 0, "__lsl_intern_table_mask": 0, "__lsl_wall_time": 0, "__lsl_sleep": 1, "__lsl_isatty": 1, "__lsl_stdin_eof": 0, "__lsl_run": 2, "__lsl_run_clean": 2, "__lsl_capture": 2, "__lsl_capture_clean": 2, "__lsl_fd_open": 2, "__lsl_fd_read": 3, "__lsl_fd_write": 3, "__lsl_fd_seek": 2, "__lsl_fd_close": 1, "__lsl_fd_socket": 2, "__lsl_fd_connect": 3, "__lsl_checked_index": 1, "__lsl_int_zeros": 1, "__lsl_byte_zeros": 1, "__lsl_raster_pack": 5, "__lsl_raster_copy": 5, "__lsl_raster_fill": 4, "__lsl_fd_ioctl": 3, "__lsl_fd_mmap": 3, "__lsl_mem_pack": 5, "__lsl_data_address": 1, "__lsl_syscall": 5, "__lsl_mem_unpack": 4, "__lsl_text_from_bytes": 3, "__lsl_byte_copy": 5, "__lsl_text_byte": 2, "__lsl_text_byte_length": 1, "__lsl_text_piece": 3, "__lsl_text_scan_digits": 2, "__lsl_text_digits": 3, "__lsl_text_split_byte": 2, "__lsl_floatarray_bytes": 1, "__lsl_floatarray_from_bytes": 1, "atomic_add": 3, "atomic_xchg": 3, "atomic_cas": 4, "atomic_pause": 0, "thread_spawn": 1, "thread_join": 1, "cpu_count": 0, "popcount": 1, "trailing_zeros": 1}
     builtin_arity["__lsl_mkdir_private"] = 1
     builtin_arity["__lsl_list_directory"] = 1
     builtin_arity["__lsl_rename"] = 2
@@ -1298,11 +1298,14 @@ function expression(state, syntax):
                     value_type = "Instance"
                 end
                 return
-            elif target["name"] == "mkdir" or target["name"] == "__lsl_mkdir_private" or target["name"] == "__lsl_list_directory" or target["name"] == "unlink" or target["name"] == "rmdir":
+            elif target["name"] == "mkdir" or target["name"] == "__lsl_mkdir_private" or target["name"] == "__lsl_list_directory" or target["name"] == "listdir" or target["name"] == "unlink" or target["name"] == "rmdir":
                 call expression(state, checked_string_node(state, syntax["arguments"][0]))
                 return
             elif target["name"] == "exists":
                 call expression(state, checked_string_node(state, syntax["arguments"][0]))
+                return
+            elif target["name"] == "eprint":
+                call expression(state, syntax["arguments"][0])
                 return
             elif target["name"] == "__lsl_rename":
                 call expression(state, checked_string_node(state, syntax["arguments"][0]))
@@ -1426,6 +1429,13 @@ function expression(state, syntax):
             method_arity = {"strip": 0, "lstrip": 0, "rstrip": 0, "lower": 0, "upper": 0, "title": 0, "capitalize": 0, "sort": 0, "reverse": 0, "copy": 0, "keys": 0, "values": 0, "items": 0, "clear": 0, "append": 1, "startswith": 1, "endswith": 1, "find": 1, "count": 1, "join": 1, "extend": 1, "remove": 1, "index": 1, "update": 1, "replace": 2, "insert": 2}
             if semantic.set_method(target["name"]):
                 method_arity[target["name"]] = 1
+            end
+            # Volitelný argument: strip(znaky) u textu, find(hledané, od) u textu
+            # (seznam má jen find(hodnota)).
+            optional_text = (target["name"] == "strip" or target["name"] == "lstrip" or target["name"] == "rstrip") and len(syntax["arguments"]) == 1
+            optional_find = target["name"] == "find" and len(syntax["arguments"]) == 2 and (receiver_type == "String" or receiver_type == "Any")
+            if optional_text or optional_find:
+                method_arity[target["name"]] = len(syntax["arguments"])
             end
             if target["name"] in method_arity and not receiver_type.startswith("Class:") and not receiver_type.startswith("Instance:"):
                 expected_method = method_arity[target["name"]]
@@ -1624,13 +1634,18 @@ function expression(state, syntax):
             else:
                 method_target = semantic.method_function(target["name"])
                 method_receiver = target["target"]
+                if (target["name"] == "strip" or target["name"] == "lstrip" or target["name"] == "rstrip") and len(syntax["arguments"]) == 1:
+                    method_target = "__lsl_" + target["name"] + "_chars"
+                elif target["name"] == "find" and len(syntax["arguments"]) == 2:
+                    method_target = "__lsl_find_offset"
+                end
                 if receiver_type == "Any" and not state["internal_abi"]:
                     receiver_guard = ""
                     if target["name"] == "count":
                         method_target = "__lsl_dynamic_count"
                     elif target["name"] == "index":
                         method_target = "__lsl_dynamic_index"
-                    elif target["name"] == "find":
+                    elif target["name"] == "find" and len(syntax["arguments"]) == 1:
                         method_target = "__lsl_dynamic_find"
                     elif target["name"] == "copy":
                         method_target = "__lsl_dynamic_copy"
@@ -1659,7 +1674,7 @@ function expression(state, syntax):
                         method_target = "__lsl_list_index"
                     elif target["name"] == "count":
                         method_target = "__lsl_list_count"
-                    elif target["name"] == "find":
+                    elif target["name"] == "find" and len(syntax["arguments"]) == 1:
                         method_target = "__lsl_list_find"
                     end
                 elif receiver_type == "String" and target["name"] == "index":

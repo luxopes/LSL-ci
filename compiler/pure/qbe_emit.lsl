@@ -111,6 +111,16 @@ end
 function rt(s,name,args,ty="Any",checked=True):
     return invoke(s,"rt_runtime_"+name,args,ty,checked)
 end
+# Volání s hotovými (otypovanými) parametry a výsledkem třídy result_type
+# (l nebo d); účetnictví GC a kontrola chyby jako u invoke pro neznámý cíl.
+function invoke_typed(s,name,params,result_type):
+    s["local_may_error"] = True
+    s["needs_gc_poll"] = True
+    s["allocation_calls"] += 1
+    value = temp(s,"call "+name+"("+", ".join(params)+")",result_type)
+    call error_check(s)
+    return value
+end
 function finish_loop_poll(s,position,allocation_calls):
     # Count emitted allocation-capable calls in this loop (including nested
     # loops and conditions). Direct LSL callees already poll their own bodies.
@@ -1409,7 +1419,7 @@ function builtin_argument(s,name,node,index):
     helper = ""
     if name in ["chr","arg","exit","thread_join"] and index == 0:
         return checked_integer_expression(s,node)
-    elif (name in ["ord","native_open","readfile","readbytes","exists","mkdir","unlink","rmdir","writefile","appendfile","writebytes","__lsl_rename","run","run_clean","capture","capture_clean","__lsl_run","__lsl_run_clean","__lsl_capture","__lsl_capture_clean","capture_input","capture_input_clean","capture_stream","capture_stream_clean","capture_input_stream","capture_input_stream_clean","__lsl_capture_input_timeout","__lsl_run_timeout"] and index == 0) or (name in ["writefile","appendfile","__lsl_rename"] and index == 1) or (name in ["capture_input","capture_input_clean","capture_input_stream","capture_input_stream_clean","__lsl_capture_input_timeout"] and index == 2):
+    elif (name in ["ord","native_open","readfile","readbytes","exists","listdir","mkdir","unlink","rmdir","writefile","appendfile","writebytes","__lsl_rename","run","run_clean","capture","capture_clean","__lsl_run","__lsl_run_clean","__lsl_capture","__lsl_capture_clean","capture_input","capture_input_clean","capture_stream","capture_stream_clean","capture_input_stream","capture_input_stream_clean","__lsl_capture_input_timeout","__lsl_run_timeout"] and index == 0) or (name in ["writefile","appendfile","__lsl_rename"] and index == 1) or (name in ["capture_input","capture_input_clean","capture_input_stream","capture_input_stream_clean","__lsl_capture_input_timeout"] and index == 2):
         rule = "string_value"
         helper = "__lsl_require_string_value"
     elif name in ["run","run_clean","capture","capture_clean","__lsl_run","__lsl_run_clean","__lsl_capture","__lsl_capture_clean","capture_input","capture_input_clean","capture_stream","capture_stream_clean","capture_input_stream","capture_input_stream_clean","__lsl_capture_input_timeout","__lsl_run_timeout"] and index == 1:
@@ -1962,7 +1972,7 @@ NATIVE = {
 "__lsl_type_code":["type_code","Int"],"__lsl_is_heap":["is_heap_object","Bool"],"__lsl_raw_equal":["equal_any","Int"],
 "__lsl_test_small_tables":["test_small_tables","None"],"__lsl_test_fd_fault":["test_fd_fault","Int"],"__lsl_object_table_mask":["object_table_mask","Int"],"__lsl_intern_table_mask":["intern_table_mask","Int"],
 "__lsl_float_accumulate":["float_accumulate","Float"],"__lsl_float_candidate_bits":["float_candidate_bits","Int"],"__lsl_float_from_decimal":["decimal_bits","Int"],"__lsl_decimal_compare":["decimal_compare","Int"],"__lsl_decimal_digits_compare":["decimal_digits_compare","Int"],"__lsl_float_nearer_upper":["float_nearer_upper","Bool"],"__lsl_float_from_int":["float_from_int","Float"],"__lsl_float_to_int":["float_to_int","Int"],"__lsl_float_from_bits":["float_new","Float"],
-"__lsl_text_byte_length":["text_byte_length","Int"],"__lsl_text_byte":["text_byte","Int"],"__lsl_text_byte_offset":["string_byte_offset","Int"],
+"__lsl_text_byte_length":["text_byte_length","Int"],"__lsl_text_byte":["text_byte","Int"],"__lsl_byte_search":["text_search","Int"],"__lsl_byte_char_count":["text_char_count","Int"],"__lsl_text_byte_offset":["string_byte_offset","Int"],
 "__lsl_text_piece":["text_piece","String"],"__lsl_text_scan_digits":["text_scan_digits","Int"],"__lsl_text_digits":["text_digits","Int"],"__lsl_text_split_byte":["text_split_byte","List"],
 "__lsl_byte_zeros":["byte_array_zeros","ByteArray"],"__lsl_byte_copy":["byte_copy","Int"],"__lsl_text_from_bytes":["text_from_bytes","String"],
 "__lsl_floatarray_bytes":["float_array_bytes","String"],"__lsl_floatarray_from_bytes":["float_array_from_bytes","FloatArray"],
@@ -1973,7 +1983,7 @@ NATIVE = {
 "__lsl_syscall":["syscall","Int"],"__lsl_syscall6":["syscall6","Int"],"__lsl_getenv":["getenv","Any"],"__lsl_sleep":["sleep","None"],"__lsl_isatty":["isatty","Bool"],"__lsl_stdin_eof":["stdin_eof","Bool"],
 "readfile":["readfile","String"],"readbytes":["readbytes","ByteArray"],"writefile":["writefile","None"],"appendfile":["appendfile","None"],"writebytes":["writebytes","None"],
 "run":["run","Int"],"capture":["capture","String"],"capture_status":["capture_status","Int"],"capture_stderr":["capture_stderr","String"],
-"exists":["exists","Bool"],"mkdir":["mkdir","Int"],"__lsl_mkdir_private":["mkdir_private","Int"],"__lsl_list_directory":["list_directory","List"],"__lsl_rename":["rename","Int"],"unlink":["unlink","Int"],"rmdir":["rmdir","Int"],
+"exists":["exists","Bool"],"listdir":["list_directory","List"],"mkdir":["mkdir","Int"],"__lsl_mkdir_private":["mkdir_private","Int"],"__lsl_list_directory":["list_directory","List"],"__lsl_rename":["rename","Int"],"unlink":["unlink","Int"],"rmdir":["rmdir","Int"],
 "executable_path":["executable_path","String"],"clock":["clock","Float"],"monotonic":["clock","Float"],"wall_time":["wall_time","Float"],"gc":["gc","Int"],"chr":["chr","String"],"ord":["ord","Int"],"cpu_count":["cpu_count","Int"],"input":["input","String"],
 "__lsl_new_set":["list_new","Set"],"__lsl_set_append":["list_append","None"],"__lsl_set_store":["list_set","None"]}
 METHODS = {"startswith":"__lsl_startswith","endswith":"__lsl_endswith","split":"__lsl_split","join":"__lsl_join","strip":"__lsl_strip","lstrip":"__lsl_lstrip","rstrip":"__lsl_rstrip","lower":"__lsl_lower","upper":"__lsl_upper","capitalize":"__lsl_capitalize","title":"__lsl_title","replace":"__lsl_replace","find":"__lsl_find","count":"__lsl_count","index":"__lsl_list_index","extend":"__lsl_extend","insert":"__lsl_insert","remove":"__lsl_remove","reverse":"__lsl_reverse","sort":"__lsl_sort","copy":"__lsl_copy","get":"__lsl_dict_get","setdefault":"__lsl_setdefault","update":"__lsl_update","values":"__lsl_dict_values","items":"__lsl_dict_items"}
@@ -1981,7 +1991,7 @@ METHODS = {"startswith":"__lsl_startswith","endswith":"__lsl_endswith","split":"
 # is Any. The helpers perform their own receiver checks; scalar unboxing first
 # can also reinterpret an unboxed integer equal to another live object's
 # address. In particular an explicit unbox must receive the original value.
-OBJECT_NATIVE_ARGS = {"__lsl_raster_pack":[0,1],"__lsl_raster_copy":[0,1],"__lsl_raster_fill":[0],"__lsl_set_append":[0,1],"__lsl_set_store":[0,2],"__lsl_unbox_int":[0],"__lsl_unbox_bool":[0],"__lsl_unbox_float":[0],"__lsl_unbox_function":[0],"__lsl_text_byte":[0],"__lsl_text_piece":[0],"__lsl_text_scan_digits":[0],"__lsl_text_digits":[0],"__lsl_text_split_byte":[0],"__lsl_text_from_bytes":[0],"__lsl_data_address":[0],"__lsl_byte_copy":[0,1],"__lsl_decimal_digits_compare":[0]}
+OBJECT_NATIVE_ARGS = {"__lsl_raster_pack":[0,1],"__lsl_raster_copy":[0,1],"__lsl_raster_fill":[0],"__lsl_set_append":[0,1],"__lsl_set_store":[0,2],"__lsl_unbox_int":[0],"__lsl_unbox_bool":[0],"__lsl_unbox_float":[0],"__lsl_unbox_function":[0],"__lsl_text_byte":[0],"__lsl_byte_search":[0,1],"__lsl_byte_char_count":[0],"__lsl_text_piece":[0],"__lsl_text_scan_digits":[0],"__lsl_text_digits":[0],"__lsl_text_split_byte":[0],"__lsl_text_from_bytes":[0],"__lsl_data_address":[0],"__lsl_byte_copy":[0,1],"__lsl_decimal_digits_compare":[0]}
 function atomic_call(s,node,name):
     if name == "atomic_pause":
         return rt(s,"atomic_pause",[],"None",False)
@@ -2148,6 +2158,9 @@ function call_expression(s,node):
             helper = METHODS[name]
             if name == "copy":
                 helper = "__lsl_dynamic_copy"
+            elif (name == "strip" or name == "lstrip" or name == "rstrip") and len(values) == 2:
+                # strip(znaky): odstraní uvedené znaky místo bílých
+                helper = "__lsl_" + name + "_chars"
             elif name == "remove":
                 helper = "__lsl_collection_remove"
             elif name == "update":
@@ -2259,12 +2272,14 @@ function call_expression(s,node):
         condition = truth(s,values[0])
         return [temp(s,"zext32("+condition+")"),"Bool",condition]
     elif name in ["Float","__lsl_declared_Float"]:
+        # Pomocné funkce vrací vždy Float (jinak chybu): výsledek má statický
+        # typ Float, aby šel předat do C jako Float64 (__lsl_qbe_call).
         if values[0][1] == "Float":
             return values[0]
         elif values[0][1] == "String":
-            return function_call(s,"__lsl_parse_float",values)
+            return [function_call(s,"__lsl_parse_float",values)[0],"Float"]
         elif values[0][1] == "Any":
-            return function_call(s,"__lsl_float_any",values)
+            return [function_call(s,"__lsl_float_any",values)[0],"Float"]
         end
         return rt(s,"float_from_int",[integer(s,values[0])],"Float",False)
     elif name == "type":
@@ -2361,6 +2376,10 @@ function call_expression(s,node):
         end
         call store(s,"Int64",tag,value[0])
         return value
+    elif name == "eprint":
+        # eprint(hodnota): String(hodnota) a nový řádek na stderr (runtime)
+        text = stringify(s,values[0])
+        return rt(s,"write_stderr",[text[0]],"None")
     elif name in ["List","Tuple","RealArray","Dictionary","set","sorted","dedup","sum"]:
         helpers = {"List":"__lsl_list","Tuple":"__lsl_list","RealArray":"__lsl_real_array","Dictionary":"__lsl_dictionary","set":"__lsl_set","sorted":"__lsl_sorted","dedup":"__lsl_dedup","sum":"__lsl_sum"}
         if len(values) == 0:
@@ -2397,13 +2416,31 @@ function call_expression(s,node):
         end
         return [args[0],"Int"]
     elif name.startswith("__lsl_qbe_call") or name.startswith("__lsl_qbe_fcall"):
-        # Native internal word ABI, including boxed Float pointers. The C
-        # migration supplies real code addresses, not an integer-ID dispatcher.
+        # Nativní volání adresy kódu. Mimo runtime se argument se statickým
+        # typem Float předává rozbalený jako Float64 (ABI jazyka C: cairo,
+        # pango, GTK) a __lsl_qbe_fcall vrací Float64 zabalený do Float;
+        # ostatní argumenty jsou slova (Int, ukazatele, zabalené objekty).
         kind = "Int"
         if name.startswith("__lsl_qbe_fcall"):
             kind = "Float"
         end
-        return invoke(s,integer(s,values[0]),args[1:],kind)
+        if s["runtime"]:
+            return invoke(s,integer(s,values[0]),args[1:],kind)
+        end
+        params = []
+        for value in values[1:]:
+            if value[1] == "Float":
+                bits = temp(s,"load("+temp(s,"add("+value[0]+", 8)")+")")
+                params.append(temp(s,"bitcast("+bits+")","d"))
+            else:
+                params.append(typed(value[0]))
+            end
+        end
+        if kind == "Float":
+            result = invoke_typed(s,integer(s,values[0]),params,"d")
+            return float_box(s,result)
+        end
+        return [invoke_typed(s,integer(s,values[0]),params,"l"),"Int"]
     elif name in ["__lsl_qbe_s8","__lsl_qbe_s16","__lsl_qbe_s32","__lsl_qbe_u8","__lsl_qbe_u16","__lsl_qbe_u32"]:
         # Comparison metadata denotes an exact 0/1 value. Narrowing or
         # extending it preserves both its value and its native condition.
