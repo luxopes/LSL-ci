@@ -863,6 +863,12 @@ end
 # Zastavení pro GC (stav 4): vlákno v blokující oblasti GC podrží hned
 # (zásobník zveřejnilo při vstupu), běžící vlákno se zastaví samo.
 function thread_suspend(process, entry):
+    if not threads():
+        # Sekvenční běh: funkce vlákna právě běží v hlavním vlákně (zastavit
+        # ji nelze a netřeba), položka zůstane ve stavu „běží“.
+        __lsl_qbe_store64(entry + 16, 1)
+        return 0
+    end
     if __lsl_qbe_call3(__lsl_symbol("lsl_arch_cas64"), blocking_word(entry), 1, 2) == 1:
         __lsl_qbe_store64(entry + 16, 2)
     end

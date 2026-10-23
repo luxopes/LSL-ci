@@ -248,7 +248,11 @@ function suspend_workers():
             # (CLONE_CHILD_CLEARTID) a zapsaná 4 by pak zůstala navždy.
             if status == 1 and sync.atomic_cas(entry + 16, 1, 4) == 1:
                 call os.thread_suspend(process, entry)
-                pending = 1
+                # Vrstva bez vláken (wasm32-wasi) vrátí stav 1: funkce vlákna
+                # běží v hlavním vlákně na témže zásobníku a GC ji prochází s ním.
+                if __lsl_qbe_load64(entry + 16) != 1:
+                    pending = 1
+                end
             elif status == 4:
                 pending = 1
             end
