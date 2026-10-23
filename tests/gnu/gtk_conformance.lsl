@@ -10,7 +10,8 @@ if env.get("DISPLAY") == None and env.get("WAYLAND_DISPLAY") == None:
     if launcher == "":
         print("SKIP: no xvfb-run")
     else:
-        exit(run(launcher, ["-a", executable_path()]))
+        # Bez sběrnice přístupnosti (CI) by GTK vypsalo varování AT-SPI do výstupu.
+        exit(run(glib.find_program_in_path("env"), ["NO_AT_BRIDGE=1", launcher, "-a", executable_path()]))
     end
     exit(0)
 end

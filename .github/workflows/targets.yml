@@ -47,6 +47,8 @@ jobs:
           mkdir -p build/manual-source
           unzip -q -j manual.zip '*.md' -d build/manual-source
           rm -f build/manual-source/RELEASE_NOTES.md
+          # Stránka novější než vydaný manuál (gtk.md od 0.10.4) ze zdroje repozitáře.
+          [ -f build/manual-source/gtk.md ] || cp docs/gtk.md build/manual-source/gtk.md
           printf '{"repository": "ci", "note": "manual from lsl-0.10.0-manual.zip for CI packages"}\n' > build/manual-source/SOURCE.json
       - name: Native compiler packages (Windows, macOS)
         run: |
