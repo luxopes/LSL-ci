@@ -89,7 +89,7 @@ function lsl_runtime_start(stack):
         call heap.fatal_allocation()
     end
     __lsl_qbe_store64(base + MAIN_STACK_TOP, arguments)
-    __lsl_qbe_store64(base + GC_BUDGET, 4194304)
+    __lsl_qbe_store64(base + GC_BUDGET, 2097152)
     if __lsl_qbe_call1(__lsl_symbol("lsl_arch_set_thread_pointer"), base + MAIN_THREAD_BLOCK) < 0:
         call cold_fatal_setup()
     end

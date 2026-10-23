@@ -13,5 +13,9 @@
 - `glib.main()` a `gtk.main()` přepnou `print` na přímý zápis, aby záznamy
   démona šly do roury nebo žurnálu hned; `glib.unbuffered()` nejdřív
   vyprázdní čekající výstup.
+- Rozpočet GC mezi úklidy je nejméně 2 MiB místo 4 MiB (dál 3× živá data):
+  halda malých programů zůstává v cache, běh je o 3–10 % rychlejší
+  (allocation_gc −9 %, pfmt −10 %, list_access −10 %) a program s malou
+  živou množinou drží o polovinu méně paměti (2,6 MB místo 4,9 MB).
 - Nové testy `memory_footprint_conformance` a `memory_release_conformance`
   (jen Linux, mimo emulaci).
