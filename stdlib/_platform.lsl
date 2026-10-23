@@ -16,6 +16,7 @@ SYS_LSEEK = implementation.SYS_LSEEK
 SYS_MMAP = implementation.SYS_MMAP
 SYS_MPROTECT = implementation.SYS_MPROTECT
 SYS_MUNMAP = implementation.SYS_MUNMAP
+SYS_MADVISE = implementation.SYS_MADVISE
 SYS_BRK = implementation.SYS_BRK
 SYS_RT_SIGACTION = implementation.SYS_RT_SIGACTION
 SYS_RT_SIGRETURN = implementation.SYS_RT_SIGRETURN

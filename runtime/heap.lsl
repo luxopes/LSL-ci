@@ -89,7 +89,7 @@ function rt_runtime_object_bitmap_ensure():
         return 0
     end
     size = (needed * 2 + 4095) & -4096
-    bitmap = os.map_anonymous(size, 16384)
+    bitmap = os.map_sparse(size)
     if bitmap < 0:
         call fatal_allocation()
     end

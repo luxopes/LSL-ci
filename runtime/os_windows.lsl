@@ -147,6 +147,16 @@ function map_anonymous(size, extra_flags):
     return address
 end
 
+# Stránky volného bloku se zde jádru nevracejí.
+function release_pages(address, length):
+    return 0
+end
+
+# Řídce zapisovaná oblast; zde bez zvláštního zacházení.
+function map_sparse(size):
+    return map_anonymous(size, 0)
+end
+
 # Paměť přesně na adrese: 1 = hotovo, 0 = místo je obsazené.
 function map_at(address, size):
     result = __lsl_qbe_call4(__lsl_symbol("VirtualAlloc"), address, size, MEM_COMMIT_RESERVE, PAGE_READWRITE)

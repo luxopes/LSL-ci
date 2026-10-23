@@ -53,6 +53,9 @@ function close(descriptor):
     return syscall3(platform.SYS_CLOSE, descriptor, 0, 0)
 end
 
+MADV_DONTNEED = 4
+MADV_NOHUGEPAGE = 15
+
 # 32bitový ARM: mmap2 bere posun ve 4KiB stránkách.
 function mmap(address, length, protection, flags, descriptor, offset):
     return syscall6(platform.SYS_MMAP, address, length, protection, flags, descriptor, __lsl_qbe_lshr(offset, platform.MMAP_OFFSET_SHIFT))
@@ -218,6 +221,23 @@ end
 # Anonymní soukromé mapování paměti (čtení a zápis); záporné = chyba.
 function map_anonymous(size, extra_flags):
     return syscall6(platform.SYS_MMAP, 0, size, platform.PROT_READ | platform.PROT_WRITE, platform.MAP_PRIVATE | platform.MAP_ANONYMOUS | extra_flags, -1, 0)
+end
+
+# Vrátí stránky volného bloku haldy jádru (obsah se ztratí, mapování zůstává;
+# další dotyk dá nulové stránky). Volá se se zámkem haldy při úklidu GC.
+function release_pages(address, length):
+    call syscall3(platform.SYS_MADVISE, address, length, MADV_DONTNEED)
+    return 0
+end
+
+# Řídce zapisovaná oblast (bitmapa objektů): bez transparentních velkých
+# stránek, jinak s THP "always" první dotyk zabere celé 2 MiB fyzické paměti.
+function map_sparse(size):
+    address = map_anonymous(size, platform.MAP_NORESERVE)
+    if address >= 0:
+        call syscall3(platform.SYS_MADVISE, address, size, MADV_NOHUGEPAGE)
+    end
+    return address
 end
 
 function futex_wait(address, expected):

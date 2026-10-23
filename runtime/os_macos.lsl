@@ -148,6 +148,16 @@ function map_anonymous(size, extra_flags):
     return mmap(0, size, 3, MAC_MAP_PRIVATE | MAC_MAP_ANON, -1, 0)
 end
 
+# Stránky volného bloku se zde jádru nevracejí.
+function release_pages(address, length):
+    return 0
+end
+
+# Řídce zapisovaná oblast; zde bez zvláštního zacházení.
+function map_sparse(size):
+    return map_anonymous(size, 0)
+end
+
 # Začátek haldy. mmap bere adresu jen jako nápovědu a na arm64 by halda
 # rychle narazila na sdílenou cache dyld, proto se adresní prostor haldy
 # (HEAP_RESERVE) vyhradí předem bez přístupu; map_at v něm jen zpřístupní

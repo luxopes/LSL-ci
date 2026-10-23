@@ -252,6 +252,16 @@ function map_anonymous(size, extra_flags):
     return lsl_baremetal_frames(size)
 end
 
+# Stránky volného bloku se zde jádru nevracejí.
+function release_pages(address, length):
+    return 0
+end
+
+# Řídce zapisovaná oblast; zde bez zvláštního zacházení.
+function map_sparse(size):
+    return map_anonymous(size, 0)
+end
+
 function map_at(address, size):
     if scheduling():
         return request(REQUEST_COMMIT, address, size, 0)

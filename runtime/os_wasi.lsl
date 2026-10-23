@@ -129,6 +129,16 @@ function map_anonymous(size, extra_flags):
     return -12
 end
 
+# Stránky volného bloku se zde jádru nevracejí.
+function release_pages(address, length):
+    return 0
+end
+
+# Řídce zapisovaná oblast; zde bez zvláštního zacházení.
+function map_sparse(size):
+    return map_anonymous(size, 0)
+end
+
 function map_at(address, size):
     address = address & 4294967295
     if address < HEAP_START:

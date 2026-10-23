@@ -216,6 +216,8 @@ end
 # číst nebo přesměrovat: předčtená data se vrátí a dál se čte i píše přímo.
 function rt_runtime_stdio_direct():
     call stdin_release()
+    # Čekající výstup ven dřív, než se vyrovnávací paměť přestane používat.
+    call rt_runtime_stdout_flush()
     base = core.state()
     __lsl_qbe_store64(base + STDIN_MODE, MODE_DIRECT)
     __lsl_qbe_store64(base + STDOUT_MODE, MODE_DIRECT)

@@ -183,6 +183,8 @@ end
 # objekt drží také. Hledá se nejbližší začátek objektu v bitmapě do
 # INTERIOR_REACH bajtů zpět a ukazatel musí ležet uvnitř jeho bloku.
 INTERIOR_REACH = 65536
+# Od této kapacity se stránky volného bloku vracejí jádru (sweep).
+RELEASE_BYTES = 32768
 function mark_root(value):
     if rt_runtime_is_heap_allocation(value):
         return rt_runtime_mark(value)
@@ -337,6 +339,16 @@ function sweep(live):
                     call os.unmap(__lsl_qbe_load64(block + 40), __lsl_qbe_load64(block + 48))
                 end
                 __lsl_qbe_store64(block + 16, 1)
+                # Velký volný blok: jeho celé stránky (za hlavičkou) zpět jádru,
+                # aby RSS po uvolnění velkých dat klesl; obsah volného bloku
+                # nikdo nečte a nový vlastník ho přepíše.
+                if __lsl_qbe_load64(block) >= RELEASE_BYTES:
+                    first = (block + heap.HEADER_BYTES + 4095) & -4096
+                    last = (block + heap.HEADER_BYTES + __lsl_qbe_load64(block)) & -4096
+                    if last > first:
+                        call os.release_pages(first, last - first)
+                    end
+                end
                 head = base + heap.FREE_LISTS + __lsl_qbe_shl(heap.rt_runtime_size_class(__lsl_qbe_load64(block)), 3)
                 __lsl_qbe_store64(block + 24, __lsl_qbe_load64(head))
                 __lsl_qbe_store64(head, block)

@@ -31,6 +31,8 @@ def run(command, timeout):
 # od Windows 10+ nemá.
 WINDOWS_SKIP = {
     'automatic_gc_conformance.lsl': 'memory from /proc/self/status',
+    'memory_footprint_conformance.lsl': 'memory from /proc/self/status',
+    'memory_release_conformance.lsl': 'memory from /proc/self/status',
     'call_statement_conformance.lsl': 'writes /dev/null',
     'gc_bigheap_threads_conformance.lsl': 'Linux syscall (setitimer)',
     'gc_stream_worker_conformance.lsl': '/bin/sh',
@@ -56,6 +58,8 @@ def run_adb(binary, timeout):
 # macOS má POSIX nástroje i /dev/null; chybí syscally Linuxu a /proc.
 MACOS_SKIP = {
     'automatic_gc_conformance.lsl': 'memory from /proc/self/status',
+    'memory_footprint_conformance.lsl': 'memory from /proc/self/status',
+    'memory_release_conformance.lsl': 'memory from /proc/self/status',
     'gc_bigheap_threads_conformance.lsl': 'Linux syscall (setitimer)',
     'process_fork_fault_conformance.lsl': 'Linux syscalls (geteuid, prlimit)',
     'syscall6_conformance.lsl': 'Linux syscalls',
@@ -66,6 +70,8 @@ MACOS_SKIP = {
 # a nativního strojového kódu.
 WASI_SKIP = {
     'automatic_gc_conformance.lsl': 'memory from /proc/self/status',
+    'memory_footprint_conformance.lsl': 'memory from /proc/self/status',
+    'memory_release_conformance.lsl': 'memory from /proc/self/status',
     'automatic_gc_threads_conformance.lsl': 'processes (run, capture)',
     'call_statement_conformance.lsl': 'writes /dev/null',
     'list_directory_conformance.lsl': 'directory listing (WASI preview1 fd_readdir not used)',
@@ -88,6 +94,8 @@ WASI_SKIP = {
 # /proc by četl stav qemu na hostiteli.
 BAREMETAL_SKIP = {
     'automatic_gc_conformance.lsl': 'memory from /proc/self/status',
+    'memory_footprint_conformance.lsl': 'memory from /proc/self/status',
+    'memory_release_conformance.lsl': 'memory from /proc/self/status',
     'list_directory_conformance.lsl': 'no directories without an OS',
     'rename_conformance.lsl': 'no file system rename without an OS',
     'update_portable_conformance.lsl': 'no self-update without an OS',
@@ -109,6 +117,8 @@ BAREMETAL_SKIP = {
 # 32bitový Linux (přes C): nativní knihovny (vlastní zavaděč ELF64 a volací
 # konvence 64bitových CPU) zatím nejsou.
 LINUX32_SKIP = {
+    'memory_footprint_conformance.lsl': 'RSS of qemu-user itself',
+    'memory_release_conformance.lsl': 'RSS of qemu-user itself',
     'native_portable_conformance.lsl': 'native libraries are 64-bit only',
 }
 
@@ -130,7 +140,9 @@ def skip_reason(target, name):
 
 # Pod qemu-user (cizí architektura Linuxu bez --adb) chybí strict seccomp,
 # runtime izolované nativní volání správně odmítne.
-EMULATED_SKIP = {'native_portable_conformance.lsl': 'no seccomp in qemu-user'}
+EMULATED_SKIP = {'native_portable_conformance.lsl': 'no seccomp in qemu-user',
+                 'memory_footprint_conformance.lsl': 'RSS of qemu-user itself',
+                 'memory_release_conformance.lsl': 'RSS of qemu-user itself'}
 
 
 def check(compiler, target, source, scratch, timeout, adb=False):

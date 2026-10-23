@@ -54,7 +54,9 @@ Pomůcky: `glib.markup_escape(text)`, `glib.find_program_in_path(jméno)`,
 `glib.monotonic_time()` (µs), `glib.home_dir()`, `glib.user_config_dir()`,
 `glib.user_runtime_dir()`, `glib.host_name()`, `glib.getpid()`,
 `glib.set_prgname(jméno)`, `glib.set_application_name(jméno)`,
-`glib.unbuffered()` (výstup `print` hned, pro záznamy démona).
+`glib.unbuffered()` (výstup `print` hned, bez vyrovnávací paměti; `glib.main()`
+a `gtk.main()` ho zapnou samy, aby záznamy démona šly do roury nebo
+žurnálu okamžitě).
 
 Obsluhy jsou běžné funkce LSL. Chyba v obsluze program neukončí:
 vypíše se na stderr jako `LSL callback error: …` a obsluha vrátí 0

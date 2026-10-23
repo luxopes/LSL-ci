@@ -75,7 +75,7 @@ function lsl_runtime_start(stack):
     __lsl_qbe_store64(base + 48, intern)
     __lsl_qbe_store64(base + 56, INTERN_MASK)
     # Bitmapa začátků objektů: 1 bit na 8 B od začátku stavu, MAP_NORESERVE.
-    bitmap = os.map_anonymous(BITMAP_INITIAL, platform.MAP_NORESERVE)
+    bitmap = os.map_sparse(BITMAP_INITIAL)
     if bitmap < 0:
         call heap.fatal_allocation()
     end

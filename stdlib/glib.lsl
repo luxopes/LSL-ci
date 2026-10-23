@@ -181,6 +181,8 @@ function main():
     if main_loop == 0:
         main_loop = __lsl_qbe_call2(__lsl_symbol("g_main_loop_new"), 0, 0)
     end
+    # Výstup démona (roura, journal) musí jít ven hned, ne až při ukončení.
+    call unbuffered()
     return __lsl_qbe_call1(__lsl_symbol("g_main_loop_run"), ptr(main_loop))
 end
 
