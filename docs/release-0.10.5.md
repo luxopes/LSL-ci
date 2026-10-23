@@ -17,5 +17,12 @@
   halda malých programů zůstává v cache, běh je o 3–10 % rychlejší
   (allocation_gc −9 %, pfmt −10 %, list_access −10 %) a program s malou
   živou množinou drží o polovinu méně paměti (2,6 MB místo 4,9 MB).
+- Cache přeložených skriptů: `lsl program.lsl` si přeložený program uloží
+  do `$XDG_CACHE_HOME/lsl/programs` (jinak `~/.cache/lsl/programs`, 0700)
+  a při dalším spuštění ho rovnou spustí (~2 ms místo ~110 ms). Klíčem je
+  verze a otisk binárky `lsl`, cíl a cesta skriptu; manifest nese velikost
+  a čas změny každého načteného zdroje (skript, standardní knihovna,
+  moduly), změna kteréhokoli vede k novému překladu. `LSL_CACHE=0` cache
+  vypne; na Windows, macOS a 32bitovém Linuxu se zatím nepoužívá.
 - Nové testy `memory_footprint_conformance` a `memory_release_conformance`
   (jen Linux, mimo emulaci).

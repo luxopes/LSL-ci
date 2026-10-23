@@ -97,6 +97,38 @@ function cleanup_program(path):
     call rmdir(dirname(path))
 end
 
+# Otisk souboru pro cache přeložených programů: "velikost-sekundy-nanosekundy"
+# z poslední změny (stat bez následování symlinků); "" když soubor není nebo
+# platforma rozložení stat nepopisuje (32bitový Linux).
+function file_stamp(path):
+    if platform.STAT_MTIME < 0:
+        return ""
+    end
+    text = String(path)
+    encoded = __lsl_byte_zeros(__lsl_text_byte_length(text) + 1)
+    index = 0
+    while index < len(encoded) - 1:
+        encoded[index] = __lsl_text_byte(text, index)
+        index += 1
+    end
+    data = __lsl_byte_zeros(platform.STAT_BYTES)
+    status = __lsl_syscall(platform.SYS_NEWFSTATAT, platform.AT_FDCWD, __lsl_data_address(encoded), __lsl_data_address(data), platform.AT_SYMLINK_NOFOLLOW)
+    if status != 0:
+        return ""
+    end
+    return String(stat_field(data, platform.STAT_SIZE)) + "-" + String(stat_field(data, platform.STAT_MTIME)) + "-" + String(stat_field(data, platform.STAT_MTIME + 8))
+end
+
+function stat_field(data, offset):
+    value = 0
+    index = 7
+    while index >= 0:
+        value = value * 256 + data[offset + index]
+        index -= 1
+    end
+    return value
+end
+
 # Verze z hlavičky knihovny AI ("# AI 1.2.0: ..."), jinak None.
 function ai_header_version(path):
     first_line = ""

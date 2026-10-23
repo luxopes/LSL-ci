@@ -165,6 +165,7 @@ TIMESPEC_NANOSECONDS = implementation.TIMESPEC_NANOSECONDS
 STAT_BYTES = implementation.STAT_BYTES
 STAT_NLINK = implementation.STAT_NLINK
 STAT_MODE = implementation.STAT_MODE
+STAT_MTIME = implementation.STAT_MTIME
 STAT_UID = implementation.STAT_UID
 STAT_SIZE = implementation.STAT_SIZE
 OPEN_HOW_BYTES = implementation.OPEN_HOW_BYTES

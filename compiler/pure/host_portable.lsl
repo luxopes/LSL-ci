@@ -139,6 +139,11 @@ function cleanup_program(path):
     call rmdir(dirname(path))
 end
 
+# Cache přeložených programů zatím jen na Linuxu (potřebuje stat).
+function file_stamp(path):
+    return ""
+end
+
 # Verze z hlavičky knihovny AI ("# AI 1.2.0: ..."), jinak None.
 function ai_header_version(path):
     first_line = ""

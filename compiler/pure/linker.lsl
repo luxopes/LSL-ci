@@ -32,6 +32,19 @@ function module_path_with_home(name, owner_path, home):
     return host.module_path(name, owner_path, home, builtin_module(name))
 end
 
+# Soubory modulů načtené při překladu (pro cache přeložených programů v CLI).
+loaded_paths = []
+
+function reset_loaded_paths():
+    global loaded_paths
+    loaded_paths = []
+    return 0
+end
+
+function loaded_module_paths():
+    return loaded_paths
+end
+
 function module_path(name, owner_path):
     return module_path_with_home(name, owner_path, host.home())
 end
@@ -589,6 +602,7 @@ function collect_module(name, owner_path, cache, output, source_budget, internal
     else:
         call import_failure(name, path, owner_path, owner_source, import_statement, False)
     end
+    loaded_paths.append(path)
     source_bytes = __lsl_text_byte_length(source)
     # Byte counts have a fixed scalar representation across the internal ABI.
     # Keep platform-provider metadata in the surrounding heterogeneous pair.

@@ -174,6 +174,9 @@ STAT_NLINK_BYTES = 8
 STAT_MODE = 24
 STAT_UID = 28
 STAT_SIZE = 48
+# Čas poslední změny (st_mtim: sekundy, +8 nanosekundy); -1 = rozložení
+# 32bitového stat64 tu není popsané, cache programů se nepoužije.
+STAT_MTIME = 88
 OPEN_HOW_BYTES = 24
 OPEN_HOW_FLAGS = 0
 OPEN_HOW_MODE = 8

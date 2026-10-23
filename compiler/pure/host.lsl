@@ -31,6 +31,10 @@ function cleanup_program(path):
     return implementation.cleanup_program(path)
 end
 
+function file_stamp(path):
+    return implementation.file_stamp(path)
+end
+
 function module_path(name, owner_path, home, builtin):
     return implementation.module_path(name, owner_path, home, builtin)
 end

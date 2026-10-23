@@ -406,6 +406,9 @@ call require_success(run_compiler(["tests/compiler/env_integration.lsl", env_int
 call require_output(env_integration, [cli_test, compiler, test_root], "tests/compiler/env_integration.out", "env integration differs")
 call require_success(run_compiler(["tests/compiler/cli_080_conformance.lsl", cli_080_test]), "compile CLI 0.8.0 conformance")
 call require_output(cli_080_test, [cli_test, compiler], "tests/compiler/cli_080_conformance.out", "CLI 0.8.0 conformance differs")
+cli_cache_test = test_path("cli-cache-test")
+call require_success(run_compiler(["tests/compiler/cli_cache_conformance.lsl", cli_cache_test]), "compile CLI cache conformance")
+call require_output(cli_cache_test, [cli_test, compiler], "tests/compiler/cli_cache_conformance.out", "CLI cache conformance differs")
 for release_test in ["color_conformance", "frontend_conformance", "backend_conformance", "semantic_validation_conformance", "abi_conformance", "platform_runtime_conformance", "object_image_conformance", "safe_codegen_conformance", "ai_manual_conformance", "automatic_gc_codegen_conformance", "definite_assignment_conformance", "import_diagnostics_conformance", "language_safety_negative"]:
     # Testy starého přímého backendu x86_64 (backend_x86_64, emitory) mají
     # smysl jen na x86_64; pro jiný cíl se přeskočí.

@@ -3,6 +3,8 @@ load host
 # Public pure-LSL command frontend.
 
 load pipeline
+load linker
+load release_crypto
 load editor
 load fd
 load highlight
@@ -201,6 +203,124 @@ function materialize_scratch(image):
         Error(FileError: failure)
     end
     return path
+end
+
+# Cache přeložených skriptů (`lsl program.lsl`): překlad trvá ~100 ms, běh
+# z cache ~1 ms. Klíč: verze a otisk binárky lsl, cíl a absolutní cesta
+# skriptu; manifest KEY.deps nese otisk (velikost, mtime) každého načteného
+# zdroje (skript, dynamic_stdlib, moduly), při změně kteréhokoli se překládá
+# znovu. Adresář $XDG_CACHE_HOME/lsl/programs (jinak ~/.cache/lsl/programs)
+# je soukromý (0700). LSL_CACHE=0 cache vypne; bez stat (jiné hostitele) se
+# nepoužije.
+function cache_directory():
+    root = __lsl_getenv("XDG_CACHE_HOME")
+    if root == None or not String(root).startswith("/"):
+        root = host.user_home() + "/.cache"
+    end
+    return root + "/lsl/programs"
+end
+
+function absolute_path(path):
+    if path.startswith("/"):
+        return path
+    end
+    directory = __lsl_getenv("PWD")
+    if directory == None or directory == "":
+        return path
+    end
+    return directory + "/" + path
+end
+
+function cache_enabled(source_path):
+    if __lsl_getenv("LSL_CACHE") == "0":
+        return False
+    end
+    return host.file_stamp(source_path) != ""
+end
+
+function cache_key(source_path):
+    executable = executable_path()
+    text = VERSION + chr(10) + host.target_name() + chr(10) + executable + chr(10) + host.file_stamp(executable) + chr(10) + absolute_path(source_path) + chr(10)
+    data = __lsl_byte_zeros(__lsl_text_byte_length(text))
+    index = 0
+    while index < len(data):
+        data[index] = __lsl_text_byte(text, index)
+        index += 1
+    end
+    return release_crypto.sha256_hex(data)
+end
+
+# Cesta k platnému přeloženému programu, nebo "".
+function cached_program(key):
+    root = cache_directory()
+    manifest = root + "/" + key + ".deps"
+    binary = root + "/" + key + ".bin"
+    if not exists(manifest) or not exists(binary):
+        return ""
+    end
+    for line in readfile(manifest).split(chr(10)):
+        if line != "":
+            parts = line.split(chr(9))
+            if len(parts) != 2 or host.file_stamp(parts[0]) != parts[1]:
+                return ""
+            end
+        end
+    end
+    return binary
+end
+
+function ensure_cache_directory(root):
+    # ~/.cache a ~/.cache/lsl jako běžné adresáře, programs soukromě (0700).
+    parent = dirname(dirname(root))
+    if not exists(parent):
+        call mkdir(parent)
+    end
+    if not exists(dirname(root)):
+        call mkdir(dirname(root))
+    end
+    if not exists(root):
+        if __lsl_mkdir_private(root) != 0 and not exists(root):
+            return False
+        end
+    end
+    return True
+end
+
+# Uloží program a manifest; chyby (plný disk, cizí práva) cache jen přeskočí.
+function store_program(key, image, paths):
+    root = cache_directory()
+    safe:
+        if ensure_cache_directory(root):
+            entries = __lsl_list_directory(root)
+            if len(entries) > 512:
+                for name in entries:
+                    call unlink(root + "/" + name)
+                end
+            end
+            lines = []
+            complete = True
+            for path in paths:
+                stamp = host.file_stamp(path)
+                if stamp == "":
+                    complete = False
+                end
+                lines.append(path + chr(9) + stamp)
+            end
+            if complete:
+                manifest = root + "/" + key + ".deps"
+                binary = root + "/" + key + ".bin"
+                if exists(manifest):
+                    call unlink(manifest)
+                end
+                if exists(binary):
+                    call unlink(binary)
+                end
+                call writebytes(binary, image)
+                call writefile(manifest, chr(10).join(lines) + chr(10))
+            end
+        end
+    end
+    return 0
 end
 
 function cleanup_config_snapshots(directory):
@@ -849,12 +969,31 @@ function main():
         exit(status)
     end
 
-    image = compile_file_image(command, 1)
+    key = ""
+    program = ""
+    if cache_enabled(command):
+        key = cache_key(command)
+        program = cached_program(key)
+    end
+    image = None
+    if program == "":
+        call linker.reset_loaded_paths()
+        image = compile_file_image(command, 1)
+        if key != "":
+            paths = [command, resource_path("compiler/pure/dynamic_stdlib.lsl")]
+            call paths.extend(linker.loaded_module_paths())
+            call store_program(key, image, paths)
+            program = cached_program(key)
+        end
+    end
     arguments = []
     index = 2
     while index < arg_count():
         arguments.append(arg(index))
         index += 1
+    end
+    if program != "":
+        exit(run(program, arguments))
     end
     scratch = materialize_scratch(image)
     status = run(scratch, arguments)
