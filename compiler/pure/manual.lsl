@@ -47,6 +47,7 @@ function pages():
         ["sandbox", "Knihovna sandbox — capability sandbox"],
         ["tensor", "Knihovna tensor — CPU tenzory"],
         ["tui", "Knihovna tui — terminalovy UI toolkit"],
+        ["gtk", "Knihovny gtk, glib a gio — GTK 3, GLib a D-Bus na Linuxu"],
         ["unixsock", "Knihovna unixsock — unix sockety"],
         ["cuda", "Knihovna cuda — GPU backend"],
         ["reference", "Kompletni reference funkci"],

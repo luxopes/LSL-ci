@@ -54,7 +54,7 @@ def main():
                         help="secure parent for isolated installation; /tmp is not suitable")
     parser.add_argument("--old-installer", type=Path,
                         default=Path.home() / ".local/bin/lsl-install")
-    parser.add_argument("--expected-version", default="0.10.3",
+    parser.add_argument("--expected-version", default="0.10.4",
                         help="canonical machine version; BETA is a separate display label")
     parser.add_argument("--timeout", type=int, default=3600,
                         help="complete original corpus timeout, at least 1800 seconds")

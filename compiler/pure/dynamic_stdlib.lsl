@@ -382,6 +382,9 @@ function __lsl_help_text(topic):
         "os": "load os\nSafe direct-argv process execution and executable lookup, never implicit shell execution.",
         "time": "load time\nSleep and time utilities. See lsl man --plain reference.",
         "tui": "load tui\nPure-LSL full-screen terminal toolkit: Terminal, enter/leave, read_key and rendering.\nAlways restore the terminal on errors and cancellation.",
+        "gtk": "load gtk\nGTK 3 windows and widgets over the GLib main loop; target linux-x86_64-gnu. See lsl man gtk.",
+        "glib": "load glib\nGLib main loop, timers, UNIX signals, spawn and GObject signals; target linux-x86_64-gnu. See lsl man gtk.",
+        "gio": "load gio\nD-Bus over GIO: calls, properties, signals and name watching; target linux-x86_64-gnu. See lsl man gtk.",
         "math": "load math\nMathematical constants and numeric functions. See lsl man --plain reference.",
         "bigint": "load bigint\nArbitrary-precision integer arithmetic. Construct bigint.BigInt(VALUE).",
         "ai": "load ai\nAI service client utilities; see lsl man ai.",
@@ -393,7 +396,7 @@ function __lsl_help_text(topic):
     if topic == "":
         names = topics.keys()
         call names.sort()
-        return "Lux Simple Lang (LSL) 0.10.3" + chr(10) + "Use help(\"TOPIC\") for details; lsl man opens the full offline manual." + chr(10) + "topics: " + " ".join(names)
+        return "Lux Simple Lang (LSL) 0.10.4" + chr(10) + "Use help(\"TOPIC\") for details; lsl man opens the full offline manual." + chr(10) + "topics: " + " ".join(names)
     end
     about = __lsl_library_about(topic)
     if topic not in topics:
@@ -429,6 +432,9 @@ function __lsl_about_table():
         "requests": "requests: Python-style HTTP client over the shared transport; get/post/put/patch/delete/head/request return Response objects with status, text, ok, json() and raise_for_status().",
         "httpserver": "httpserver: bounded HTTP/1.1 server with syscall-only transport and static files pinned to one directory; also behind lsl server.",
         "tui": "tui: full-screen terminal toolkit: cbreak mode, alternate screen, ANSI rendering and a normalized key decoder for keyboard-driven programs.",
+        "gtk": "gtk: GTK 3 windows, widgets and signal handlers over the GLib main loop (target linux-x86_64-gnu).",
+        "glib": "glib: GLib main loop, timers, UNIX signals, process spawning and GObject signals (target linux-x86_64-gnu).",
+        "gio": "gio: D-Bus over GIO: method calls, properties, signals, name watching and ownership (target linux-x86_64-gnu).",
         "env": "env: process environment with automatic runtime .env loading beside the script/executable. Exported values take precedence; get, has, require and load_dotenv.",
         "config": "config: helpers for declarative configuration modules evaluated by lsl config.",
         "configure": "configure: generates the native configuration evaluator wrapper for a module graph (used by lsl-configure).",
@@ -510,7 +516,7 @@ function __lsl_about_text(name):
         Error(TypeError: "about name must be a String")
     end
     if name == "":
-        return "Lux Simple Lang (LSL) 0.10.3" + chr(10) + "A small self-hosted programming language: the compiler runs on Linux, Windows and macOS, translates to LuxIR and builds native programs without libc for Linux (x86_64, arm64, riscv64), Windows, macOS, WebAssembly and bare metal RISC-V. Programs read like scripts, run as native code, and can use declarative configuration, AI clients, GUI packages and optional CUDA tensors." + chr(10) + "Website and manual: https://lsl.lux-ai.cz/  (offline: lsl man)" + chr(10) + "License: MIT"
+        return "Lux Simple Lang (LSL) 0.10.4" + chr(10) + "A small self-hosted programming language: the compiler runs on Linux, Windows and macOS, translates to LuxIR and builds native programs without libc for Linux (x86_64, arm64, riscv64), Windows, macOS, WebAssembly and bare metal RISC-V. Programs read like scripts, run as native code, and can use declarative configuration, AI clients, GUI packages and optional CUDA tensors." + chr(10) + "Website and manual: https://lsl.lux-ai.cz/  (offline: lsl man)" + chr(10) + "License: MIT"
     end
     about = __lsl_library_about(name)
     if about == "":
