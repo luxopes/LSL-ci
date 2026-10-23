@@ -1,4 +1,6 @@
-# LSL 0.10.6 – vývojová verze
+# Release LSL 0.10.6
+
+Vydáno 23. 10. 2026. Backend LuxIR 0.4.3.
 
 Doplňky pro plochu LuxOS v LSL (zadání LuxOS po 0.10.5): opravy tří chyb
 cíle `linux-x86_64-gnu`, jazykové drobnosti a podstatně širší moduly
@@ -7,7 +9,7 @@ cíle `linux-x86_64-gnu`, jazykové drobnosti a podstatně širší moduly
 ## Opravy
 
 - `strip`/`objcopy` na programu cíle gnu už nedává „exec format error“:
-  LuxIR 0.4.2 zapisuje hlavičky sekcí `.interp`, `.got`, `.dynsym`,
+  LuxIR 0.4.3 zapisuje hlavičky sekcí `.interp`, `.got`, `.dynsym`,
   `.dynstr`, `.hash`, `.rela.dyn` a `.dynamic`, takže BFD interpret a tabulky
   ld.so zachová (makepkg stripuje implicitně).
 - `readfile`/`readbytes` čtou soubory bez známé velikosti (`/proc/*/cmdline`,

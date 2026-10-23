@@ -1,7 +1,7 @@
 {
-  "version": "0.10.5",
+  "version": "0.10.6",
   "status": "STABLE",
-  "tag": "v0.10.5",
+  "tag": "v0.10.6",
   "platforms": [
     "linux-x86_64",
     "linux-aarch64",
@@ -14,12 +14,12 @@
   "backend": {
     "name": "LuxIR",
     "repository": "https://git.lux-ai.cz/LuxAI/LuxIR.git",
-    "commit": "43199b7fba05d11f336684ff033b4b206c00f673",
+    "commit": "ce6e30a6c0436ceba252eb02790eaa6c56af4d0c",
     "directory": "build/dependencies/LuxIR"
   },
   "manual": {
     "repository": "https://git.lux-ai.cz/LuxAI/LSL-Web.git",
-    "commit": "61dccd58de374e0acd3de5b47aa0786c4e4f2802",
+    "commit": "250a8772a85f505c124826d9de207cd67917dc06",
     "path": "public",
     "directory": "build/dependencies/LSL-Web"
   },
