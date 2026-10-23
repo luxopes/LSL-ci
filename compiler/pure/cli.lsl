@@ -4,7 +4,6 @@ load host
 
 load pipeline
 load linker
-load release_crypto
 load editor
 load fd
 load highlight
@@ -19,7 +18,7 @@ load sandbox
 load tui
 load update
 
-VERSION = "0.10.4"
+VERSION = "0.10.5"
 # Prázdné u stabilního vydání, jinak např. " BETA".
 RELEASE_LABEL = ""
 
@@ -206,22 +205,26 @@ function materialize_scratch(image):
 end
 
 # Cache přeložených skriptů (`lsl program.lsl`): překlad trvá ~100 ms, běh
-# z cache ~1 ms. Klíč: verze a otisk binárky lsl, cíl a absolutní cesta
-# skriptu; manifest KEY.deps nese otisk (velikost, mtime) každého načteného
-# zdroje (skript, dynamic_stdlib, moduly), při změně kteréhokoli se překládá
-# znovu. Adresář $XDG_CACHE_HOME/lsl/programs (jinak ~/.cache/lsl/programs)
-# je soukromý (0700). LSL_CACHE=0 cache vypne; bez stat (jiné hostitele) se
-# nepoužije.
+# z cache ~1 ms. Klíč: verze a otisk binárky lsl, cíl a cesta skriptu;
+# manifest KEY.deps nese otisk každého načteného zdroje (skript,
+# dynamic_stdlib, moduly) – při změně kteréhokoli se překládá znovu. Otisk
+# je velikost a čas změny (stat, Linux), jinak FNV-1a obsahu (Windows,
+# macOS: čtení a otisk standardní knihovny ~0,3 ms). Adresář
+# $XDG_CACHE_HOME/lsl/programs (jinak ~/.cache/lsl/programs, na Windows
+# %LOCALAPPDATA%/lsl/programs) je soukromý (0700). LSL_CACHE=0 cache vypne.
 function cache_directory():
     root = __lsl_getenv("XDG_CACHE_HOME")
-    if root == None or not String(root).startswith("/"):
-        root = host.user_home() + "/.cache"
+    if root == None or root == "":
+        root = __lsl_getenv("LOCALAPPDATA")
+        if root == None or root == "":
+            root = host.user_home() + "/.cache"
+        end
     end
     return root + "/lsl/programs"
 end
 
 function absolute_path(path):
-    if path.startswith("/"):
+    if path.startswith("/") or path.startswith("\\") or (len(path) > 2 and path[1] == ":"):
         return path
     end
     directory = __lsl_getenv("PWD")
@@ -231,23 +234,58 @@ function absolute_path(path):
     return directory + "/" + path
 end
 
-function cache_enabled(source_path):
-    if __lsl_getenv("LSL_CACHE") == "0":
-        return False
-    end
-    return host.file_stamp(source_path) != ""
+function cache_enabled():
+    return __lsl_getenv("LSL_CACHE") != "0"
 end
 
-function cache_key(source_path):
-    executable = executable_path()
-    text = VERSION + chr(10) + host.target_name() + chr(10) + executable + chr(10) + host.file_stamp(executable) + chr(10) + absolute_path(source_path) + chr(10)
+function bytes_digest(data):
+    return String(__lsl_qbe_call2(__lsl_symbol("rt_runtime_bytes_digest"), __lsl_data_address(data), len(data)))
+end
+
+function text_digest(text):
     data = __lsl_byte_zeros(__lsl_text_byte_length(text))
     index = 0
     while index < len(data):
         data[index] = __lsl_text_byte(text, index)
         index += 1
     end
-    return release_crypto.sha256_hex(data)
+    return bytes_digest(data)
+end
+
+# Otisk zdroje: "s" + stat, nebo "h" + otisk obsahu; "" když nelze přečíst.
+function source_mark(path):
+    stamp = host.file_stamp(path)
+    if stamp != "":
+        return "s" + stamp
+    end
+    result = ""
+    safe:
+        result = "h" + bytes_digest(readbytes(path))
+    end
+    return result
+end
+
+# Identita binárky lsl: verze, cesta a otisk (stat; bez něj délka a otisk
+# prvních a posledních 64 KiB – nový překlad mění kód i na začátku).
+function executable_identity():
+    executable = executable_path()
+    mark = host.file_stamp(executable)
+    if mark == "":
+        image = readbytes(executable)
+        size = len(image)
+        head = min(size, 65536)
+        sample = __lsl_byte_zeros(head + min(max(size - head, 0), 65536))
+        call __lsl_byte_copy(sample, image, 0, 0, head)
+        if len(sample) > head:
+            call __lsl_byte_copy(sample, image, head, size - (len(sample) - head), len(sample) - head)
+        end
+        mark = String(size) + "-" + bytes_digest(sample)
+    end
+    return VERSION + chr(10) + executable + chr(10) + mark
+end
+
+function cache_key(source_path):
+    return text_digest(executable_identity() + chr(10) + host.target_name() + chr(10) + absolute_path(source_path) + chr(10))
 end
 
 # Cesta k platnému přeloženému programu, nebo "".
@@ -261,7 +299,7 @@ function cached_program(key):
     for line in readfile(manifest).split(chr(10)):
         if line != "":
             parts = line.split(chr(9))
-            if len(parts) != 2 or host.file_stamp(parts[0]) != parts[1]:
+            if len(parts) != 2 or source_mark(parts[0]) != parts[1]:
                 return ""
             end
         end
@@ -270,7 +308,7 @@ function cached_program(key):
 end
 
 function ensure_cache_directory(root):
-    # ~/.cache a ~/.cache/lsl jako běžné adresáře, programs soukromě (0700).
+    # Nadřazené adresáře jako běžné, programs soukromě (0700).
     parent = dirname(dirname(root))
     if not exists(parent):
         call mkdir(parent)
@@ -300,11 +338,11 @@ function store_program(key, image, paths):
             lines = []
             complete = True
             for path in paths:
-                stamp = host.file_stamp(path)
-                if stamp == "":
+                mark = source_mark(path)
+                if mark == "":
                     complete = False
                 end
-                lines.append(path + chr(9) + stamp)
+                lines.append(path + chr(9) + mark)
             end
             if complete:
                 manifest = root + "/" + key + ".deps"
@@ -971,7 +1009,7 @@ function main():
 
     key = ""
     program = ""
-    if cache_enabled(command):
+    if cache_enabled():
         key = cache_key(command)
         program = cached_program(key)
     end

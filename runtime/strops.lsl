@@ -113,6 +113,27 @@ function rt_runtime_grow_intern_table():
 end
 
 # Kopie statického záznamu String na haldu, jednou pro každou adresu záznamu.
+# Otisk bajtů bez seedu (FNV-1a 64; stabilní mezi běhy, pro cache překladů).
+function rt_runtime_bytes_digest(address, length):
+    h = -3750763034362895579
+    position = address
+    finish = address + length
+    while __lsl_qbe_ult(position, finish):
+        h = (h ~ __lsl_qbe_load8(position)) * 1099511628211
+        position += 1
+    end
+    return h
+end
+
+# Kopie literálu při startu programu (lsl_init_literals): každý literál se
+# kopíruje právě jednou do kořenového slotu, internovací tabulka je zbytečná.
+function rt_runtime_string_literal(source):
+    length = __lsl_qbe_load64(source + 8)
+    text = string_alloc(length)
+    call copy_memory(text + 16, source + 16, length)
+    return text
+end
+
 function rt_runtime_string_clone(source):
     base = core.state()
     table = __lsl_qbe_load64(base + INTERN_TABLE)

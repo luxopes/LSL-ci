@@ -3171,17 +3171,17 @@ function generate(unit,path,entry_source=""):
     for text in shared["strings"]:
         index = shared["strings"][text]
         offset = (len(unit["variables"])+index)*8
-        initializers.append("    Int64(p"+String(index)+") = call rt_runtime_string_clone(str"+String(index)+")"+chr(10))
+        initializers.append("    Int64(p"+String(index)+") = call rt_runtime_string_literal(str"+String(index)+")"+chr(10))
         initializers.append("    Int64(a"+String(index)+") = add(lsl_globals, "+String(offset)+")"+chr(10))
         initializers.append("    store(p"+String(index)+", a"+String(index)+")"+chr(10))
-        # Previously initialized slots are already roots. Bound startup work
-        # for programs containing unusually large sets of string literals.
-        initializers.append("    call rt_runtime_maybe_gc()"+chr(10))
         escaped = text.replace("\\","\\\\").replace("\"","\\\"").replace(chr(10),"\\n").replace(chr(13),"\\r").replace(chr(9),"\\t").replace(chr(0),"\\0")
         # LuxIR strings contain UTF-8 bytes; LSL length counts characters.
         length = __lsl_text_byte_length(String(text))
         call appendfile(path,"data str"+String(shared["strings"][text])+" align 8 = [Int64(1, "+String(length)+"), \""+escaped+"\", Int8(0)]"+chr(10))
     end
+    # Zaplněné sloty jsou kořeny; jeden úklid na konci omezí haldu programů
+    # s neobvykle velkou sadou literálů.
+    initializers.append("    call rt_runtime_maybe_gc()"+chr(10))
     initializers.append("    return"+chr(10)+"end"+chr(10))
     call appendfile(path,"".join(initializers))
     return len(shared["queue"])

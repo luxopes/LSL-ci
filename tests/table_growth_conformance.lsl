@@ -4,7 +4,8 @@ objects = []
 for index in rang(40):
     objects.append([index])
 end
-intern_mask = __lsl_intern_table_mask()
-# Objekty rozlišuje bitmapa začátků objektů, tabulka objektů už neroste.
-print intern_mask >= 15, len(objects), len(texts)
+# Objekty rozlišuje bitmapa začátků objektů, tabulka objektů už neroste;
+# literály se při startu kopírují bez internovací tabulky (od 0.10.5),
+# malé tabulky tedy nesmí vadit ani růstu haldy, ani dvanácti literálům.
+print __lsl_intern_table_mask() >= 7, len(objects), len(texts)
 print objects[39][0], texts[11]
