@@ -291,6 +291,22 @@ function remove_directory(path):
     return checked(__lsl_qbe_call1(__lsl_symbol("rmdir"), path))
 end
 
+# Pracovní adresář do buffer: délka bez nuly, nebo záporné errno.
+function current_directory(buffer, size):
+    if __lsl_qbe_call2(__lsl_symbol("getcwd"), buffer, size) == 0:
+        return last_errno()
+    end
+    length = 0
+    while length < size and __lsl_qbe_load8(buffer + length) != 0:
+        length += 1
+    end
+    return length
+end
+
+function change_directory(path):
+    return checked(__lsl_qbe_call1(__lsl_symbol("chdir"), path))
+end
+
 # Přejmenování bez přepsání cíle (renamex_np, RENAME_EXCL; macOS 10.12+).
 function rename_path(source, destination):
     return checked(__lsl_qbe_call3(__lsl_symbol("renamex_np"), source, destination, 4))

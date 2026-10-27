@@ -1,0 +1,15 @@
+yes no
+1 ['a']
+medium
+[1, 20, 3, 40]
+hello 2 changed changed
+2
+AttributeError: instance has no member value
+AttributeError: member value requires a class instance, got Int
+None None True 2
+None 7
+[žluťoučký kůň] [žluťoučký kůň  ] [  žluťoučký kůň]
+[ž] [aj ča] []
+říl liš True
+200000 199999 True
+True

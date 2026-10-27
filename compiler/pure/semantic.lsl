@@ -181,7 +181,7 @@ end
 
 # Builtin return types are immutable. A single lookup replaces repeated long
 # chains of String comparisons at every inference visit.
-BUILTIN_RETURN_TYPES = {"len":"Int","Int":"Int","ord":"Int","arg_count":"Int","run":"Int","__lsl_run":"Int","run_clean":"Int","__lsl_run_clean":"Int","capture_status":"Int","native_u64":"Int","native_size":"Int","native_call":"Int","native_close":"Int","__lsl_type_code":"Int","__lsl_raw_equal":"Int","__lsl_float_bits":"Int","__lsl_float_candidate_bits":"Int","__lsl_float_from_decimal":"Int","__lsl_decimal_compare":"Int","__lsl_decimal_digits_compare":"Int","__lsl_float_nearer_upper":"Bool","__lsl_float_to_int":"Int","__lsl_unbox_int":"Int","__lsl_raw_int":"Int","__lsl_typed_int":"Int","__lsl_checked_index":"Int","__lsl_parse_literal_int":"Int","__lsl_test_fd_fault":"Int","__lsl_address":"Int","__lsl_object_table_mask":"Int","__lsl_intern_table_mask":"Int","__lsl_fd_open":"Int","__lsl_fd_read":"Int","__lsl_fd_write":"Int","__lsl_fd_seek":"Int","__lsl_fd_close":"Int","__lsl_fd_socket":"Int","__lsl_fd_connect":"Int","__lsl_raster_pack":"Int","__lsl_raster_copy":"Int","__lsl_raster_fill":"Int","__lsl_fd_ioctl":"Int","__lsl_fd_mmap":"Int","__lsl_mem_pack":"Int","__lsl_data_address":"Int","__lsl_syscall":"Int","__lsl_syscall6":"Int","__lsl_mem_unpack":"Int","__lsl_byte_copy":"Int","__lsl_text_byte":"Int","__lsl_text_byte_length":"Int","__lsl_text_scan_digits":"Int","__lsl_text_digits":"Int","atomic_add":"Int","atomic_xchg":"Int","atomic_cas":"Int","thread_spawn":"Int","thread_join":"Int","cpu_count":"Int","popcount":"Int","trailing_zeros":"Int","Float":"Float","sqrt":"Float","__lsl_float_from_bits":"Float","float_sum":"Float","float_dot":"Float","__lsl_wall_time":"Float","Bool":"Bool","__lsl_isatty":"Bool","__lsl_stdin_eof":"Bool","last_error":"Any","String":"String","chr":"String","arg":"Any","input":"String","readfile":"String","type":"String","capture":"String","__lsl_capture":"String","capture_clean":"String","__lsl_capture_clean":"String","capture_stream":"String","capture_stream_clean":"String","capture_input":"String","capture_input_clean":"String","capture_input_stream":"String","capture_input_stream_clean":"String","__lsl_capture_input_timeout":"String","__lsl_run_timeout":"Int","capture_stderr":"String","executable_path":"String","__lsl_text_from_bytes":"String","__lsl_text_piece":"String","__lsl_floatarray_bytes":"String","clock":"String","monotonic":"Float","__lsl_monotonic":"Float","exists":"Bool","listdir":"List","__lsl_list_directory":"List","eprint":"None","__lsl_rename":"Int","native_name_equal":"Bool","__lsl_sleep":"None","atomic_pause":"None","help":"None","__lsl_set_append":"None","__lsl_set_store":"None","List":"List","sorted":"List","dedup":"List","__lsl_text_split_byte":"List","set":"Set","__lsl_new_set":"Set","Tuple":"Tuple","RealArray":"RealArray","IntArray":"IntArray","__lsl_int_zeros":"IntArray","FloatArray":"FloatArray","float_zeros":"FloatArray","float_matmul":"FloatArray","__lsl_floatarray_from_bytes":"FloatArray","ByteArray":"ByteArray","readbytes":"ByteArray","__lsl_byte_zeros":"ByteArray","Dictionary":"Dictionary"}
+BUILTIN_RETURN_TYPES = {"len":"Int","Int":"Int","ord":"Int","arg_count":"Int","run":"Int","__lsl_run":"Int","run_clean":"Int","__lsl_run_clean":"Int","capture_status":"Int","native_u64":"Int","native_size":"Int","native_call":"Int","native_close":"Int","__lsl_type_code":"Int","__lsl_raw_equal":"Int","__lsl_float_bits":"Int","__lsl_float_candidate_bits":"Int","__lsl_float_from_decimal":"Int","__lsl_decimal_compare":"Int","__lsl_decimal_digits_compare":"Int","__lsl_float_nearer_upper":"Bool","__lsl_float_to_int":"Int","__lsl_unbox_int":"Int","__lsl_raw_int":"Int","__lsl_typed_int":"Int","__lsl_checked_index":"Int","__lsl_parse_literal_int":"Int","__lsl_test_fd_fault":"Int","__lsl_address":"Int","__lsl_object_table_mask":"Int","__lsl_intern_table_mask":"Int","__lsl_fd_open":"Int","__lsl_fd_read":"Int","__lsl_fd_write":"Int","__lsl_fd_seek":"Int","__lsl_fd_close":"Int","__lsl_fd_socket":"Int","__lsl_fd_connect":"Int","__lsl_raster_pack":"Int","__lsl_raster_copy":"Int","__lsl_raster_fill":"Int","__lsl_fd_ioctl":"Int","__lsl_fd_mmap":"Int","__lsl_mem_pack":"Int","__lsl_data_address":"Int","__lsl_syscall":"Int","__lsl_syscall6":"Int","__lsl_mem_unpack":"Int","__lsl_byte_copy":"Int","__lsl_text_byte":"Int","__lsl_text_byte_length":"Int","__lsl_text_scan_digits":"Int","__lsl_text_digits":"Int","atomic_add":"Int","atomic_xchg":"Int","atomic_cas":"Int","thread_spawn":"Int","thread_join":"Int","cpu_count":"Int","popcount":"Int","trailing_zeros":"Int","Float":"Float","sqrt":"Float","__lsl_float_from_bits":"Float","float_sum":"Float","float_dot":"Float","__lsl_wall_time":"Float","Bool":"Bool","__lsl_isatty":"Bool","__lsl_stdin_eof":"Bool","last_error":"Any","String":"String","chr":"String","arg":"Any","input":"String","readfile":"String","type":"String","capture":"String","__lsl_capture":"String","capture_clean":"String","__lsl_capture_clean":"String","capture_stream":"String","capture_stream_clean":"String","capture_input":"String","capture_input_clean":"String","capture_input_stream":"String","capture_input_stream_clean":"String","__lsl_capture_input_timeout":"String","__lsl_run_timeout":"Int","capture_stderr":"String","executable_path":"String","__lsl_text_from_bytes":"String","__lsl_text_piece":"String","__lsl_floatarray_bytes":"String","clock":"String","monotonic":"Float","__lsl_monotonic":"Float","exists":"Bool","cwd":"String","chdir":"None","remove_path":"None","listdir":"List","__lsl_list_directory":"List","eprint":"None","__lsl_rename":"Int","native_name_equal":"Bool","__lsl_sleep":"None","atomic_pause":"None","help":"None","__lsl_set_append":"None","__lsl_set_store":"None","List":"List","sorted":"List","dedup":"List","__lsl_text_split_byte":"List","set":"Set","__lsl_new_set":"Set","Tuple":"Tuple","RealArray":"RealArray","IntArray":"IntArray","__lsl_int_zeros":"IntArray","FloatArray":"FloatArray","float_zeros":"FloatArray","float_matmul":"FloatArray","__lsl_floatarray_from_bytes":"FloatArray","ByteArray":"ByteArray","readbytes":"ByteArray","__lsl_byte_zeros":"ByteArray","Dictionary":"Dictionary"}
 
 function return_type_value(function_returns, key):
     value = function_returns[key]
@@ -235,6 +235,8 @@ function infer_expression_type(syntax, types, function_returns):
         call collect_types(syntax["body"], types, function_returns)
         if syntax["collection_kind"] == "dictionary":
             return "Dictionary"
+        elif syntax["collection_kind"] == "conditional":
+            return infer_expression_type(syntax["result"], types, function_returns)
         end
         return "List"
     elif kind == "list":
@@ -612,6 +614,31 @@ function is_numeric_type(value_type):
     return value_type == "Int" or value_type == "Bool" or value_type == "Float" or value_type == "Any"
 end
 
+# Metoda třídy volaná na hodnotě bez statického typu (instance v parametru):
+# jméno třídy, když metodu se jménem `name` implementuje právě jedna funkce;
+# "@ambiguous", když ji implementuje víc tříd různě; "" jinak (vestavěná
+# metoda nebo žádná třída). Instance za běhu nenese svou třídu, proto se
+# nejednoznačná metoda nedá vybrat a překlad ji odmítne.
+function dynamic_method_class(classes, functions, receiver_type, name):
+    if receiver_type != "Any" or method_supported("Any", name):
+        return ""
+    end
+    found = ""
+    found_class = ""
+    for class_name in classes.keys():
+        resolved = resolve_method_name(classes, functions, class_name, name)
+        if resolved != "":
+            if found == "":
+                found = resolved
+                found_class = class_name
+            elif resolved != found:
+                return "@ambiguous"
+            end
+        end
+    end
+    return found_class
+end
+
 function method_supported(receiver_type, name):
     if receiver_type == "Any":
         return method_function(name) != "" or name == "append" or name == "clear" or name == "pop" or name == "keys" or name == "index" or set_method(name)
@@ -929,6 +956,9 @@ function function_table(path, lines, program):
     return functions
 end
 
+# "@none" je výslovné `return None` (nebo holé `return`): na rozdíl od "None"
+# (zatím žádný návrat) ho nelze sloučit se skalárem Int/Float/Bool, ten by
+# None přeložil jako 0/0.0/False.
 function merge_return_type(current, candidate):
     if candidate == "None":
         return current
@@ -936,27 +966,53 @@ function merge_return_type(current, candidate):
         return candidate
     elif current == candidate:
         return current
+    elif candidate == "@none":
+        if current in ["Int", "Float", "Bool"]:
+            return "Any"
+        end
+        return current
+    elif current == "@none":
+        if candidate in ["Int", "Float", "Bool"]:
+            return "Any"
+        end
+        return candidate
     end
     return "Any"
 end
 
 function returned_type(statements, types, function_returns):
+    result = returned_type_marked(statements, types, function_returns)
+    if result == "@none":
+        return "None"
+    end
+    return result
+end
+
+function explicit_none(expression):
+    return expression == None or (expression["kind"] == "literal" and expression["value"] == "None")
+end
+
+function returned_type_marked(statements, types, function_returns):
     result = "None"
     for statement in statements:
         kind = statement["kind"]
         if kind == "return":
-            result = merge_return_type(result, infer_expression_type(statement["expression"], types, function_returns))
+            if explicit_none(statement["expression"]):
+                result = merge_return_type(result, "@none")
+            else:
+                result = merge_return_type(result, infer_expression_type(statement["expression"], types, function_returns))
+            end
         elif kind == "if":
             selected = constant_if_body(statement)
             if selected[0]:
-                branch_type = returned_type(selected[1], types, function_returns)
+                branch_type = returned_type_marked(selected[1], types, function_returns)
                 result = merge_return_type(result, branch_type)
             else:
                 for branch in statement["branches"]:
-                    branch_type = returned_type(branch[1], types, function_returns)
+                    branch_type = returned_type_marked(branch[1], types, function_returns)
                     result = merge_return_type(result, branch_type)
                 end
-                branch_type = returned_type(statement["otherwise"], types, function_returns)
+                branch_type = returned_type_marked(statement["otherwise"], types, function_returns)
                 result = merge_return_type(result, branch_type)
             end
         elif kind == "while" or kind == "loop" or kind == "for":
@@ -966,16 +1022,16 @@ function returned_type(statements, types, function_returns):
                 include_body = not condition[0] or condition[1]
             end
             if include_body:
-                branch_type = returned_type(statement["body"], types, function_returns)
+                branch_type = returned_type_marked(statement["body"], types, function_returns)
                 result = merge_return_type(result, branch_type)
             end
         elif kind == "unsafe":
-            branch_type = returned_type(statement["body"], types, function_returns)
+            branch_type = returned_type_marked(statement["body"], types, function_returns)
             result = merge_return_type(result, branch_type)
         elif kind == "safe" or kind == "try":
-            branch_type = returned_type(statement["body"], types, function_returns)
+            branch_type = returned_type_marked(statement["body"], types, function_returns)
             result = merge_return_type(result, branch_type)
-            branch_type = returned_type(statement["otherwise"], types, function_returns)
+            branch_type = returned_type_marked(statement["otherwise"], types, function_returns)
             result = merge_return_type(result, branch_type)
         end
         if kind == "return" or kind == "break" or kind == "continue" or kind == "error":

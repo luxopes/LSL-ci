@@ -52,7 +52,7 @@ WINDOWS_IMPORTS = {
         GetSystemTimePreciseAsFileTime GetTempFileNameW GetTempPathW GetThreadContext
         InitializeProcThreadAttributeList MapViewOfFile MoveFileExW MultiByteToWideChar PeekConsoleInputW PeekNamedPipe
         QueryPerformanceCounter QueryPerformanceFrequency ReadConsoleInputW ReadConsoleW ReadFile
-        RemoveDirectoryW ResumeThread SetConsoleCP SetConsoleMode SetFilePointerEx SetHandleInformation SetInformationJobObject
+        RemoveDirectoryW ResumeThread GetCurrentDirectoryW SetCurrentDirectoryW SetConsoleCP SetConsoleMode SetFilePointerEx SetHandleInformation SetInformationJobObject
         SetUnhandledExceptionFilter Sleep SuspendThread SwitchToThread TerminateProcess TlsAlloc
         UnmapViewOfFile UpdateProcThreadAttribute VirtualProtect VirtualAlloc VirtualFree WaitForSingleObject
         WideCharToMultiByte WriteConsoleW WriteFile'''),

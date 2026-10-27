@@ -1,0 +1,135 @@
+{
+  "complete": true,
+  "commands": [
+    {
+      "command": [
+        "/home/antonin/Projects/LSL/lsl/build/release-build/bootstrap-frontend",
+        "compiler/pure/lslc_qbe.lsl",
+        "/home/antonin/Projects/LSL/lsl/build/release-build/frontend2",
+        "/home/antonin/Projects/LSL/lsl/build/release-build/bootstrap-backend"
+      ],
+      "seconds": 3.4895452249911614,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/Projects/LSL/lsl/build/release-build/frontend2",
+        "compiler/pure/lslc_qbe.lsl",
+        "/home/antonin/Projects/LSL/lsl/build/release-build/frontend3",
+        "/home/antonin/Projects/LSL/lsl/build/release-build/bootstrap-backend"
+      ],
+      "seconds": 3.274044228994171,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/Projects/LSL/lsl/build/release-build/frontend3",
+        "build/dependencies/LuxIR/lsl/luxir.lsl",
+        "/home/antonin/Projects/LSL/lsl/build/release-build/luxir2",
+        "/home/antonin/Projects/LSL/lsl/build/release-build/bootstrap-backend"
+      ],
+      "seconds": 39.071112959005404,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/Projects/LSL/lsl/build/release-build/frontend3",
+        "build/dependencies/LuxIR/lsl/luxir.lsl",
+        "/home/antonin/Projects/LSL/lsl/build/release-build/luxir3",
+        "/home/antonin/Projects/LSL/lsl/build/release-build/luxir2"
+      ],
+      "seconds": 37.53558586999134,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/Projects/LSL/lsl/build/release-build/frontend3",
+        "--unsafe",
+        "compiler/pure/lslc_direct.lsl",
+        "/home/antonin/Projects/LSL/lsl/build/release-build/lslc-direct",
+        "/home/antonin/Projects/LSL/lsl/build/release-build/luxir3"
+      ],
+      "seconds": 3.134954267006833,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/Projects/LSL/lsl/build/release-build/frontend3",
+        "--unsafe",
+        "compiler/pure/cli.lsl",
+        "/home/antonin/Projects/LSL/lsl/build/release-build/lsl-cli",
+        "/home/antonin/Projects/LSL/lsl/build/release-build/luxir3"
+      ],
+      "seconds": 4.956832745010615,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/Projects/LSL/lsl/build/release-build/frontend3",
+        "--unsafe",
+        "compiler/pure/install.lsl",
+        "/home/antonin/Projects/LSL/lsl/build/release-build/lsl-install",
+        "/home/antonin/Projects/LSL/lsl/build/release-build/luxir3"
+      ],
+      "seconds": 0.46005289698950946,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/Projects/LSL/lsl/build/release-build/frontend3",
+        "--unsafe",
+        "stdlib/configure.lsl",
+        "/home/antonin/Projects/LSL/lsl/build/release-build/lsl-configure",
+        "/home/antonin/Projects/LSL/lsl/build/release-build/luxir3"
+      ],
+      "seconds": 0.3008959849976236,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/home/antonin/Projects/LSL/lsl/build/release-build/frontend3",
+        "--unsafe",
+        "tests/test_runner.lsl",
+        "/home/antonin/Projects/LSL/lsl/build/release-build/lsl-test",
+        "/home/antonin/Projects/LSL/lsl/build/release-build/luxir3"
+      ],
+      "seconds": 0.6733366879925597,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "bootstrap": {
+    "frontend_sha256": "5a819d733bc3e6afd92d8fd8a7b68abb082cc01ede5eb4aca6187fc37da7b6bc",
+    "backend_sha256": "96d23a283a8e65eaa66158349b39e80cf1d75758fc9a9520ca2833fe034526b3"
+  },
+  "frontend_fixed_point": true,
+  "backend_fixed_point": true,
+  "artifacts": {
+    "compiler/pure/lslc-qbe": "5a819d733bc3e6afd92d8fd8a7b68abb082cc01ede5eb4aca6187fc37da7b6bc",
+    "compiler/lslc": "5a819d733bc3e6afd92d8fd8a7b68abb082cc01ede5eb4aca6187fc37da7b6bc",
+    "compiler/pure/luxir": "96d23a283a8e65eaa66158349b39e80cf1d75758fc9a9520ca2833fe034526b3",
+    "compiler/pure/lslc-direct": "b1fbefab98234956622b1a98e721f54f14e44ac0f2abdcaeab1d581b59015455",
+    "compiler/pure/lsl-cli": "753a4957af6ce570c47a18ecd679fa8c2e42fd185b58d795fbb3ebe45dd71fc7",
+    "compiler/pure/lsl-install": "135c718086dcaac9fb2b08e7db3a4ad4c1d0e29e445287744b88c4a0ccda4174",
+    "compiler/pure/lsl-configure": "3e33ec3640fb71cacb5f6bb43fac84c8aa7ffd13fa365b54416ed6e52150bbbb",
+    "tests/lsl-test": "764e598b77e61488e26e2c0bad7b36edecd294a0ed20f8a86855c87730a8a3cf",
+    "lsl": "753a4957af6ce570c47a18ecd679fa8c2e42fd185b58d795fbb3ebe45dd71fc7"
+  }
+}

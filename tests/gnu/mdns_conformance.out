@@ -1,0 +1,32 @@
+bad backend: True
+long name: True
+bad type: True
+bad handle: True
+avahi available: True
+backend: avahi
+avahi state: established
+avahi found: True
+avahi port: 47923 type: _lslmdns._tcp domain: local
+avahi txt: 1 0123456789abcdef Žluťoučký kůň
+avahi host .local: True ipv4: True
+avahi local: True backend: avahi
+avahi consistent: True
+avahi event added: True
+avahi event updated: True
+avahi browse after update: 2
+avahi event removed: True
+avahi browse_stop: True False
+avahi after withdraw: 0
+backend: raw
+raw state: established
+raw found: True
+raw port: 47924 type: _lslmdns._tcp domain: local
+raw txt: 1 0123456789abcdef Žluťoučký kůň
+raw host .local: True ipv4: True
+raw local: True backend: raw
+raw consistent: True
+raw event added: True
+raw event updated: True
+raw event removed: True
+raw browse_stop: True
+raw after withdraw: 0

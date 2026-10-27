@@ -159,6 +159,17 @@ end
 
 Dvojtečka za hlavičkou je volitelná. Spustí se nejvýše jedna větev.
 
+Podmíněný výraz (od 0.10.7) vybere hodnotu jako v Pythonu a vyhodnotí jen
+vybranou větev; je pravě asociativní:
+
+```lsl
+mark = "✓" if done else " "
+size = "velký" if n > 1000 else "střední" if n > 10 else "malý"
+```
+
+V klauzuli comprehension (`for … in X`, `if X`) je `if` další klauzule;
+podmíněný výraz tam dejte do závorek.
+
 ## Smyčky
 
 ```lsl
@@ -224,7 +235,9 @@ result = motor(10)
 `return` bez hodnoty vrátí `None`. Funkce čtou globální scope, zápis je
 lokální pro aktuální volání. Funkce bez defaultů jsou first-class hodnoty:
 lze je uložit, vrátit a předat jako callback (`type(callback)` je `Function`).
-Lexikální closures nejsou podporovány.
+Lexikální closures nejsou podporovány: definice funkce uvnitř funkce je
+chyba překladu E1248; funkci dejte na úroveň modulu a hodnoty jí předejte
+parametry.
 
 Od 0.7.8 lze deklarovat `function f(a, b=2)` a volat `f(1)` nebo
 `f(b=4, a=1)`. Default musí být immutable literál: číslo (i se znaménkem),
@@ -280,6 +293,13 @@ end
 
 LSL podporuje jednu rodičovskou třídu a cyklickou dědičnost odmítá při
 překladu.
+
+Instance lze předávat jako parametry, ukládat do kolekcí a vracet. Když
+překladač typ hodnoty nezná (parametr, prvek seznamu, callback), ověří až
+za běhu, že jde o instanci: chybějící pole je `AttributeError`, jiný typ
+`AttributeError`/`TypeError`. Metodu na takové hodnotě překladač najde
+podle jména; definuje-li stejnojmennou metodu víc tříd, potřebuje znát typ
+příjemce (instance za běhu nenese svou třídu) a jinak volání odmítne.
 
 ## Kolekce
 

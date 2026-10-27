@@ -1,0 +1,19 @@
+version: TLSv1.3 TLSv1.3
+cipher (server preference): TLS_AES_256_GCM_SHA384 TLS_AES_256_GCM_SHA384
+alpn: luxdrop/1 luxdrop/1
+pinned server key: True
+server cert der: True
+no client certificate: 0 True
+written: 100005
+received: 100005 True
+reply: odpověď
+timeout: TimeoutError: read timed out
+close_notify: 0
+alpn mismatch: [] []
+mtls client key: True
+mtls client cn: LuxDrop client
+optional client certificate missing: 0
+required client certificate: True
+tls 1.2: TLSv1.2 True
+1.3-only client vs 1.2 server: True
+system verification: True

@@ -622,6 +622,27 @@ function rt_runtime_rmdir(path):
     return os.remove_directory(path + 16)
 end
 
+# cwd(): absolutní cesta pracovního adresáře; chyba FileError.
+function rt_runtime_cwd():
+    buffer = __lsl_qbe_alloc(4096)
+    length = os.current_directory(buffer, 4096)
+    if length < 0:
+        return file_error("FileError: cannot read the current directory")
+    end
+    return text.string_from(buffer, length)
+end
+
+# chdir(cesta): změní pracovní adresář; chyba FileError.
+function rt_runtime_chdir(path):
+    if not rt_runtime_path_valid(path):
+        return file_error("FileError: cannot change directory")
+    end
+    if os.change_directory(path + 16) < 0:
+        return file_error("FileError: cannot change directory")
+    end
+    return 0
+end
+
 # __lsl_rename(zdroj, cíl): 0, nebo záporné errno; existující cíl se
 # nepřepíše (atomické přejmenování v rámci jednoho svazku).
 function rt_runtime_rename(source, destination):

@@ -48,6 +48,7 @@ function pages():
         ["tensor", "Knihovna tensor — CPU tenzory"],
         ["tui", "Knihovna tui — terminalovy UI toolkit"],
         ["gtk", "Knihovny gtk, glib, gio, cairo a pango — GTK 3, GLib, D-Bus a kreslení na Linuxu"],
+        ["network", "Knihovny net, tls, crypto a mdns — sokety, TLS, kryptografie a DNS-SD na Linuxu"],
         ["unixsock", "Knihovna unixsock — unix sockety"],
         ["cuda", "Knihovna cuda — GPU backend"],
         ["reference", "Kompletni reference funkci"],

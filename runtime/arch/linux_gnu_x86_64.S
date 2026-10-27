@@ -419,6 +419,41 @@ lsl_arch_callback_u8:
 	pop %rbx
 	ret
 
+# Zpětná volání OpenSSL bez user_data, která nemusí do LSL (modul tls):
+# lsl_arch_return_one přijme každý certifikát protistrany (verify callback;
+# aplikace si klíč připne sama), lsl_arch_alpn_select vybere ALPN serveru:
+# (ssl, out, outlen, in, inlen, arg) -> arg[0](out, outlen, arg[1], arg[2],
+# in, inlen), tedy SSL_select_next_proto se seznamem serveru v arg; shoda
+# (OPENSSL_NPN_NEGOTIATED = 1) vrací SSL_TLSEXT_ERR_OK, jinak NOACK (3),
+# spojení pokračuje bez ALPN jako u Pythonu. Adresu SSL_select_next_proto
+# dodá modul tls, runtime tak na libssl nezávisí.
+	.globl lsl_arch_return_one
+	.p2align 4
+lsl_arch_return_one:
+	mov $1, %eax
+	ret
+
+	.globl lsl_arch_alpn_select
+	.p2align 4
+lsl_arch_alpn_select:
+	push %rbx
+	mov %r9, %rbx
+	mov %rsi, %rdi
+	mov %rdx, %rsi
+	mov %r8, %r9
+	mov %rcx, %r8
+	mov 8(%rbx), %rdx
+	mov 16(%rbx), %rcx
+	call *(%rbx)
+	pop %rbx
+	cmp $1, %eax
+	jne 9f
+	xor %eax, %eax
+	ret
+9:
+	mov $3, %eax
+	ret
+
 	.data
 	.p2align 3
 	.globl lsl_arch_callback_slot

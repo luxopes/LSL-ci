@@ -168,6 +168,20 @@ function remove_directory(path):
     return syscall3(platform.SYS_UNLINKAT, platform.AT_FDCWD, path, platform.AT_REMOVEDIR)
 end
 
+# Pracovní adresář do buffer (nejvýš size bajtů): délka bez nuly, nebo
+# záporné errno. Jádro vrací délku včetně koncové nuly.
+function current_directory(buffer, size):
+    length = syscall3(platform.SYS_GETCWD, buffer, size, 0)
+    if length <= 0:
+        return length
+    end
+    return length - 1
+end
+
+function change_directory(path):
+    return syscall3(platform.SYS_CHDIR, path, 0, 0)
+end
+
 # Přejmenování bez přepsání cíle (renameat2, RENAME_NOREPLACE).
 function rename_path(source, destination):
     return syscall6(platform.SYS_RENAMEAT2, platform.AT_FDCWD, source, platform.AT_FDCWD, destination, 1, 0)

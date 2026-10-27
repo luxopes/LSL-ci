@@ -202,7 +202,7 @@ end
 function pump():
     context = __lsl_qbe_call0(__lsl_symbol("g_main_context_default"))
     while __lsl_qbe_call2(__lsl_symbol("g_main_context_iteration"), context, 0) != 0:
-        pass
+        continue
     end
     return 0
 end
@@ -218,6 +218,18 @@ end
 
 function idle_add(handler):
     return __lsl_qbe_call2(__lsl_symbol("g_idle_add"), callback_first(), record_new(handler, 0))
+end
+
+# Podmínky deskriptoru pro fd_add (GIOCondition).
+IO_IN = 1
+IO_OUT = 4
+IO_ERR = 8
+IO_HUP = 16
+
+# Deskriptor (soket net/tls, roura) v hlavní smyčce: handler(fd, podmínky)
+# se volá, když nastane některá z podmínek, dokud vrací True; vrací id zdroje.
+function fd_add(fd, condition, handler):
+    return __lsl_qbe_call6(__lsl_symbol("g_unix_fd_add_full"), PRIORITY_DEFAULT, ptr(fd), ptr(condition), callback_third(), record_new(handler, 2), 0)
 end
 
 function source_remove(id):

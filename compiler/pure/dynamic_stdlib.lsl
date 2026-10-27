@@ -264,50 +264,92 @@ function __lsl_endswith(text, suffix):
     return True
 end
 
-function __lsl_lstrip(text):
-    start = 0
-    while start < len(text) and __lsl_is_space(text[start]):
-        start += 1
+# strip/lstrip/rstrip (i se znaky) procházejí bajty UTF-8: index znaku
+# i len() se u Stringu počítají od začátku, takže smyčka přes znaky byla
+# kvadratická (16 kB textu 0,18 s). Výsledek je jeden výřez bajtů. Znak je
+# celá sekvence UTF-8; ta se v platném UTF-8 shoduje jen na hranici znaku,
+# takže stačí hledání bajtů v chars (ASCII se porovná přímo).
+function __lsl_utf8_width(byte):
+    if byte < 128:
+        return 1
+    elif byte >= 240:
+        return 4
+    elif byte >= 224:
+        return 3
+    elif byte >= 192:
+        return 2
     end
-    return text[start:len(text)]
+    return 1
+end
+
+function __lsl_strip_member(text, chars, position, width):
+    if width == 1:
+        byte = __lsl_text_byte(text, position)
+        index = 0
+        while index < __lsl_text_byte_length(chars):
+            if __lsl_text_byte(chars, index) == byte:
+                return True
+            end
+            index += 1
+        end
+        return False
+    end
+    return __lsl_byte_search(chars, __lsl_text_piece(text, position, width), 0) >= 0
+end
+
+function __lsl_strip_side(text, chars, left, right):
+    text = __lsl_require_string(text)
+    chars = __lsl_require_string_value(chars)
+    size = __lsl_text_byte_length(text)
+    start = 0
+    stop = size
+    while left and start < size:
+        width = __lsl_utf8_width(__lsl_text_byte(text, start))
+        if not __lsl_strip_member(text, chars, start, width):
+            break
+        end
+        start += width
+    end
+    while right and stop > start:
+        previous = stop - 1
+        while previous > start and __lsl_text_byte(text, previous) >= 128 and __lsl_text_byte(text, previous) < 192:
+            previous -= 1
+        end
+        if not __lsl_strip_member(text, chars, previous, stop - previous):
+            break
+        end
+        stop = previous
+    end
+    if start == 0 and stop == size:
+        return text
+    end
+    return __lsl_byte_piece(text, start, stop - start)
+end
+
+function __lsl_lstrip(text):
+    return __lsl_strip_side(text, " \t\r\n", True, False)
 end
 
 function __lsl_rstrip(text):
-    stop = len(text)
-    while stop > 0 and __lsl_is_space(text[stop - 1]):
-        stop -= 1
-    end
-    return text[0:stop]
+    return __lsl_strip_side(text, " \t\r\n", False, True)
 end
 
 function __lsl_strip(text):
-    return __lsl_rstrip(__lsl_lstrip(text))
+    return __lsl_strip_side(text, " \t\r\n", True, True)
 end
 
 # strip(znaky): odstraní ze začátku/konce všechny znaky uvedené v chars
 # (jako Python; prázdné chars nemění nic).
 function __lsl_lstrip_chars(text, chars):
-    text = __lsl_require_string(text)
-    chars = __lsl_require_string_value(chars)
-    start = 0
-    while start < len(text) and __lsl_byte_search(chars, text[start], 0) >= 0:
-        start += 1
-    end
-    return text[start:len(text)]
+    return __lsl_strip_side(text, chars, True, False)
 end
 
 function __lsl_rstrip_chars(text, chars):
-    text = __lsl_require_string(text)
-    chars = __lsl_require_string_value(chars)
-    stop = len(text)
-    while stop > 0 and __lsl_byte_search(chars, text[stop - 1], 0) >= 0:
-        stop -= 1
-    end
-    return text[0:stop]
+    return __lsl_strip_side(text, chars, False, True)
 end
 
 function __lsl_strip_chars(text, chars):
-    return __lsl_rstrip_chars(__lsl_lstrip_chars(text, chars), chars)
+    return __lsl_strip_side(text, chars, True, True)
 end
 
 function __lsl_find(text, needle):
@@ -419,6 +461,10 @@ function __lsl_help_text(topic):
         "gio": "load gio\nD-Bus over GIO: calls, properties, signals and name watching; target linux-x86_64-gnu. See lsl man gtk.",
         "cairo": "load cairo\nCairo 2D drawing in GTK draw handlers or into image surfaces; target linux-x86_64-gnu. See lsl man gtk.",
         "pango": "load pango\nPango text layout over cairo: system fonts, wrapping, ellipsis and markup; target linux-x86_64-gnu. See lsl man gtk.",
+        "net": "load net\nTCP and UDP sockets: IPv4/IPv6 servers and clients with timeouts, UDP multicast, interface addresses; target linux-x86_64-gnu. See lsl man network.",
+        "tls": "load tls\nTLS 1.2/1.3 client and server over system OpenSSL: own certificate, key pinning, mTLS, ALPN, cipher suites; target linux-x86_64-gnu. See lsl man network.",
+        "crypto": "load crypto\nSystem OpenSSL: random bytes, SHA-2, HMAC, EC P-256 keys, ECDSA, self-signed X.509, constant-time compare; target linux-x86_64-gnu. See lsl man network.",
+        "mdns": "load mdns\nDNS-SD service browse and announce via Avahi D-Bus or raw mDNS; target linux-x86_64-gnu. See lsl man network.",
         "math": "load math\nMathematical constants and numeric functions. See lsl man --plain reference.",
         "bigint": "load bigint\nArbitrary-precision integer arithmetic. Construct bigint.BigInt(VALUE).",
         "ai": "load ai\nAI service client utilities; see lsl man ai.",
@@ -430,7 +476,7 @@ function __lsl_help_text(topic):
     if topic == "":
         names = topics.keys()
         call names.sort()
-        return "Lux Simple Lang (LSL) 0.10.6" + chr(10) + "Use help(\"TOPIC\") for details; lsl man opens the full offline manual." + chr(10) + "topics: " + " ".join(names)
+        return "Lux Simple Lang (LSL) 0.10.7" + chr(10) + "Use help(\"TOPIC\") for details; lsl man opens the full offline manual." + chr(10) + "topics: " + " ".join(names)
     end
     about = __lsl_library_about(topic)
     if topic not in topics:
@@ -471,6 +517,10 @@ function __lsl_about_table():
         "gio": "gio: D-Bus over GIO: method calls, properties, signals, name watching and ownership (target linux-x86_64-gnu).",
         "cairo": "cairo: 2D drawing with Cairo in GTK draw handlers or into PNG images (target linux-x86_64-gnu).",
         "pango": "pango: text layout with system fonts, wrapping, ellipsis and markup over cairo (target linux-x86_64-gnu).",
+        "net": "net: TCP and UDP sockets with timeouts, IPv6 link-local, UDP multicast and interface addresses (target linux-x86_64-gnu).",
+        "tls": "tls: TLS 1.2/1.3 over system OpenSSL with key pinning, mTLS, ALPN and cipher control (target linux-x86_64-gnu).",
+        "crypto": "crypto: system OpenSSL hashes, HMAC, EC P-256 keys, ECDSA signatures and self-signed certificates (target linux-x86_64-gnu).",
+        "mdns": "mdns: DNS-SD browse and announce over Avahi D-Bus with a raw mDNS fallback (target linux-x86_64-gnu).",
         "env": "env: process environment with automatic runtime .env loading beside the script/executable. Exported values take precedence; get, has, require and load_dotenv.",
         "config": "config: helpers for declarative configuration modules evaluated by lsl config.",
         "configure": "configure: generates the native configuration evaluator wrapper for a module graph (used by lsl-configure).",
@@ -552,7 +602,7 @@ function __lsl_about_text(name):
         Error(TypeError: "about name must be a String")
     end
     if name == "":
-        return "Lux Simple Lang (LSL) 0.10.6" + chr(10) + "A small self-hosted programming language: the compiler runs on Linux, Windows and macOS, translates to LuxIR and builds native programs without libc for Linux (x86_64, arm64, riscv64), Windows, macOS, WebAssembly and bare metal RISC-V. Programs read like scripts, run as native code, and can use declarative configuration, AI clients, GUI packages and optional CUDA tensors." + chr(10) + "Website and manual: https://lsl.lux-ai.cz/  (offline: lsl man)" + chr(10) + "License: MIT"
+        return "Lux Simple Lang (LSL) 0.10.7" + chr(10) + "A small self-hosted programming language: the compiler runs on Linux, Windows and macOS, translates to LuxIR and builds native programs without libc for Linux (x86_64, arm64, riscv64), Windows, macOS, WebAssembly and bare metal RISC-V. Programs read like scripts, run as native code, and can use declarative configuration, AI clients, GUI packages and optional CUDA tensors." + chr(10) + "Website and manual: https://lsl.lux-ai.cz/  (offline: lsl man)" + chr(10) + "License: MIT"
     end
     about = __lsl_library_about(name)
     if about == "":
@@ -1843,6 +1893,56 @@ function __lsl_str_value(value):
     return __lsl_render(value, False)
 end
 
+# Pole instance přes hodnotu bez statického typu (parametr, prvek seznamu):
+# instance je za běhu slovník polí, typ se ověří až teď.
+function __lsl_member_get(target, name):
+    if __lsl_type_code(target) != 3:
+        Error(AttributeError: "member " + name + " requires a class instance, got " + __lsl_type_name(target))
+    end
+    if name not in target:
+        Error(AttributeError: "instance has no member " + name)
+    end
+    return target[name]
+end
+
+# Vestavěná proměnná args: všechny argumenty programu (args[0] je program).
+function __lsl_args():
+    result = []
+    index = 0
+    count = arg_count()
+    while index < count:
+        result.append(arg(index))
+        index += 1
+    end
+    return result
+end
+
+# remove_path(cesta) (builtin): smaže soubor, nebo prázdný adresář; chyba FileError.
+function __lsl_remove_path(path):
+    if unlink(path) == 0:
+        return None
+    end
+    if rmdir(path) == 0:
+        return None
+    end
+    Error(FileError: "cannot remove " + String(path))
+end
+
+function __lsl_require_instance(target):
+    if __lsl_type_code(target) != 3:
+        Error(AttributeError: "method call requires a class instance, got " + __lsl_type_name(target))
+    end
+    return target
+end
+
+function __lsl_member_set(target, name, value):
+    if __lsl_type_code(target) != 3:
+        Error(TypeError: "member assignment requires a class instance, got " + __lsl_type_name(target))
+    end
+    target[name] = value
+    return None
+end
+
 function __lsl_type_name(value):
     code = __lsl_type_code(value)
     if code == 0 or code == 9:
@@ -2078,6 +2178,27 @@ function __lsl_slice3(target, start, has_start, stop, has_stop, step):
     end
     target_type = __lsl_type_code(target)
     is_string = target_type == 1
+    if is_string and step == 1:
+        # Souvislý výřez Stringu: indexy znaků se jedním průchodem převedou
+        # na bajty UTF-8 a výsledek je jeden výřez bajtů. Po znacích by každý
+        # target[index] počítal od začátku (kvadraticky).
+        if stop <= start:
+            return ""
+        end
+        size = __lsl_text_byte_length(target)
+        position = 0
+        index = 0
+        while index < start and position < size:
+            position += __lsl_utf8_width(__lsl_text_byte(target, position))
+            index += 1
+        end
+        first = position
+        while index < stop and position < size:
+            position += __lsl_utf8_width(__lsl_text_byte(target, position))
+            index += 1
+        end
+        return __lsl_byte_piece(target, first, position - first)
+    end
     parts = []
     if target_type == 13:
         parts = IntArray()

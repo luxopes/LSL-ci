@@ -34,6 +34,29 @@ píše modul pomocí interního ABI (`__lsl_qbe_callN(__lsl_symbol("jméno"),
 …)`), které je dostupné jen důvěryhodným modulům standardní knihovny.
 Běžný program knihovny nevolá přímo, používá moduly níže.
 
+Pravidla volání C v interním ABI:
+
+- `__lsl_qbe_callN` vrací celé slovo `rax`. Funkce s návratovým typem C
+  `int` (`open`, `poll`, většina OpenSSL) definuje jen spodních 32 bitů,
+  proto ji volejte `__lsl_qbe_icallN`, které výsledek znaménkově rozšíří
+  (`-1` zůstane `-1`, ne `4294967295`); jednotlivou hodnotu rozšíří
+  `__lsl_qbe_s32(x)`.
+- Argument se statickým typem `Float` jde do C jako `double`. Parametr typu
+  C `float` (`gtk_label_set_xalign`, `pango_layout_set_line_spacing`)
+  předejte jako `__lsl_qbe_f32(Float(x))`; tak jde v registru jako
+  jednoduchá přesnost. Návratovou hodnotu C `float` `__lsl_qbe_fcallN`
+  nečte (čte `double`); vlastnost GObject čtěte přes GValue typu
+  `G_TYPE_DOUBLE`, GLib hodnotu převede.
+- Uvnitř modulu jsou `None` a celé číslo `0` stejné slovo. Funkce, která
+  může vrátit obojí, ať vrací prázdný `List`, `-1` nebo vyhodí chybu.
+- Importované symboly mají verzi knihovny hostitele (`.gnu.version_r`) jako
+  u GNU ld: `realpath(cesta, NULL)` volá aktuální `realpath@GLIBC_2.3`, ne
+  starou kompatibilní variantu. Program pak potřebuje glibc alespoň té
+  verze, se kterou byl přeložen.
+
+Síť, TLS, kryptografie a mDNS (moduly `net`, `tls`, `crypto`, `mdns`)
+popisuje kapitola [Síť, TLS a kryptografie](network.md).
+
 ## Modul `glib`
 
 Hlavní smyčka a zdroje událostí:

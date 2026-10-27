@@ -1,0 +1,15 @@
+listen port > 0: True
+accepted: 3 127.0.0.1
+sent: 11
+received: ahoj světe
+timeout: TimeoutError: recv timed out
+eof: 0
+no pending accept: 0
+ipv6 peer: ::1
+refused: OSError: connect to 127.0.0.1: Connection refused
+udp sent: 8
+udp received: datagram 127.0.0.1
+udp timeout: 0
+multicast: True
+loopback interface: True
+glib watch: ['loop']

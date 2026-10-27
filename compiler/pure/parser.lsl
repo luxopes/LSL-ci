@@ -371,7 +371,7 @@ function parse_comprehension(parser, token, collection, key, value):
         end
         opening = advance(parser)
         if opening["value"] == "if":
-            clauses.append({"kind": "if", "condition": parse_expression(parser)})
+            clauses.append({"kind": "if", "condition": parse_expression_in(parser, False)})
         else:
             targets = []
             parenthesized = match(parser, "(")
@@ -387,7 +387,7 @@ function parse_comprehension(parser, token, collection, key, value):
                 call expect(parser, ")", "E1242", "unclosed comprehension target")
             end
             call expect(parser, "in", "E1242", "expected in after comprehension target")
-            clauses.append({"kind": "for", "targets": targets, "iterable": parse_expression(parser)})
+            clauses.append({"kind": "for", "targets": targets, "iterable": parse_expression_in(parser, False)})
         end
     end
     closing = "]"
@@ -831,12 +831,44 @@ function parse_or(parser):
 end
 
 function parse_expression(parser):
+    return parse_expression_in(parser, True)
+end
+
+# Podmíněný výraz `a if podmínka else b` (pravě asociativní jako v Pythonu).
+# Parser ho přepíše na uzel comprehension: příkaz if přiřadí vybranou větev do
+# skryté proměnné, takže se vyhodnotí jen jedna větev a další fáze překladače
+# nic nového nepotřebují. V klauzulích comprehension (iterovaná hodnota,
+# podmínka) je `if` další klauzule, proto tam podmíněný výraz chce závorky.
+function parse_conditional(parser, value, token):
+    condition = parse_or(parser)
+    call expect(parser, "else", "E1201", "expected else in conditional expression")
+    otherwise = parse_expression_in(parser, True)
+    serial = parser[9][0]
+    parser[9][0] += 1
+    result_name = synthetic_name(token, "@conditional@" + parser[2] + "@" + String(serial))
+    choice = node("if", token)
+    choice["has_comprehension"] = True
+    choice["branches"] = [[condition, [synthetic_assign(token, result_name, value)]]]
+    choice["otherwise"] = [synthetic_assign(token, result_name, otherwise)]
+    result = node("comprehension", token)
+    result["collection_kind"] = "conditional"
+    result["body"] = [choice]
+    result["result"] = result_name
+    return finish_node(result, parser)
+end
+
+function parse_expression_in(parser, conditional):
     outer = parser[6] == 0
     if outer:
         parser[7] = parser[1]
     end
     parser[6] += 1
+    token = current(parser)
     result = parse_or(parser)
+    if conditional and check(parser, "if"):
+        call advance(parser)
+        result = parse_conditional(parser, result, token)
+    end
     parser[6] -= 1
     if outer and parser[1] - parser[7] > 1024:
         call fail_at(parser, current(parser), "E1118", "expression exceeds the 1024-token complexity limit", "split the expression into intermediate values")
@@ -1285,6 +1317,11 @@ end
 function parse_statement_inner(parser):
     opening = current(parser)
     if match(parser, "function"):
+        if parser[9][1] > 0:
+            # Vnořená funkce by potřebovala uzávěr (closure); místo pádu
+            # pozdější fáze překladače srozumitelná chyba u definice.
+            call fail_at(parser, opening, "E1248", "nested functions are not supported", "define the function at module level and pass the values it uses as parameters")
+        end
         return parse_function(parser, opening)
     elif match(parser, "if"):
         return parse_if(parser, opening)

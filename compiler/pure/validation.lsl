@@ -240,7 +240,7 @@ function shown_type(value_type):
 end
 
 function builtin_arities():
-    builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "Dictionary": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sqrt": 1, "sum": 1, "float_zeros": 1, "float_fill": 2, "float_sum": 1, "float_dot": 2, "float_axpy": 3, "float_matmul": 5, "type": 1, "exit": 1, "input": 1, "readfile": 1, "readbytes": 1, "__lsl_getenv": 1, "listdir": 1, "eprint": 1, "mkdir": 1, "unlink": 1, "rmdir": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "help": 0, "run": 2, "run_clean": 2, "capture": 2, "capture_clean": 2, "capture_stream": 3, "capture_stream_clean": 3, "capture_input": 3, "capture_input_clean": 3, "capture_input_stream": 4, "capture_input_stream_clean": 4, "__lsl_capture_input_timeout": 4, "__lsl_run_timeout": 3, "capture_status": 0, "capture_stderr": 0, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2, "native_open": 1, "native_size": 1, "native_u64": 2, "native_name_equal": 3, "native_function": 2, "native_call": 2, "native_close": 1, "__lsl_test_small_tables": 0, "__lsl_test_fd_fault": 1, "__lsl_object_table_mask": 0, "__lsl_intern_table_mask": 0, "__lsl_wall_time": 0, "__lsl_sleep": 1, "__lsl_isatty": 1, "__lsl_stdin_eof": 0, "__lsl_run": 2, "__lsl_run_clean": 2, "__lsl_capture": 2, "__lsl_capture_clean": 2, "__lsl_fd_open": 2, "__lsl_fd_read": 3, "__lsl_fd_write": 3, "__lsl_fd_seek": 2, "__lsl_fd_close": 1, "__lsl_fd_socket": 2, "__lsl_fd_connect": 3, "__lsl_checked_index": 1, "__lsl_int_zeros": 1, "__lsl_byte_zeros": 1, "__lsl_raster_pack": 5, "__lsl_raster_copy": 5, "__lsl_raster_fill": 4, "__lsl_fd_ioctl": 3, "__lsl_fd_mmap": 3, "__lsl_mem_pack": 5, "__lsl_data_address": 1, "__lsl_syscall": 5, "__lsl_mem_unpack": 4, "__lsl_text_from_bytes": 3, "__lsl_byte_copy": 5, "__lsl_text_byte": 2, "__lsl_text_byte_length": 1, "__lsl_text_piece": 3, "__lsl_text_scan_digits": 2, "__lsl_text_digits": 3, "__lsl_text_split_byte": 2, "__lsl_floatarray_bytes": 1, "__lsl_floatarray_from_bytes": 1, "atomic_add": 3, "atomic_xchg": 3, "atomic_cas": 4, "atomic_pause": 0, "thread_spawn": 1, "thread_join": 1, "cpu_count": 0, "popcount": 1, "trailing_zeros": 1}
+    builtin_arity = {"Bool": 1, "Int": 1, "Float": 1, "String": 1, "List": 1, "Tuple": 1, "RealArray": 1, "Dictionary": 1, "len": 1, "chr": 1, "ord": 1, "abs": 1, "sqrt": 1, "sum": 1, "float_zeros": 1, "float_fill": 2, "float_sum": 1, "float_dot": 2, "float_axpy": 3, "float_matmul": 5, "type": 1, "exit": 1, "input": 1, "readfile": 1, "readbytes": 1, "__lsl_getenv": 1, "listdir": 1, "eprint": 1, "mkdir": 1, "unlink": 1, "rmdir": 1, "cwd": 0, "chdir": 1, "remove_path": 1, "exists": 1, "gc": 0, "clock": 0, "arg_count": 0, "last_error": 0, "executable_path": 0, "help": 0, "run": 2, "run_clean": 2, "capture": 2, "capture_clean": 2, "capture_stream": 3, "capture_stream_clean": 3, "capture_input": 3, "capture_input_clean": 3, "capture_input_stream": 4, "capture_input_stream_clean": 4, "__lsl_capture_input_timeout": 4, "__lsl_run_timeout": 3, "capture_status": 0, "capture_stderr": 0, "writefile": 2, "appendfile": 2, "writebytes": 2, "check": 2, "native_open": 1, "native_size": 1, "native_u64": 2, "native_name_equal": 3, "native_function": 2, "native_call": 2, "native_close": 1, "__lsl_test_small_tables": 0, "__lsl_test_fd_fault": 1, "__lsl_object_table_mask": 0, "__lsl_intern_table_mask": 0, "__lsl_wall_time": 0, "__lsl_sleep": 1, "__lsl_isatty": 1, "__lsl_stdin_eof": 0, "__lsl_run": 2, "__lsl_run_clean": 2, "__lsl_capture": 2, "__lsl_capture_clean": 2, "__lsl_fd_open": 2, "__lsl_fd_read": 3, "__lsl_fd_write": 3, "__lsl_fd_seek": 2, "__lsl_fd_close": 1, "__lsl_fd_socket": 2, "__lsl_fd_connect": 3, "__lsl_checked_index": 1, "__lsl_int_zeros": 1, "__lsl_byte_zeros": 1, "__lsl_raster_pack": 5, "__lsl_raster_copy": 5, "__lsl_raster_fill": 4, "__lsl_fd_ioctl": 3, "__lsl_fd_mmap": 3, "__lsl_mem_pack": 5, "__lsl_data_address": 1, "__lsl_syscall": 5, "__lsl_mem_unpack": 4, "__lsl_text_from_bytes": 3, "__lsl_byte_copy": 5, "__lsl_text_byte": 2, "__lsl_text_byte_length": 1, "__lsl_text_piece": 3, "__lsl_text_scan_digits": 2, "__lsl_text_digits": 3, "__lsl_text_split_byte": 2, "__lsl_floatarray_bytes": 1, "__lsl_floatarray_from_bytes": 1, "atomic_add": 3, "atomic_xchg": 3, "atomic_cas": 4, "atomic_pause": 0, "thread_spawn": 1, "thread_join": 1, "cpu_count": 0, "popcount": 1, "trailing_zeros": 1}
     builtin_arity["__lsl_mkdir_private"] = 1
     builtin_arity["__lsl_list_directory"] = 1
     builtin_arity["__lsl_rename"] = 2
@@ -270,6 +270,7 @@ function builtin_arities():
     for count in rang(13):
         builtin_arity["__lsl_qbe_call"+String(count)] = count + 1
         builtin_arity["__lsl_qbe_fcall"+String(count)] = count + 1
+        builtin_arity["__lsl_qbe_icall"+String(count)] = count + 1
     end
     builtin_arity["__lsl_qbe_loadf32"] = 1
     builtin_arity["__lsl_qbe_storef32"] = 2
@@ -354,6 +355,9 @@ function expression(state, syntax):
         name = syntax["name"]
         if name in state["variables"] or name in state["global_variables"]:
             value = None
+        elif name == "args":
+            # Vestavěná proměnná: List argumentů programu (__lsl_args).
+            value = None
         elif name in state["functions"]:
             if "defaults" in state["functions"][name]:
                 call semantic.unsupported(state["path"], state["lines"], syntax, "functions with defaults cannot be used as Function values yet", "wrap the call in a function with explicit parameters")
@@ -388,7 +392,8 @@ function expression(state, syntax):
         end
     elif kind == "member":
         target_type = semantic.infer_expression_type(syntax["target"], state["types"], state["function_returns"])
-        if target_type.startswith("Class:") or target_type.startswith("Instance:") or target_type == "Dictionary":
+        if target_type.startswith("Class:") or target_type.startswith("Instance:") or target_type == "Dictionary" or target_type == "Any":
+            # Any: instance předaná jako parametr; typ ověří __lsl_member_get.
             call expression(state, syntax["target"])
         else:
             if state["error_label"] != "":
@@ -1116,7 +1121,7 @@ function expression(state, syntax):
                 return
             elif target["name"] == "__lsl_entry_source":
                 return
-            elif target["name"] == "executable_path":
+            elif target["name"] == "executable_path" or target["name"] == "cwd":
                 return
             elif target["name"] == "__lsl_getenv":
                 call expression(state, syntax["arguments"][0])
@@ -1298,7 +1303,7 @@ function expression(state, syntax):
                     value_type = "Instance"
                 end
                 return
-            elif target["name"] == "mkdir" or target["name"] == "__lsl_mkdir_private" or target["name"] == "__lsl_list_directory" or target["name"] == "listdir" or target["name"] == "unlink" or target["name"] == "rmdir":
+            elif target["name"] == "mkdir" or target["name"] == "__lsl_mkdir_private" or target["name"] == "__lsl_list_directory" or target["name"] == "listdir" or target["name"] == "unlink" or target["name"] == "rmdir" or target["name"] == "chdir" or target["name"] == "remove_path":
                 call expression(state, checked_string_node(state, syntax["arguments"][0]))
                 return
             elif target["name"] == "exists":
@@ -1412,6 +1417,16 @@ function expression(state, syntax):
                 return
             end
             receiver_type = semantic.infer_expression_type(target["target"], state["types"], state["function_returns"])
+            dynamic_class = semantic.dynamic_method_class(state["classes"], state["functions"], receiver_type, target["name"])
+            if dynamic_class == "@ambiguous":
+                if state["error_label"] != "":
+                    call record_error(state, syntax, "method_supported", "AttributeError", "method " + target["name"] + " is defined by several classes and the receiver's class is not known")
+                    return
+                end
+                call semantic.unsupported(state["path"], state["lines"], syntax, "method " + target["name"] + " is defined by several classes and the receiver's class is not known", "create the instance in this function, or call a module function that takes the instance")
+            elif dynamic_class != "":
+                receiver_type = "Instance:" + dynamic_class
+            end
             if "argument_names" in syntax and not receiver_type.startswith("Class:") and not receiver_type.startswith("Instance:"):
                 if state["error_label"] != "":
                     call record_error(state, syntax, "method_keywords", "TypeError", "builtin methods do not accept keyword arguments")
@@ -2023,7 +2038,7 @@ function statements(state, body, break_label, continue_label, return_label):
                 end
             elif target["kind"] == "member":
                 target_type = semantic.infer_expression_type(target["target"], state["types"], state["function_returns"])
-                if not target_type.startswith("Class:") and not target_type.startswith("Instance:"):
+                if not target_type.startswith("Class:") and not target_type.startswith("Instance:") and target_type != "Any":
                     if state["error_label"] != "":
                         call record_error(state, statement, "member_assignment", "TypeError", "member assignment requires a class instance")
                         return

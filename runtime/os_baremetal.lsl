@@ -910,6 +910,16 @@ function remove_directory(path):
     return 0 - ENOSYS
 end
 
+# Bez souborového systému procesu: kořen "/", změnit ho nelze.
+function current_directory(buffer, size):
+    __lsl_qbe_store8(buffer, 47)
+    return 1
+end
+
+function change_directory(path):
+    return 0 - ENOSYS
+end
+
 function access(path):
     if not host():
         return 0 - ENOENT

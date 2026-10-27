@@ -461,6 +461,17 @@ function remove_directory(path):
     return path_call(path, 2)
 end
 
+# WASI nemá pracovní adresář procesu: relativní cesty se řeší proti
+# předotevřeným adresářům, kořen je "/" a změnit ho nelze.
+function current_directory(buffer, size):
+    __lsl_qbe_store8(buffer, 47)
+    return 1
+end
+
+function change_directory(path):
+    return 0 - ENOSYS
+end
+
 function access(path):
     target = __lsl_qbe_alloc(24)
     if not resolve(path, target):

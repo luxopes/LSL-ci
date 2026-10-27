@@ -367,7 +367,7 @@ end
 call require_success(run_compiler(["compiler/pure/cli.lsl", cli_test]), "compile stdin CLI")
 call require_hardened_elf(cli_test)
 help_output = capture(cli_test, ["--help"])
-expected_help = "Lux Simple Lang (LSL) 0.10.6" + chr(10)
+expected_help = "Lux Simple Lang (LSL) 0.10.7" + chr(10)
 expected_help += chr(10)
 expected_help += "Usage:" + chr(10)
 expected_help += "  lsl [SOURCE [ARG...]]" + chr(10)
@@ -429,11 +429,11 @@ if capture_status() != 0 or tui_keys_output != "buffered terminal keys passed" +
     Error(TestFailure: "buffered terminal keys differ")
 end
 version_output = capture(cli_test, ["version"])
-if capture_status() != 0 or version_output != "0.10.6" + chr(10):
+if capture_status() != 0 or version_output != "0.10.7" + chr(10):
     Error(TestFailure: "CLI version output differs")
 end
 version_flag_output = capture(cli_test, ["--version"])
-if capture_status() != 0 or version_flag_output != "0.10.6" + chr(10):
+if capture_status() != 0 or version_flag_output != "0.10.7" + chr(10):
     Error(TestFailure: "CLI --version output differs")
 end
 if not emulated:
@@ -906,6 +906,10 @@ call require_failure(run_compiler(["tests/internal_builtin_arity_negative.lsl", 
 call require_failure(run_compiler(["tests/method_arity_negative.lsl", test_path("method-negative")]), "method arity mismatch unexpectedly compiled")
 call require_failure(run_compiler(["tests/dictionary_method_arity_negative.lsl", test_path("dictionary-method-negative")]), "Dictionary method arity mismatch unexpectedly compiled")
 call require_failure(run_compiler(["tests/method_receiver_negative.lsl", test_path("method-receiver-negative")]), "invalid method receiver unexpectedly compiled")
+nested_output = capture_compiler(["tests/nested_function_negative.lsl", test_path("nested-function-negative")])
+if capture_status() == 0 or (nested_output + capture_stderr()).find("E1248") < 0:
+    Error(TestFailure: "nested function did not report E1248")
+end
 call require_failure(run_compiler(["tests/scalar_length_negative.lsl", test_path("scalar-length-negative")]), "scalar len unexpectedly compiled")
 call require_failure(run_compiler(["tests/sequence_index_type_negative.lsl", test_path("sequence-index-type-negative")]), "non-Int sequence index unexpectedly compiled")
 call require_failure(run_compiler(["tests/arithmetic_operand_negative.lsl", test_path("arithmetic-operand-negative")]), "invalid arithmetic operand unexpectedly compiled")

@@ -1,0 +1,4 @@
+open raw word: 4294967295 icall: -1 True
+realpath NULL: True
+pump: 1
+float parameters: 0.5 0.25

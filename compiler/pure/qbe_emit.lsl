@@ -478,6 +478,10 @@ function load_name(s,name,node=None):
         end
         ptr = temp(s,"add(lsl_globals, "+String(index*8)+")")
         return [temp(s,"load("+ptr+")"),s["unit"]["types"].get(name,"Any")]
+    elif name == "args" and not s["runtime"]:
+        # Vestavěná proměnná args: List argumentů programu (jako
+        # [arg(i) for i in rang(arg_count())]), pokud program nemá vlastní args.
+        return function_call(s,"__lsl_args",[])
     elif name in s["unit"]["functions"]:
         address = used(s,name)
         if not s["unit"]["internal_abi"]:
@@ -1073,11 +1077,21 @@ function compare(s,op,left,right):
     condition = temp(s,opcodes[op]+"("+typed(a,"Int64")+", "+b+")","w")
     return [temp(s,"zext32("+condition+")"),"Bool",condition]
 end
+function dynamic_method_class(s,receiver_type,name):
+    if s["internal"]:
+        return ""
+    end
+    return semantic.dynamic_method_class(s["unit"]["classes"],s["unit"]["functions"],receiver_type,name)
+end
 function expression(s,node):
     if node == None:
         return ["0","None"]
     end
     kind = node["kind"]
+    if kind == "@value":
+        # Už vyhodnocená hodnota (příjemce metody ověřený za běhu).
+        return node["value"]
+    end
     if s["has_validation_errors"] and expression_validation_error(s,node):
         return ["0","None"]
     end
@@ -1136,7 +1150,12 @@ function expression(s,node):
         end
         return value
     elif kind == "member":
-        return rt(s,"dict_get",[expression(s,node["target"])[0],string(s,node["name"])[0]],"Any")
+        target = expression(s,node["target"])
+        if target[1] == "Any" and not s["internal"]:
+            # Instance bez statického typu: typ a pole ověří běh.
+            return function_call(s,"__lsl_member_get",[target,string(s,node["name"])])
+        end
+        return rt(s,"dict_get",[target[0],string(s,node["name"])[0]],"Any")
     elif kind == "index":
         target = expression(s,node["target"])
         return read_at(s,target,expression(s,node["index"]),target[1],node)
@@ -1419,7 +1438,7 @@ function builtin_argument(s,name,node,index):
     helper = ""
     if name in ["chr","arg","exit","thread_join"] and index == 0:
         return checked_integer_expression(s,node)
-    elif (name in ["ord","native_open","readfile","readbytes","exists","listdir","mkdir","unlink","rmdir","writefile","appendfile","writebytes","__lsl_rename","run","run_clean","capture","capture_clean","__lsl_run","__lsl_run_clean","__lsl_capture","__lsl_capture_clean","capture_input","capture_input_clean","capture_stream","capture_stream_clean","capture_input_stream","capture_input_stream_clean","__lsl_capture_input_timeout","__lsl_run_timeout"] and index == 0) or (name in ["writefile","appendfile","__lsl_rename"] and index == 1) or (name in ["capture_input","capture_input_clean","capture_input_stream","capture_input_stream_clean","__lsl_capture_input_timeout"] and index == 2):
+    elif (name in ["ord","native_open","readfile","readbytes","exists","listdir","mkdir","unlink","rmdir","chdir","remove_path","writefile","appendfile","writebytes","__lsl_rename","run","run_clean","capture","capture_clean","__lsl_run","__lsl_run_clean","__lsl_capture","__lsl_capture_clean","capture_input","capture_input_clean","capture_stream","capture_stream_clean","capture_input_stream","capture_input_stream_clean","__lsl_capture_input_timeout","__lsl_run_timeout"] and index == 0) or (name in ["writefile","appendfile","__lsl_rename"] and index == 1) or (name in ["capture_input","capture_input_clean","capture_input_stream","capture_input_stream_clean","__lsl_capture_input_timeout"] and index == 2):
         rule = "string_value"
         helper = "__lsl_require_string_value"
     elif name in ["run","run_clean","capture","capture_clean","__lsl_run","__lsl_run_clean","__lsl_capture","__lsl_capture_clean","capture_input","capture_input_clean","capture_stream","capture_stream_clean","capture_input_stream","capture_input_stream_clean","__lsl_capture_input_timeout","__lsl_run_timeout"] and index == 1:
@@ -1484,6 +1503,14 @@ function class_method(s,node):
             return ["0","Any"]
         end
         receiver_type = infer(s,receiver)
+        dynamic_class = dynamic_method_class(s,receiver_type,target["name"])
+        if dynamic_class != "":
+            # Instance bez statického typu: před voláním metody ověřit, že
+            # jde o instanci (slovník polí); vyhodnotí se jen jednou.
+            checked = function_call(s,"__lsl_require_instance",[expression(s,receiver)])
+            receiver = {"kind":"@value","value":checked,"line":receiver["line"],"column":receiver["column"],"end_column":receiver["end_column"]}
+            receiver_type = "Instance:" + dynamic_class
+        end
         offset = 9
         if receiver_type.startswith("Class:"):
             offset = 6
@@ -1570,6 +1597,10 @@ function assign(s,target,value):
         call rt(s,helper,[collection[0],index_bits,boxed(s,value)],"None")
     elif target["kind"] == "member":
         collection = expression(s,target["target"])
+        if collection[1] == "Any" and not s["internal"]:
+            call function_call(s,"__lsl_member_set",[collection,string(s,target["name"]),value])
+            return
+        end
         call rt(s,"dict_set",[collection[0],string(s,target["name"])[0],boxed(s,value)],"None")
     else:
         Error(CompileError: "LuxIR assignment target")
@@ -1983,7 +2014,7 @@ NATIVE = {
 "__lsl_syscall":["syscall","Int"],"__lsl_syscall6":["syscall6","Int"],"__lsl_getenv":["getenv","Any"],"__lsl_sleep":["sleep","None"],"__lsl_isatty":["isatty","Bool"],"__lsl_stdin_eof":["stdin_eof","Bool"],
 "readfile":["readfile","String"],"readbytes":["readbytes","ByteArray"],"writefile":["writefile","None"],"appendfile":["appendfile","None"],"writebytes":["writebytes","None"],
 "run":["run","Int"],"capture":["capture","String"],"capture_status":["capture_status","Int"],"capture_stderr":["capture_stderr","String"],
-"exists":["exists","Bool"],"listdir":["list_directory","List"],"mkdir":["mkdir","Int"],"__lsl_mkdir_private":["mkdir_private","Int"],"__lsl_list_directory":["list_directory","List"],"__lsl_rename":["rename","Int"],"unlink":["unlink","Int"],"rmdir":["rmdir","Int"],
+"exists":["exists","Bool"],"listdir":["list_directory","List"],"mkdir":["mkdir","Int"],"__lsl_mkdir_private":["mkdir_private","Int"],"__lsl_list_directory":["list_directory","List"],"__lsl_rename":["rename","Int"],"unlink":["unlink","Int"],"rmdir":["rmdir","Int"],"cwd":["cwd","String"],"chdir":["chdir","None"],
 "executable_path":["executable_path","String"],"clock":["clock","Float"],"monotonic":["clock","Float"],"wall_time":["wall_time","Float"],"gc":["gc","Int"],"chr":["chr","String"],"ord":["ord","Int"],"cpu_count":["cpu_count","Int"],"input":["input","String"],
 "__lsl_new_set":["list_new","Set"],"__lsl_set_append":["list_append","None"],"__lsl_set_store":["list_set","None"]}
 METHODS = {"startswith":"__lsl_startswith","endswith":"__lsl_endswith","split":"__lsl_split","join":"__lsl_join","strip":"__lsl_strip","lstrip":"__lsl_lstrip","rstrip":"__lsl_rstrip","lower":"__lsl_lower","upper":"__lsl_upper","capitalize":"__lsl_capitalize","title":"__lsl_title","replace":"__lsl_replace","find":"__lsl_find","count":"__lsl_count","index":"__lsl_list_index","extend":"__lsl_extend","insert":"__lsl_insert","remove":"__lsl_remove","reverse":"__lsl_reverse","sort":"__lsl_sort","copy":"__lsl_copy","get":"__lsl_dict_get","setdefault":"__lsl_setdefault","update":"__lsl_update","values":"__lsl_dict_values","items":"__lsl_dict_items"}
@@ -2078,6 +2109,9 @@ function call_expression(s,node):
     if target["kind"] == "member":
         receiver_type = infer(s,target["target"])
         is_origin = target["target"]["kind"] == "name" and target["target"]["name"] == "origin"
+        if not is_origin and dynamic_method_class(s,receiver_type,target["name"]) != "":
+            return class_method(s,node)
+        end
         if is_origin or receiver_type.startswith("Class:") or receiver_type.startswith("Instance:"):
             return class_method(s,node)
         end
@@ -2380,8 +2414,8 @@ function call_expression(s,node):
         # eprint(hodnota): String(hodnota) a nový řádek na stderr (runtime)
         text = stringify(s,values[0])
         return rt(s,"write_stderr",[text[0]],"None")
-    elif name in ["List","Tuple","RealArray","Dictionary","set","sorted","dedup","sum"]:
-        helpers = {"List":"__lsl_list","Tuple":"__lsl_list","RealArray":"__lsl_real_array","Dictionary":"__lsl_dictionary","set":"__lsl_set","sorted":"__lsl_sorted","dedup":"__lsl_dedup","sum":"__lsl_sum"}
+    elif name in ["List","Tuple","RealArray","Dictionary","set","sorted","dedup","sum","remove_path"]:
+        helpers = {"List":"__lsl_list","Tuple":"__lsl_list","RealArray":"__lsl_real_array","Dictionary":"__lsl_dictionary","set":"__lsl_set","sorted":"__lsl_sorted","dedup":"__lsl_dedup","sum":"__lsl_sum","remove_path":"__lsl_remove_path"}
         if len(values) == 0:
             if name == "Dictionary":
                 return rt(s,"dict_new",[],name,False)
@@ -2415,21 +2449,40 @@ function call_expression(s,node):
             return [args[0],"Int",values[0][2]]
         end
         return [args[0],"Int"]
-    elif name.startswith("__lsl_qbe_call") or name.startswith("__lsl_qbe_fcall"):
+    elif name.startswith("__lsl_qbe_call") or name.startswith("__lsl_qbe_fcall") or name.startswith("__lsl_qbe_icall"):
         # Nativní volání adresy kódu. Mimo runtime se argument se statickým
         # typem Float předává rozbalený jako Float64 (ABI jazyka C: cairo,
         # pango, GTK) a __lsl_qbe_fcall vrací Float64 zabalený do Float;
         # ostatní argumenty jsou slova (Int, ukazatele, zabalené objekty).
+        # __lsl_qbe_icall vrací C int: ABI definuje jen spodních 32 bitů rax,
+        # proto se výsledek znaménkově rozšíří (open() == -1 je -1).
         kind = "Int"
         if name.startswith("__lsl_qbe_fcall"):
             kind = "Float"
+        end
+        if name.startswith("__lsl_qbe_icall"):
+            if s["runtime"]:
+                word = invoke(s,integer(s,values[0]),args[1:],"Int")
+            else:
+                params = []
+                for value in values[1:]:
+                    params.append(typed(value[0]))
+                end
+                word = [invoke_typed(s,integer(s,values[0]),params,"l"),"Int"]
+            end
+            return scalar(s,"sext32("+temp(s,"copy("+integer(s,word)+")","w")+")")
         end
         if s["runtime"]:
             return invoke(s,integer(s,values[0]),args[1:],kind)
         end
         params = []
+        singles = s.get("single_values",{})
         for value in values[1:]:
-            if value[1] == "Float":
+            if value[1] == "Float" and value[0] in singles:
+                # __lsl_qbe_f32(x): parametr C typu float (Float32 v xmm),
+                # ne double, jehož spodních 32 bitů by funkce četla.
+                params.append(singles[value[0]])
+            elif value[1] == "Float":
                 bits = temp(s,"load("+temp(s,"add("+value[0]+", 8)")+")")
                 params.append(temp(s,"bitcast("+bits+")","d"))
             else:
@@ -2568,7 +2621,14 @@ function call_expression(s,node):
             return ["0","Int"]
         end
         wide = temp(s,"fext("+value+")","d")
-        return rt(s,"float_new",[temp(s,"bitcast("+wide+")")],"Float",False)
+        result = rt(s,"float_new",[temp(s,"bitcast("+wide+")")],"Float",False)
+        if name == "__lsl_qbe_f32":
+            if "single_values" not in s:
+                s["single_values"] = {}
+            end
+            s["single_values"][result[0]] = value
+        end
+        return result
     elif name.startswith("__lsl_qbe_load"):
         operations = {"__lsl_qbe_load8":"load_u8","__lsl_qbe_load16":"load_u16","__lsl_qbe_load32":"load_u32","__lsl_qbe_load64":"load"}
         return scalar(s,operations[name]+"("+integer(s,values[0])+")")

@@ -30,6 +30,7 @@ def run(command, timeout):
 # nástroje (/bin/sh, true, sh v PATH) nebo curl.exe, který wine na rozdíl
 # od Windows 10+ nemá.
 WINDOWS_SKIP = {
+    'fs_0107_conformance.lsl': 'cwd() is a drive path',
     'automatic_gc_conformance.lsl': 'memory from /proc/self/status',
     'memory_footprint_conformance.lsl': 'memory from /proc/self/status',
     'memory_release_conformance.lsl': 'memory from /proc/self/status',
@@ -69,6 +70,7 @@ MACOS_SKIP = {
 # WebAssembly s WASI preview1: bez procesů, socketů, /proc, /dev/null
 # a nativního strojového kódu.
 WASI_SKIP = {
+    'fs_0107_conformance.lsl': 'no process working directory',
     'automatic_gc_conformance.lsl': 'memory from /proc/self/status',
     'memory_footprint_conformance.lsl': 'memory from /proc/self/status',
     'memory_release_conformance.lsl': 'memory from /proc/self/status',
@@ -93,6 +95,7 @@ WASI_SKIP = {
 # Bare metal: bez procesů, socketů, systémových volání a nativního kódu;
 # /proc by četl stav qemu na hostiteli.
 BAREMETAL_SKIP = {
+    'fs_0107_conformance.lsl': 'no process working directory',
     'automatic_gc_conformance.lsl': 'memory from /proc/self/status',
     'memory_footprint_conformance.lsl': 'memory from /proc/self/status',
     'memory_release_conformance.lsl': 'memory from /proc/self/status',

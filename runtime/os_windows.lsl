@@ -457,6 +457,32 @@ function remove_directory(path):
     return 0
 end
 
+# Pracovní adresář jako UTF-8 do buffer: délka, nebo záporné errno. Znak
+# UTF-16 dá nejvýš tři bajty UTF-8, proto se čte nejvýš size / 3 znaků.
+function current_directory(buffer, size):
+    wide = __lsl_qbe_alloc(WIDE_PATH_BYTES)
+    limit = __lsl_qbe_udiv(size - 1, 3)
+    count = dword(__lsl_qbe_call2(__lsl_symbol("GetCurrentDirectoryW"), limit, wide))
+    if count == 0:
+        return last_errno()
+    end
+    if count >= limit:
+        return 0 - platform.ENAMETOOLONG
+    end
+    return utf8_from_wide(wide, count, buffer)
+end
+
+function change_directory(path):
+    wide = __lsl_qbe_alloc(WIDE_PATH_BYTES)
+    if not wide_path(path, wide):
+        return 0 - platform.ENOENT
+    end
+    if dword(__lsl_qbe_call1(__lsl_symbol("SetCurrentDirectoryW"), wide)) == 0:
+        return last_errno()
+    end
+    return 0
+end
+
 # Přejmenování bez přepsání cíle (MoveFileExW bez MOVEFILE_REPLACE_EXISTING,
 # s MOVEFILE_WRITE_THROUGH). Přesune i spuštěný .exe v rámci svazku.
 function rename_path(source, destination):
