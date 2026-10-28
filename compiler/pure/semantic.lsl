@@ -1611,14 +1611,16 @@ function infer_function_returns(functions, classes, parameter_types, global_type
             # Cache keys on the first visit, retaining collect_variables scan
             # order and its initial hidden-loop annotations. Final scope IDs
             # are still collected independently by analyze_function.
+            # Stabilní funkce (memo) se neprochází: anotace collect_variables
+            # už nese z prvního volání.
+            if name in stable:
+                previous_inputs[name] = memo["inputs"][name]
+                continue
+            end
             if name not in local_names:
                 locals = {}
                 call collect_variables(declaration["body"], locals)
                 local_names[name] = locals.keys()
-            end
-            if name in stable:
-                previous_inputs[name] = memo["inputs"][name]
-                continue
             end
             if name in previous_inputs:
                 if return_dependency_values_unchanged(previous_inputs[name], result):
@@ -1672,6 +1674,10 @@ function infer_function_returns(functions, classes, parameter_types, global_type
             locals_by_name[name] = set(local_names[name])
         end
         for parameter_owner in names:
+            if parameter_owner not in locals_by_name:
+                # Stabilní funkce: lokální jména (s parametry) z minulého memo.
+                locals_by_name[parameter_owner] = set(memo["locals"][parameter_owner])
+            end
             for parameter in functions[parameter_owner]["parameters"]:
                 locals_by_name[parameter_owner].add(parameter)
             end
@@ -1893,7 +1899,11 @@ function analyze(path, source, program, internal_abi, lazy_functions=None):
     # ordinary proved globals keep their existing hot path.
     deleted = {}
     for name in functions.keys():
-        call flow.deleted_names(functions[name]["body"], deleted)
+        # Funkce dynamické knihovny (lazy) mažou jen položky slovníků, nikdy
+        # jména: průchod jejich těly by stál ~12 ms každého překladu.
+        if name not in lazy_functions:
+            call flow.deleted_names(functions[name]["body"], deleted)
+        end
     end
     mutable_globals = {}
     guarded_main_reads = {}

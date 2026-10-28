@@ -711,7 +711,10 @@ function binary_node(operator, left, right):
 end
 
 function parse_power(parser):
-    left = parse_unary(parser)
+    return parse_power_from(parser, parse_unary(parser))
+end
+
+function parse_power_from(parser, left):
     if match(parser, "^"):
         parser[4] += 1
         if parser[4] > 256:
@@ -725,7 +728,10 @@ function parse_power(parser):
 end
 
 function parse_factor(parser):
-    left = parse_power(parser)
+    return parse_factor_from(parser, parse_power(parser))
+end
+
+function parse_factor_from(parser, left):
     loop:
         operator = current(parser)["value"]
         if operator != "*" and operator != "/" and operator != "//" and operator != "%":
@@ -738,7 +744,10 @@ function parse_factor(parser):
 end
 
 function parse_term(parser):
-    left = parse_factor(parser)
+    return parse_term_from(parser, parse_factor(parser))
+end
+
+function parse_term_from(parser, left):
     loop:
         operator = current(parser)["value"]
         if operator != "+" and operator != "-":
@@ -751,7 +760,10 @@ function parse_term(parser):
 end
 
 function parse_shift(parser):
-    left = parse_term(parser)
+    return parse_shift_from(parser, parse_term(parser))
+end
+
+function parse_shift_from(parser, left):
     loop:
         operator = current(parser)["value"]
         if operator != "<<" and operator != ">>":
@@ -764,7 +776,10 @@ function parse_shift(parser):
 end
 
 function parse_bitand(parser):
-    left = parse_shift(parser)
+    return parse_bitand_from(parser, parse_shift(parser))
+end
+
+function parse_bitand_from(parser, left):
     while match(parser, "&"):
         left = binary_node("&", left, parse_shift(parser))
     end
@@ -772,7 +787,10 @@ function parse_bitand(parser):
 end
 
 function parse_bitxor(parser):
-    left = parse_bitand(parser)
+    return parse_bitxor_from(parser, parse_bitand(parser))
+end
+
+function parse_bitxor_from(parser, left):
     while match(parser, "~"):
         left = binary_node("~", left, parse_bitand(parser))
     end
@@ -780,7 +798,10 @@ function parse_bitxor(parser):
 end
 
 function parse_bitor(parser):
-    left = parse_bitxor(parser)
+    return parse_bitor_from(parser, parse_bitxor(parser))
+end
+
+function parse_bitor_from(parser, left):
     while match(parser, "|"):
         left = binary_node("|", left, parse_bitxor(parser))
     end
@@ -788,7 +809,11 @@ function parse_bitor(parser):
 end
 
 function parse_compare(parser):
-    operands = [parse_bitor(parser)]
+    return parse_compare_from(parser, parse_bitor(parser))
+end
+
+function parse_compare_from(parser, first):
+    operands = [first]
     operators = []
     loop:
         operator = current(parser)["value"]
@@ -815,15 +840,28 @@ function parse_compare(parser):
 end
 
 function parse_and(parser):
-    left = parse_compare(parser)
+    return parse_and_from(parser, parse_compare(parser))
+end
+
+function parse_and_from(parser, left):
     while match(parser, "and"):
         left = binary_node("and", left, parse_compare(parser))
     end
     return left
 end
 
+# Hodnoty tokenu, na které reaguje některá úroveň binárních operátorů.
+BINARY_WORDS = {"^": True, "*": True, "/": True, "//": True, "%": True, "+": True, "-": True, "<<": True, ">>": True, "&": True, "~": True, "|": True, "==": True, "!=": True, "<": True, "<=": True, ">": True, ">=": True, "in": True, "not": True, "is": True, "and": True, "or": True}
+
+# Operand bez následujícího operátoru (většina) projde jedním voláním místo
+# deseti úrovní priorit; jinak řetěz pokračuje s už načteným operandem a
+# strom je stejný.
 function parse_or(parser):
-    left = parse_and(parser)
+    operand = parse_unary(parser)
+    if current(parser)["value"] not in BINARY_WORDS:
+        return operand
+    end
+    left = parse_and_from(parser, parse_compare_from(parser, parse_bitor_from(parser, parse_bitxor_from(parser, parse_bitand_from(parser, parse_shift_from(parser, parse_term_from(parser, parse_factor_from(parser, parse_power_from(parser, operand)))))))))
     while match(parser, "or"):
         left = binary_node("or", left, parse_and(parser))
     end
@@ -1314,183 +1352,189 @@ function parse_statement(parser):
     return result
 end
 
+STATEMENT_WORDS = {"function": True, "if": True, "while": True, "for": True, "loop": True, "class": True, "unsafe": True, "safe": True, "try": True, "Error": True, "print": True, "printl": True, "printr": True, "return": True, "break": True, "continue": True, "load": True, "from": True, "ctype": True, "global": True, "del": True, "end": True, "elif": True, "else": True}
+
 function parse_statement_inner(parser):
     opening = current(parser)
-    if match(parser, "function"):
-        if parser[9][1] > 0:
-            # Vnořená funkce by potřebovala uzávěr (closure); místo pádu
-            # pozdější fáze překladače srozumitelná chyba u definice.
-            call fail_at(parser, opening, "E1248", "nested functions are not supported", "define the function at module level and pass the values it uses as parameters")
-        end
-        return parse_function(parser, opening)
-    elif match(parser, "if"):
-        return parse_if(parser, opening)
-    elif match(parser, "while"):
-        return parse_loop_block(parser, opening, "while")
-    elif match(parser, "for"):
-        return parse_loop_block(parser, opening, "for")
-    elif match(parser, "loop"):
-        return parse_loop_block(parser, opening, "loop")
-    elif match(parser, "class"):
-        return parse_class(parser, opening)
-    elif match(parser, "unsafe"):
-        return parse_loop_block(parser, opening, "unsafe")
-    elif match(parser, "safe"):
-        return parse_try_block(parser, opening, True)
-    elif match(parser, "try"):
-        return parse_try_block(parser, opening, False)
-    elif match(parser, "Error"):
-        return parse_error_statement(parser, opening)
-    elif match(parser, "print") or match(parser, "printl") or match(parser, "printr"):
-        formatted = opening["value"] == "printl"
-        expressions = []
-        if not check_kind(parser, "newline") and not check_kind(parser, "eof"):
+    # Klíčová slova příkazů se zkouší jen u tokenu, jehož hodnota může být
+    # klíčovým slovem; přiřazení a výrazy (většina řádků) řetěz přeskočí.
+    if opening["value"] in STATEMENT_WORDS:
+        if match(parser, "function"):
+            if parser[9][1] > 0:
+                # Vnořená funkce by potřebovala uzávěr (closure); místo pádu
+                # pozdější fáze překladače srozumitelná chyba u definice.
+                call fail_at(parser, opening, "E1248", "nested functions are not supported", "define the function at module level and pass the values it uses as parameters")
+            end
+            return parse_function(parser, opening)
+        elif match(parser, "if"):
+            return parse_if(parser, opening)
+        elif match(parser, "while"):
+            return parse_loop_block(parser, opening, "while")
+        elif match(parser, "for"):
+            return parse_loop_block(parser, opening, "for")
+        elif match(parser, "loop"):
+            return parse_loop_block(parser, opening, "loop")
+        elif match(parser, "class"):
+            return parse_class(parser, opening)
+        elif match(parser, "unsafe"):
+            return parse_loop_block(parser, opening, "unsafe")
+        elif match(parser, "safe"):
+            return parse_try_block(parser, opening, True)
+        elif match(parser, "try"):
+            return parse_try_block(parser, opening, False)
+        elif match(parser, "Error"):
+            return parse_error_statement(parser, opening)
+        elif match(parser, "print") or match(parser, "printl") or match(parser, "printr"):
+            formatted = opening["value"] == "printl"
+            expressions = []
+            if not check_kind(parser, "newline") and not check_kind(parser, "eof"):
+                loop:
+                    expressions.append(parse_expression(parser))
+                    if len(expressions) > 1024:
+                        call fail_at(parser, current(parser), "E1234", "print statement has more than 1024 values", "split the output into multiple statements")
+                    end
+                    if not match(parser, ","):
+                        break
+                    end
+                end
+            end
+            if formatted and len(expressions) == 1 and expressions[0]["kind"] == "literal" and expressions[0]["literal_kind"] == "string":
+                expressions[0] = interpolation_value(parser, expressions[0]["value"], expressions[0])
+                formatted = False
+            end
+            call consume_line_end(parser)
+            result = node("print", opening)
+            result["formatted"] = formatted
+            # printr vypíše hodnoty přesně, bez oddělovačů a odřádkování.
+            if opening["value"] == "printr":
+                result["raw"] = True
+            end
+            result["expressions"] = expressions
+            return finish_node(result, parser)
+        elif match(parser, "return"):
+            expression = None
+            if not check_kind(parser, "newline") and not check_kind(parser, "eof"):
+                expression = parse_expression(parser)
+            end
+            call consume_line_end(parser)
+            result = node("return", opening)
+            result["expression"] = expression
+            return finish_node(result, parser)
+        elif match(parser, "break") or match(parser, "continue"):
+            call consume_line_end(parser)
+            return node(opening["value"], opening)
+        elif match(parser, "load"):
+            # `load a, b as x` imports several modules in one statement; the
+            # linker sees one load node per module. Without `as`, every module
+            # keeps its own name; with it, all of them share the alias.
+            modules = []
             loop:
-                expressions.append(parse_expression(parser))
-                if len(expressions) > 1024:
-                    call fail_at(parser, current(parser), "E1234", "print statement has more than 1024 values", "split the output into multiple statements")
+                module = expect_kind(parser, "name", "E1215", "expected module name")
+                name = module["value"]
+                components = 1
+                while match(parser, "."):
+                    name += "." + expect_kind(parser, "name", "E1216", "expected module path component")["value"]
+                    components += 1
+                    if components > 64 or len(name) > 1024:
+                        call fail_at(parser, current(parser), "E1235", "module path is too long", "use at most 64 components and 1024 characters")
+                    end
+                end
+                modules.append([name, module["column"]])
+                if len(modules) > 32:
+                    call fail_at(parser, module, "E1236", "too many modules in one load statement", "use at most 32 modules per load")
                 end
                 if not match(parser, ","):
                     break
                 end
             end
-        end
-        if formatted and len(expressions) == 1 and expressions[0]["kind"] == "literal" and expressions[0]["literal_kind"] == "string":
-            expressions[0] = interpolation_value(parser, expressions[0]["value"], expressions[0])
-            formatted = False
-        end
-        call consume_line_end(parser)
-        result = node("print", opening)
-        result["formatted"] = formatted
-        # printr vypíše hodnoty přesně, bez oddělovačů a odřádkování.
-        if opening["value"] == "printr":
-            result["raw"] = True
-        end
-        result["expressions"] = expressions
-        return finish_node(result, parser)
-    elif match(parser, "return"):
-        expression = None
-        if not check_kind(parser, "newline") and not check_kind(parser, "eof"):
-            expression = parse_expression(parser)
-        end
-        call consume_line_end(parser)
-        result = node("return", opening)
-        result["expression"] = expression
-        return finish_node(result, parser)
-    elif match(parser, "break") or match(parser, "continue"):
-        call consume_line_end(parser)
-        return node(opening["value"], opening)
-    elif match(parser, "load"):
-        # `load a, b as x` imports several modules in one statement; the
-        # linker sees one load node per module. Without `as`, every module
-        # keeps its own name; with it, all of them share the alias.
-        modules = []
-        loop:
-            module = expect_kind(parser, "name", "E1215", "expected module name")
+            shared_alias = None
+            if match(parser, "as"):
+                shared_alias = expect_kind(parser, "name", "E1232", "expected module alias")["value"]
+            end
+            call consume_line_end(parser)
+            result = None
+            for entry in modules:
+                item = node("load", opening)
+                item["module"] = entry[0]
+                item["module_column"] = entry[1]
+                item["symbol"] = None
+                module_parts = String(entry[0]).split(".")
+                item["alias"] = module_parts[len(module_parts) - 1]
+                item["shared_alias"] = False
+                if shared_alias != None:
+                    item["alias"] = shared_alias
+                    item["shared_alias"] = len(modules) > 1
+                end
+                if result == None:
+                    result = item
+                    result["extra_loads"] = []
+                else:
+                    result["extra_loads"].append(item)
+                end
+            end
+            return result
+        elif match(parser, "from"):
+            module = expect_kind(parser, "name", "E1217", "expected module name")
             name = module["value"]
             components = 1
             while match(parser, "."):
-                name += "." + expect_kind(parser, "name", "E1216", "expected module path component")["value"]
+                name += "." + expect_kind(parser, "name", "E1218", "expected module path component")["value"]
                 components += 1
                 if components > 64 or len(name) > 1024:
                     call fail_at(parser, current(parser), "E1235", "module path is too long", "use at most 64 components and 1024 characters")
                 end
             end
-            modules.append([name, module["column"]])
-            if len(modules) > 32:
-                call fail_at(parser, module, "E1236", "too many modules in one load statement", "use at most 32 modules per load")
+            call expect(parser, "load", "E1219", "expected load in selective import")
+            symbol = expect_kind(parser, "name", "E1220", "expected imported symbol")
+            alias = symbol["value"]
+            if match(parser, "as"):
+                alias = expect_kind(parser, "name", "E1221", "expected import alias")["value"]
             end
-            if not match(parser, ","):
-                break
+            call consume_line_end(parser)
+            result = node("load", opening)
+            result["module"] = name
+            result["module_column"] = module["column"]
+            result["symbol"] = symbol["value"]
+            result["alias"] = alias
+            return result
+        elif match(parser, "ctype"):
+            visibility = expect_kind(parser, "name", "E1222", "expected Public or Private")
+            if visibility["value"] != "Public" and visibility["value"] != "Private":
+                call fail_at(parser, visibility, "E1223", "invalid class visibility", "use ctype Public or ctype Private")
             end
-        end
-        shared_alias = None
-        if match(parser, "as"):
-            shared_alias = expect_kind(parser, "name", "E1232", "expected module alias")["value"]
-        end
-        call consume_line_end(parser)
-        result = None
-        for entry in modules:
-            item = node("load", opening)
-            item["module"] = entry[0]
-            item["module_column"] = entry[1]
-            item["symbol"] = None
-            module_parts = String(entry[0]).split(".")
-            item["alias"] = module_parts[len(module_parts) - 1]
-            item["shared_alias"] = False
-            if shared_alias != None:
-                item["alias"] = shared_alias
-                item["shared_alias"] = len(modules) > 1
+            call consume_line_end(parser)
+            result = node("ctype", opening)
+            result["visibility"] = visibility["value"]
+            return result
+        elif check(parser, "global") and parser[1] + 1 < len(parser[0]) and parser[0][parser[1] + 1]["kind"] == "name":
+            # global x, y: zápis do proměnných modulu z funkce.
+            call advance(parser)
+            if parser[9][1] == 0:
+                call fail_at(parser, opening, "E1246", "global is only allowed inside a function", "module-level variables are global already")
             end
-            if result == None:
-                result = item
-                result["extra_loads"] = []
-            else:
-                result["extra_loads"].append(item)
+            names = []
+            loop:
+                names.append(expect_kind(parser, "name", "E1246", "expected variable name after global")["value"])
+                if not match(parser, ","):
+                    break
+                end
             end
+            call consume_line_end(parser)
+            parser[9][3] += 1
+            result = node("global", opening)
+            result["names"] = names
+            return finish_node(result, parser)
+        elif match(parser, "del"):
+            call expect(parser, "(", "E1224", "expected parenthesized del target")
+            target = parse_expression(parser)
+            call expect(parser, ")", "E1225", "unclosed del target")
+            call consume_line_end(parser)
+            result = node("delete", opening)
+            result["target"] = target
+            return result
+        elif check(parser, "end") or check(parser, "elif") or check(parser, "else"):
+            call fail_at(parser, opening, "E1226", "unexpected block terminator", "remove it or add its opening block")
         end
-        return result
-    elif match(parser, "from"):
-        module = expect_kind(parser, "name", "E1217", "expected module name")
-        name = module["value"]
-        components = 1
-        while match(parser, "."):
-            name += "." + expect_kind(parser, "name", "E1218", "expected module path component")["value"]
-            components += 1
-            if components > 64 or len(name) > 1024:
-                call fail_at(parser, current(parser), "E1235", "module path is too long", "use at most 64 components and 1024 characters")
-            end
-        end
-        call expect(parser, "load", "E1219", "expected load in selective import")
-        symbol = expect_kind(parser, "name", "E1220", "expected imported symbol")
-        alias = symbol["value"]
-        if match(parser, "as"):
-            alias = expect_kind(parser, "name", "E1221", "expected import alias")["value"]
-        end
-        call consume_line_end(parser)
-        result = node("load", opening)
-        result["module"] = name
-        result["module_column"] = module["column"]
-        result["symbol"] = symbol["value"]
-        result["alias"] = alias
-        return result
-    elif match(parser, "ctype"):
-        visibility = expect_kind(parser, "name", "E1222", "expected Public or Private")
-        if visibility["value"] != "Public" and visibility["value"] != "Private":
-            call fail_at(parser, visibility, "E1223", "invalid class visibility", "use ctype Public or ctype Private")
-        end
-        call consume_line_end(parser)
-        result = node("ctype", opening)
-        result["visibility"] = visibility["value"]
-        return result
-    elif check(parser, "global") and parser[1] + 1 < len(parser[0]) and parser[0][parser[1] + 1]["kind"] == "name":
-        # global x, y: zápis do proměnných modulu z funkce.
-        call advance(parser)
-        if parser[9][1] == 0:
-            call fail_at(parser, opening, "E1246", "global is only allowed inside a function", "module-level variables are global already")
-        end
-        names = []
-        loop:
-            names.append(expect_kind(parser, "name", "E1246", "expected variable name after global")["value"])
-            if not match(parser, ","):
-                break
-            end
-        end
-        call consume_line_end(parser)
-        parser[9][3] += 1
-        result = node("global", opening)
-        result["names"] = names
-        return finish_node(result, parser)
-    elif match(parser, "del"):
-        call expect(parser, "(", "E1224", "expected parenthesized del target")
-        target = parse_expression(parser)
-        call expect(parser, ")", "E1225", "unclosed del target")
-        call consume_line_end(parser)
-        result = node("delete", opening)
-        result["target"] = target
-        return result
-    elif check(parser, "end") or check(parser, "elif") or check(parser, "else"):
-        call fail_at(parser, opening, "E1226", "unexpected block terminator", "remove it or add its opening block")
     end
     # lock je kontextové slovo: lock jméno: ... end (jinak běžné jméno).
     if check_kind(parser, "name") and check(parser, "lock") and parser[1] + 1 < len(parser[0]) and parser[0][parser[1] + 1]["kind"] == "name":

@@ -5,6 +5,10 @@ load host
 load qbe_toolchain
 load target
 
+# Překladač běží krátce a alokuje hodně: větší rozpočet GC (64 MiB) ušetří
+# sbírky; paměť navíc je do desítek MiB.
+call __lsl_qbe_call1(__lsl_symbol("rt_runtime_gc_floor"), 67108864)
+
 source_index = 1
 safety_mode = -1
 target_name = host.target_name()

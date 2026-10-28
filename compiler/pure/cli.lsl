@@ -18,7 +18,7 @@ load sandbox
 load tui
 load update
 
-VERSION = "0.10.7"
+VERSION = "0.10.8"
 # Prázdné u stabilního vydání, jinak např. " BETA".
 RELEASE_LABEL = ""
 
@@ -109,6 +109,8 @@ function decimal_option(value, minimum, maximum, label):
 end
 
 function compile_image_mode(source_path, source, safety_mode, running=False, target_name=""):
+    # Překlad alokuje hodně a krátce: větší rozpočet GC (jako lslc).
+    call __lsl_qbe_call1(__lsl_symbol("rt_runtime_gc_floor"), 67108864)
     stdlib_name = "compiler/pure/dynamic_stdlib.lsl"
     stdlib_path = resource_path(stdlib_name)
     stdlib_source = readfile(stdlib_path)

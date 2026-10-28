@@ -102,6 +102,13 @@ function text_slice(text, start, stop, buffer):
     return __lsl_text_piece(text, start, stop - start)
 end
 
+# Povolené jednoznakové operátory a interpunkce (mimo závorky): + - * / %
+# ^ = < > ! : , . & | ~
+SYMBOL_BYTES = [0 for code in rang(128)]
+for symbol_code in [43, 45, 42, 47, 37, 94, 61, 60, 62, 33, 58, 44, 46, 38, 124, 126]:
+    SYMBOL_BYTES[symbol_code] = 1
+end
+
 function tokenize(path, source):
     text = String(source)
     count = __lsl_text_byte_length(text)
@@ -379,42 +386,42 @@ function tokenize(path, source):
             end
             result.append(token("name", text_slice(text, start, index, scratch), line, start_column, column))
         else:
+            # Operátor podle bajtů: dvou- a tříznakové operátory se poznají bez
+            # skládání kandidátních Stringů; jednoznakové ověří tabulka.
             start_column = column
             width = char_width(code)
-            value = text_slice(text, index, index + width, scratch)
-            if width == 1 and index + 2 < count:
-                triple = value + chr(__lsl_text_byte(text, index + 1)) + chr(__lsl_text_byte(text, index + 2))
-                if triple == "<<=" or triple == ">>=":
-                    value = triple
+            length = 1
+            if width == 1:
+                second = -1
+                if index + 1 < count:
+                    second = __lsl_text_byte(text, index + 1)
                 end
-            end
-            if len(value) == 1 and width == 1 and index + 1 < count:
-                pair = value + chr(__lsl_text_byte(text, index + 1))
-                if pair == "==" or pair == "!=" or pair == "<=" or pair == ">=" or pair == "//" or pair == "+=" or pair == "-=" or pair == "*=" or pair == "/=" or pair == "%=" or pair == "<<" or pair == ">>" or pair == "&=" or pair == "|=" or pair == "~=" or pair == "++" or pair == "--":
-                    value = pair
+                if (code == 60 or code == 62) and second == code and index + 2 < count and __lsl_text_byte(text, index + 2) == 61:
+                    length = 3
+                elif second == 61 and (code == 61 or code == 33 or code == 60 or code == 62 or code == 43 or code == 45 or code == 42 or code == 47 or code == 37 or code == 38 or code == 124 or code == 126):
+                    length = 2
+                elif second == code and (code == 47 or code == 60 or code == 62 or code == 43 or code == 45):
+                    length = 2
                 end
-            end
-            if len(value) == 3:
-                index += 3
-                column += 3
-            elif len(value) == 2:
-                index += 2
-                column += 2
+                value = text_slice(text, index, index + length, scratch)
+                index += length
+                column += length
             else:
+                value = text_slice(text, index, index + width, scratch)
                 index += width
                 column += 1
             end
-            if value == "(" or value == "[" or value == "{":
+            if code == 40 or code == 91 or code == 123:
                 depth += 1
                 if depth > 256:
                     call diagnostics.fail(path, line, start_column, len(value), source_line(lines, line), "E0012", "delimiter nesting exceeds 256 levels", "split the expression into smaller statements")
                 end
-            elif value == ")" or value == "]" or value == "}":
+            elif code == 41 or code == 93 or code == 125:
                 depth -= 1
                 if depth < 0:
                     call diagnostics.fail(path, line, start_column, len(value), source_line(lines, line), "E0005", "unexpected closing delimiter", "remove it or add the matching opening delimiter")
                 end
-            elif value != "+" and value != "-" and value != "*" and value != "/" and value != "%" and value != "^" and value != "=" and value != "<" and value != ">" and value != "!" and value != ":" and value != "," and value != "." and value != "&" and value != "|" and value != "~" and value != "==" and value != "!=" and value != "<=" and value != ">=" and value != "//" and value != "+=" and value != "-=" and value != "*=" and value != "/=" and value != "%=" and value != "<<" and value != ">>" and value != "&=" and value != "|=" and value != "~=" and value != "<<=" and value != ">>=" and value != "++" and value != "--":
+            elif length == 1 and (width != 1 or SYMBOL_BYTES[code] == 0):
                 call diagnostics.fail(path, line, start_column, len(value), source_line(lines, line), "E0006", "unexpected character", "remove the character or put it inside a String")
             end
             result.append(token("symbol", value, line, start_column, column))

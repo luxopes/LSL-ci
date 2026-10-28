@@ -1,4 +1,4 @@
-# LSL 0.10.7 pro Linux, Windows a macOS
+# LSL 0.10.8 pro Linux, Windows a macOS
 
 Archiv obsahuje překladač pro jeden systém a architekturu hostitele
 (Linux x86_64/aarch64/riscv64, Windows x64/ARM64, macOS Apple
@@ -25,11 +25,11 @@ Binárky nejsou podepsané certifikátem vývojáře ani notarizované:
 - **Windows:** SmartScreen může při prvním spuštění zobrazit „Systém Windows
   ochránil váš počítač“; pokračujte přes „Další informace“ → „Přesto
   spustit“. ZIP stažený prohlížečem lze předem odblokovat v PowerShellu:
-  `Unblock-File lsl-0.10.7-windows-x86_64.zip`. Stažení přes `curl.exe` značku
+  `Unblock-File lsl-0.10.8-windows-x86_64.zip`. Stažení přes `curl.exe` značku
   internetu nepřidá.
 - **macOS:** soubor stažený prohlížečem dostane karanténu a Gatekeeper ho
   odmítne. Před spuštěním ji odstraňte: `xattr -dr com.apple.quarantine
-  lsl-0.10.7`, nebo program jednou povolte v Nastavení systému → Soukromí
+  lsl-0.10.8`, nebo program jednou povolte v Nastavení systému → Soukromí
   a zabezpečení → „Přesto otevřít“. Stažení přes `curl` karanténu nepřidá
   a `lsl update` také ne.
 
@@ -74,7 +74,7 @@ Spuštění na hostiteli bez cílového systému:
   64bitovém jádře x86_64, `linux-arm` v qemu-user. Nativní knihovny
   (`native`) jsou zatím jen 64bitové.
 
-Stabilní vydání; `lsl version` vypisuje `0.10.7`. Podepsaný `lsl update`
+Stabilní vydání; `lsl version` vypisuje `0.10.8`. Podepsaný `lsl update`
 sleduje stabilní kanál na všech hostitelích (Linux x86_64, aarch64 a
 riscv64, Windows x64 a ARM64, macOS arm64 a x86_64). Podpis Ed25519 i
 SHA-256 archivu ověřuje sám překladač; na Windows a macOS stahuje systémový
